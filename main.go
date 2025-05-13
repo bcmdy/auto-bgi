@@ -319,10 +319,6 @@ func main() {
 	ginServer.POST("/closeYuanShen", func(context *gin.Context) {
 
 		control.CloseYuanShen()
-		//err := task.ChangeTaskEnabledList()
-		//if err != nil {
-		//	return
-		//}
 
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "原神关闭成功"})
 	})
@@ -366,7 +362,7 @@ func main() {
 		})
 	})
 
-	//webhook接口
+	//发送截图
 	ginServer.POST("/getImage", func(c *gin.Context) {
 
 		err := control.ScreenShot()
@@ -400,6 +396,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "received", "data": j})
 	})
 
+	//米游社签到
 	ginServer.POST("/MysSignIn", func(context *gin.Context) {
 
 		err := control.HttpGet("http://localhost:8888/qd")
@@ -411,11 +408,50 @@ func main() {
 		return
 	})
 
+	//背包统计
+	ginServer.GET("/BagStatistics", func(context *gin.Context) {
+		statistics, err := bgiStatus.BagStatistics()
+
+		// 按 Cl 字段排序
+		sort.Slice(statistics, func(i, j int) bool {
+			return statistics[i].Cl < statistics[j].Cl
+		})
+
+		if err != nil {
+			// 传递给模板
+			context.HTML(http.StatusOK, "bg.html", gin.H{
+				"title": "背包统计",
+				"items": nil,
+			})
+			return
+		}
+
+		// 传递给模板
+		context.HTML(http.StatusOK, "bg.html", gin.H{
+			"title": "背包统计",
+			"items": statistics,
+		})
+	})
+
+	//删除背包统计记录
+	ginServer.POST("/deleteBag", func(context *gin.Context) {
+		isOk := bgiStatus.DeleteBagStatistics()
+
+		data := gin.H{
+			"message": isOk,
+		}
+
+		context.JSON(http.StatusOK, data)
+	})
+
 	//一条龙
 	go task.OneLong()
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
+
+	//米游社自动签到
+	go task.MysSignIn()
 
 	//服务器端口
 	err := ginServer.Run(":8082")
@@ -424,3 +460,5 @@ func main() {
 	}
 
 }
+
+//go build -o auto-bgi.exe main.go

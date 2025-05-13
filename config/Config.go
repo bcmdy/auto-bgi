@@ -14,6 +14,7 @@ type config struct {
 	WebhookURL      string `json:"webhookURL"`
 	Content         string `json:"content"`
 	ConfigName      string `json:"ConfigName"`
+	BagStatistics   string `json:"BagStatistics"`
 }
 
 var Cfg config

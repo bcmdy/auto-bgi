@@ -261,3 +261,76 @@ func TodayHarvest() (map[string]int, error) {
 
 	return harvestStats, nil
 }
+
+type Material struct {
+	Data string
+	Cl   string
+}
+
+func BagStatistics() ([]Material, error) {
+	fmt.Println("背包统计")
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\recognized_materials.txt", Config.BetterGIAddress))
+
+	// 打开文件
+	file, err := os.Open(filename) // 替换为你的文件路径
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// 创建一个扫描器来读取文件
+	scanner := bufio.NewScanner(file)
+
+	// 创建一个正则表达式来匹配日期格式 "YYYY/M/D HH:MM:SS"
+	re1 := regexp.MustCompile(`\b\d{4}/\d{1,2}/\d{1,2} \d{2}:\d{2}:\d{2}\b`)
+
+	statistics := Config.BagStatistics
+
+	split := strings.Split(statistics, ",")
+
+	var bags []Material
+	var bag Material
+
+	for scanner.Scan() {
+		for _, s := range split {
+			// 创建一个正则表达式来匹配 "晶蝶：数字" 模式
+			sprintf := fmt.Sprintf(`%s: (\d+)`, s)
+			re := regexp.MustCompile(sprintf)
+
+			line := scanner.Text()
+
+			//日期匹配
+			if re1.MatchString(line) {
+				bag.Data = line
+			}
+
+			// 查找当前行中所有匹配
+			match := re.FindString(line)
+			if match != "" {
+				// 提取数字部分并存储
+				bag.Cl = match
+				bags = append(bags, bag)
+			}
+		}
+
+		// 检查扫描器是否有错误
+		if err := scanner.Err(); err != nil {
+			panic(err)
+		}
+	}
+
+	return bags, nil
+}
+
+func DeleteBagStatistics() string {
+	fmt.Println("背包统计")
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\recognized_materials.txt", Config.BetterGIAddress))
+	// 删除文件
+	err := os.Remove(filePath)
+	if err != nil {
+		fmt.Println("删除文件失败:", err)
+		return "删除文件失败"
+	}
+	fmt.Println("文件删除成功")
+	return "文件删除成功"
+}

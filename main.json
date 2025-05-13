@@ -3,6 +3,7 @@
  "OneLongHour": 11,
  "OneLongMinute": 4,
  "webhookURL": "https://qyapi.weixin.qq.com",
- "content": "http://****",
- "configName": "我的"
+ "content": "http://说的方法是对方",
+ "configName": "我的",
+ "BagStatistics": "晶核,大英雄的经验,水晶块,魔晶块,萃凝晶,苍晶螺"
 }

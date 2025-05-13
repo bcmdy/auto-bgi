@@ -30,6 +30,7 @@
         h1 {
             font-size: 1.2em;
             margin-bottom: 15px;
+            color: #e0e0e0;
         }
         button {
             display: inline-block;
@@ -108,6 +109,11 @@
             window.location.href = '/TodayHarvest';
         }
 
+        function BagStatisticsBtn() {
+            // 跳转到收获页面
+            window.location.href = '/BagStatistics';
+        }
+
         function getImageBtn() {
             fetch('/getImage', {
                 method: 'POST'
@@ -151,6 +157,7 @@
     <button onclick="closeBgiBtn()">关闭BGI</button>
     <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>
     <button onclick="todayHarvestBtn()">今日收获</button>
+    <button onclick="BagStatisticsBtn()">背包统计</button>
     <button onclick="getImageBtn()">发送截图</button>
     <button onclick="MysSignInBtn()">米游社签到</button>
 </div>

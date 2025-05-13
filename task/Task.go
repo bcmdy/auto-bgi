@@ -240,3 +240,37 @@ func ScriptGroupTask() {
 
 	time.Sleep(1000 * time.Millisecond)
 }
+
+func MysSignIn() {
+	cronTab := cron.New(cron.WithSeconds())
+
+	// 定时任务,cron表达式
+	spec := fmt.Sprintf("0 %d %d * * *", 10, 2)
+
+	// 定义定时器调用的任务函数
+	task := func() {
+		fmt.Print("米游社签到服务启动", time.Now().Format("2006-01-02 15:04:05"))
+
+		err := control.HttpGet("http://localhost:8888/qd")
+		if err != nil {
+			fmt.Println("签到失败", err)
+		}
+
+		time.Sleep(1000 * time.Millisecond)
+
+		schedule, err := config.Parser.Parse(spec)
+		if err != nil {
+			fmt.Println("解析失败:", err)
+			return
+		}
+
+		fmt.Print("米游社签到服务启动完毕", "下次执行时间:", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
+	}
+
+	// 添加定时任务
+	cronTab.AddFunc(spec, task)
+	// 启动定时器
+	cronTab.Start()
+	// 阻塞主线程停止
+	select {}
+}
