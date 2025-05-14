@@ -318,18 +318,58 @@ func BagStatistics() ([]Material, error) {
 			panic(err)
 		}
 	}
+	morasStatistics, _ := MorasStatistics()
+	bags = append(bags, morasStatistics...)
 
 	return bags, nil
 }
 
+// 摩拉统计
+func MorasStatistics() ([]Material, error) {
+	fmt.Println("摩拉统计")
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR摩拉log\\mora_log.txt", Config.BetterGIAddress))
+	// 打开文件
+	file, err := os.Open(filename) // 替换为你的文件路径
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var bags []Material
+
+	// 创建一个扫描器来读取文件
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var bag Material
+		line := scanner.Text()
+		split := strings.Split(line, " - ")
+		bag.Data = split[0]
+		bag.Cl = split[1]
+		bags = append(bags, bag)
+		//for _, s := range split {
+		//	fmt.Println(s)
+		//}
+	}
+	return bags, nil
+}
+
+// 删除背包统计
 func DeleteBagStatistics() string {
 	fmt.Println("背包统计")
 	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\recognized_materials.txt", Config.BetterGIAddress))
 	// 删除文件
 	err := os.Remove(filePath)
 	if err != nil {
-		fmt.Println("删除文件失败:", err)
-		return "删除文件失败"
+		fmt.Println("背包统计删除文件失败:", err)
+
+	}
+	fmt.Println("摩拉统计")
+	filePath2 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR摩拉log\\mora_log.txt", Config.BetterGIAddress))
+	// 删除文件
+	err2 := os.Remove(filePath2)
+	if err2 != nil {
+		fmt.Println("摩拉统计删除文件失败:", err2)
+
 	}
 	fmt.Println("文件删除成功")
 	return "文件删除成功"

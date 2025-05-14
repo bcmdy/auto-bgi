@@ -444,6 +444,17 @@ func main() {
 		context.JSON(http.StatusOK, data)
 	})
 
+	//删除背包统计记录
+	ginServer.GET("/abc", func(context *gin.Context) {
+		statistics, _ := bgiStatus.MorasStatistics()
+
+		data := gin.H{
+			"message": statistics,
+		}
+
+		context.JSON(http.StatusOK, data)
+	})
+
 	//一条龙
 	go task.OneLong()
 
