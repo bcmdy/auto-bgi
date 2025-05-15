@@ -15,14 +15,4 @@
 看b站
 
 ####配置说明：main.json
-
-```json
-{
- "BetterGIAddress": "BGI安装地址",
- "OneLongHour": 6,//一条龙启动时间小时（记得删除）
- "OneLongMinute": 10,//一条龙启动时间分钟（记得删除）
- "webhookURL": "https://qyapi.weixin.qq.com/*****",//企业机器人地址
- "content": "崩溃了",//bgi闪退，发送的消息
- "configName": "我的"//你的配置组名称
-}
-```
+![输入图片说明](20e8450de0b7ec843a51790f1a3321c1.png)
