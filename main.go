@@ -267,7 +267,7 @@ func main() {
 	})
 
 	//日志查询
-	ginServer.GET("/status", func(c *gin.Context) {
+	ginServer.GET("/", func(c *gin.Context) {
 		// 生成日志文件名
 		date := time.Now().Format("20060102")
 
@@ -465,7 +465,7 @@ func main() {
 	go task.MysSignIn()
 
 	//服务器端口
-	err := ginServer.Run(":8082")
+	err := ginServer.Run(Config.Post)
 	if err != nil {
 		return
 	}

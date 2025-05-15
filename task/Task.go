@@ -137,11 +137,11 @@ func OneLongTask() {
 	// 等待一小会儿
 	time.Sleep(3000 * time.Millisecond)
 
-	fmt.Println("启动原神")
-	control.MouseClick(1267, 536, "left", false)
-
-	fmt.Println("等待一小会儿（等待原神启动）")
-	time.Sleep(60 * time.Second)
+	//fmt.Println("启动原神")
+	//control.MouseClick(1267, 536, "left", false)
+	//
+	//fmt.Println("等待一小会儿（等待原神启动）")
+	//time.Sleep(60 * time.Second)
 
 	fmt.Println("切换屏幕")
 	control.SwitchingScreens("更好的原神")
@@ -154,12 +154,12 @@ func OneLongTask() {
 	}
 
 	fmt.Println("点击一条龙")
-	control.MouseClick(613, 455, "left", false)
+	control.MouseClick(Config.LongX, Config.LongY, "left", false)
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(3000 * time.Millisecond)
 
 	fmt.Println("执行")
-	control.MouseClick(759, 294, "left", false)
+	control.MouseClick(Config.ExecuteX, Config.ExecuteY, "left", false)
 }
 
 func OneLong() {

@@ -15,6 +15,11 @@ type config struct {
 	Content         string `json:"content"`
 	ConfigName      string `json:"ConfigName"`
 	BagStatistics   string `json:"BagStatistics"`
+	LongX           int    `json:"longX"`
+	LongY           int    `json:"longY"`
+	ExecuteX        int    `json:"executeX"`
+	ExecuteY        int    `json:"executeY"`
+	Post            string `json:"post"`
 }
 
 var Cfg config

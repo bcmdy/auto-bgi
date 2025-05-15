@@ -346,9 +346,6 @@ func MorasStatistics() ([]Material, error) {
 		bag.Data = split[0]
 		bag.Cl = split[1]
 		bags = append(bags, bag)
-		//for _, s := range split {
-		//	fmt.Println(s)
-		//}
 	}
 	return bags, nil
 }
