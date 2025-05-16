@@ -32,13 +32,22 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+
+        }
+        .container-header {
+            max-width: 200px;
+            margin: 0 auto;
+            padding: 20px;
+
         }
 
+
         header {
-            background-color: white;
+            background-color: #4ddcc7;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             padding: 15px 0;
             margin-bottom: 30px;
+            height: 233px;
         }
 
         h1 {
@@ -132,7 +141,7 @@
 </head>
 <body>
 <header>
-    <div class="container">
+    <div class="container-header">
         <div class="btn-container">
             <button class="btn" onclick="window.location.href='/'">返回主页</button>
         </div>
@@ -145,11 +154,12 @@
 </header>
 
 <div class="container">
-    <table>
+    <table id="materialTable">
         <thead>
         <tr>
             <th>统计日期</th>
-            <th>材料和数量</th>
+            <th>材料</th>
+            <th>数量</th>
         </tr>
         </thead>
         <tbody>
@@ -157,12 +167,13 @@
         <tr>
             <td>{{ .Data }}</td>
             <td>{{ .Cl }}</td>
+            <td>{{ .Num }}</td>
         </tr>
         {{ end }}
         </tbody>
     </table>
 </div>
-</body>
+
 <script>
     async function deleteBagBtn() {
         fetch('/deleteBag', {
@@ -177,5 +188,33 @@
                 alert("请求出错：" + error);
             });
     }
+
+    // 给相同 Cl 值的行分配相同颜色
+    window.onload = function() {
+        const table = document.getElementById('materialTable');
+        const colorMap = {};
+        const colorPalette = [
+            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+            '#1abc9c', '#d35400', '#34495e', '#16a085', '#c0392b'
+        ];
+        let colorIndex = 0;
+
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const clCell = row.cells[1]; // Cl 列是第二列，索引为 1
+
+            const clValue = clCell.textContent;
+            if (!colorMap[clValue]) {
+                // 为新的 Cl 值分配颜色
+                colorMap[clValue] = colorPalette[colorIndex % colorPalette.length];
+                colorIndex++;
+            }
+
+            // 设置行的背景色
+            row.style.backgroundColor = colorMap[clValue];
+        }
+    };
 </script>
+</body>
 </html>

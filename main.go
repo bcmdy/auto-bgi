@@ -236,6 +236,15 @@ func start() error {
 	return nil
 }
 
+// 获取材料名称的前缀
+func getPrefix(name string) string {
+	parts := strings.Split(name, "")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return ""
+}
+
 //go:embed html/*
 var htmlFS embed.FS
 
@@ -412,9 +421,22 @@ func main() {
 	ginServer.GET("/BagStatistics", func(context *gin.Context) {
 		statistics, err := bgiStatus.BagStatistics()
 
-		// 按 Cl 字段排序
+		//// 按 Cl 字段排序
+		//sort.Slice(statistics, func(i, j int) bool {
+		//	return statistics[i].Cl < statistics[j].Cl
+		//})
+
+		// 按材料名称排序，再按日期排序
 		sort.Slice(statistics, func(i, j int) bool {
-			return statistics[i].Cl < statistics[j].Cl
+			// 首先按材料名称排序
+			if statistics[i].Cl != statistics[j].Cl {
+				return statistics[i].Cl < statistics[j].Cl
+			}
+			// 如果材料名称相同，则按日期排序
+			layout := "2006/1/2 15:04:05"
+			ti, _ := time.Parse(layout, statistics[i].Data)
+			tj, _ := time.Parse(layout, statistics[j].Data)
+			return ti.Before(tj)
 		})
 
 		if err != nil {

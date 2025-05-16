@@ -265,6 +265,7 @@ func TodayHarvest() (map[string]int, error) {
 type Material struct {
 	Data string
 	Cl   string
+	Num  string
 }
 
 func BagStatistics() ([]Material, error) {
@@ -308,7 +309,11 @@ func BagStatistics() ([]Material, error) {
 			match := re.FindString(line)
 			if match != "" {
 				// 提取数字部分并存储
-				bag.Cl = match
+				split := strings.Split(match, ":")
+
+				bag.Cl = split[0]
+				bag.Num = split[1]
+
 				bags = append(bags, bag)
 			}
 		}
@@ -344,7 +349,10 @@ func MorasStatistics() ([]Material, error) {
 		line := scanner.Text()
 		split := strings.Split(line, " - ")
 		bag.Data = split[0]
-		bag.Cl = split[1]
+
+		ClNum := strings.Split(split[1], ":")
+		bag.Cl = ClNum[0]
+		bag.Num = ClNum[1]
 		bags = append(bags, bag)
 	}
 	return bags, nil

@@ -254,6 +254,7 @@ func MysSignIn() {
 		err := control.HttpGet("http://localhost:8888/qd")
 		if err != nil {
 			fmt.Println("签到失败", err)
+			return
 		}
 
 		time.Sleep(1000 * time.Millisecond)
