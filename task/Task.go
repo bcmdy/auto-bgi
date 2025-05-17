@@ -30,6 +30,61 @@ func contains(slice []string, num int) bool {
 	return false
 }
 
+// 选择一条龙配置
+func ChangeOneDragonConfig() (string, error) {
+
+	now := time.Now()
+	weekdayNum := int(now.Weekday())
+
+	if len(Config.OneDragonList) < 7 {
+		return "默认", fmt.Errorf("OneDragonList配置错误")
+	}
+
+	s := Config.OneDragonList[weekdayNum]
+
+	fmt.Printf("今天是: 星期%d", weekdayNum)
+	fmt.Println("====")
+	fmt.Printf("今天启动一条龙：%s", s)
+	fmt.Println("====")
+
+	//自定义配置路径
+	filename := Config.BetterGIAddress + "\\User\\config.json"
+
+	// 1. 读取 JSON 文件
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		log.Fatalf("读取文件失败: %v", err)
+		return err
+	}
+	//2. 解析为 orderedData
+	jsonData := orderedmap.New()
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		log.Fatalf("解析 JSON 失败: %v", err)
+		return err
+	}
+	_, b := jsonData.Get("selectedOneDragonFlowConfigName")
+	if !b {
+		return fmt.Errorf("selectedOneDragonFlowConfigName 字段不存在")
+	}
+
+	jsonData.Set("selectedOneDragonFlowConfigName", s)
+
+	updatedData, err := json.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		return fmt.Errorf("JSON 编码失败")
+	}
+
+	// 6. 写回文件
+	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
+		//log.Fatalf("写入文件失败: %v", err)
+		return fmt.Errorf("自定义配置写入文件失败")
+
+	}
+
+	return nil
+
+}
+
 // 修改TaskEnabledList
 func ChangeTaskEnabledList() error {
 
@@ -50,7 +105,6 @@ func ChangeTaskEnabledList() error {
 	}
 
 	//2. 解析为 orderedData
-
 	jsonData := orderedmap.New()
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		log.Fatalf("解析 JSON 失败: %v", err)
