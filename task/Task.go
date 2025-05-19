@@ -9,8 +9,11 @@ import (
 	"github.com/go-vgo/robotgo"
 	"github.com/iancoleman/orderedmap"
 	"github.com/robfig/cron/v3"
+	"io/fs"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,61 +31,6 @@ func contains(slice []string, num int) bool {
 		}
 	}
 	return false
-}
-
-// 选择一条龙配置
-func ChangeOneDragonConfig() (string, error) {
-
-	now := time.Now()
-	weekdayNum := int(now.Weekday())
-
-	if len(Config.OneDragonList) < 7 {
-		return "默认", fmt.Errorf("OneDragonList配置错误")
-	}
-
-	s := Config.OneDragonList[weekdayNum]
-
-	fmt.Printf("今天是: 星期%d", weekdayNum)
-	fmt.Println("====")
-	fmt.Printf("今天启动一条龙：%s", s)
-	fmt.Println("====")
-
-	//自定义配置路径
-	filename := Config.BetterGIAddress + "\\User\\config.json"
-
-	// 1. 读取 JSON 文件
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("读取文件失败: %v", err)
-		return err
-	}
-	//2. 解析为 orderedData
-	jsonData := orderedmap.New()
-	if err := json.Unmarshal(data, &jsonData); err != nil {
-		log.Fatalf("解析 JSON 失败: %v", err)
-		return err
-	}
-	_, b := jsonData.Get("selectedOneDragonFlowConfigName")
-	if !b {
-		return fmt.Errorf("selectedOneDragonFlowConfigName 字段不存在")
-	}
-
-	jsonData.Set("selectedOneDragonFlowConfigName", s)
-
-	updatedData, err := json.MarshalIndent(jsonData, "", "  ")
-	if err != nil {
-		return fmt.Errorf("JSON 编码失败")
-	}
-
-	// 6. 写回文件
-	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
-		//log.Fatalf("写入文件失败: %v", err)
-		return fmt.Errorf("自定义配置写入文件失败")
-
-	}
-
-	return nil
-
 }
 
 // 修改TaskEnabledList
@@ -328,4 +276,68 @@ func MysSignIn() {
 	cronTab.Start()
 	// 阻塞主线程停止
 	select {}
+}
+
+func ListGroups() ([]string, error) {
+	// 指定要读取的文件夹路径
+	//自定义配置路径
+	folderPath := Config.BetterGIAddress + "\\User\\ScriptGroup"
+
+	var groupNames []string
+
+	// 遍历文件夹
+	err := filepath.WalkDir(folderPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 检查是否是 JSON 文件
+		if filepath.Ext(d.Name()) == ".json" {
+			// 打印 JSON 文件名（相对于文件夹的路径）
+			relativePath, err := filepath.Rel(folderPath, path)
+			if err != nil {
+				return err
+			}
+
+			name := strings.Replace(relativePath, ".json", "", -1)
+
+			groupNames = append(groupNames, name)
+			//fmt.Println(relativePath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return groupNames, nil
+}
+
+// 启动配置组
+func StartGroups(name string) {
+	control.CloseSoftware()
+	time.Sleep(5000 * time.Millisecond)
+
+	// 切换到目标目录
+	if err := os.Chdir(Config.BetterGIAddress); err != nil {
+		fmt.Printf("Failed to change directory to %s: %v\n", Config.BetterGIAddress, err)
+		return
+	}
+
+	// 直接指定 BetterGI.exe 的完整路径
+	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
+
+	// 定义要执行的命令
+	cmd := exec.Command(betterGIPath, "BetterGI.exe", "--startGroups", name)
+
+	// 执行命令
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Failed to execute command: %v\n", err)
+		return
+	}
+
+	fmt.Println("Command executed successfully")
+
 }

@@ -477,6 +477,38 @@ func main() {
 		context.JSON(http.StatusOK, data)
 	})
 
+	//查询所有配置组
+	ginServer.GET("/listGroups", func(context *gin.Context) {
+		groups, err := task.ListGroups()
+		if err != nil {
+			return
+		}
+		fmt.Println(groups)
+
+		// 传递给模板
+		context.HTML(http.StatusOK, "listGroups.html", gin.H{
+			"title": "调度器",
+			"items": groups,
+		})
+	})
+
+	//启动配置组
+	ginServer.POST("/startGroups", func(context *gin.Context) {
+
+		var data map[string]string
+		err := context.BindJSON(&data)
+		if err != nil {
+			fmt.Println("err:", err)
+			return
+		}
+		fmt.Println(data)
+		task.StartGroups(data["name"])
+		if err != nil {
+			return
+		}
+		context.JSON(http.StatusOK, gin.H{"message": "Success"})
+	})
+
 	//一条龙
 	go task.OneLong()
 
@@ -487,7 +519,11 @@ func main() {
 	go task.MysSignIn()
 
 	//服务器端口
-	err := ginServer.Run(Config.Post)
+	post := Config.Post
+	if post == "" {
+		post = ":8082"
+	}
+	err := ginServer.Run(post)
 	if err != nil {
 		return
 	}

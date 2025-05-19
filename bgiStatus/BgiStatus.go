@@ -138,7 +138,7 @@ func CheckBetterGIStatus() {
 			notified = false // 清除通知状态
 		} else {
 			if !notified {
-				SendWeChatNotification("BetterGI 已经关闭:\\n\" + Config.Content + \"/test")
+				SendWeChatNotification("BetterGI 已经关闭:" + Config.Content)
 				notified = true
 			} else {
 				fmt.Print("\rBetterGI 已关闭，已通知过", time.Now().Format("2006-01-02 15:04:05"))
