@@ -296,17 +296,23 @@ func main() {
 		jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
 		progress, err := bgiStatus.Progress(jsonStr, line)
 		if err != nil {
-			fmt.Printf("进度: %v\n", err)
-			progress = "进度：0/0"
+			fmt.Printf("%v\n", err)
+			progress = "0/0"
 		}
 
 		running := bgiStatus.IsWechatRunning()
 
+		jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?) 个")
+		if err != nil {
+			jsProgress = "无"
+		}
+
 		c.HTML(http.StatusOK, "index.html", map[string]interface{}{
-			"group":    group,
-			"line":     line,
-			"progress": progress,
-			"running":  running,
+			"group":      group,
+			"line":       line,
+			"progress":   progress,
+			"running":    running,
+			"jsProgress": jsProgress,
 		})
 
 	})
@@ -510,13 +516,13 @@ func main() {
 	})
 
 	//一条龙
-	go task.OneLong()
+	//go task.OneLong()
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 
 	//米游社自动签到
-	go task.MysSignIn()
+	//go task.MysSignIn()
 
 	//服务器端口
 	post := Config.Post

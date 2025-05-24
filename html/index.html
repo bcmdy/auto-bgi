@@ -25,12 +25,15 @@
             width: 600px;
             margin: auto;
             box-sizing: border-box;
+
             /*backdrop-filter: blur(6px); !* 可选：模糊背景更柔和 *!*/
         }
         h1 {
             font-size: 1.2em;
             margin-bottom: 15px;
-            color: #e0e0e0;
+            color: #eb0822;
+            backdrop-filter: blur(6px); /* 可选：模糊背景更柔和 */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15); /* 稍微加深阴影提升层次 */
         }
         button {
             display: inline-block;
@@ -156,8 +159,9 @@
 <div class="container">
     <h1>当前执行配置组: {{.group}}</h1>
     <h1>当前执行脚本: {{.line}}</h1>
-    <h1>{{.progress}}</h1>
+    <h1>地图追踪进度：{{.progress}}</h1>
     <h1>软件运行状态: {{.running}}</h1>
+    <h1>JS运行进度: {{.jsProgress}}</h1>
     <button onclick="oneLongBtn()">一条龙启动</button>
     <button onclick="closeBgiBtn()">关闭BGI</button>
     <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>

@@ -153,6 +153,44 @@ func CheckBetterGIStatus() {
 	select {}
 }
 
+func JsProgress(filename string, pattern string) (string, error) {
+
+	// 1. 读取 JSON 文件
+
+	re := regexp.MustCompile(pattern)
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	// 用于存储最后匹配的行和配置组名称
+	var lastMatch string
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := re.FindStringSubmatch(line)
+		if matches != nil {
+			lastMatch = line
+
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	// 输出结果
+	if lastMatch != "" {
+		fmt.Println("最后匹配的行:", lastMatch)
+	} else {
+		errs := fmt.Errorf("没有找到匹配的行", 500)
+		return "", errs
+	}
+	return lastMatch, nil
+}
+
 func Progress(filename string, line string) (string, error) {
 
 	start := strings.Index(line, `"`)
@@ -189,7 +227,7 @@ func Progress(filename string, line string) (string, error) {
 	for i, project := range projects {
 		projectMap := project.(map[string]interface{})
 		if projectMap["name"] == content {
-			pro = fmt.Sprintf("当前进度:%d/%d", i, len(projects))
+			pro = fmt.Sprintf("%d/%d", i, len(projects))
 			break
 		}
 	}
