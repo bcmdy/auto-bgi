@@ -308,7 +308,7 @@ type Material struct {
 
 func BagStatistics() ([]Material, error) {
 	fmt.Println("背包统计")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\recognized_materials.txt", Config.BetterGIAddress))
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
 
 	// 打开文件
 	file, err := os.Open(filename) // 替换为你的文件路径
@@ -370,7 +370,7 @@ func BagStatistics() ([]Material, error) {
 // 摩拉统计
 func MorasStatistics() ([]Material, error) {
 	fmt.Println("摩拉统计")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR摩拉log\\mora_log.txt", Config.BetterGIAddress))
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
 	// 打开文件
 	file, err := os.Open(filename) // 替换为你的文件路径
 	if err != nil {
@@ -399,7 +399,7 @@ func MorasStatistics() ([]Material, error) {
 // 删除背包统计
 func DeleteBagStatistics() string {
 	fmt.Println("背包统计")
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\recognized_materials.txt", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt.txt", Config.BetterGIAddress))
 	// 删除文件
 	err := os.Remove(filePath)
 	if err != nil {
@@ -407,7 +407,7 @@ func DeleteBagStatistics() string {
 
 	}
 	fmt.Println("摩拉统计")
-	filePath2 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR摩拉log\\mora_log.txt", Config.BetterGIAddress))
+	filePath2 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
 	// 删除文件
 	err2 := os.Remove(filePath2)
 	if err2 != nil {

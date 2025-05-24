@@ -516,13 +516,13 @@ func main() {
 	})
 
 	//一条龙
-	//go task.OneLong()
+	go task.OneLong()
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 
 	//米游社自动签到
-	//go task.MysSignIn()
+	go task.MysSignIn()
 
 	//服务器端口
 	post := Config.Post
@@ -536,4 +536,4 @@ func main() {
 
 }
 
-//go build -o auto-bgi.exe main.go
+//go build -o auto-bgi.exe -ldflags="-H=windowsgui" main.go
