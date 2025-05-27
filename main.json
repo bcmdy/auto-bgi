@@ -1,5 +1,7 @@
 {
  "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
+ "isStartTimeLong": true,
+ "isMysSignIn": false,
  "OneLongHour": 11,
  "OneLongMinute": 4,
  "webhookURL": "https://qyapi.weixin.qq.com",
@@ -10,6 +12,5 @@
  "longY": 455,
  "executeX": 759,
  "executeY": 294,
- "post": ":8082",
- "OneDragonList": ["星期天","星期一","星期二","星期三","星期四","星期五","默认配置"]
+ "post": ":8082"
 }

@@ -155,6 +155,8 @@ func OneLongTask() {
 		control.SwitchingScreens("更好的原神")
 	}
 
+	time.Sleep(3000 * time.Millisecond)
+
 	fmt.Println("点击一条龙")
 	control.MouseClick(Config.LongX, Config.LongY, "left", false)
 

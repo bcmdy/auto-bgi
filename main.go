@@ -302,12 +302,54 @@ func main() {
 
 		running := bgiStatus.IsWechatRunning()
 
-		jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?) 个")
+		jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)")
 		if err != nil {
 			jsProgress = "无"
 		}
 
 		c.HTML(http.StatusOK, "index.html", map[string]interface{}{
+			"group":      group,
+			"line":       line,
+			"progress":   progress,
+			"running":    running,
+			"jsProgress": jsProgress,
+		})
+
+	})
+
+	//日志查询
+	ginServer.GET("/mark", func(c *gin.Context) {
+		// 生成日志文件名
+		date := time.Now().Format("20060102")
+
+		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date))
+
+		line, err := findLastJSONLine(filename)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+		fmt.Println("Last line containing '.json':")
+		fmt.Println(line)
+
+		group, err := findLastGroup(filename)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+		jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
+		progress, err := bgiStatus.Progress(jsonStr, line)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			progress = "0/0"
+		}
+
+		running := bgiStatus.IsWechatRunning()
+
+		jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)")
+		if err != nil {
+			jsProgress = "无"
+		}
+
+		c.JSON(http.StatusOK, map[string]interface{}{
 			"group":      group,
 			"line":       line,
 			"progress":   progress,
@@ -516,13 +558,23 @@ func main() {
 	})
 
 	//一条龙
-	go task.OneLong()
+	if Config.IsStartTimeLong {
+		go task.OneLong()
+		fmt.Println("一条龙开启状态")
+	} else {
+		fmt.Println("一条龙关闭状态")
+	}
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 
-	//米游社自动签到
-	go task.MysSignIn()
+	if Config.IsMysSignIn {
+		//米游社自动签到
+		go task.MysSignIn()
+		fmt.Println("米游社自动签到开启状态")
+	} else {
+		fmt.Println("米游社自动签到关闭状态")
+	}
 
 	//服务器端口
 	post := Config.Post
@@ -536,4 +588,4 @@ func main() {
 
 }
 
-//go build -o auto-bgi.exe -ldflags="-H=windowsgui" main.go
+//go build -o auto-bgi.exe main.go

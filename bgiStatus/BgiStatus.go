@@ -399,7 +399,7 @@ func MorasStatistics() ([]Material, error) {
 // 删除背包统计
 func DeleteBagStatistics() string {
 	fmt.Println("背包统计")
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt.txt", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
 	// 删除文件
 	err := os.Remove(filePath)
 	if err != nil {
