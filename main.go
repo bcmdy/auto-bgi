@@ -469,11 +469,6 @@ func main() {
 	ginServer.GET("/BagStatistics", func(context *gin.Context) {
 		statistics, err := bgiStatus.BagStatistics()
 
-		//// 按 Cl 字段排序
-		//sort.Slice(statistics, func(i, j int) bool {
-		//	return statistics[i].Cl < statistics[j].Cl
-		//})
-
 		// 按材料名称排序，再按日期排序
 		sort.Slice(statistics, func(i, j int) bool {
 			// 首先按材料名称排序
