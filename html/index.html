@@ -61,7 +61,12 @@
         }
     </style>
     <script>
-        function oneLongBtn() {
+        function getAutoArtifactsProBtn() {
+        // 跳转到收获页面
+        window.location.href = '/getAutoArtifactsPro';
+    }
+
+    function oneLongBtn() {
             fetch('/oneLong', {
                 method: 'POST'
             })
@@ -171,6 +176,7 @@
     <button onclick="listGroupsBtn()">调度器</button>
     <button onclick="getImageBtn()">发送截图</button>
 <!--    <button onclick="MysSignInBtn()">米游社签到</button>-->
+    <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
 </div>
 </body>
 </html>

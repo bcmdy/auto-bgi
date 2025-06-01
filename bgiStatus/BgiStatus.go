@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"auto-bgi/config"
+	"auto-bgi/control"
 	"bufio"
 	"bytes"
 	"crypto/md5"
@@ -139,6 +140,7 @@ func CheckBetterGIStatus() {
 		} else {
 			if !notified {
 				SendWeChatNotification("BetterGI 已经关闭:" + Config.Content)
+				control.CloseYuanShen()
 				notified = true
 			} else {
 				fmt.Print("\rBetterGI 已关闭，已通知过", time.Now().Format("2006-01-02 15:04:05"))
@@ -372,7 +374,7 @@ func MorasStatistics() ([]Material, error) {
 	fmt.Println("摩拉统计")
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
 	// 打开文件
-	file, err := os.Open(filename) // 替换为你的文件路径
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -416,4 +418,45 @@ func DeleteBagStatistics() string {
 	}
 	fmt.Println("文件删除成功")
 	return "文件删除成功"
+}
+
+func GetAutoArtifactsPro() ([]string, error) {
+	fmt.Println("狗粮日志查询")
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
+	// 打开文件
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var data []string
+
+	// 创建一个扫描器来读取文件
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "上次结束时间") {
+			re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z`)
+			dateStr := re.FindString(line)
+			// 解析为time.Time
+			layout := "2006-01-02T15:04:05.999Z"
+			parsedTime, err := time.Parse(layout, dateStr)
+			if err != nil {
+				fmt.Println("解析时间出错:", err)
+				return nil, err
+			}
+			// 加8小时
+			after8Hours := parsedTime.Add(8 * time.Hour)
+			// 格式化为原来的字符串格式
+			formatted := after8Hours.Format("2006-01-02 15:04:05")
+			data = append(data, "上次结束时间:\n\t"+formatted)
+		} else {
+			data = append(data, line)
+		}
+
+	}
+	return data, nil
+
 }

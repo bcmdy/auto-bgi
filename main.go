@@ -552,6 +552,27 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"message": "Success"})
 	})
 
+	//查询狗粮日志
+	ginServer.GET("/getAutoArtifactsPro", func(context *gin.Context) {
+		pro, err := bgiStatus.GetAutoArtifactsPro()
+		fmt.Println(pro)
+
+		if err != nil {
+			fmt.Println(err)
+			// 传递给模板
+			context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
+				"title": "狗粮日志查询",
+				"items": nil,
+			})
+			return
+		}
+		context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
+			"title": "狗粮日志查询",
+			"items": pro,
+		})
+
+	})
+
 	//一条龙
 	if Config.IsStartTimeLong {
 		go task.OneLong()
