@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -295,9 +296,10 @@ func TodayHarvest() (map[string]int, error) {
 		return nil, fmt.Errorf("读取文件错误: %v", err)
 	}
 
-	for item, count := range harvestStats {
-		fmt.Printf("%s: %d\n", item, count)
-	}
+	//for item, count := range harvestStats {
+	//
+	//	fmt.Printf("%s: %d\n", item, count)
+	//}
 
 	return harvestStats, nil
 }
@@ -458,5 +460,63 @@ func GetAutoArtifactsPro() ([]string, error) {
 
 	}
 	return data, nil
+
+}
+
+// IsStringInDictionaryCategory 检查一个字符串是否包含字典数组中的任何词语
+func IsStringInDictionaryCategory(target string, dictionary []string) bool {
+	for _, word := range dictionary {
+		if strings.Contains(target, word) {
+			return true // 如果找到任何一个词语，就返回 true
+		}
+	}
+	return false // 遍历完所有词语都没有找到，则返回 false
+}
+
+// 定义一个结构体来存储键值对
+type KeyValue struct {
+	Key   string
+	Value int
+}
+
+// analyseLog handles the /api/analyse GET request
+func LogAnalysis() map[string]int {
+	fmt.Println("日志分析")
+	res, _ := TodayHarvest()
+
+	var datas []KeyValue
+
+	var syw = 0
+
+	for item, count := range res {
+		var data KeyValue
+
+		if IsStringInDictionaryCategory(item, Config.Relics) {
+			syw += count
+		} else {
+			data.Key = item
+			data.Value = count
+			fmt.Println(item, count)
+		}
+		datas = append(datas, data)
+	}
+	var data KeyValue
+	data.Key = "圣遗物"
+	data.Value = syw
+	datas = append(datas, data)
+
+	// 按值从大到小排序
+	sort.Slice(datas, func(i, j int) bool {
+		return datas[i].Value > datas[j].Value
+	})
+
+	// 取出前 5 个元素，考虑长度不足 5 的情况
+	mapData := make(map[string]int)
+	for i := 0; i < 6 && i < len(datas); i++ {
+
+		mapData[datas[i].Key] = datas[i].Value
+	}
+
+	return mapData
 
 }

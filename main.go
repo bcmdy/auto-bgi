@@ -248,6 +248,11 @@ func getPrefix(name string) string {
 //go:embed html/*
 var htmlFS embed.FS
 
+func tojson(v interface{}) template.JS {
+	a, _ := json.Marshal(v)
+	return template.JS(a)
+}
+
 func main() {
 
 	//创建一个服务
@@ -256,8 +261,16 @@ func main() {
 	////加载templates中所有模板文件, 使用不同目录下名称相同的模板,注意:一定要放在配置路由之前才得行
 	//ginServer.LoadHTMLGlob("html/*")
 
+	tmpl := template.Must(
+		template.New("").Funcs(template.FuncMap{
+			"tojson": tojson,
+		}).ParseFS(htmlFS, "html/*.html"),
+	)
+
+	ginServer.SetHTMLTemplate(tmpl)
+
 	// 引入html
-	ginServer.SetHTMLTemplate(template.Must(template.New("").ParseFS(htmlFS, "html/*.html")))
+	//ginServer.SetHTMLTemplate(template.Must(template.New("").ParseFS(htmlFS, "html/*.html")))
 
 	// 提供静态资源服务，把 html 目录映射为 /static 路径
 	ginServer.Static("/static", ".")
@@ -571,6 +584,18 @@ func main() {
 			"items": pro,
 		})
 
+	})
+
+	//日志分析
+	ginServer.GET("/logAnalysis", func(context *gin.Context) {
+		res := bgiStatus.LogAnalysis()
+
+		fmt.Println(res)
+
+		context.HTML(http.StatusOK, "logAnalysis.html", gin.H{
+			"title": "日志分析",
+			"items": res,
+		})
 	})
 
 	//一条龙
