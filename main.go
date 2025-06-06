@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -253,6 +255,12 @@ func tojson(v interface{}) template.JS {
 	return template.JS(a)
 }
 
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
 func main() {
 
 	//创建一个服务
@@ -274,6 +282,51 @@ func main() {
 
 	// 提供静态资源服务，把 html 目录映射为 /static 路径
 	ginServer.Static("/static", ".")
+
+	ginServer.GET("/log", func(context *gin.Context) {
+
+		// 传递给模板
+		context.HTML(http.StatusOK, "log.html", nil)
+	})
+
+	// WebSocket 处理器
+	ginServer.GET("/ws", func(c *gin.Context) {
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		// 生成日志文件名
+		date := time.Now().Format("20060102")
+
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date)) // 本地日志路径
+
+		file, err := os.Open(filePath)
+		if err != nil {
+			conn.WriteMessage(websocket.TextMessage, []byte("无法打开日志文件"))
+			return
+		}
+		defer file.Close()
+
+		// 移动到文件末尾
+		file.Seek(0, io.SeekEnd)
+
+		buffer := make([]byte, 1024)
+		for {
+			n, err := file.Read(buffer)
+			if err == io.EOF {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			if err != nil {
+				break
+			}
+			if n > 0 {
+				conn.WriteMessage(websocket.TextMessage, buffer[:n])
+			}
+		}
+	})
 
 	//重启接口
 	ginServer.GET("/test", func(c *gin.Context) {

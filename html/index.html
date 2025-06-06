@@ -126,6 +126,10 @@
             // 跳转到收获页面
             window.location.href = '/listGroups';
         }
+        function realTimeLogBtn() {
+            // 跳转到收获页面
+            window.location.href = '/log';
+        }
 
         function getImageBtn() {
             fetch('/getImage', {
@@ -173,7 +177,8 @@
     <button onclick="todayHarvestBtn()">今日收获</button>
     <button onclick="BagStatisticsBtn()">背包统计</button>
     <button onclick="listGroupsBtn()">调度器</button>
-    <button onclick="getImageBtn()">发送截图</button>
+    <button onclick="realTimeLogBtn()">实时日志</button>
+<!--    <button onclick="getImageBtn()">发送截图</button>-->
 <!--    <button onclick="MysSignInBtn()">米游社签到</button>-->
     <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
 </div>
