@@ -421,47 +421,99 @@ func DeleteBagStatistics() string {
 	fmt.Println("文件删除成功")
 	return "文件删除成功"
 }
-
 func GetAutoArtifactsPro() ([]string, error) {
-	fmt.Println("狗粮日志查询")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
-	// 打开文件
-	file, err := os.Open(filename)
+	// 获取当前目录下所有 .txt 文件
+	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\*.txt", Config.BetterGIAddress))
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-
+	if len(files) == 0 {
+		return nil, fmt.Errorf("未找到任何txt文件")
+	}
 	var data []string
+	for _, filename := range files {
+		file, err := os.Open(filename)
 
-	// 创建一个扫描器来读取文件
-	scanner := bufio.NewScanner(file)
+		if err != nil {
+			fmt.Printf("打开文件失败: %s, 错误: %v\n", filename, err)
+			continue
+		}
+		defer file.Close()
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "上次结束时间") {
-			re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z`)
-			dateStr := re.FindString(line)
-			// 解析为time.Time
-			layout := "2006-01-02T15:04:05.999Z"
-			parsedTime, err := time.Parse(layout, dateStr)
-			if err != nil {
-				fmt.Println("解析时间出错:", err)
-				return nil, err
+		// 添加文件间隔标题
+		data = append(data, fmt.Sprintf("===== %s =====", filepath.Base(filename)))
+
+		scanner := bufio.NewScanner(file)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "上次结束时间") {
+				re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z`)
+				dateStr := re.FindString(line)
+
+				layout := "2006-01-02T15:04:05.999Z"
+				parsedTime, err := time.Parse(layout, dateStr)
+				if err != nil {
+					fmt.Printf("解析时间出错 (%s): %v\n", filename, err)
+					continue
+				}
+				after8Hours := parsedTime.Add(8 * time.Hour)
+				formatted := after8Hours.Format("2006-01-02 15:04:05")
+				data = append(data, fmt.Sprintf("上次结束时间:\n\t%s", formatted))
+			} else {
+				data = append(data, fmt.Sprintf("%s", line))
 			}
-			// 加8小时
-			after8Hours := parsedTime.Add(8 * time.Hour)
-			// 格式化为原来的字符串格式
-			formatted := after8Hours.Format("2006-01-02 15:04:05")
-			data = append(data, "上次结束时间:\n\t"+formatted)
-		} else {
-			data = append(data, line)
+		}
+
+		if err := scanner.Err(); err != nil {
+			fmt.Printf("读取文件出错: %s, 错误: %v\n", filename, err)
 		}
 
 	}
-	return data, nil
 
+	return data, nil
 }
+
+//func GetAutoArtifactsPro() ([]string, error) {
+//	fmt.Println("狗粮日志查询")
+//	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
+//	// 打开文件
+//	file, err := os.Open(filename)
+//	if err != nil {
+//		return nil, err
+//	}
+//	defer file.Close()
+//
+//	var data []string
+//
+//	// 创建一个扫描器来读取文件
+//	scanner := bufio.NewScanner(file)
+//
+//	for scanner.Scan() {
+//		line := scanner.Text()
+//		if strings.Contains(line, "上次结束时间") {
+//			re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z`)
+//			dateStr := re.FindString(line)
+//			// 解析为time.Time
+//			layout := "2006-01-02T15:04:05.999Z"
+//			parsedTime, err := time.Parse(layout, dateStr)
+//			if err != nil {
+//				fmt.Println("解析时间出错:", err)
+//				return nil, err
+//			}
+//			// 加8小时
+//			after8Hours := parsedTime.Add(8 * time.Hour)
+//			// 格式化为原来的字符串格式
+//			formatted := after8Hours.Format("2006-01-02 15:04:05")
+//			data = append(data, "上次结束时间:\n\t"+formatted)
+//		} else {
+//			data = append(data, line)
+//		}
+//
+//	}
+//	return data, nil
+//
+//}
 
 // IsStringInDictionaryCategory 检查一个字符串是否包含字典数组中的任何词语
 func IsStringInDictionaryCategory(target string, dictionary []string) bool {
