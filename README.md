@@ -55,11 +55,33 @@
 
 
 
+列子：
+
+```json1
+{
+ "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
+ "isStartTimeLong": false,
+ "isMysSignIn": false,
+ "OneLongHour": 11,
+ "OneLongMinute": 4,
+ "webhookURL": "https://qyapi.weixin.qq.com",
+ "content": "http://说的方法是对方",
+ "configName": "我的",
+ "BagStatistics": "晶核,大英雄的经验,水晶块,魔晶块,萃凝晶,苍晶螺",
+ "longX": 613,
+ "longY": 455,
+ "executeX": 759,
+ "executeY": 294,
+ "post": ":8082",
+ "relics": ["教官的","流放者","上官的","幸运儿","战狂的","流放者","游医的","冒险家","家怀表","官的胸花","银莲","险家头","存医的怀钟","险家"]
+}
+```
+
+
+
+
+
 ![2639b7410bd75b357ee15d20364d8db](./assets/2639b7410bd75b357ee15d20364d8db.jpg)
-
-![输入图片说明](./assets/20e8450de0b7ec843a51790f1a3321c1.png)
-
-
 
 ## 软件截图
 

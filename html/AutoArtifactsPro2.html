@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .title }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --text-color: #00ff00;
+            --panel-bg: #1a1a1a;
+            --border-color: #00ff00;
+            --accent-color: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "Courier New", Courier, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 0 0 5px var(--text-color);
+        }
+
+        #chart {
+            width: 100%;
+            max-width: 1200px;
+            height: 70vh;
+            margin: 0 auto;
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        /* 删除了媒体查询 */
+    </style>
+</head>
+<body>
+<h2>{{ .title }}</h2>
+<div id="chart"></div>
+
+<script>
+    fetch('/getAutoArtifactsPro2?json=1')
+        .then(res => res.json())
+        .then(data => {
+            const chartDom = document.getElementById('chart');
+            const myChart = echarts.init(chartDom, 'dark'); // 使用暗色主题
+
+            const dates = data.dates.slice().reverse();
+            const lines = data.line.slice().reverse();
+            const dogExp = data.dogExp.slice().reverse();
+            const mora = data.mora.slice().reverse();
+
+            const dogExpWithLine = dogExp.map((val, i) => ({
+                value: val,
+                line: lines[i]
+            }));
+            const moraWithLine = mora.map((val, i) => ({
+                value: val,
+                line: lines[i]
+            }));
+
+            const option = {
+                backgroundColor: '#1a1a1a',
+                title: {
+                    text: '狗粮与摩拉收益堆叠折线图',
+                    left: 'center',
+                    textStyle: {
+                        color: '#00ff00',
+                        fontFamily: 'Courier New'
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#222',
+                    borderColor: '#00ff00',
+                    textStyle: {
+                        color: '#00ffcc'
+                    },
+                    formatter: function (params) {
+                        const date = params[0].axisValue;
+                        let result = `${date}<br/>`;
+                        params.forEach(item => {
+                            result += `${item.marker}${item.seriesName}: ${item.data.value}（路线${item.data.line}）<br/>`;
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    top: 30,
+                    textStyle: {
+                        color: '#00ff00'
+                    },
+                    data: ['狗粮经验', '摩拉']
+                },
+                toolbox: {
+                    feature: {
+                        saveAsImage: { title: '保存为图片' }
+                    },
+                    iconStyle: {
+                        borderColor: '#00ff00'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '5%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dates,
+                    axisLine: {
+                        lineStyle: {
+                            color: '#00ff00'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#00ffcc'
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: {
+                        lineStyle: {
+                            color: '#00ff00'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#00ffcc'
+                    }
+                },
+                series: [
+                    {
+                        name: '狗粮经验',
+                        type: 'line',
+                        stack: '总量',
+                        symbolSize: 15, // 调整点的大小
+                        smooth: true,
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#32eb08',
+                            fontSize: 15
+                        },
+                        // areaStyle: {
+                        //     color: 'rgba(0, 255, 0, 0.3)'
+                        // },
+                        lineStyle: {
+                            color: '#00ff00'
+                        },
+                        data: dogExpWithLine
+                    },
+                    {
+                        name: '摩拉',
+                        type: 'line',
+                        stack: '总量',
+                        symbolSize: 15, // 调整点的大小
+                        smooth: true,
+                        label: {
+                            show: true,
+                            position: 'bottom',
+                            color: '#ffffff',
+                            fontSize: 15
+                        },
+                        textStyle: {
+                            fontSize: 30
+                        },
+                        // areaStyle: {
+                        //     color: 'rgba(0, 255, 204, 0.3)'
+                        // },
+                        lineStyle: {
+                            color: '#00ffcc'
+                        },
+                        data: moraWithLine
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+            window.addEventListener('resize', () => myChart.resize());
+        })
+        .catch(error => {
+            document.getElementById('chart').innerHTML = '<p style="color:red;">加载数据失败：' + error + '</p>';
+        });
+</script>
+</body>
+</html>

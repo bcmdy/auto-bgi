@@ -425,6 +425,7 @@ func main() {
 
 	})
 
+	//一条龙
 	ginServer.POST("/oneLong", func(context *gin.Context) {
 
 		task.OneLongTask()
@@ -637,6 +638,27 @@ func main() {
 			"items": pro,
 		})
 
+	})
+
+	//查询狗粮日志
+	ginServer.GET("/getAutoArtifactsPro2", func(context *gin.Context) {
+		data, err := bgiStatus.GetAutoArtifactsPro2()
+
+		// 判断是否请求 JSON 数据
+		if context.Query("json") == "1" {
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"error": "读取失败"})
+				return
+			}
+			context.JSON(http.StatusOK, data)
+			return
+		}
+
+		// 正常页面渲染
+		context.HTML(http.StatusOK, "AutoArtifactsPro2.html", gin.H{
+			"title": "狗粮日志查询",
+			"items": data,
+		})
 	})
 
 	//日志分析

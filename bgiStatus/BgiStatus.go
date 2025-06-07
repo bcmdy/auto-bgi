@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -474,46 +475,83 @@ func GetAutoArtifactsPro() ([]string, error) {
 	return data, nil
 }
 
-//func GetAutoArtifactsPro() ([]string, error) {
-//	fmt.Println("狗粮日志查询")
-//	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
-//	// 打开文件
-//	file, err := os.Open(filename)
-//	if err != nil {
-//		return nil, err
-//	}
-//	defer file.Close()
-//
-//	var data []string
-//
-//	// 创建一个扫描器来读取文件
-//	scanner := bufio.NewScanner(file)
-//
-//	for scanner.Scan() {
-//		line := scanner.Text()
-//		if strings.Contains(line, "上次结束时间") {
-//			re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z`)
-//			dateStr := re.FindString(line)
-//			// 解析为time.Time
-//			layout := "2006-01-02T15:04:05.999Z"
-//			parsedTime, err := time.Parse(layout, dateStr)
-//			if err != nil {
-//				fmt.Println("解析时间出错:", err)
-//				return nil, err
-//			}
-//			// 加8小时
-//			after8Hours := parsedTime.Add(8 * time.Hour)
-//			// 格式化为原来的字符串格式
-//			formatted := after8Hours.Format("2006-01-02 15:04:05")
-//			data = append(data, "上次结束时间:\n\t"+formatted)
-//		} else {
-//			data = append(data, line)
-//		}
-//
-//	}
-//	return data, nil
-//
-//}
+type EarningsData struct {
+	Dates  []string `json:"dates"`
+	Line   []string `json:"line"`
+	DogExp []int    `json:"dogExp"`
+	Mora   []int    `json:"mora"`
+}
+
+func GetAutoArtifactsPro2() (*EarningsData, error) {
+	fmt.Println("狗粮日志查询")
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	data := &EarningsData{}
+	inHistory := false
+
+	for scanner.Scan() {
+
+		line := scanner.Text()
+		if !inHistory {
+			if strings.HasPrefix(line, "历史收益：") {
+				inHistory = true
+			}
+			continue
+		}
+		// 1. 分割字符串，获取日期部分
+		parts := strings.Split(line, "：")
+		if len(parts) < 1 {
+			fmt.Println("字符串格式不正确，无法提取日期。")
+			continue
+		}
+		//日期
+		fmt.Println(parts[0])
+		sj := strings.Split(parts[1], "，")
+		// 路线
+		re := regexp.MustCompile(`[a-zA-Z]`)
+		letters := re.FindAllString(sj[0], -1)
+
+		fmt.Println(letters[0])
+
+		// 狗粮
+		re2 := regexp.MustCompile(`-?\d+`)
+		DogExpNum := re2.FindString(sj[1])
+		number, _ := strconv.Atoi(DogExpNum)
+		if number <= 1 {
+			continue
+
+		}
+
+		fmt.Println(number)
+
+		// 摩拉
+		re3 := regexp.MustCompile(`-?\d+`)
+		MoraNum := re3.FindString(sj[2])
+		number2, _ := strconv.Atoi(MoraNum)
+		if number2 <= 1 {
+			continue
+
+		}
+		fmt.Println(number2)
+		fmt.Println("===============")
+
+		data.Dates = append(data.Dates, parts[0])
+		data.Line = append(data.Line, letters[0])
+		data.DogExp = append(data.DogExp, number)
+		data.Mora = append(data.Mora, number2)
+
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
 
 // IsStringInDictionaryCategory 检查一个字符串是否包含字典数组中的任何词语
 func IsStringInDictionaryCategory(target string, dictionary []string) bool {
