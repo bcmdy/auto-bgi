@@ -505,34 +505,35 @@ func GetAutoArtifactsPro2() (*EarningsData, error) {
 			continue
 		}
 		// 1. 分割字符串，获取日期部分
-		parts := strings.Split(line, "：")
+		parts := strings.Split(line, "，")
 		if len(parts) < 1 {
 			fmt.Println("字符串格式不正确，无法提取日期。")
 			continue
 		}
 		//日期
 		fmt.Println(parts[0])
-		sj := strings.Split(parts[1], "，")
+		//sj := strings.Split(parts[1], "，")
 		// 路线
 		re := regexp.MustCompile(`[a-zA-Z]`)
-		letters := re.FindAllString(sj[0], -1)
+		letters := re.FindAllString(parts[1], -1)
 
 		fmt.Println(letters[0])
 
 		// 狗粮
-		re2 := regexp.MustCompile(`-?\d+`)
-		DogExpNum := re2.FindString(sj[1])
+		//re2 := regexp.MustCompile(`-?\d+`)
+		//DogExpNum := re2.FindString(parts[2])
+		DogExpNum := strings.ReplaceAll(parts[2], "狗粮经验", "")
 		number, _ := strconv.Atoi(DogExpNum)
 		if number <= 1 {
 			continue
-
 		}
 
 		fmt.Println(number)
 
 		// 摩拉
-		re3 := regexp.MustCompile(`-?\d+`)
-		MoraNum := re3.FindString(sj[2])
+		//re3 := regexp.MustCompile(`-?\d+`)
+		//MoraNum := re3.FindString(parts[3])
+		MoraNum := strings.ReplaceAll(parts[3], "摩拉", "")
 		number2, _ := strconv.Atoi(MoraNum)
 		if number2 <= 1 {
 			continue
@@ -541,7 +542,8 @@ func GetAutoArtifactsPro2() (*EarningsData, error) {
 		fmt.Println(number2)
 		fmt.Println("===============")
 
-		data.Dates = append(data.Dates, parts[0])
+		date := strings.ReplaceAll(parts[0], "日期:", "")
+		data.Dates = append(data.Dates, date)
 		data.Line = append(data.Line, letters[0])
 		data.DogExp = append(data.DogExp, number)
 		data.Mora = append(data.Mora, number2)
