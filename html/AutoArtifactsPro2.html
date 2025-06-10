@@ -31,6 +31,9 @@
             font-size: 2rem;
             text-shadow: 0 0 5px var(--text-color);
         }
+        h4 {
+            text-align: center;
+        }
 
         #chart {
             width: 100%;
@@ -47,8 +50,13 @@
     </style>
 </head>
 <body>
-<h2>{{ .title }}</h2>
-<div id="chart"></div>
+
+<div id="rotate-wrapper">
+    <h2>{{ .title }}</h2>
+    <h4>及格富A线（狗粮经验：98406，摩拉：20800）=======及格富B线（狗粮经验：76356，摩拉：13800）</h4>
+    <div id="chart"></div>
+</div>
+
 
 <script>
     fetch('/getAutoArtifactsPro2?json=1')
@@ -199,7 +207,7 @@
         })
         .catch(error => {
             document.getElementById('chart').innerHTML = '<p style="color:red;">加载数据失败：' + error + '</p>';
-        });
+        });dw
 </script>
 </body>
 </html>

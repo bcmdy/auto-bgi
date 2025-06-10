@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <title>实时日志查看</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 0;
@@ -17,20 +13,25 @@
             color: #ffffff;
             font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
         }
-
         header {
             background-color: #111;
             padding: 1rem;
             text-align: center;
             border-bottom: 1px solid #444;
         }
-
         h1 {
-            margin: 0;
+            margin: 0 0 0.5rem;
             font-size: 1.5rem;
             color: #00ff88;
         }
-
+        select {
+            padding: 0.4rem;
+            font-size: 1rem;
+            background-color: #222;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+        }
         #log {
             background-color: #000;
             color: #00ff00;
@@ -44,12 +45,8 @@
             font-family: monospace;
             font-size: 0.9rem;
         }
-
         @media (max-width: 768px) {
-            h1 {
-                font-size: 1.2rem;
-            }
-
+            h1 { font-size: 1.2rem; }
             #log {
                 margin: 0.5rem;
                 height: 75vh;
@@ -62,32 +59,69 @@
 
 <header>
     <h1>实时日志查看</h1>
+    <select id="logSelector"></select>
 </header>
 
 <main>
-    <pre id="log">正在连接日志服务...</pre>
+    <pre id="log">正在加载日志列表...</pre>
 </main>
 
 <script>
-    const ws = new WebSocket("ws://" + location.host + "/ws");
     const logEl = document.getElementById("log");
+    const selector = document.getElementById("logSelector");
+    let ws;
 
-    ws.onmessage = function(event) {
-        logEl.textContent += event.data;
-        logEl.scrollTop = logEl.scrollHeight;
-    };
+    function connectWebSocket(name) {
+        if (ws) ws.close();
 
-    ws.onopen = function() {
-        logEl.textContent = ""; // 清除“正在连接”提示
-    };
+        logEl.textContent = `正在连接 ${name} 日志服务...\n`;
+        ws = new WebSocket(`ws://${location.host}/ws/${encodeURIComponent(name)}`);
 
-    ws.onclose = function() {
-        logEl.textContent += "\n[连接已关闭]";
-    };
+        ws.onmessage = function(event) {
+            logEl.textContent += event.data;
+            logEl.scrollTop = logEl.scrollHeight;
+        };
 
-    ws.onerror = function() {
-        logEl.textContent += "\n[连接出错]";
-    };
+        ws.onopen = function() {
+            logEl.textContent += `[已连接到 ${name}]\n`;
+        };
+
+        ws.onclose = function() {
+            logEl.textContent += "\n[连接已关闭]";
+        };
+
+        ws.onerror = function() {
+            logEl.textContent += "\n[连接出错]";
+        };
+    }
+
+    async function loadLogFiles() {
+        try {
+            const res = await fetch('/logFiles');
+            const data = await res.json();
+            if (data.files && data.files.length > 0) {
+                selector.innerHTML = ''; // 清空旧选项
+                data.files.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file;
+                    option.textContent = file;
+                    selector.appendChild(option);
+                });
+                connectWebSocket(data.files[0]); // 默认连接第一个
+            } else {
+                logEl.textContent = "未找到日志文件。";
+            }
+        } catch (err) {
+            logEl.textContent = "加载日志列表失败。\n" + err;
+        }
+    }
+
+    selector.addEventListener("change", () => {
+        connectWebSocket(selector.value);
+    });
+
+    // 初始化
+    loadLogFiles();
 </script>
 
 </body>

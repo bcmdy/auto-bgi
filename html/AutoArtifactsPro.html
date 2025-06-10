@@ -139,7 +139,10 @@
 <div class="container">
     <h1 class="main-title">{{ .title }}</h1>
 
-    <a href="/" class="home-btn">返回主页</a>
+    <div style="display: flex; gap: 10px;">
+        <button onclick="window.location.href='/'" class="home-btn">返回主页</button>
+        <button onclick="window.location.href='/getAutoArtifactsPro2'" class="home-btn">转为折线图</button>
+    </div>
 
     <div class="cards-container">
         {{ range .items }}

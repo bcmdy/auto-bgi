@@ -256,8 +256,10 @@ func tojson(v interface{}) template.JS {
 }
 
 var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		return true // 如果跨域就写逻辑
 	},
 }
 
@@ -289,19 +291,31 @@ func main() {
 		context.HTML(http.StatusOK, "log.html", nil)
 	})
 
+	//查询今日所有日志文件
+	ginServer.GET("/logFiles", func(c *gin.Context) {
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress)) // 本地日志路径
+		files, err := bgiStatus.FindLogFiles(filePath)
+		if err != nil {
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"files": files})
+	})
+
 	// WebSocket 处理器
-	ginServer.GET("/ws", func(c *gin.Context) {
+	ginServer.GET("/ws/:name", func(c *gin.Context) {
+		logName := c.Param("name")
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			return
 		}
 		defer conn.Close()
 
-		// 生成日志文件名
-		date := time.Now().Format("20060102")
+		if logName == "" {
+			date := time.Now().Format("20060102")
+			logName = fmt.Sprintf("better-genshin-impact%s.log", date)
+		}
 
-		filePath := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date)) // 本地日志路径
-
+		filePath := filepath.Join(Config.BetterGIAddress, "log", logName)
 		file, err := os.Open(filePath)
 		if err != nil {
 			conn.WriteMessage(websocket.TextMessage, []byte("无法打开日志文件"))
@@ -309,21 +323,29 @@ func main() {
 		}
 		defer file.Close()
 
-		// 移动到文件末尾
+		// 定位到文件末尾
 		file.Seek(0, io.SeekEnd)
 
-		buffer := make([]byte, 1024)
+		reader := bufio.NewReader(file)
+
 		for {
-			n, err := file.Read(buffer)
-			if err == io.EOF {
-				time.Sleep(1 * time.Second)
-				continue
-			}
+			// 尝试读取一行
+			line, err := reader.ReadString('\n')
 			if err != nil {
+				if err == io.EOF {
+					// 没新数据就稍等
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				log.Println("读取日志出错:", err)
 				break
 			}
-			if n > 0 {
-				conn.WriteMessage(websocket.TextMessage, buffer[:n])
+
+			// 检查连接是否还活着
+			err = conn.WriteMessage(websocket.TextMessage, []byte(line))
+			if err != nil {
+				log.Println("WebSocket 写入失败:", err)
+				break
 			}
 		}
 	})

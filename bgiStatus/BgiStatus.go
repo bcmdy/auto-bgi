@@ -524,7 +524,7 @@ func GetAutoArtifactsPro2() (*EarningsData, error) {
 		//DogExpNum := re2.FindString(parts[2])
 		DogExpNum := strings.ReplaceAll(parts[2], "狗粮经验", "")
 		number, _ := strconv.Atoi(DogExpNum)
-		if number <= 1 {
+		if number == -1 {
 			continue
 		}
 
@@ -535,7 +535,7 @@ func GetAutoArtifactsPro2() (*EarningsData, error) {
 		//MoraNum := re3.FindString(parts[3])
 		MoraNum := strings.ReplaceAll(parts[3], "摩拉", "")
 		number2, _ := strconv.Atoi(MoraNum)
-		if number2 <= 1 {
+		if number2 == 0 {
 			continue
 
 		}
@@ -611,4 +611,23 @@ func LogAnalysis() map[string]int {
 
 	return mapData
 
+}
+
+func FindLogFiles(dirPath string) ([]string, error) {
+
+	date := time.Now().Format("20060102")
+	prefix := fmt.Sprintf("better-genshin-impact%s", date)
+	pattern := dirPath + "\\" + prefix + "*.log" // logs 为日志目录
+
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	var filenames []string
+	for _, f := range files {
+		filenames = append(filenames, filepath.Base(f))
+	}
+
+	return filenames, nil
 }
