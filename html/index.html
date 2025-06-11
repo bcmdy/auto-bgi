@@ -9,11 +9,12 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #0d0d0d;
-            color: #00ff00;
+            font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+            background-color: #ffecf5;
+            color: #ff6699;
             overflow-x: hidden;
             overflow-y: auto;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="5" fill="%23ffcce6" opacity="0.5"/></svg>');
         }
 
         body {
@@ -21,7 +22,7 @@
             z-index: 1;
         }
 
-        canvas#matrixRainCanvas {
+        canvas#animeCanvas {
             position: fixed;
             top: 0;
             left: 0;
@@ -38,27 +39,28 @@
             max-width: 700px;
             margin: 60px auto;
             padding: 20px;
-            border: 2px solid #00ff00;
-            border-radius: 12px;
-            background-color: rgba(0, 0, 0, 0.7);
-            box-shadow: 0 0 20px #00ff00;
+            border: 2px solid #ff9ecd;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 20px #ffaad5;
         }
 
         h1 {
             font-size: 1em;
             margin-bottom: 10px;
-            text-shadow: 0 0 5px #00ff00;
+            text-shadow: 0 0 5px #ffd1e0;
             word-break: break-word;
+            color: #ff6699;
         }
 
         h1:last-child::after {
-            content: '▊';
-            animation: blink 1s infinite;
+            content: '♡';
+            animation: bounce 1s infinite;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
         }
 
         button {
@@ -66,19 +68,21 @@
             margin: 12px 0;
             padding: 14px;
             font-size: 15px;
-            background-color: black;
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            border-radius: 8px;
+            background-color: #ffd1e0;
+            color: #ff5588;
+            border: 2px solid #ff9ecd;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 0 10px #00ff00;
+            box-shadow: 0 0 10px #ffcce6;
             transition: all 0.2s ease-in-out;
+            font-weight: bold;
         }
 
         button:hover {
-            background-color: #00ff00;
-            color: #000;
-            box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            background-color: #ff9ecd;
+            color: white;
+            box-shadow: 0 0 20px #ff9ecd, 0 0 40px #ff9ecd;
+            transform: scale(1.05);
         }
 
         @media (max-width: 480px) {
@@ -95,7 +99,7 @@
 </head>
 <body>
 
-<canvas id="matrixRainCanvas"></canvas>
+<canvas id="animeCanvas"></canvas>
 
 <!--<audio src="https://vod.ruotongmusic.com/sv/33203264-179ccc83f10/33203264-179ccc83f10.wav" autoplay loop style="display:none"></audio>-->
 
@@ -157,43 +161,67 @@
 </script>
 
 <script>
-    // Matrix Rain 特效
-    const canvas = document.getElementById("matrixRainCanvas");
+    // 樱花飘落特效
+    const canvas = document.getElementById("animeCanvas");
     const ctx = canvas.getContext("2d");
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const katakana = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ";
-    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const nums = "0123456789";
-    const alphabet = katakana + latin + nums;
+    // 樱花类
+    class Petal {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height * -1 - 100;
+            this.size = Math.random() * 8 + 5;
+            this.speed = Math.random() * 2 + 0.5;
+            this.angle = Math.random() * 360;
+            this.spin = Math.random() * 5 - 2.5;
+            this.color = ["#ffcce6", "#ffd1e0", "#ff9ecd", "#ffaad5"][Math.floor(Math.random() * 4)];
+        }
 
-    const fontSize = 16;
-    const columns = canvas.width / fontSize;
+        update() {
+            this.y += this.speed;
+            this.x += Math.sin(this.angle * Math.PI / 180) * 0.5;
+            this.angle += this.spin;
 
-    const drops = Array.from({ length: columns }).fill(1);
-
-    function draw() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "#00ff00";
-        ctx.font = `${fontSize}px monospace`;
-
-        drops.forEach((y, x) => {
-            const text = alphabet[Math.floor(Math.random() * alphabet.length)];
-            ctx.fillText(text, x * fontSize, y * fontSize);
-
-            if (y * fontSize > canvas.height && Math.random() > 0.975) {
-                drops[x] = 0;
+            if (this.y > canvas.height) {
+                this.y = -this.size * 2;
+                this.x = Math.random() * canvas.width;
             }
+        }
 
-            drops[x]++;
-        });
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle * Math.PI / 180);
+            
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            // 绘制樱花花瓣
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(this.size / 2, -this.size / 2, this.size, -this.size / 4, this.size, 0);
+            ctx.bezierCurveTo(this.size, this.size / 4, this.size / 2, this.size / 2, 0, 0);
+            ctx.fill();
+            ctx.restore();
+        }
     }
 
-    setInterval(draw, 33);
+    // 创建多个樱花花瓣
+    const petals = Array.from({ length: 50 }, () => new Petal());
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        petals.forEach(petal => {
+            petal.update();
+            petal.draw();
+        });
+        
+        requestAnimationFrame(animate);
+    }
+
+    animate();
 
     // 窗口尺寸变化时自适应
     window.addEventListener('resize', () => {

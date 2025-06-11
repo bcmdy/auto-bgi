@@ -6,11 +6,11 @@
     <title>{{ .title }}</title>
     <style>
         :root {
-            --primary-color: #00ff99;
-            --background-dark: #000;
-            --text-color: #00ff99;
-            --border-color: #00ff99;
-            --hover-color: rgba(0, 255, 153, 0.1);
+            --primary-color: #ff6eb4;
+            --background-light: #fff6fb;
+            --text-color: #ff6eb4;
+            --border-color: #ffc0da;
+            --hover-color: rgba(255, 192, 218, 0.3);
         }
 
         * {
@@ -20,17 +20,19 @@
         }
 
         body {
-            font-family: "Courier New", monospace;
-            background-color: var(--background-dark);
+            font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+            background-color: var(--background-light);
             color: var(--text-color);
             min-height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6eb" opacity="0.6"/><circle cx="70" cy="70" r="7" fill="%23ffc0da" opacity="0.5"/></svg>');
         }
 
         header {
-            background-color: #000;
+            background-color: rgba(255, 255, 255, 0.8);
             padding: 30px 0 10px;
             text-align: center;
             box-shadow: 0 0 20px var(--primary-color);
+            border-radius: 0 0 30px 30px;
         }
 
         h1 {
@@ -52,48 +54,78 @@
         }
 
         .btn {
-            background-color: #000;
+            background-color: #fff;
             color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            border-radius: 6px;
-            padding: 8px 16px;
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            padding: 10px 20px;
             font-size: 1rem;
             cursor: pointer;
             box-shadow: 0 0 10px var(--primary-color);
             transition: all 0.3s ease;
             margin: 5px;
+            font-weight: bold;
         }
 
         .btn:hover {
             background-color: var(--primary-color);
-            color: #000;
+            color: #fff;
             box-shadow: 0 0 20px var(--primary-color);
+            transform: scale(1.05);
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
-            background-color: #111;
-            box-shadow: 0 0 10px #00ff99;
-            border-radius: 8px;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px #ffcce6;
+            border-radius: 20px;
             overflow: hidden;
+            padding: 15px;
         }
 
         th, td {
-            padding: 12px 16px;
+            padding: 15px 20px;
             text-align: left;
-            border-bottom: 1px solid #222;
             color: var(--text-color);
         }
 
         th {
-            background-color: #00ff99;
-            color: #000;
+            background-color: #ffcce6;
+            color: #ff5599;
             font-weight: bold;
+            border-radius: 10px;
         }
 
-        tr:hover {
+        td {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        tr:hover td {
             background-color: var(--hover-color);
+        }
+
+        /* 可爱元素装饰 */
+        .container::before {
+            content: "♡";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+            opacity: 0.5;
+        }
+
+        .container::after {
+            content: "♡";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+            opacity: 0.5;
         }
 
         @media (max-width: 600px) {
@@ -103,12 +135,12 @@
 
             .btn {
                 font-size: 0.9rem;
-                padding: 6px 12px;
+                padding: 8px 16px;
             }
 
             th, td {
                 font-size: 0.9rem;
-                padding: 10px;
+                padding: 12px;
             }
         }
     </style>

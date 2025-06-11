@@ -7,11 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <style>
         :root {
-            --bg-color: #0f0f0f;
-            --text-color: #00ff00;
-            --panel-bg: #1a1a1a;
-            --border-color: #00ff00;
-            --accent-color: #00ffcc;
+            --bg-color: #fff0f7;
+            --text-color: #ff6699;
+            --panel-bg: rgba(255, 255, 255, 0.8);
+            --border-color: #ffb7d5;
+            --accent-color: #b28dff;
         }
 
         * {
@@ -21,33 +21,105 @@
         body {
             margin: 0;
             padding: 20px;
-            font-family: "Courier New", Courier, monospace;
+            font-family: "Comic Sans MS", "Segoe UI", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="30" cy="30" r="3" fill="%23ffb7d5" opacity="0.5"/><circle cx="70" cy="70" r="4" fill="%23b28dff" opacity="0.3"/></svg>');
         }
 
         h2 {
             text-align: center;
             margin-bottom: 20px;
             font-size: 2rem;
-            text-shadow: 0 0 5px var(--text-color);
+            text-shadow: 0 0 5px var(--border-color);
+            position: relative;
+            display: inline-block;
+            width: 100%;
         }
+        
+        h2::before, h2::after {
+            content: "♡";
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        
+        h2::before {
+            left: 25%;
+        }
+        
+        h2::after {
+            right: 25%;
+        }
+        
         h4 {
             text-align: center;
+            color: #b28dff;
+            margin-bottom: 20px;
         }
 
         #chart {
             width: 100%;
             max-width: 1200px;
             height: 70vh;
-            margin: 0 auto;
+            margin: 0 auto 20px;
             background: var(--panel-bg);
             border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 10px;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(255, 183, 213, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #chart::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: linear-gradient(45deg, transparent, rgba(255, 183, 213, 0.1), transparent);
+            z-index: -1;
+            animation: shimmer 3s linear infinite;
         }
 
-        /* 删除了媒体查询 */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        #rotate-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 25px;
+            background-color: #fff;
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255, 183, 213, 0.5);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: var(--text-color);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 183, 213, 0.7);
+        }
     </style>
 </head>
 <body>
@@ -56,6 +128,7 @@
     <h2>{{ .title }}</h2>
     <h4>及格富A线（狗粮经验：98406，摩拉：20800）=======及格富B线（狗粮经验：76356，摩拉：13800）</h4>
     <div id="chart"></div>
+    <a href="/" class="back-button">返回主页</a>
 </div>
 
 
@@ -64,7 +137,7 @@
         .then(res => res.json())
         .then(data => {
             const chartDom = document.getElementById('chart');
-            const myChart = echarts.init(chartDom, 'dark'); // 使用暗色主题
+            const myChart = echarts.init(chartDom); // 使用默认主题
 
             const dates = data.dates.slice().reverse();
             const lines = data.line.slice().reverse();
@@ -81,21 +154,21 @@
             }));
 
             const option = {
-                backgroundColor: '#1a1a1a',
+                backgroundColor: 'rgba(255, 255, 255, 0.6)',
                 title: {
                     text: '狗粮与摩拉收益堆叠折线图',
                     left: 'center',
                     textStyle: {
-                        color: '#00ff00',
-                        fontFamily: 'Courier New'
+                        color: '#ff6699',
+                        fontFamily: "'Comic Sans MS', 'Segoe UI', sans-serif"
                     }
                 },
                 tooltip: {
                     trigger: 'axis',
-                    backgroundColor: '#222',
-                    borderColor: '#00ff00',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: '#ffb7d5',
                     textStyle: {
-                        color: '#00ffcc'
+                        color: '#ff6699'
                     },
                     formatter: function (params) {
                         const date = params[0].axisValue;
@@ -109,7 +182,7 @@
                 legend: {
                     top: 30,
                     textStyle: {
-                        color: '#00ff00'
+                        color: '#ff6699'
                     },
                     data: ['狗粮经验', '摩拉']
                 },
@@ -118,7 +191,7 @@
                         saveAsImage: { title: '保存为图片' }
                     },
                     iconStyle: {
-                        borderColor: '#00ff00'
+                        borderColor: '#ff6699'
                     }
                 },
                 grid: {
@@ -133,70 +206,66 @@
                     data: dates,
                     axisLine: {
                         lineStyle: {
-                            color: '#00ff00'
+                            color: '#ffb7d5'
                         }
                     },
                     axisLabel: {
-                        color: '#00ffcc'
+                        color: '#ff6699'
                     }
                 },
                 yAxis: {
                     type: 'value',
                     axisLine: {
                         lineStyle: {
-                            color: '#00ff00'
+                            color: '#ffb7d5'
                         }
                     },
                     splitLine: {
                         lineStyle: {
-                            color: '#333'
+                            color: 'rgba(255, 183, 213, 0.3)'
                         }
                     },
                     axisLabel: {
-                        color: '#00ffcc'
+                        color: '#ff6699'
                     }
                 },
                 series: [
                     {
                         name: '狗粮经验',
                         type: 'line',
-                        // stack: '总量',
                         symbolSize: 15, // 调整点的大小
-                        // smooth: true,
                         label: {
                             show: true,
                             position: 'top',
-                            color: '#32eb08',
+                            color: '#ff6699',
                             fontSize: 15
                         },
-                        // areaStyle: {
-                        //     color: 'rgba(0, 255, 0, 0.3)'
-                        // },
                         lineStyle: {
-                            color: '#00ff00'
+                            color: '#ff6699'
+                        },
+                        itemStyle: {
+                            color: '#ff6699'
                         },
                         data: dogExpWithLine
                     },
                     {
                         name: '摩拉',
                         type: 'line',
-                        // stack: '总量',
                         symbolSize: 15, // 调整点的大小
-                        // smooth: true,
                         label: {
                             show: true,
                             position: 'bottom',
-                            color: '#ffffff',
+                            color: '#b28dff',
                             fontSize: 15
                         },
                         textStyle: {
                             fontSize: 30
                         },
-                        // areaStyle: {
-                        //     color: 'rgba(0, 255, 204, 0.3)'
-                        // },
                         lineStyle: {
-                            color: '#00ffcc'
+                            color: '#b28dff'
+                        },
+                        itemStyle: {
+                            color: '#b28dff'
                         },
                         data: moraWithLine
                     }
@@ -207,8 +276,8 @@
             window.addEventListener('resize', () => myChart.resize());
         })
         .catch(error => {
-            document.getElementById('chart').innerHTML = '<p style="color:red;">加载数据失败：' + error + '</p>';
-        });dw
+            document.getElementById('chart').innerHTML = '<p style="color:#ff6699;">加载数据失败：' + error + '</p>';
+        });
 </script>
 </body>
 </html>
