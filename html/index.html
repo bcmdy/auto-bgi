@@ -5,102 +5,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>执行状态</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
-
         body {
             margin: 0;
-            padding: 0;
-            font-family: 'ZCOOL KuaiLe', cursive;
-            background: url('/static/bj.png') no-repeat center center fixed;
-            background-size: cover;
-            color: #fff;
+            padding: 20px;
+            background-color: #0d0d0d;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ff00;
+            background-image: radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 0);
+            background-size: 20px 20px;
+            overflow: hidden;
         }
 
         .container {
-            max-width: 600px;
-            margin: 50px auto;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid #ffc4f0;
-            border-radius: 20px;
+            position: relative;
+            z-index: 2;
+            max-width: 700px;
+            margin: auto;
             padding: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 15px #ffb2f5;
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            background-color: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px #00ff00;
         }
 
         h1 {
-            font-size: 20px;
-            color: #fff0fa;
+            font-size: 1em;
             margin-bottom: 10px;
-            text-shadow: 1px 1px 2px #ff9fe7;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .blinking {
+            display: inline-block;
+            animation: blink 1s step-start infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
         }
 
         button {
-            display: flex;
-            align-items: center;
+            display: block;
             width: 100%;
-            margin: 12px 0;
-            padding: 14px 20px;
-            font-size: 18px;
-            font-family: 'ZCOOL KuaiLe', cursive;
-            background: linear-gradient(to right, #fcd1f5, #c7dfff);
-            color: #6b366b;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(255, 187, 255, 0.4);
+            margin: 15px 0;
+            padding: 14px;
+            font-size: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            box-shadow: 0 0 10px #00ff00;
+            transition: all 0.2s ease-in-out;
         }
 
         button:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 20px #ffb2f5;
+            background-color: #00ff00;
+            color: #000;
+            box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
         }
 
-        button img {
-            width: 24px;
-            height: 24px;
-            margin-right: 12px;
+        #matrixCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            width: 100vw;
+            height: 100vh;
         }
     </style>
-    <script>
-        function getAutoArtifactsProBtn() { window.location.href = '/getAutoArtifactsPro'; }
-        function oneLongBtn() {
-            fetch('/oneLong', { method: 'POST' })
-                .then(res => alert(res.ok ? "启动成功！" : "启动失败！"))
-                .catch(err => alert("请求出错：" + err));
-        }
-        function closeBgiBtn() {
-            fetch('/closeBgi', { method: 'POST' })
-                .then(res => alert(res.ok ? "关闭成功！" : "关闭失败！"))
-                .catch(err => alert("请求出错：" + err));
-        }
-        function closeYuanShenBtn() {
-            fetch('/closeYuanShen', { method: 'POST' })
-                .then(res => alert(res.ok ? "关闭成功！" : "关闭失败！"))
-                .catch(err => alert("请求出错：" + err));
-        }
-        function todayHarvestBtn() { window.location.href = '/logAnalysis'; }
-        function BagStatisticsBtn() { window.location.href = '/BagStatistics'; }
-        function listGroupsBtn() { window.location.href = '/listGroups'; }
-        function realTimeLogBtn() { window.location.href = '/log'; }
-    </script>
 </head>
 <body>
+<canvas id="matrixCanvas"></canvas>
 <div class="container">
-    <h1>当前执行配置组: {{.group}}</h1>
-    <h1>当前执行脚本: {{.line}}</h1>
-    <h1>地图追踪进度：{{.progress}}</h1>
-    <h1>软件运行状态: {{.running}}</h1>
-    <h1>JS: {{.jsProgress}}</h1>
-
-    <button onclick="oneLongBtn()">🌸 一条龙启动</button>
-    <button onclick="closeBgiBtn()">❌ 关闭BGI</button>
-    <button onclick="closeYuanShenBtn()">💫 关闭原神启动器</button>
-    <button onclick="todayHarvestBtn()">🍓 今日收获</button>
-    <button onclick="BagStatisticsBtn()">🎒 背包统计</button>
-    <button onclick="listGroupsBtn()">📋 调度器</button>
-    <button onclick="realTimeLogBtn()">📝 实时日志</button>
-    <button onclick="getAutoArtifactsProBtn()">✨ 查看狗粮日志</button>
+    <h1>> 当前执行配置组: {{.group}}</h1>
+    <h1>> 当前执行脚本: {{.line}}</h1>
+    <h1>> 地图追踪进度：{{.progress}}</h1>
+    <h1>> 软件运行状态: {{.running}}</h1>
+    <h1>> JS: {{.jsProgress}} <span class="blinking">_</span></h1>
+    <button onclick="oneLongBtn()">一条龙启动</button>
+    <button onclick="closeBgiBtn()">关闭BGI</button>
+    <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>
+    <button onclick="todayHarvestBtn()">今日收获</button>
+    <button onclick="BagStatisticsBtn()">背包统计</button>
+    <button onclick="listGroupsBtn()">调度器</button>
+    <button onclick="realTimeLogBtn()">实时日志</button>
+    <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
 </div>
+
+<audio id="bgSound" loop autoplay>
+    <source src="https://cdn.jsdelivr.net/gh/naptha/talkify-tts/demo/static/electro-hum.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+    // matrix rain effect
+    const canvas = document.getElementById("matrixCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const chars = "01";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = new Array(Math.floor(columns)).fill(1);
+
+    function draw() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0f0";
+        ctx.font = fontSize + "px Courier New";
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = chars.charAt(Math.floor(Math.random() * chars.length));
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    setInterval(draw, 33);
+
+    // 键盘音效（可选添加）
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            new Audio('https://cdn.jsdelivr.net/gh/kenwheeler/slick@1.8.1/sounds/click.mp3').play();
+        });
+    });
+
+    // 按钮功能
+    function getAutoArtifactsProBtn() { window.location.href = '/getAutoArtifactsPro'; }
+    function oneLongBtn() {
+        fetch('/oneLong', { method: 'POST' })
+            .then(res => alert(res.ok ? "启动成功！" : "启动失败！"))
+            .catch(err => alert("请求出错：" + err));
+    }
+    function closeBgiBtn() {
+        fetch('/closeBgi', { method: 'POST' })
+            .then(res => alert(res.ok ? "关闭成功！" : "关闭失败！"))
+            .catch(err => alert("请求出错：" + err));
+    }
+    function closeYuanShenBtn() {
+        fetch('/closeYuanShen', { method: 'POST' })
+            .then(res => alert(res.ok ? "关闭成功！" : "关闭失败！"))
+            .catch(err => alert("请求出错：" + err));
+    }
+    function todayHarvestBtn() { window.location.href = '/logAnalysis'; }
+    function BagStatisticsBtn() { window.location.href = '/BagStatistics'; }
+    function listGroupsBtn() { window.location.href = '/listGroups'; }
+    function realTimeLogBtn() { window.location.href = '/log'; }
+</script>
 </body>
 </html>
