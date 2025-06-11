@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ .title }}</title>
     <style>
         :root {
-            --primary-color: #4285f4;
-            --secondary-color: #f8f9fa;
-            --text-color: #333;
-            --border-color: #e0e0e0;
-            --hover-color: #f1f1f1;
+            --primary-color: #00ff99;
+            --background-dark: #000;
+            --text-color: #00ff99;
+            --border-color: #00ff99;
+            --row-hover: rgba(0, 255, 153, 0.1);
         }
 
         * {
@@ -20,137 +20,104 @@
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
+            font-family: "Courier New", monospace;
+            background-color: var(--background-dark);
             color: var(--text-color);
-            background-color: #f5f5f5;
-            padding: 0;
-            margin: 0;
+            min-height: 100vh;
         }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-
-        }
-        .container-header {
-            max-width: 200px;
-            margin: 0 auto;
-            padding: 20px;
-
-        }
-
 
         header {
-            background-color: #4ddcc7;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 15px 0;
-            margin-bottom: 30px;
-            height: 233px;
+            background-color: #000;
+            padding: 30px 0 10px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--primary-color);
         }
 
         h1 {
             color: var(--primary-color);
-            text-align: center;
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin: 10px 0;
-        }
-
-        .btn:hover {
-            background-color: #3367d6;
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--primary-color);
+            margin-top: 15px;
         }
 
         .btn-container {
-            text-align: center;
-            margin-bottom: 10px;
+            margin: 10px auto;
+        }
+
+        .btn {
+            background-color: #000;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-color);
+            color: #000;
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background-color: #111;
+            box-shadow: 0 0 10px #00ff99;
             border-radius: 8px;
             overflow: hidden;
-            margin-bottom: 30px;
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid #222;
+            color: var(--text-color);
         }
 
         th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 500;
+            background-color: #00ff99;
+            color: #000;
+            font-weight: bold;
+            text-shadow: none;
         }
 
         tr:hover {
-            background-color: var(--hover-color);
+            background-color: var(--row-hover);
         }
 
-        tr:nth-child(even) {
-            background-color: var(--secondary-color);
-        }
-
-        /* 响应式设计 */
         @media (max-width: 600px) {
-            .container {
-                padding: 10px;
-            }
-
             h1 {
                 font-size: 1.5rem;
             }
-
-            th, td {
-                padding: 8px 10px;
-                font-size: 0.9rem;
-            }
-
             .btn {
-                padding: 8px 16px;
                 font-size: 0.9rem;
+                padding: 6px 12px;
             }
-        }
-
-        @media (max-width: 400px) {
             th, td {
-                padding: 6px 8px;
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
         }
     </style>
 </head>
 <body>
+
 <header>
-    <div class="container-header">
-        <div class="btn-container">
-            <button class="btn" onclick="window.location.href='/'">返回主页</button>
-        </div>
-        <br>
-        <div class="btn-container">
-            <button class="btn" onclick="deleteBagBtn()">清空统计</button>
-        </div>
-        <h1>{{ .title }}</h1>
+    <div class="btn-container">
+        <button class="btn" onclick="window.location.href='/'">返回主页</button>
+        <button class="btn" onclick="deleteBagBtn()">清空统计</button>
     </div>
+    <h1>{{ .title }}</h1>
 </header>
 
 <div class="container">
@@ -176,28 +143,24 @@
 
 <script>
     async function deleteBagBtn() {
-        fetch('/deleteBag', {
-            method: 'POST'
-        })
-            .then(async response => {
-                const data = await response.json();
-                console.log(data)
-                alert(data.message)
+        fetch('/deleteBag', { method: 'POST' })
+            .then(async res => {
+                const data = await res.json();
+                alert(data.message);
             })
-            .catch(error => {
-                alert("请求出错：" + error);
+            .catch(err => {
+                alert("请求出错：" + err);
             });
     }
 
     window.onload = function() {
         const table = document.getElementById('materialTable');
         const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        const materialMap = {}; // key: material, value: { date, num }
-
+        const materialMap = {};
         const colorMap = {};
         const colorPalette = [
             '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
-            '#1abc9c', '#d35400', '#34495e', '#16a085', '#c0392b'
+            '#1abc9c', '#d35400', '#43e20a', '#16a085', '#c0392b'
         ];
         let colorIndex = 0;
 
@@ -207,14 +170,13 @@
             const cl = row.cells[1].textContent.trim();
             const num = parseInt(row.cells[2].textContent.trim());
 
-            // 分配颜色
             if (!colorMap[cl]) {
                 colorMap[cl] = colorPalette[colorIndex % colorPalette.length];
                 colorIndex++;
             }
-            row.style.backgroundColor = colorMap[cl];
 
-            // 计算差值
+            row.style.backgroundColor = colorMap[cl] + "20"; // 半透明颜色
+
             if (materialMap[cl] !== undefined) {
                 const prev = materialMap[cl];
                 const diff = num - prev.num;
@@ -224,11 +186,10 @@
                 }
             }
 
-            // 更新最新记录
             materialMap[cl] = { date, num };
         }
     };
-
 </script>
+
 </body>
 </html>
