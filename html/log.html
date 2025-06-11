@@ -1,17 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="color-scheme" content="only light" />
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="only light">
     <title>实时日志查看</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        /* 重置和基础 */
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; margin:0; padding:0; }
         html, body {
-            margin: 0; padding: 0; height: 100%;
+            height: 100%;
             background-color: #000;
             overflow: hidden;
             font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
@@ -19,31 +16,23 @@
         }
         body {
             position: relative;
-            display: flex;
-            flex-direction: column;
         }
-
-        /* 代码雨画布，覆盖全屏 */
         canvas#codeRain {
             position: fixed;
             top: 0; left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             z-index: 0;
             background-color: #000;
         }
-
-        /* 头部固定高度 */
         header {
-            background-color: rgba(17,17,17,0.8);
+            background-color: rgba(17, 17, 17, 0.8);
             padding: 1rem;
             text-align: center;
             border-bottom: 1px solid #444;
             position: relative;
             z-index: 2;
-            flex: 0 0 auto; /* 不拉伸 */
         }
-
         h1 {
             margin: 0 0 0.5rem;
             font-size: 1.5rem;
@@ -57,29 +46,28 @@
             border: 1px solid #00ff88;
             border-radius: 4px;
         }
-
-        /* 主体区域剩余全部高度，并可滚动 */
         main {
             position: relative;
             z-index: 2;
+            padding: 1rem;
+            height: calc(100vh - 120px);
+            overflow: auto;
+            margin: 0 1rem 1rem 1rem;
             background-color: rgba(0,0,0,0.75);
             border-radius: 8px;
             box-shadow: 0 0 10px #00ff88;
             font-family: monospace;
             font-size: 0.9rem;
             color: #00ff00;
-            white-space: pre-wrap;
-            flex: 1 1 auto; /* 剩余空间 */
-            overflow-y: auto;
-            margin: 1rem;
-            /* 去掉固定高度，使用flex布局撑满 */
         }
-
-        /* 响应式 */
+        #log {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-y: auto;
+            height: 100%;
+        }
         @media (max-width: 768px) {
-            h1 {
-                font-size: 1.2rem;
-            }
+            h1 { font-size: 1.2rem; }
             main {
                 margin: 0.5rem;
                 font-size: 0.8rem;
@@ -97,7 +85,7 @@
 </header>
 
 <main>
-    <pre id="log">正在加载日志列表...</pre>
+    <div id="log">正在加载日志列表...</div>
 </main>
 
 <script>
@@ -143,7 +131,7 @@
         setup();
     });
 
-    // 日志查看逻辑
+    // 日志加载逻辑
     const logEl = document.getElementById("log");
     const selector = document.getElementById("logSelector");
     let ws;
@@ -155,8 +143,11 @@
         ws = new WebSocket(`ws://${location.host}/ws/${encodeURIComponent(name)}`);
 
         ws.onmessage = function(event) {
+            const atBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 10;
             logEl.textContent += event.data;
-            logEl.scrollTop = logEl.scrollHeight;
+            if (atBottom) {
+                logEl.scrollTop = logEl.scrollHeight;
+            }
         };
 
         ws.onopen = function() {
