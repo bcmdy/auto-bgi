@@ -1,25 +1,49 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="color-scheme" content="only light">
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="only light" />
     <title>实时日志查看</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #1e1e1e;
-            color: #ffffff;
-            font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+        /* 重置和基础 */
+        * {
+            box-sizing: border-box;
         }
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+            color: #00ff88;
+        }
+        body {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 代码雨画布，覆盖全屏 */
+        canvas#codeRain {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            background-color: #000;
+        }
+
+        /* 头部固定高度 */
         header {
-            background-color: #111;
+            background-color: rgba(17,17,17,0.8);
             padding: 1rem;
             text-align: center;
             border-bottom: 1px solid #444;
+            position: relative;
+            z-index: 2;
+            flex: 0 0 auto; /* 不拉伸 */
         }
+
         h1 {
             margin: 0 0 0.5rem;
             font-size: 1.5rem;
@@ -33,30 +57,39 @@
             border: 1px solid #00ff88;
             border-radius: 4px;
         }
-        #log {
-            background-color: #000;
-            color: #00ff00;
-            padding: 1rem;
-            margin: 1rem;
-            height: 80vh;
-            overflow-y: auto;
-            white-space: pre-wrap;
+
+        /* 主体区域剩余全部高度，并可滚动 */
+        main {
+            position: relative;
+            z-index: 2;
+            background-color: rgba(0,0,0,0.75);
             border-radius: 8px;
             box-shadow: 0 0 10px #00ff88;
             font-family: monospace;
             font-size: 0.9rem;
+            color: #00ff00;
+            white-space: pre-wrap;
+            flex: 1 1 auto; /* 剩余空间 */
+            overflow-y: auto;
+            margin: 1rem;
+            /* 去掉固定高度，使用flex布局撑满 */
         }
+
+        /* 响应式 */
         @media (max-width: 768px) {
-            h1 { font-size: 1.2rem; }
-            #log {
+            h1 {
+                font-size: 1.2rem;
+            }
+            main {
                 margin: 0.5rem;
-                height: 75vh;
                 font-size: 0.8rem;
             }
         }
     </style>
 </head>
 <body>
+
+<canvas id="codeRain"></canvas>
 
 <header>
     <h1>实时日志查看</h1>
@@ -68,6 +101,49 @@
 </main>
 
 <script>
+    // 代码雨效果
+    const canvas = document.getElementById('codeRain');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    const letters = 'アァイィウヴエォカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヰヱヲン0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const fontSize = 16;
+    let columns;
+    let drops = [];
+
+    function setup() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        columns = Math.floor(width / fontSize);
+        drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.floor(Math.random() * height / fontSize);
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#0F0';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters.charAt(Math.floor(Math.random() * letters.length));
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    setup();
+    setInterval(draw, 50);
+    window.addEventListener('resize', () => {
+        setup();
+    });
+
+    // 日志查看逻辑
     const logEl = document.getElementById("log");
     const selector = document.getElementById("logSelector");
     let ws;
@@ -101,14 +177,14 @@
             const res = await fetch('/logFiles');
             const data = await res.json();
             if (data.files && data.files.length > 0) {
-                selector.innerHTML = ''; // 清空旧选项
+                selector.innerHTML = '';
                 data.files.forEach(file => {
                     const option = document.createElement('option');
                     option.value = file;
                     option.textContent = file;
                     selector.appendChild(option);
                 });
-                connectWebSocket(data.files[0]); // 默认连接第一个
+                connectWebSocket(data.files[0]);
             } else {
                 logEl.textContent = "未找到日志文件。";
             }
@@ -121,7 +197,6 @@
         connectWebSocket(selector.value);
     });
 
-    // 初始化
     loadLogFiles();
 </script>
 

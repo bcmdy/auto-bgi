@@ -153,40 +153,71 @@
             });
     }
 
-    window.onload = function() {
+    window.onload = function () {
         const table = document.getElementById('materialTable');
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        const materialMap = {};
-        const colorMap = {};
-        const colorPalette = [
-            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
-            '#1abc9c', '#d35400', '#43e20a', '#16a085', '#c0392b'
-        ];
-        let colorIndex = 0;
+        const tbody = table.querySelector('tbody');
 
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const date = row.cells[0].textContent.trim();
-            const cl = row.cells[1].textContent.trim();
-            const num = parseInt(row.cells[2].textContent.trim());
+        // 先获取所有数据行，转成数组
+        const rows = Array.from(tbody.querySelectorAll('tr'));
 
-            if (!colorMap[cl]) {
-                colorMap[cl] = colorPalette[colorIndex % colorPalette.length];
-                colorIndex++;
+        // 提取数据，方便排序
+        const dataRows = rows.map(row => {
+            return {
+                element: row,
+                date: row.cells[0].textContent.trim(),
+                cl: row.cells[1].textContent.trim(),
+                num: parseInt(row.cells[2].textContent.trim())
+            };
+        });
+
+        // 按材料名升序排序
+        dataRows.sort((a, b) => a.cl.localeCompare(b.cl));
+
+        // 清空 tbody
+        tbody.innerHTML = '';
+
+        // // 颜色分配和材料记录
+        // const colorMap = {};
+        // const colorPalette = [
+        //     '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+        //     '#1abc9c', '#d35400', '#43e20a', '#16a085', '#c0392b'
+        // ];
+        // let colorIndex = 0;
+        let materialMap = {};
+        let lastCl = null;
+
+        // 按排序结果重新插入行，并插入空行区分材料
+        for (let i = 0; i < dataRows.length; i++) {
+            const { element, date, cl, num } = dataRows[i];
+
+            // 如果材料变化，插入空行
+            if (lastCl !== null && cl !== lastCl) {
+                const spacer = document.createElement('tr');
+                spacer.innerHTML = `<td colspan="3" style="height: 12px; background-color: #45ad20;"></td>`;
+                tbody.appendChild(spacer);
             }
+            lastCl = cl;
 
-            row.style.backgroundColor = colorMap[cl] + "20"; // 半透明颜色
+            // // 分配颜色
+            // if (!colorMap[cl]) {
+            //     colorMap[cl] = colorPalette[colorIndex % colorPalette.length];
+            //     colorIndex++;
+            // }
+            // element.style.backgroundColor = colorMap[cl] + '20'; // 半透明
 
+            // 显示数量变化
             if (materialMap[cl] !== undefined) {
                 const prev = materialMap[cl];
                 const diff = num - prev.num;
                 if (diff !== 0) {
-                    const sign = diff > 0 ? "+" : "";
-                    row.cells[2].textContent += ` (${sign}${diff})`;
+                    const sign = diff > 0 ? '+' : '';
+                    element.cells[2].textContent = num + ` (${sign}${diff})`;
                 }
             }
 
             materialMap[cl] = { date, num };
+
+            tbody.appendChild(element);
         }
     };
 </script>

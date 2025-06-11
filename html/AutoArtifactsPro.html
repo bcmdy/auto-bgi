@@ -33,7 +33,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 600px; /* 设个中等宽度，适合单列显示 */
             margin: 0 auto;
             padding: 20px;
         }
@@ -59,21 +59,29 @@
             box-shadow: var(--glow);
         }
 
+        /* 按钮组容器，垂直排列，居中 */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        /* 按钮样式 */
         .home-btn {
-            display: inline-block;
-            margin: 0 auto 30px;
-            padding: 10px 24px;
+            padding: 12px 28px;
             background: transparent;
             border: 2px solid var(--secondary-color);
-            border-radius: 6px;
+            border-radius: 8px;
             color: var(--secondary-color);
-            font-size: 1rem;
+            font-size: 1.1rem;
             cursor: pointer;
             text-decoration: none;
             text-align: center;
+            width: 100%;
+            max-width: 320px;
             transition: all 0.3s ease;
-            display: block;
-            width: fit-content;
         }
 
         .home-btn:hover {
@@ -82,9 +90,10 @@
             box-shadow: var(--glow);
         }
 
+        /* 卡片容器 单列 */
         .cards-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
 
@@ -109,13 +118,22 @@
             color: var(--font-color);
         }
 
-        /* 响应式优化 */
+        /* 响应式调整 */
         @media (max-width: 768px) {
             .main-title {
                 font-size: 2rem;
             }
+            .home-btn {
+                font-size: 1rem;
+                max-width: 100%;
+                padding: 10px 20px;
+            }
             .card-content {
                 font-size: 1rem;
+            }
+            .container {
+                max-width: 90vw;
+                padding: 15px;
             }
         }
 
@@ -123,12 +141,10 @@
             .main-title {
                 font-size: 1.6rem;
             }
-
             .home-btn {
+                font-size: 0.95rem;
                 padding: 8px 16px;
-                font-size: 0.9rem;
             }
-
             .card-content {
                 font-size: 0.95rem;
             }
@@ -139,7 +155,7 @@
 <div class="container">
     <h1 class="main-title">{{ .title }}</h1>
 
-    <div style="display: flex; gap: 10px;">
+    <div class="button-group">
         <button onclick="window.location.href='/'" class="home-btn">返回主页</button>
         <button onclick="window.location.href='/getAutoArtifactsPro2'" class="home-btn">转为折线图</button>
     </div>

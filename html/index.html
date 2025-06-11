@@ -1,27 +1,43 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>执行状态</title>
     <style>
-        body {
+        html, body {
             margin: 0;
-            padding: 20px;
-            background-color: #0d0d0d;
+            padding: 0;
+            height: 100%;
             font-family: 'Courier New', Courier, monospace;
+            background-color: #0d0d0d;
             color: #00ff00;
-            background-image: radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 0);
-            background-size: 20px 20px;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        body {
+            position: relative;
+            z-index: 1;
+        }
+
+        canvas#matrixRainCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
         }
 
         .container {
             position: relative;
-            z-index: 2;
+            z-index: 1;
+            width: 90%;
             max-width: 700px;
-            margin: auto;
-            padding: 30px;
+            margin: 60px auto;
+            padding: 20px;
             border: 2px solid #00ff00;
             border-radius: 12px;
             background-color: rgba(0, 0, 0, 0.7);
@@ -31,27 +47,26 @@
         h1 {
             font-size: 1em;
             margin-bottom: 10px;
-            color: #00ff00;
             text-shadow: 0 0 5px #00ff00;
+            word-break: break-word;
         }
 
-        .blinking {
-            display: inline-block;
-            animation: blink 1s step-start infinite;
+        h1:last-child::after {
+            content: '▊';
+            animation: blink 1s infinite;
         }
 
         @keyframes blink {
+            0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
 
         button {
-            display: block;
             width: 100%;
-            margin: 15px 0;
+            margin: 12px 0;
             padding: 14px;
-            font-size: 16px;
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #000;
+            font-size: 15px;
+            background-color: black;
             color: #00ff00;
             border: 2px solid #00ff00;
             border-radius: 8px;
@@ -66,96 +81,126 @@
             box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
         }
 
-        #matrixCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 0;
-            width: 100vw;
-            height: 100vh;
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 0.9em;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 12px;
+            }
         }
     </style>
 </head>
 <body>
-<canvas id="matrixCanvas"></canvas>
+
+<canvas id="matrixRainCanvas"></canvas>
+
+<!--<audio src="https://vod.ruotongmusic.com/sv/33203264-179ccc83f10/33203264-179ccc83f10.wav" autoplay loop style="display:none"></audio>-->
+
 <div class="container">
-    <h1>> 当前执行配置组: {{.group}}</h1>
-    <h1>> 当前执行脚本: {{.line}}</h1>
-    <h1>> 地图追踪进度：{{.progress}}</h1>
-    <h1>> 软件运行状态: {{.running}}</h1>
-    <h1>> JS: {{.jsProgress}} <span class="blinking">_</span></h1>
+    <h1>当前执行配置组: {{.group}}</h1>
+    <h1>当前执行脚本: {{.line}}</h1>
+    <h1>地图追踪进度：{{.progress}}</h1>
+    <h1>软件运行状态: {{.running}}</h1>
+    <h1>JS: {{.jsProgress}}</h1>
+
     <button onclick="oneLongBtn()">一条龙启动</button>
     <button onclick="closeBgiBtn()">关闭BGI</button>
     <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>
-    <button onclick="todayHarvestBtn()">今日收获</button>
+    <button onclick="todayHarvestBtn()">查看收获前10</button>
     <button onclick="BagStatisticsBtn()">背包统计</button>
     <button onclick="listGroupsBtn()">调度器</button>
     <button onclick="realTimeLogBtn()">实时日志</button>
     <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
 </div>
 
-<audio id="bgSound" loop autoplay>
-    <source src="https://cdn.jsdelivr.net/gh/naptha/talkify-tts/demo/static/electro-hum.mp3" type="audio/mpeg">
-</audio>
-
 <script>
-    // matrix rain effect
-    const canvas = document.getElementById("matrixCanvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const chars = "01";
-    const fontSize = 16;
-    const columns = canvas.width / fontSize;
-    const drops = new Array(Math.floor(columns)).fill(1);
-
-    function draw() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#0f0";
-        ctx.font = fontSize + "px Courier New";
-
-        for (let i = 0; i < drops.length; i++) {
-            const text = chars.charAt(Math.floor(Math.random() * chars.length));
-            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                drops[i] = 0;
-            }
-            drops[i]++;
-        }
-    }
-
-    setInterval(draw, 33);
-
-    // 键盘音效（可选添加）
-    document.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            new Audio('https://cdn.jsdelivr.net/gh/kenwheeler/slick@1.8.1/sounds/click.mp3').play();
-        });
-    });
-
-    // 按钮功能
-    function getAutoArtifactsProBtn() { window.location.href = '/getAutoArtifactsPro'; }
     function oneLongBtn() {
         fetch('/oneLong', { method: 'POST' })
             .then(res => alert(res.ok ? "启动成功！" : "启动失败！"))
             .catch(err => alert("请求出错：" + err));
     }
+
     function closeBgiBtn() {
         fetch('/closeBgi', { method: 'POST' })
             .then(res => alert(res.ok ? "关闭成功！" : "关闭失败！"))
             .catch(err => alert("请求出错：" + err));
     }
+
     function closeYuanShenBtn() {
         fetch('/closeYuanShen', { method: 'POST' })
             .then(res => alert(res.ok ? "关闭成功！" : "关闭失败！"))
             .catch(err => alert("请求出错：" + err));
     }
-    function todayHarvestBtn() { window.location.href = '/logAnalysis'; }
-    function BagStatisticsBtn() { window.location.href = '/BagStatistics'; }
-    function listGroupsBtn() { window.location.href = '/listGroups'; }
-    function realTimeLogBtn() { window.location.href = '/log'; }
+
+    function todayHarvestBtn() {
+        window.location.href = '/logAnalysis';
+    }
+
+    function BagStatisticsBtn() {
+        window.location.href = '/BagStatistics';
+    }
+
+    function listGroupsBtn() {
+        window.location.href = '/listGroups';
+    }
+
+    function realTimeLogBtn() {
+        window.location.href = '/log';
+    }
+
+    function getAutoArtifactsProBtn() {
+        window.location.href = '/getAutoArtifactsPro';
+    }
 </script>
+
+<script>
+    // Matrix Rain 特效
+    const canvas = document.getElementById("matrixRainCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const katakana = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ";
+    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const nums = "0123456789";
+    const alphabet = katakana + latin + nums;
+
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+
+    const drops = Array.from({ length: columns }).fill(1);
+
+    function draw() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#00ff00";
+        ctx.font = `${fontSize}px monospace`;
+
+        drops.forEach((y, x) => {
+            const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+            ctx.fillText(text, x * fontSize, y * fontSize);
+
+            if (y * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[x] = 0;
+            }
+
+            drops[x]++;
+        });
+    }
+
+    setInterval(draw, 33);
+
+    // 窗口尺寸变化时自适应
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+</script>
+
 </body>
 </html>

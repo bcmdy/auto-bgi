@@ -612,7 +612,7 @@ func LogAnalysis() map[string]int {
 
 	// 取出前 5 个元素，考虑长度不足 5 的情况
 	mapData := make(map[string]int)
-	for i := 0; i < 6 && i < len(datas); i++ {
+	for i := 0; i < 10 && i < len(datas); i++ {
 
 		mapData[datas[i].Key] = datas[i].Value
 	}
