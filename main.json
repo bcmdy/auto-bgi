@@ -12,5 +12,6 @@
  "longY": 455,
  "executeX": 759,
  "executeY": 294,
- "post": ":8082"
+ "post": ":8082",
+ "backupsJs": ["JsScript\\AutoArtifactsPro\\record.txt"]
 }

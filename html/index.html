@@ -118,9 +118,15 @@
     <button onclick="listGroupsBtn()">调度器</button>
     <button onclick="realTimeLogBtn()">实时日志</button>
     <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
+    <button onclick="getAutoUpdateJsAndPathingBtn()">更新脚本和地图追踪</button>
 </div>
 
 <script>
+    function getAutoUpdateJsAndPathingBtn() {
+        fetch('/autoUpdateJsAndPathing', { method: 'POST' })
+            .then(res => alert(res.ok ? "脚本和地图已经更新成功！" : "脚本和地图已经更新失败！"))
+            .catch(err => alert("请求出错：" + err));
+    }
     function oneLongBtn() {
         fetch('/oneLong', { method: 'POST' })
             .then(res => alert(res.ok ? "启动成功！" : "启动失败！"))

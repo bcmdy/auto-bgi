@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"archive/zip"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"bufio"
@@ -10,7 +11,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/otiai10/copy"
+	"github.com/pterm/pterm"
 	"github.com/robfig/cron/v3"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -133,11 +137,13 @@ func CheckBetterGIStatus() {
 
 	// 定时任务,cron表达式
 	spec := "*/30 * * * * *"
-
+	area, _ := pterm.DefaultArea.WithCenter().Start()
 	task := func() {
+
 		// 检查进程
 		if IsWechatRunning() {
-			fmt.Print("\rBetterGI 正在运行", time.Now().Format("2006-01-02 15:04:05"))
+			//fmt.Print("\rBetterGI 正在运行", time.Now().Format("2006-01-02 15:04:05"))
+			area.Update(pterm.Sprintf("BetterGI 正在运行: %s", pterm.LightMagenta(time.Now().Format("2006-01-02 15:04:05"))))
 			notified = false // 清除通知状态
 		} else {
 			if !notified {
@@ -145,10 +151,14 @@ func CheckBetterGIStatus() {
 				control.CloseYuanShen()
 				notified = true
 			} else {
-				fmt.Print("\rBetterGI 已关闭，已通知过", time.Now().Format("2006-01-02 15:04:05"))
+				//fmt.Print("\rBetterGI 已关闭，已通知过", time.Now().Format("2006-01-02 15:04:05"))
+				area.Update(pterm.Sprintf("BetterGI 已关闭，已通知过: %s", pterm.LightMagenta(time.Now().Format("2006-01-02 15:04:05"))))
+
 			}
 		}
+
 	}
+	area.Stop()
 	// 添加定时任务
 	cronTab.AddFunc(spec, task)
 	// 启动定时器
@@ -638,4 +648,147 @@ func FindLogFiles(dirPath string) ([]string, error) {
 	}
 
 	return filenames, nil
+}
+
+func UpdateJsAndPathing() error {
+	pterm.DefaultBasicText.Println("开始更新脚本和地图仓库")
+	url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
+	zipFile := "main.zip"
+	targetPrefix := "repo/"
+	outputDir := "repo"
+	// 下载 zip 文件
+	if err := downloadFile(zipFile, url); err != nil {
+		fmt.Println("下载失败:", err)
+		return err
+	}
+
+	pterm.DefaultBasicText.Println("下载完成")
+	// 解压指定目录
+	if err := unzipRepo(zipFile, outputDir, targetPrefix); err != nil {
+		fmt.Println("解压失败:", err)
+		return err
+	}
+	pterm.DefaultBasicText.Println("已提取 repo 文件夹")
+
+	_ = os.Remove(zipFile)
+
+	pterm.DefaultBasicText.Println("已删除压缩包")
+	pterm.DefaultBasicText.Println("开始备份特定脚本文件")
+	for _, path := range Config.BackupsJs {
+
+		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
+
+		err := copy.Copy(file, "./backups/"+path)
+		if err != nil {
+			return err
+		}
+		fmt.Println("已复制文件:", path)
+	}
+	pterm.DefaultBasicText.Println("开始更新脚本文件")
+	err := copy.Copy("./repo/js", Config.BetterGIAddress+"\\User\\JsScript")
+	if err != nil {
+		return err
+	}
+	pterm.DefaultBasicText.Println("已更新脚本文件")
+	pterm.DefaultBasicText.Println("开始更新地图追踪文件")
+	err2 := os.RemoveAll(Config.BetterGIAddress + "\\User\\AutoPathing")
+	if err2 != nil {
+		return err2
+	}
+	err3 := copy.Copy("./repo/pathing", Config.BetterGIAddress+"\\User\\AutoPathing")
+	if err3 != nil {
+		return err3
+	}
+	pterm.DefaultBasicText.Println("更新地图追踪文件成功")
+	pterm.DefaultBasicText.Println("开始还原备份文件配置文件")
+
+	for _, path := range Config.BackupsJs {
+
+		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
+
+		err := copy.Copy("./backups/"+path, file)
+		if err != nil {
+			return err
+		}
+		fmt.Println("已还原文件:", file)
+	}
+	pterm.DefaultBasicText.Println("还原备份文件配置文件成功")
+	os.RemoveAll("./repo")
+	pterm.DefaultBasicText.Println("脚本和地图已经更新成功")
+	return nil
+}
+
+// 解压 zip 中 repo 文件夹的内容
+func unzipRepo(zipPath, outputDir, targetPrefix string) error {
+	r, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	// 获取 ZIP 包的根路径前缀（如 "bettergi-scripts-list-main/"）
+	rootPrefix := ""
+	if len(r.File) > 0 {
+		parts := strings.SplitN(r.File[0].Name, "/", 2)
+		if len(parts) > 1 {
+			rootPrefix = parts[0] + "/"
+		}
+	}
+
+	fullTarget := rootPrefix + targetPrefix
+
+	for _, f := range r.File {
+		if !strings.HasPrefix(f.Name, fullTarget) {
+			continue // 跳过不在 repo/ 下的内容
+		}
+
+		relPath := strings.TrimPrefix(f.Name, fullTarget)
+		fpath := filepath.Join(outputDir, relPath)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		outFile, err := os.Create(fpath)
+		if err != nil {
+			return err
+		}
+		defer outFile.Close()
+
+		_, err = io.Copy(outFile, rc)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// 下载文件
+func downloadFile(filename, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }

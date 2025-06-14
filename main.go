@@ -696,6 +696,16 @@ func main() {
 		})
 	})
 
+	//自动更新仓库脚本仓库和地图追踪
+	ginServer.POST("/autoUpdateJsAndPathing", func(context *gin.Context) {
+		err := bgiStatus.UpdateJsAndPathing()
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "更新失败"})
+			return
+		}
+		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "更新成功"})
+	})
+
 	//一条龙
 	if Config.IsStartTimeLong {
 		go task.OneLong()

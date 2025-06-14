@@ -8,20 +8,21 @@ import (
 )
 
 type config struct {
-	OneLongHour     int    `json:"OneLongHour"`
-	OneLongMinute   int    `json:"OneLongMinute"`
-	BetterGIAddress string `json:"BetterGIAddress"`
-	WebhookURL      string `json:"webhookURL"`
-	Content         string `json:"content"`
-	ConfigName      string `json:"ConfigName"`
-	BagStatistics   string `json:"BagStatistics"`
-	LongX           int    `json:"longX"`
-	LongY           int    `json:"longY"`
-	ExecuteX        int    `json:"executeX"`
-	ExecuteY        int    `json:"executeY"`
-	Post            string `json:"post"`
-	IsStartTimeLong bool   `json:"isStartTimeLong"`
-	IsMysSignIn     bool   `json:"isMysSignIn"`
+	OneLongHour     int      `json:"OneLongHour"`
+	OneLongMinute   int      `json:"OneLongMinute"`
+	BetterGIAddress string   `json:"BetterGIAddress"`
+	WebhookURL      string   `json:"webhookURL"`
+	Content         string   `json:"content"`
+	ConfigName      string   `json:"ConfigName"`
+	BagStatistics   string   `json:"BagStatistics"`
+	LongX           int      `json:"longX"`
+	LongY           int      `json:"longY"`
+	ExecuteX        int      `json:"executeX"`
+	ExecuteY        int      `json:"executeY"`
+	Post            string   `json:"post"`
+	IsStartTimeLong bool     `json:"isStartTimeLong"`
+	IsMysSignIn     bool     `json:"isMysSignIn"`
+	BackupsJs       []string `json:"backupsJs"`
 }
 
 var Cfg config
