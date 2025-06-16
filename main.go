@@ -700,10 +700,20 @@ func main() {
 	ginServer.POST("/autoUpdateJsAndPathing", func(context *gin.Context) {
 		err := bgiStatus.UpdateJsAndPathing()
 		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "更新失败"})
+			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
 			return
 		}
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "更新成功"})
+	})
+
+	//备份文件
+	ginServer.POST("/backup", func(context *gin.Context) {
+		err := bgiStatus.Backup()
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
+			return
+		}
+		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "备份成功"})
 	})
 
 	//一条龙

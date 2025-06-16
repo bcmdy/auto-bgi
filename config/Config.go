@@ -22,7 +22,7 @@ type config struct {
 	Post            string   `json:"post"`
 	IsStartTimeLong bool     `json:"isStartTimeLong"`
 	IsMysSignIn     bool     `json:"isMysSignIn"`
-	BackupsJs       []string `json:"backupsJs"`
+	Backups         []string `json:"backups"`
 }
 
 var Cfg config

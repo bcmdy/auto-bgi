@@ -3,6 +3,7 @@ package control
 import (
 	"fmt"
 	"github.com/go-vgo/robotgo"
+	"github.com/pterm/pterm"
 	"github.com/vcaesar/imgo"
 	"net/http"
 	"os/exec"
@@ -43,10 +44,11 @@ func CloseSoftware() {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("执行命令出错: %v\n", err)
+		//fmt.Printf("执行命令出错: %v\n", err)
+		pterm.DefaultBasicText.Println("执行命令出错:", err)
 	}
-
-	fmt.Printf("命令输出:\n%s\n", string(output))
+	pterm.DefaultBasicText.Println("命令输出:", string(output))
+	//fmt.Printf("命令输出:\n%s\n", string(output))
 
 }
 
@@ -59,10 +61,12 @@ func CloseYuanShen() {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("执行命令出错: %v\n", err)
+		pterm.DefaultBasicText.Println("执行命令出错:", err)
+		//fmt.Printf("执行命令出错: %v\n", err)
 	}
 
-	fmt.Printf("命令输出:\n%s\n", string(output))
+	//fmt.Printf("命令输出:\n%s\n", string(output))
+	pterm.DefaultBasicText.Println("命令输出:", string(output))
 
 	time.Sleep(3000 * time.Millisecond)
 
@@ -73,10 +77,12 @@ func CloseYuanShen() {
 	output2, err2 := cmd2.CombinedOutput()
 
 	if err2 != nil {
-		fmt.Printf("执行命令出错: %v\n", err2)
+		//fmt.Printf("执行命令出错: %v\n", err2)
+		pterm.DefaultBasicText.Println("执行命令出错:", err2)
 	}
 
-	fmt.Printf("命令输出:\n%s\n", string(output2))
+	//fmt.Printf("命令输出:\n%s\n", string(output2))
+	pterm.DefaultBasicText.Println("命令输出:", string(output2))
 
 }
 

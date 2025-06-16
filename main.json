@@ -13,5 +13,5 @@
  "executeX": 759,
  "executeY": 294,
  "post": ":8082",
- "backupsJs": ["JsScript\\AutoArtifactsPro\\record.txt"]
+ "backups": ["JsScript\\AutoArtifactsPro\\record.txt","AutoPathing\\矿物\\萃凝晶"]
 }

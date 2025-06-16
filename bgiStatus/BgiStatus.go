@@ -652,6 +652,14 @@ func FindLogFiles(dirPath string) ([]string, error) {
 
 func UpdateJsAndPathing() error {
 	pterm.DefaultBasicText.Println("开始更新脚本和地图仓库")
+
+	pterm.DefaultBasicText.Println("先备份user文件夹")
+	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
+	if err4 != nil {
+		return fmt.Errorf("备份失败")
+	}
+	pterm.DefaultBasicText.Println("备份成功")
+
 	url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
 	zipFile := "main.zip"
 	targetPrefix := "repo/"
@@ -673,13 +681,14 @@ func UpdateJsAndPathing() error {
 	_ = os.Remove(zipFile)
 
 	pterm.DefaultBasicText.Println("已删除压缩包")
-	pterm.DefaultBasicText.Println("开始备份特定脚本文件")
-	for _, path := range Config.BackupsJs {
+	pterm.DefaultBasicText.Println("开始备份指定文件")
+	for _, path := range Config.Backups {
 
 		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
 
 		err := copy.Copy(file, "./backups/"+path)
 		if err != nil {
+			fmt.Println("备份文件失败", err)
 			return err
 		}
 		fmt.Println("已复制文件:", path)
@@ -702,7 +711,7 @@ func UpdateJsAndPathing() error {
 	pterm.DefaultBasicText.Println("更新地图追踪文件成功")
 	pterm.DefaultBasicText.Println("开始还原备份文件配置文件")
 
-	for _, path := range Config.BackupsJs {
+	for _, path := range Config.Backups {
 
 		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
 
@@ -710,7 +719,7 @@ func UpdateJsAndPathing() error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("已还原文件:", file)
+		pterm.DefaultBasicText.Println("已还原文件", file)
 	}
 	pterm.DefaultBasicText.Println("还原备份文件配置文件成功")
 	os.RemoveAll("./repo")
@@ -726,7 +735,6 @@ func unzipRepo(zipPath, outputDir, targetPrefix string) error {
 	}
 	defer r.Close()
 
-	// 获取 ZIP 包的根路径前缀（如 "bettergi-scripts-list-main/"）
 	rootPrefix := ""
 	if len(r.File) > 0 {
 		parts := strings.SplitN(r.File[0].Name, "/", 2)
@@ -791,4 +799,92 @@ func downloadFile(filename, url string) error {
 
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+func zipDir(sourceDir, zipFilePath string) error {
+	fmt.Println(sourceDir)
+	fmt.Println(zipFilePath)
+
+	// 创建一个新的 zip 文件
+	zipFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	// 创建一个新的 zip 写入器
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	// 遍历文件夹中的所有文件和子文件夹
+	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 使用 filepath.Rel 获取相对路径
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return err
+		}
+
+		// 获取文件在压缩包中的相对路径
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		// 如果是目录，则不需要写入内容，只需创建对应的目录条目
+		if info.IsDir() {
+			header.Name = relPath + "/"
+			header.Method = zip.Store
+			if _, err := zipWriter.CreateHeader(header); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		// 文件的相对路径
+		header.Name = relPath
+
+		// 设置压缩方法
+		header.Method = zip.Deflate
+
+		// 创建新的文件写入器
+		writer, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		// 打开文件进行读取
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		// 将文件内容复制到压缩包中
+		_, err = io.Copy(writer, file)
+		return err
+	})
+
+	return err
+}
+
+func Backup() error {
+	for _, path := range Config.Backups {
+
+		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
+
+		copy.Copy(file, "./backups/"+path)
+
+		fmt.Println("已备份文件:", path)
+	}
+	pterm.DefaultBasicText.Println("备份user文件夹")
+	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
+	if err4 != nil {
+		return fmt.Errorf("备份失败")
+	}
+	pterm.DefaultBasicText.Println("备份成功")
+	return nil
 }
