@@ -1,6 +1,7 @@
 package control
 
 import (
+	"auto-bgi/autoLog"
 	"fmt"
 	"github.com/go-vgo/robotgo"
 	"github.com/pterm/pterm"
@@ -58,15 +59,13 @@ func CloseYuanShen() {
 	cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
 
 	// 执行命令并获取输出
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 
 	if err != nil {
-		pterm.DefaultBasicText.Println("执行命令出错:", err)
-		//fmt.Printf("执行命令出错: %v\n", err)
+		autoLog.Sugar.Infof("原神已关闭")
+	} else {
+		autoLog.Sugar.Infof("原神关闭成功")
 	}
-
-	//fmt.Printf("命令输出:\n%s\n", string(output))
-	pterm.DefaultBasicText.Println("命令输出:", string(output))
 
 	time.Sleep(3000 * time.Millisecond)
 
@@ -74,15 +73,13 @@ func CloseYuanShen() {
 	cmd2 := exec.Command("taskkill", "/F", "/IM", "HYP.exe")
 
 	// 执行命令并获取输出
-	output2, err2 := cmd2.CombinedOutput()
+	_, err2 := cmd2.CombinedOutput()
 
 	if err2 != nil {
-		//fmt.Printf("执行命令出错: %v\n", err2)
-		pterm.DefaultBasicText.Println("执行命令出错:", err2)
+		autoLog.Sugar.Infof("原神启动器已关闭")
+	} else {
+		autoLog.Sugar.Infof("原神启动器关闭成功")
 	}
-
-	//fmt.Printf("命令输出:\n%s\n", string(output2))
-	pterm.DefaultBasicText.Println("命令输出:", string(output2))
 
 }
 
@@ -141,15 +138,17 @@ func SwitchingScreens(name string) {
 
 	hwnd, err := findWindow(nil, windowTitle)
 	if err != nil || hwnd == 0 {
-		fmt.Println("找不到指定窗口:", err)
+
+		autoLog.Sugar.Infof("找不到指定窗口:", err)
 		return
 	}
 
 	success := setForegroundWindow(hwnd)
 	if success {
-		fmt.Println("成功切换到窗口:", name)
+
+		autoLog.Sugar.Infof("成功切换到窗口: %s", name)
 	} else {
-		fmt.Println("切换窗口失败")
+		autoLog.Sugar.Errorf("切换窗口失败")
 	}
 }
 
@@ -182,17 +181,17 @@ func getWindowText(hwnd uintptr) string {
 func GetWindows() string {
 	hwnd := getForegroundWindow()
 	if hwnd == 0 {
-		fmt.Println("无法获取活动窗口句柄")
+		autoLog.Sugar.Infof("无法获取活动窗口句柄")
 		return ""
 	}
 
 	title := getWindowText(hwnd)
 	if title == "" {
-		fmt.Println("无法获取窗口标题或窗口标题为空")
+		autoLog.Sugar.Infof("无法获取窗口标题或窗口标题为空")
 		return ""
 	}
 
-	fmt.Println("当前活动窗口标题:", title)
+	autoLog.Sugar.Infof("当前活动窗口标题: %s", title)
 	return title
 }
 
@@ -202,14 +201,15 @@ func HttpGet(url string) error {
 	// 发送 GET 请求
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println("发送请求失败:", err)
+		autoLog.Sugar.Infof("发送请求失败: %v", err)
 		return err
 	}
 	defer resp.Body.Close() // 延迟关闭响应体
 	// 检查响应状态码
-	fmt.Println("状态码:", resp.StatusCode)
+	autoLog.Sugar.Infof("状态码: %d", resp.StatusCode)
 	if resp.StatusCode == 200 {
 		return nil
 	}
+	autoLog.Sugar.Errorf("状态码: %d", resp.StatusCode)
 	return fmt.Errorf("状态码: %d", resp.StatusCode)
 }

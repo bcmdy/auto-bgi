@@ -10,8 +10,8 @@
  "BagStatistics": "晶核,大英雄的经验,水晶块,魔晶块,萃凝晶,苍晶螺",
  "longX": 613,
  "longY": 455,
- "executeX": 759,
- "executeY": 294,
+ "executeX": 858,
+ "executeY": 298,
  "post": ":8082",
  "backups": ["JsScript\\AutoArtifactsPro\\record.txt","AutoPathing\\矿物\\萃凝晶"]
 }

@@ -1,16 +1,16 @@
 package task
 
 import (
+	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"encoding/json"
 	"fmt"
-	"github.com/go-vgo/robotgo"
 	"github.com/iancoleman/orderedmap"
 	"github.com/robfig/cron/v3"
 	"io/fs"
-	"log"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,14 +33,121 @@ func contains(slice []string, num int) bool {
 	return false
 }
 
+func calculateExecutionDay(boundaryTime int, cycle int) int {
+	// 获取当前日期和时间
+	now := time.Now()
+	// 获取当前日期的年、月、日
+	year, month, day := now.Date()
+	// 计算从分界时间开始的当天时间
+	boundaryDateTime := time.Date(year, month, day, boundaryTime, 0, 0, 0, time.Local)
+	// 如果当前时间小于分界时间，则算前一天的
+	if now.Before(boundaryDateTime) {
+		// 计算前一天的日期
+		previousDay := now.AddDate(0, 0, -1)
+		year, month, day = previousDay.Date()
+	}
+	// 获取分界日期对象（当天或前一天）
+	boundaryDate := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
+	// 计算从分界时间开始的天数（基于某个起始日期，这里假设起始日期为2025-01-01）
+	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.Local)
+	deltaDays := int(boundaryDate.Sub(startDate).Hours() / 24)
+	// 计算执行序号
+	executionSequence := (deltaDays % cycle) + 1
+	return executionSequence
+}
+
+type TaskCycleConfig struct {
+	Name         string
+	Cycle        float64
+	BoundaryTime float64
+	Enable       bool
+	Index        float64
+	Mark         string
+}
+
+// 计算配置组今日是否执行
+func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
+	//读取目录下所有的json文件
+	dir := Config.BetterGIAddress + "\\User\\ScriptGroup"
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return []TaskCycleConfig{}, err
+	}
+	var TaskCycleConfigs = []TaskCycleConfig{}
+
+	// 遍历目录中的所有文件
+	for _, file := range files {
+		// 检查文件是否为 JSON 文件
+		if filepath.Ext(file.Name()) == ".json" {
+			// 构建完整的文件路径
+			filePath := filepath.Join(dir, file.Name())
+			//fmt.Println("正在读取文件:", filePath)
+			// 打开 JSON 文件
+			configFile, err2 := os.Open(filePath) // 假设 JSON 文件名为 config.json
+			if err2 != nil {
+				return []TaskCycleConfig{}, err2
+			}
+			defer configFile.Close()
+			// 读取文件内容
+			byteValue, err3 := ioutil.ReadAll(configFile)
+			if err3 != nil {
+				fmt.Println("Failed to read JSON file:", err)
+				return []TaskCycleConfig{}, err3
+			}
+			// 定义一个 map 来解析 JSON 数据
+			var result map[string]interface{}
+
+			// 解析 JSON 数据到 map
+			err = json.Unmarshal(byteValue, &result)
+			if err != nil {
+				fmt.Println("Failed to unmarshal JSON data:", err)
+				return []TaskCycleConfig{}, err
+			}
+			// 获取 taskCycleConfig 内容
+			// 需要逐步深入嵌套的 map
+			pathingConfig, ok := result["config"].(map[string]interface{})["pathingConfig"].(map[string]interface{})
+			if !ok {
+				fmt.Println("Failed to get pathingConfig")
+				return []TaskCycleConfig{}, fmt.Errorf("Failed to get pathingConfig")
+			}
+			taskCycleConfig, ok := pathingConfig["taskCycleConfig"].(map[string]interface{})
+			if !ok {
+				fmt.Println("Failed to get taskCycleConfig")
+				return []TaskCycleConfig{}, fmt.Errorf("Failed to get taskCycleConfig")
+			}
+
+			var data = TaskCycleConfig{}
+			data.Name = file.Name()
+			data.Enable = taskCycleConfig["enable"].(bool)
+			data.BoundaryTime = taskCycleConfig["boundaryTime"].(float64)
+			data.Cycle = taskCycleConfig["cycle"].(float64)
+			data.Index = taskCycleConfig["index"].(float64)
+
+			if data.Enable == true {
+				data.Mark = "今日执行"
+			} else {
+				data.Mark = "今日不执行"
+				day := calculateExecutionDay(int(data.BoundaryTime), int(data.Cycle))
+				if day == int(data.Index) {
+					data.Mark = "今日执行"
+				} else {
+					data.Mark = "今日不执行"
+				}
+			}
+			TaskCycleConfigs = append(TaskCycleConfigs, data)
+		}
+	}
+
+	return TaskCycleConfigs, nil
+}
+
 // 修改TaskEnabledList
 func ChangeTaskEnabledList() error {
 
 	now := time.Now()
 	weekdayNum := int(now.Weekday())
 
-	fmt.Printf("今天是: 星期%d", weekdayNum)
-	fmt.Println("====")
+	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
 
 	//自定义配置路径
 	filename := Config.BetterGIAddress + "\\User\\OneDragon\\" + Config.ConfigName + ".json"
@@ -48,19 +155,21 @@ func ChangeTaskEnabledList() error {
 	// 1. 读取 JSON 文件
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("读取文件失败: %v", err)
+		autoLog.Sugar.Errorf("读取文件失败: %v", err)
 		return err
 	}
 
 	//2. 解析为 orderedData
 	jsonData := orderedmap.New()
 	if err := json.Unmarshal(data, &jsonData); err != nil {
-		log.Fatalf("解析 JSON 失败: %v", err)
+
+		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
 		return err
 	}
 
 	TaskEnabled, b := jsonData.Get("TaskEnabledList")
 	if !b {
+		autoLog.Sugar.Errorf("TaskEnabledList 字段不存在")
 		return fmt.Errorf("TaskEnabledList 字段不存在")
 	}
 
@@ -83,15 +192,15 @@ func ChangeTaskEnabledList() error {
 			builder.WriteString("\n")
 			continue
 		}
-		fmt.Println("匹配的数字:", numbers)
+		autoLog.Sugar.Infof("匹配的数字:%v", numbers)
 		if contains(numbers, weekdayNum) {
-			fmt.Println("配置组:[" + s + "]已到执行时间")
+			autoLog.Sugar.Infof("配置组:[" + s + "]已到执行时间")
 			aa.Set(s, true)
 			builder.WriteString(fmt.Sprintf("%s：%v", s, true))
 			builder.WriteString("\n")
 			continue
 		} else {
-			fmt.Println("配置组:[" + s + "]还未到执行时间")
+			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
 			aa.Set(s, false)
 			builder.WriteString(fmt.Sprintf("%s：%v", s, false))
 			builder.WriteString("\n")
@@ -108,7 +217,8 @@ func ChangeTaskEnabledList() error {
 
 	// 6. 写回文件
 	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
-		//log.Fatalf("写入文件失败: %v", err)
+
+		autoLog.Sugar.Errorf("写入文件失败: %v", err)
 		return fmt.Errorf("自定义配置写入文件失败")
 
 	}
@@ -129,11 +239,11 @@ func OneLongTask() {
 	//修改我的配置
 	err := ChangeTaskEnabledList()
 	if err != nil {
-		fmt.Println("修改配置失败")
+		autoLog.Sugar.Errorf("修改配置失败: %v", err)
 	}
 
 	time.Sleep(4000 * time.Millisecond)
-	fmt.Println("修改配置成功")
+	autoLog.Sugar.Info("修改配置成功")
 
 	control.OpenSoftware(Config.BetterGIAddress + "/BetterGI.exe")
 	// 等待一小会儿
@@ -145,7 +255,7 @@ func OneLongTask() {
 	//fmt.Println("等待一小会儿（等待原神启动）")
 	//time.Sleep(60 * time.Second)
 
-	fmt.Println("切换屏幕")
+	autoLog.Sugar.Info("切换屏幕")
 	control.SwitchingScreens("更好的原神")
 
 	time.Sleep(1000 * time.Millisecond)
@@ -157,12 +267,12 @@ func OneLongTask() {
 
 	time.Sleep(3000 * time.Millisecond)
 
-	fmt.Println("点击一条龙")
+	autoLog.Sugar.Info("点击一条龙")
 	control.MouseClick(Config.LongX, Config.LongY, "left", false)
 
 	time.Sleep(3000 * time.Millisecond)
 
-	fmt.Println("执行")
+	autoLog.Sugar.Info("点击执行")
 	control.MouseClick(Config.ExecuteX, Config.ExecuteY, "left", false)
 }
 
@@ -175,7 +285,7 @@ func OneLong() {
 
 	// 定义定时器调用的任务函数
 	task := func() {
-		fmt.Print("一条龙服务启动", time.Now().Format("2006-01-02 15:04:05"))
+		autoLog.Sugar.Infof("一条龙服务启动 %v", time.Now().Format("2006-01-02 15:04:05"))
 
 		OneLongTask()
 
@@ -183,11 +293,11 @@ func OneLong() {
 
 		schedule, err := config.Parser.Parse(spec)
 		if err != nil {
-			fmt.Println("解析失败:", err)
+			autoLog.Sugar.Error("解析失败:", err)
 			return
 		}
 
-		fmt.Print("一条龙服务启动完毕", "下次执行时间:", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
+		autoLog.Sugar.Infof("一条龙服务启动完毕 %v", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
 	}
 
 	// 添加定时任务
@@ -197,52 +307,6 @@ func OneLong() {
 	// 阻塞主线程停止
 	select {}
 
-}
-
-func ScriptGroupTask() {
-	fmt.Print("调度器服务启动", time.Now().Format("2006-01-02 15:04:05"))
-
-	time.Sleep(2 * time.Second)
-
-	robotgo.KeyDown("alt") // 按下 Alt 键
-	robotgo.KeyTap("tab")  // 按一下 Tab 键
-	robotgo.KeyUp("alt")   // 释放 Alt 键
-
-	time.Sleep(1000 * time.Millisecond)
-
-	control.SwitchingScreens("更好的原神")
-	time.Sleep(1000 * time.Millisecond)
-
-	windows := control.GetWindows()
-	if windows != "更好的原神" {
-		control.SwitchingScreens("更好的原神")
-	}
-	time.Sleep(1000 * time.Millisecond)
-
-	//点击全自动
-	control.MouseClick(582, 495, "left", false)
-
-	time.Sleep(1000 * time.Millisecond)
-
-	//点击调度器
-	control.MouseClick(606, 538, "left", false)
-
-	time.Sleep(1000 * time.Millisecond)
-
-	//点击连续执行
-	control.MouseClick(772, 791, "left", false)
-
-	time.Sleep(1000 * time.Millisecond)
-
-	//点击全选
-	control.MouseClick(907, 379, "left", false)
-
-	time.Sleep(1000 * time.Millisecond)
-
-	//点击确认执行
-	control.MouseClick(919, 704, "left", false)
-
-	time.Sleep(1000 * time.Millisecond)
 }
 
 func MysSignIn() {
@@ -257,7 +321,8 @@ func MysSignIn() {
 
 		err := control.HttpGet("http://localhost:8888/qd")
 		if err != nil {
-			fmt.Println("签到失败", err)
+
+			autoLog.Sugar.Error("签到失败:", err)
 			return
 		}
 
@@ -265,11 +330,12 @@ func MysSignIn() {
 
 		schedule, err := config.Parser.Parse(spec)
 		if err != nil {
-			fmt.Println("解析失败:", err)
+
+			autoLog.Sugar.Error("解析失败:", err)
 			return
 		}
 
-		fmt.Print("米游社签到服务启动完毕", "下次执行时间:", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
+		autoLog.Sugar.Infof("米游社签到服务启动完毕,下次执行时间: %s", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
 	}
 
 	// 添加定时任务
@@ -304,7 +370,7 @@ func ListGroups() ([]string, error) {
 			name := strings.Replace(relativePath, ".json", "", -1)
 
 			groupNames = append(groupNames, name)
-			//fmt.Println(relativePath)
+
 		}
 
 		return nil
@@ -336,10 +402,10 @@ func StartGroups(name string) {
 
 	// 执行命令
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Failed to execute command: %v\n", err)
+		autoLog.Sugar.Error("启动配置组失败:", err)
 		return
 	}
 
-	fmt.Println("Command executed successfully")
+	autoLog.Sugar.Infof("%s 启动配置组成功", name)
 
 }

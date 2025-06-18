@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"archive/zip"
+	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"bufio"
@@ -12,7 +13,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/otiai10/copy"
-	"github.com/pterm/pterm"
 	"github.com/robfig/cron/v3"
 	"io"
 	"io/ioutil"
@@ -33,7 +33,8 @@ func IsWechatRunning() bool {
 	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq BetterGI.exe")
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println("Error executing tasklist:", err)
+
+		autoLog.Sugar.Error("BetterGI.exe 是否在运行:", err)
 		return false
 	}
 	return strings.Contains(string(output), "BetterGI.exe")
@@ -54,7 +55,7 @@ func SendWeChatNotification(content string) {
 	}
 	jsonData, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
+		autoLog.Sugar.Error("Error marshaling JSON:", err)
 		return
 	}
 
@@ -62,20 +63,21 @@ func SendWeChatNotification(content string) {
 
 	req, err := http.NewRequest("POST", Config.WebhookURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+
+		autoLog.Sugar.Error("Error creating request:", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
+		autoLog.Sugar.Error("Error sending request:", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("Response Status:", resp.Status)
-	fmt.Println("BetterGI 已关闭，通知已发送")
+	autoLog.Sugar.Info("企业微信机器人配置错误:", resp.Status)
+	autoLog.Sugar.Info("BetterGI 已关闭，通知已发送")
 }
 
 // 向企业微信发送通知（图片）
@@ -106,7 +108,7 @@ func SendWeChatImage(path string) error {
 
 	jsonData, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
+		autoLog.Sugar.Error("Error marshaling JSON:", err)
 		return err
 	}
 
@@ -114,14 +116,16 @@ func SendWeChatImage(path string) error {
 
 	req, err := http.NewRequest("POST", Config.WebhookURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+
+		autoLog.Sugar.Error("Error creating request:", err)
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
+
+		autoLog.Sugar.Error("Error sending request:", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -130,6 +134,7 @@ func SendWeChatImage(path string) error {
 }
 
 var notified = false
+var okInform = false
 
 func CheckBetterGIStatus() {
 
@@ -137,28 +142,28 @@ func CheckBetterGIStatus() {
 
 	// 定时任务,cron表达式
 	spec := "*/30 * * * * *"
-	area, _ := pterm.DefaultArea.WithCenter().Start()
+
 	task := func() {
 
 		// 检查进程
 		if IsWechatRunning() {
 			//fmt.Print("\rBetterGI 正在运行", time.Now().Format("2006-01-02 15:04:05"))
-			area.Update(pterm.Sprintf("BetterGI 正在运行: %s", pterm.LightMagenta(time.Now().Format("2006-01-02 15:04:05"))))
+
+			autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
 			notified = false // 清除通知状态
 		} else {
 			if !notified {
 				SendWeChatNotification("BetterGI 已经关闭:" + Config.Content)
 				control.CloseYuanShen()
 				notified = true
-			} else {
-				//fmt.Print("\rBetterGI 已关闭，已通知过", time.Now().Format("2006-01-02 15:04:05"))
-				area.Update(pterm.Sprintf("BetterGI 已关闭，已通知过: %s", pterm.LightMagenta(time.Now().Format("2006-01-02 15:04:05"))))
-
+			} else if !okInform {
+				autoLog.Sugar.Infof("BetterGI 已关闭，已通知过: %s", time.Now().Format("2006-01-02 15:04:05"))
+				okInform = true
 			}
 		}
 
 	}
-	area.Stop()
+
 	// 添加定时任务
 	cronTab.AddFunc(spec, task)
 	// 启动定时器
@@ -197,7 +202,7 @@ func JsProgress(filename string, pattern string) (string, error) {
 	}
 	// 输出结果
 	if lastMatch != "" {
-		fmt.Println("最后匹配的行:", lastMatch)
+		autoLog.Sugar.Infof("最后匹配的行: %s", lastMatch)
 	} else {
 		errs := fmt.Errorf("没有找到匹配的行", 500)
 		return "", errs
@@ -226,7 +231,8 @@ func Progress(filename string, line string) (string, error) {
 	// 2. 解析为 map[string]interface{}（保持原始结构）
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal(data, &jsonData); err != nil {
-		log.Fatalf("解析 JSON 失败: %v", err)
+
+		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
 		return "", err
 	}
 	// 3. 获取 projects 数组
@@ -275,7 +281,8 @@ func GetGroupNum(filename string) (int, error) {
 }
 
 func TodayHarvest() (map[string]int, error) {
-	fmt.Println("今日收获统计")
+
+	autoLog.Sugar.Infof("今日收获统计")
 	re := regexp.MustCompile(`^交互或拾取："([^"]*)"`)
 
 	// 生成日志文件名
@@ -307,11 +314,6 @@ func TodayHarvest() (map[string]int, error) {
 		return nil, fmt.Errorf("读取文件错误: %v", err)
 	}
 
-	//for item, count := range harvestStats {
-	//
-	//	fmt.Printf("%s: %d\n", item, count)
-	//}
-
 	return harvestStats, nil
 }
 
@@ -322,7 +324,7 @@ type Material struct {
 }
 
 func BagStatistics() ([]Material, error) {
-	fmt.Println("背包统计")
+	autoLog.Sugar.Infof("背包统计")
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
 
 	// 打开文件
@@ -384,7 +386,8 @@ func BagStatistics() ([]Material, error) {
 
 // 摩拉统计
 func MorasStatistics() ([]Material, error) {
-	fmt.Println("摩拉统计")
+
+	autoLog.Sugar.Infof("摩拉统计")
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
 	// 打开文件
 	file, err := os.Open(filename)
@@ -413,7 +416,8 @@ func MorasStatistics() ([]Material, error) {
 
 // 删除背包统计
 func DeleteBagStatistics() string {
-	fmt.Println("背包统计")
+
+	autoLog.Sugar.Infof("删除背包统计")
 	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
 	// 删除文件
 	err := os.Remove(filePath)
@@ -421,15 +425,16 @@ func DeleteBagStatistics() string {
 		fmt.Println("背包统计删除文件失败:", err)
 
 	}
-	fmt.Println("摩拉统计")
+
+	autoLog.Sugar.Infof("删除摩拉统计")
 	filePath2 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
 	// 删除文件
 	err2 := os.Remove(filePath2)
 	if err2 != nil {
-		fmt.Println("摩拉统计删除文件失败:", err2)
+		autoLog.Sugar.Errorf("删除摩拉统计失败")
 
 	}
-	fmt.Println("文件删除成功")
+	autoLog.Sugar.Infof("文件删除成功")
 	return "文件删除成功"
 }
 func GetAutoArtifactsPro() ([]string, error) {
@@ -446,7 +451,8 @@ func GetAutoArtifactsPro() ([]string, error) {
 		file, err := os.Open(filename)
 
 		if err != nil {
-			fmt.Printf("打开文件失败: %s, 错误: %v\n", filename, err)
+
+			autoLog.Sugar.Errorf("打开文件失败: %s, 错误: %v\n", filename, err)
 			continue
 		}
 		defer file.Close()
@@ -465,7 +471,8 @@ func GetAutoArtifactsPro() ([]string, error) {
 				layout := "2006-01-02T15:04:05.999Z"
 				parsedTime, err := time.Parse(layout, dateStr)
 				if err != nil {
-					fmt.Printf("解析时间出错 (%s): %v\n", filename, err)
+
+					autoLog.Sugar.Errorf("解析时间出错 (%s): %v\n", filename, err)
 					continue
 				}
 				after8Hours := parsedTime.Add(8 * time.Hour)
@@ -477,7 +484,8 @@ func GetAutoArtifactsPro() ([]string, error) {
 		}
 
 		if err := scanner.Err(); err != nil {
-			fmt.Printf("读取文件出错: %s, 错误: %v\n", filename, err)
+
+			autoLog.Sugar.Errorf("读取文件出错: %s, 错误: %v\n", filename, err)
 		}
 
 	}
@@ -493,7 +501,8 @@ type EarningsData struct {
 }
 
 func GetAutoArtifactsPro2() (*EarningsData, error) {
-	fmt.Println("狗粮日志查询")
+
+	autoLog.Sugar.Infof("狗粮查询")
 	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -517,40 +526,29 @@ func GetAutoArtifactsPro2() (*EarningsData, error) {
 		// 1. 分割字符串，获取日期部分
 		parts := strings.Split(line, "，")
 		if len(parts) < 1 {
-			fmt.Println("字符串格式不正确，无法提取日期。")
+			autoLog.Sugar.Errorf("字符串格式不正确，无法提取日期。")
 			continue
 		}
 		//日期
-		fmt.Println(parts[0])
-		//sj := strings.Split(parts[1], "，")
+
 		// 路线
 		re := regexp.MustCompile(`[a-zA-Z]`)
 		letters := re.FindAllString(parts[1], -1)
 
-		fmt.Println(letters[0])
-
 		// 狗粮
-		//re2 := regexp.MustCompile(`-?\d+`)
-		//DogExpNum := re2.FindString(parts[2])
 		DogExpNum := strings.ReplaceAll(parts[2], "狗粮经验", "")
 		number, _ := strconv.Atoi(DogExpNum)
 		if number == -1 {
 			continue
 		}
 
-		fmt.Println(number)
-
 		// 摩拉
-		//re3 := regexp.MustCompile(`-?\d+`)
-		//MoraNum := re3.FindString(parts[3])
 		MoraNum := strings.ReplaceAll(parts[3], "摩拉", "")
 		number2, _ := strconv.Atoi(MoraNum)
 		if number2 == 0 {
 			continue
 
 		}
-		fmt.Println(number2)
-		fmt.Println("===============")
 
 		date := strings.ReplaceAll(parts[0], "日期:", "")
 		data.Dates = append(data.Dates, date)
@@ -582,31 +580,33 @@ type KeyValue struct {
 }
 
 // 创建一个数组
-var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "运儿", "家", "的",
+var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "运儿", "家",
 	"方巾", "枭羽", "怀钟", "药壶", "银莲", "怀表", "尾羽", "头带", "金杯", "之花", "之杯",
 	"沙漏", "绿花", "银冠", "鹰羽"}
 
 // analyseLog handles the /api/analyse GET request
 func LogAnalysis() map[string]int {
-	fmt.Println("日志分析")
+	autoLog.Sugar.Infof("日志分析")
 	res, _ := TodayHarvest()
 
 	var datas []KeyValue
 
 	var syw = 0
+	var xie = 0
 
 	for item, count := range res {
 		var data KeyValue
 
 		if IsStringInDictionaryCategory(item, Relics) {
 			syw += count
+		} else if strings.Contains(item, "蟹") {
+			xie += count
 		} else if item == "调查" {
 			continue
-
 		} else {
 			data.Key = item
 			data.Value = count
-			fmt.Println(item, count)
+			//autoLog.Sugar.Infof("物品: %s, 数量: %d", item, count)
 		}
 		datas = append(datas, data)
 	}
@@ -614,6 +614,11 @@ func LogAnalysis() map[string]int {
 	data.Key = "圣遗物"
 	data.Value = syw
 	datas = append(datas, data)
+
+	var dataXie KeyValue
+	dataXie.Key = "螃蟹"
+	dataXie.Value = xie
+	datas = append(datas, dataXie)
 
 	// 按值从大到小排序
 	sort.Slice(datas, func(i, j int) bool {
@@ -635,7 +640,7 @@ func FindLogFiles(dirPath string) ([]string, error) {
 
 	date := time.Now().Format("20060102")
 	prefix := fmt.Sprintf("better-genshin-impact%s", date)
-	pattern := dirPath + "\\" + prefix + "*.log" // logs 为日志目录
+	pattern := dirPath + "\\" + prefix + "*.autoLog" // logs 为日志目录
 
 	files, err := filepath.Glob(pattern)
 	if err != nil {
@@ -651,14 +656,15 @@ func FindLogFiles(dirPath string) ([]string, error) {
 }
 
 func UpdateJsAndPathing() error {
-	pterm.DefaultBasicText.Println("开始更新脚本和地图仓库")
+	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
+	autoLog.Sugar.Infof("开始备份user文件夹")
 
-	pterm.DefaultBasicText.Println("先备份user文件夹")
 	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
 	if err4 != nil {
 		return fmt.Errorf("备份失败")
 	}
-	pterm.DefaultBasicText.Println("备份成功")
+
+	autoLog.Sugar.Info("备份成功")
 
 	url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
 	zipFile := "main.zip"
@@ -666,40 +672,45 @@ func UpdateJsAndPathing() error {
 	outputDir := "repo"
 	// 下载 zip 文件
 	if err := downloadFile(zipFile, url); err != nil {
-		fmt.Println("下载失败:", err)
+		autoLog.Sugar.Info("下载失败")
 		return err
 	}
 
-	pterm.DefaultBasicText.Println("下载完成")
+	autoLog.Sugar.Info("下载完成")
 	// 解压指定目录
 	if err := unzipRepo(zipFile, outputDir, targetPrefix); err != nil {
-		fmt.Println("解压失败:", err)
+		autoLog.Sugar.Errorf("解压失败")
 		return err
 	}
-	pterm.DefaultBasicText.Println("已提取 repo 文件夹")
+
+	autoLog.Sugar.Info("已提取 repo 文件夹")
 
 	_ = os.Remove(zipFile)
 
-	pterm.DefaultBasicText.Println("已删除压缩包")
-	pterm.DefaultBasicText.Println("开始备份指定文件")
+	autoLog.Sugar.Info("已删除压缩包")
+	autoLog.Sugar.Info("开始备份指定文件")
 	for _, path := range Config.Backups {
 
 		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
 
 		err := copy.Copy(file, "./backups/"+path)
 		if err != nil {
-			fmt.Println("备份文件失败", err)
+
+			autoLog.Sugar.Error("备份文件失败", err)
 			return err
 		}
-		fmt.Println("已复制文件:", path)
+		autoLog.Sugar.Info("已复制文件:", path)
 	}
-	pterm.DefaultBasicText.Println("开始更新脚本文件")
+
+	autoLog.Sugar.Info("开始更新脚本文件")
 	err := copy.Copy("./repo/js", Config.BetterGIAddress+"\\User\\JsScript")
 	if err != nil {
 		return err
 	}
-	pterm.DefaultBasicText.Println("已更新脚本文件")
-	pterm.DefaultBasicText.Println("开始更新地图追踪文件")
+
+	autoLog.Sugar.Info("已更新脚本文件")
+	autoLog.Sugar.Info("开始更新地图追踪文件")
+
 	err2 := os.RemoveAll(Config.BetterGIAddress + "\\User\\AutoPathing")
 	if err2 != nil {
 		return err2
@@ -708,8 +719,9 @@ func UpdateJsAndPathing() error {
 	if err3 != nil {
 		return err3
 	}
-	pterm.DefaultBasicText.Println("更新地图追踪文件成功")
-	pterm.DefaultBasicText.Println("开始还原备份文件配置文件")
+
+	autoLog.Sugar.Info("开始还原备份文件配置文件")
+	autoLog.Sugar.Info("开始还原备份文件配置文件")
 
 	for _, path := range Config.Backups {
 
@@ -719,11 +731,13 @@ func UpdateJsAndPathing() error {
 		if err != nil {
 			return err
 		}
-		pterm.DefaultBasicText.Println("已还原文件", file)
+
+		autoLog.Sugar.Info("已还原文件", file)
 	}
-	pterm.DefaultBasicText.Println("还原备份文件配置文件成功")
+
+	autoLog.Sugar.Info("还原备份文件配置文件成功")
 	os.RemoveAll("./repo")
-	pterm.DefaultBasicText.Println("脚本和地图已经更新成功")
+	autoLog.Sugar.Info("脚本和地图已经更新成功")
 	return nil
 }
 
@@ -878,13 +892,15 @@ func Backup() error {
 
 		copy.Copy(file, "./backups/"+path)
 
-		fmt.Println("已备份文件:", path)
+		autoLog.Sugar.Infof("已备份文件: %s\n", path)
 	}
-	pterm.DefaultBasicText.Println("备份user文件夹")
-	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
+	autoLog.Sugar.Infof("开始备份user文件夹")
+	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip")
 	if err4 != nil {
+		autoLog.Sugar.Errorf("备份失败: %v")
 		return fmt.Errorf("备份失败")
 	}
-	pterm.DefaultBasicText.Println("备份成功")
+
+	autoLog.Sugar.Info("备份成功")
 	return nil
 }
