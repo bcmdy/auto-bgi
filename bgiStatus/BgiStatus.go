@@ -640,7 +640,7 @@ func FindLogFiles(dirPath string) ([]string, error) {
 
 	date := time.Now().Format("20060102")
 	prefix := fmt.Sprintf("better-genshin-impact%s", date)
-	pattern := dirPath + "\\" + prefix + "*.autoLog" // logs 为日志目录
+	pattern := dirPath + "\\" + prefix + "*.log" // logs 为日志目录
 
 	files, err := filepath.Glob(pattern)
 	if err != nil {
@@ -903,4 +903,86 @@ func Backup() error {
 
 	autoLog.Sugar.Info("备份成功")
 	return nil
+}
+
+type GroupTimeMap struct {
+	Group    string
+	Duration time.Duration
+}
+
+func GroupTime() ([]GroupTimeMap, error) {
+	date := time.Now().Format("20060102")
+	filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date))
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	timeRegexp := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2}\.\d{3})\]`)
+	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
+	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
+
+	layout := "15:04:05.000"
+	startTimes := make(map[string]time.Time)
+	groupDurations := make(map[string]time.Duration)
+
+	scanner := bufio.NewScanner(file)
+	var prevLine string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// 检查是否是开始行
+		if prevLine != "" {
+			if startMatch := startRegexp.FindStringSubmatch(line); startMatch != nil {
+				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
+					group := startMatch[1]
+					t, _ := time.Parse(layout, timeMatch[1])
+					startTimes[group] = t
+				}
+			}
+
+			// 检查是否是结束行
+			if endMatch := endRegexp.FindStringSubmatch(line); endMatch != nil {
+				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
+					group := endMatch[1]
+					t, _ := time.Parse(layout, timeMatch[1])
+					if start, ok := startTimes[group]; ok {
+						duration := t.Sub(start)
+						groupDurations[group] += duration
+						delete(startTimes, group)
+					}
+				}
+			}
+		}
+		prevLine = line
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	// 转换为 []GroupTimeMap
+	var groupTimeMaps []GroupTimeMap
+	for group, duration := range groupDurations {
+		groupTimeMaps = append(groupTimeMaps, GroupTimeMap{
+			Group:    group,
+			Duration: duration,
+		})
+	}
+
+	return groupTimeMaps, nil
+}
+
+// 判断目录是否存在
+func PathExists() (bool, error) {
+	_, err := os.Stat(Config.BetterGIAddress)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

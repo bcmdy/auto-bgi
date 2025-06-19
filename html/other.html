@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ .title }}</title>
+    <link href="./static/css2.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-color: #ff6eb4;
+            --background-light: #fff6fb;
+            --text-color: #ff6eb4;
+            --border-color: #ffc0da;
+            --hover-color: rgba(255, 192, 218, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-color);
+            min-height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6eb" opacity="0.6"/><circle cx="70" cy="70" r="7" fill="%23ffc0da" opacity="0.5"/></svg>');
+            padding-bottom: 50px;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px 0 10px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--primary-color);
+            border-radius: 0 0 30px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--primary-color);
+            margin-top: 15px;
+        }
+
+        .btn {
+            background-color: #fff;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: all 0.3s ease;
+            margin: 0 10px 10px 0;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+            box-shadow: 0 0 20px var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        section.panel {
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px #ffcce6;
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        section.panel h2 {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            color: var(--text-color);
+        }
+
+        th {
+            background-color: #ffcce6;
+            color: #ff5599;
+            font-weight: bold;
+            border-radius: 10px;
+        }
+
+        td {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        tr:hover td {
+            background-color: var(--hover-color);
+        }
+
+        /* 可爱元素装饰 */
+        .container::before {
+            content: "♡";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+            opacity: 0.5;
+        }
+
+        .container::after {
+            content: "♡";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+            opacity: 0.5;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            h2 {
+                font-size: 1.3rem;
+            }
+            .btn {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+            th, td {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <button class="btn" onclick="window.location.href='/'">返回首页</button>
+    <h1>{{ .title }}</h1>
+</header>
+
+<div class="container">
+
+    <!-- 收益板块 -->
+<!--    <section class="panel" id="revenuePanel">-->
+<!--        <h2>收益情况</h2>-->
+<!--        &lt;!&ndash; 这里可以放收益的表格或图表 &ndash;&gt;-->
+<!--        <p>这里显示收益相关的信息，未来可扩展为图表、详细数据等。</p>-->
+<!--    </section>-->
+
+    <!-- 配置组执行时间统计 -->
+    <section class="panel" id="executionPanel">
+        <h2>配置组执行时间统计</h2>
+        <table id="groupTable">
+            <thead>
+            <tr>
+                <th>配置组</th>
+                <th>执行耗时</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ range .GroupTime }}
+            <tr>
+                <td>{{ .Group }}</td>
+                <td>{{ .Duration }}</td>
+            </tr>
+            {{ end }}
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 以后可以继续添加更多板块 -->
+
+</div>
+
+<script>
+    // 这里可以写一些各个板块交互的JS
+</script>
+
+</body>
+</html>

@@ -120,9 +120,13 @@
     <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
 <!--    <button onclick="getAutoUpdateJsAndPathingBtn()">更新脚本和地图追踪</button>-->
     <button onclick="getBackupBtn()">备份user文件和指定文件</button>
+    <button onclick="otherBtn()">其他</button>
 </div>
 
 <script>
+    function otherBtn() {
+        window.location.href = '/other';
+    }
 
     function getBackupBtn() {
         fetch('/backup', { method: 'POST' })

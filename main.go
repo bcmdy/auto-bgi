@@ -11,6 +11,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"html/template"
@@ -31,6 +32,17 @@ var (
 	procFindWindow       = user32.NewProc("FindWindowW")
 	procSetForegroundWnd = user32.NewProc("SetForegroundWindow")
 )
+
+func init() {
+	//判断目录是否设置正确
+	exists, _ := bgiStatus.PathExists()
+	if !exists {
+		err2 := fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件：例子：D:\\subject\\BetterGI")
+		fmt.Println(err2)
+
+		os.Exit(1)
+	}
+}
 
 func findLastJSONLine(filename string) (string, error) {
 	file, err := os.Open(filename)
@@ -133,6 +145,7 @@ func main() {
 	ginServer := gin.Default()
 
 	ginServer.SetTrustedProxies(nil)
+	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	////加载templates中所有模板文件, 使用不同目录下名称相同的模板,注意:一定要放在配置路由之前才得行
 	//ginServer.LoadHTMLGlob("html/*")
@@ -151,15 +164,15 @@ func main() {
 	// 提供静态资源服务，把 html 目录映射为 /static 路径
 	ginServer.Static("/static", ".")
 
-	ginServer.GET("/autoLog", func(context *gin.Context) {
+	ginServer.GET("/log", func(context *gin.Context) {
 
 		// 传递给模板
-		context.HTML(http.StatusOK, "autoLog.html", nil)
+		context.HTML(http.StatusOK, "log.html", nil)
 	})
 
 	//查询今日所有日志文件
 	ginServer.GET("/logFiles", func(c *gin.Context) {
-		filePath := filepath.Clean(fmt.Sprintf("%s\\autoLog", Config.BetterGIAddress)) // 本地日志路径
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress)) // 本地日志路径
 		files, err := bgiStatus.FindLogFiles(filePath)
 		if err != nil {
 			return
@@ -178,10 +191,10 @@ func main() {
 
 		if logName == "" {
 			date := time.Now().Format("20060102")
-			logName = fmt.Sprintf("better-genshin-impact%s.autoLog", date)
+			logName = fmt.Sprintf("better-genshin-impact%s.log", date)
 		}
 
-		filePath := filepath.Join(Config.BetterGIAddress, "autoLog", logName)
+		filePath := filepath.Join(Config.BetterGIAddress, "log", logName)
 		file, err := os.Open(filePath)
 		if err != nil {
 			conn.WriteMessage(websocket.TextMessage, []byte("无法打开日志文件"))
@@ -471,7 +484,8 @@ func main() {
 		if err != nil {
 			return
 		}
-		fmt.Println(groups)
+
+		autoLog.Sugar.Infof("查询所有配置组:%s", groups)
 
 		// 传递给模板
 		context.HTML(http.StatusOK, "listGroups.html", gin.H{
@@ -581,6 +595,25 @@ func main() {
 			"title": "配置组执行",
 			"tasks": list,
 		})
+	})
+
+	//统计配置组执行时间
+	ginServer.GET("/other", func(context *gin.Context) {
+		GroupTime, err := bgiStatus.GroupTime()
+		if err != nil {
+			context.HTML(http.StatusInternalServerError, "error.html", gin.H{
+				"error": err.Error(),
+			})
+		}
+		context.HTML(http.StatusOK, "other.html", gin.H{
+			"title":     "其他",
+			"GroupTime": GroupTime,
+		})
+	})
+
+	//测试
+	ginServer.GET("/test", func(context *gin.Context) {
+		control.GetMysQDXy()
 	})
 
 	//一条龙

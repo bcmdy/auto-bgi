@@ -73,7 +73,7 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 	if err != nil {
 		return []TaskCycleConfig{}, err
 	}
-	var TaskCycleConfigs = []TaskCycleConfig{}
+	var TaskCycleConfigs []TaskCycleConfig
 
 	// 遍历目录中的所有文件
 	for _, file := range files {

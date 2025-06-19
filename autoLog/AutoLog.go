@@ -50,7 +50,8 @@ func Init() {
 		zapcore.NewCore(zapcore.NewJSONEncoder(fileEncoderConfig), writerSync, zapcore.InfoLevel),
 	)
 
-	Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.DPanicLevel)) // 只在致命级别输出
+
 	Sugar = Logger.Sugar()
 }
 
