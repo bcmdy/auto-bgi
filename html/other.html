@@ -159,6 +159,39 @@
                 padding: 12px;
             }
         }
+        .info-box {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 2px dashed var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .info-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+
+        .info-box h3 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+
+        .info-box p {
+            margin: 8px 0;
+            font-size: 1rem;
+        }
+sssss
+        .info-box .highlight {
+            color: #ff5599;
+            font-weight: bold;
+        }
+        🧸 效果
     </style>
 </head>
 <body>
@@ -180,22 +213,15 @@
     <!-- 配置组执行时间统计 -->
     <section class="panel" id="executionPanel">
         <h2>配置组执行时间统计</h2>
-        <table id="groupTable">
-            <thead>
-            <tr>
-                <th>配置组</th>
-                <th>执行耗时</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{ range .GroupTime }}
-            <tr>
-                <td>{{ .Group }}</td>
-                <td>{{ .Duration }}</td>
-            </tr>
-            {{ end }}
-            </tbody>
-        </table>
+        {{ range .GroupTime }}
+        <div class="info-box">
+            <h3>♡ {{ .Title }}</h3>
+            <p><strong>开始时间：</strong>{{ .Detail.StartTime }}</p>
+            <p><strong>结束时间：</strong>{{ .Detail.EndTime }}</p>
+            <p><strong>执行时间：</strong><span class="highlight">{{ .Detail.ExecuteTime }}</span></p>
+            <p><strong>收益摩拉：</strong><span class="highlight">{{.Detail.MoLa }}</span></p>
+        </div>
+        {{ end }}
     </section>
 
     <!-- 以后可以继续添加更多板块 -->

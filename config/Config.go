@@ -23,6 +23,7 @@ type config struct {
 	IsStartTimeLong bool     `json:"isStartTimeLong"`
 	IsMysSignIn     bool     `json:"isMysSignIn"`
 	Backups         []string `json:"backups"`
+	Cookie          string   `json:"cookie"`
 }
 
 var Cfg config

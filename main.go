@@ -4,7 +4,6 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
-	_ "auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/task"
 	"bufio"
@@ -630,6 +629,10 @@ func main() {
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
+	//async := config.GetTravelsDiaryDetailAsync(6, 2, 1)
+	//for i, list := range async.List {
+	//	fmt.Println(i, list)
+	//}
 
 	if Config.IsMysSignIn {
 		//米游社自动签到

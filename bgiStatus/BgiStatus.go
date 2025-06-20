@@ -905,12 +905,27 @@ func Backup() error {
 	return nil
 }
 
-type GroupTimeMap struct {
-	Group    string
-	Duration time.Duration
+type GroupMap struct {
+	//标题
+	Title  string
+	Detail GroupDetail
 }
 
-func GroupTime() ([]GroupTimeMap, error) {
+type GroupDetail struct {
+	// 开始时间
+	StartTime string
+	// 结束时间
+	EndTime string
+	// 执行时间
+	ExecuteTime string
+	//摩拉
+	MoLa int
+}
+
+func GroupTime() ([]GroupMap, error) {
+	today := time.Now().Format("2006-01-02")
+	layoutFull := "2006-01-02 15:04:05"
+
 	date := time.Now().Format("20060102")
 	filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date))
 	file, err := os.Open(filename)
@@ -923,36 +938,65 @@ func GroupTime() ([]GroupTimeMap, error) {
 	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
 	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
 
-	layout := "15:04:05.000"
-	startTimes := make(map[string]time.Time)
-	groupDurations := make(map[string]time.Duration)
+	type TempGroup struct {
+		GroupName string
+		StartTime time.Time
+		LineTime  string // 日志时间字符串
+	}
 
+	var results []GroupMap
+	var temp *TempGroup
 	scanner := bufio.NewScanner(file)
 	var prevLine string
+
+	async := config.GetTravelsDiaryDetailAsync(6, 2, 1)
+	async1 := config.GetTravelsDiaryDetailAsync(6, 2, 2)
+	async.List = append(async.List, async1.List...)
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// 检查是否是开始行
 		if prevLine != "" {
+			// 开始记录
 			if startMatch := startRegexp.FindStringSubmatch(line); startMatch != nil {
 				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
-					group := startMatch[1]
-					t, _ := time.Parse(layout, timeMatch[1])
-					startTimes[group] = t
+					t, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
+					temp = &TempGroup{
+						GroupName: startMatch[1],
+						StartTime: t,
+						LineTime:  timeMatch[1],
+					}
 				}
 			}
 
-			// 检查是否是结束行
-			if endMatch := endRegexp.FindStringSubmatch(line); endMatch != nil {
+			// 结束记录
+			if endMatch := endRegexp.FindStringSubmatch(line); endMatch != nil && temp != nil && endMatch[1] == temp.GroupName {
 				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
-					group := endMatch[1]
-					t, _ := time.Parse(layout, timeMatch[1])
-					if start, ok := startTimes[group]; ok {
-						duration := t.Sub(start)
-						groupDurations[group] += duration
-						delete(startTimes, group)
+					endTime, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
+					duration := endTime.Sub(temp.StartTime)
+
+					// 过滤收益
+					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
+					endStr := endTime.Format("2006-01-02 15:04:05")
+					filtered := config.FilterByTime(async.List, startStr, endStr)
+					var totalMoLa int
+					for _, item := range filtered {
+						totalMoLa += item.Num
 					}
+
+					// 组装
+					results = append(results, GroupMap{
+						Title: temp.GroupName,
+						Detail: GroupDetail{
+							StartTime:   startStr,
+							EndTime:     endStr,
+							ExecuteTime: duration.String(),
+							MoLa:        totalMoLa,
+						},
+					})
+
+					// 重置临时变量
+					temp = nil
 				}
 			}
 		}
@@ -962,17 +1006,7 @@ func GroupTime() ([]GroupTimeMap, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-
-	// 转换为 []GroupTimeMap
-	var groupTimeMaps []GroupTimeMap
-	for group, duration := range groupDurations {
-		groupTimeMaps = append(groupTimeMaps, GroupTimeMap{
-			Group:    group,
-			Duration: duration,
-		})
-	}
-
-	return groupTimeMaps, nil
+	return results, nil
 }
 
 // 判断目录是否存在
