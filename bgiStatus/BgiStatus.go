@@ -330,7 +330,7 @@ func BagStatistics() ([]Material, error) {
 	// 打开文件
 	file, err := os.Open(filename) // 替换为你的文件路径
 	if err != nil {
-		return nil, err
+		autoLog.Sugar.Errorf("背包统计失败: %v", err)
 	}
 	defer file.Close()
 

@@ -13,5 +13,6 @@
  "executeX": 858,
  "executeY": 298,
  "post": ":8082",
- "backups": ["JsScript\\AutoArtifactsPro\\record.txt","AutoPathing\\矿物\\萃凝晶"]
+ "backups": ["JsScript\\AutoArtifactsPro\\record.txt","AutoPathing\\矿物\\萃凝晶"],
+ "Cookie": "米游社cookie"
 }
