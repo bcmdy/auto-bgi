@@ -319,6 +319,8 @@ func MysSignIn() {
 	task := func() {
 		fmt.Print("米游社签到服务启动", time.Now().Format("2006-01-02 15:04:05"))
 
+		//config.GenShinSign()
+
 		err := control.HttpGet("http://localhost:8888/qd")
 		if err != nil {
 

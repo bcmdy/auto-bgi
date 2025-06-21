@@ -6,189 +6,189 @@
     <title>{{ .title }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Comic+Sans+MS&display=swap" rel="stylesheet">
     <style>
-        /* 全局样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-color: #ff6eb4;
+            --background-light: #fff6fb;
+            --text-color: #ff6eb4;
+            --border-color: #ffc0da;
+            --hover-color: rgba(255, 192, 218, 0.3);
         }
 
-        :root {
-            --primary-color: #ff85b1;
-            --secondary-color: #b28dff;
-            --background-light: #fff0fb;
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --card-border: rgba(255, 133, 177, 0.5);
-            --glow: 0 0 12px #ffb7d5;
-            --font-color: #ff6699;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Comic Sans MS', 'Mochiy Pop One', sans-serif;
+            font-family: "Comic Sans MS", "Segoe UI", sans-serif;
             background-color: var(--background-light);
-            color: var(--font-color);
-            padding: 20px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="10" cy="10" r="2" fill="%23ffb7d5" opacity="0.5"/><circle cx="40" cy="40" r="3" fill="%23b28dff" opacity="0.5"/><circle cx="70" cy="70" r="2" fill="%23ffb7d5" opacity="0.5"/><circle cx="30" cy="70" r="2" fill="%23b28dff" opacity="0.5"/><circle cx="80" cy="20" r="3" fill="%23ffb7d5" opacity="0.5"/></svg>');
+            color: var(--text-color);
+            min-height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6eb" opacity="0.6"/><circle cx="70" cy="70" r="7" fill="%23ffc0da" opacity="0.5"/></svg>');
+            padding-bottom: 50px;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px 0 10px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--primary-color);
+            border-radius: 0 0 30px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--primary-color);
+            margin-top: 15px;
+        }
+
+        .btn {
+            background-color: #fff;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: all 0.3s ease;
+            margin: 0 10px 10px 0;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+            box-shadow: 0 0 20px var(--primary-color);
+            transform: scale(1.05);
         }
 
         .container {
-            max-width: 600px; /* 设个中等宽度，适合单列显示 */
-            margin: 0 auto;
-            padding: 20px;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
             position: relative;
         }
 
-        .container::before,
-        .container::after {
-            content: "♡";
-            position: absolute;
-            font-size: 2rem;
-            color: var(--primary-color);
-            opacity: 0.7;
-        }
-
-        .container::before {
-            top: 5px;
-            left: 5px;
-        }
-
-        .container::after {
-            bottom: 5px;
-            right: 5px;
-        }
-
-        .main-title {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary-color);
-            text-shadow: var(--glow);
-            position: relative;
-        }
-
-        .main-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            box-shadow: var(--glow);
-            border-radius: 3px;
-        }
-
-        /* 按钮组容器，垂直排列，居中 */
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 30px;
-            align-items: center;
-        }
-
-        /* 按钮样式 */
-        .home-btn {
-            padding: 12px 28px;
+        section.panel {
             background: rgba(255, 255, 255, 0.8);
-            border: 2px solid var(--primary-color);
-            border-radius: 50px;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            width: 100%;
-            max-width: 320px;
-            transition: all 0.3s ease;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(255, 133, 177, 0.3);
-        }
-
-        .home-btn:hover {
-            background-color: var(--primary-color);
-            color: white;
-            box-shadow: var(--glow);
-            transform: translateY(-3px) scale(1.03);
-        }
-
-        /* 卡片容器 单列 */
-        .cards-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 2px solid var(--card-border);
+            box-shadow: 0 0 15px #ffcce6;
             border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 0 15px rgba(255, 133, 177, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 20px 25px;
+            margin-bottom: 30px;
             position: relative;
+        }
+
+        section.panel h2 {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            border-radius: 20px;
             overflow: hidden;
         }
 
-        .card::before {
-            content: "";
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            color: var(--text-color);
+        }
+
+        th {
+            background-color: #ffcce6;
+            color: #ff5599;
+            font-weight: bold;
+            border-radius: 10px;
+        }
+
+        td {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        tr:hover td {
+            background-color: var(--hover-color);
+        }
+
+        /* 可爱元素装饰 */
+        .container::before {
+            content: "♡";
             position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            background: linear-gradient(45deg, transparent, rgba(255, 133, 177, 0.1), transparent);
-            z-index: -1;
-            animation: shimmer 3s linear infinite;
+            top: 10px;
+            left: 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+            opacity: 0.5;
         }
 
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+        .container::after {
+            content: "♡";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+            opacity: 0.5;
         }
 
-        .card:hover {
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 0 0 25px rgba(255, 133, 177, 0.4);
-        }
-
-        .card-content {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            color: #ff6699;
-        }
-
-        /* 响应式调整 */
-        @media (max-width: 768px) {
-            .main-title {
-                font-size: 2rem;
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
             }
-            .home-btn {
-                font-size: 1rem;
-                max-width: 100%;
-                padding: 10px 20px;
+            h2 {
+                font-size: 1.3rem;
             }
-            .card-content {
-                font-size: 1rem;
-            }
-            .container {
-                max-width: 90vw;
-                padding: 15px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .main-title {
-                font-size: 1.6rem;
-            }
-            .home-btn {
-                font-size: 0.95rem;
+            .btn {
+                font-size: 0.9rem;
                 padding: 8px 16px;
             }
-            .card-content {
-                font-size: 0.95rem;
+            th, td {
+                font-size: 0.9rem;
+                padding: 12px;
             }
+        }
+        .info-box {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 2px dashed var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .info-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+
+        .info-box h3 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+
+        .info-box p {
+            margin: 8px 0;
+            font-size: 1rem;
+        }
+        .info-box .highlight {
+            color: #ff5599;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -197,17 +197,31 @@
     <h1 class="main-title">{{ .title }}</h1>
 
     <div class="button-group">
-        <button onclick="window.location.href='/'" class="home-btn">返回主页</button>
-        <button onclick="window.location.href='/getAutoArtifactsPro2'" class="home-btn">转为折线图</button>
+        <button onclick="window.location.href='/'" class="btn">返回主页</button>
+<!--        <button onclick="window.location.href='/getAutoArtifactsPro2'" class="home-btn">转为折线图</button>-->
     </div>
 
-    <div class="cards-container">
+    <section class="panel" id="executionPanel">
+        <h2>{{.title}}</h2>
+
         {{ range .items }}
-        <div class="card">
-            <div class="card-content">{{ . }}</div>
+        <div class="info-box">
+            <h3>♡ {{ .FileName }}</h3>
+            <button class="btn" onclick="getAutoArtifactsPro2Btn('{{ .FileName }}')">转为折线图</button>
+            {{ range .Detail }}
+            <p>{{.}}</p>
+            {{ end }}
+
         </div>
         {{ end }}
-    </div>
+    </section>
 </div>
+
+<script>
+    function getAutoArtifactsPro2Btn(FileName) {
+        window.location.href = '/getAutoArtifactsPro2?fileName='+FileName;
+    }
+
+</script>
 </body>
 </html>

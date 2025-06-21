@@ -516,16 +516,15 @@ func main() {
 		autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
 		if err != nil {
-			fmt.Println(err)
 			// 传递给模板
 			context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
-				"title": "狗粮日志查询",
+				"title": "狗粮收益查询",
 				"items": nil,
 			})
 			return
 		}
 		context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
-			"title": "狗粮日志查询",
+			"title": "狗粮收益查询",
 			"items": pro,
 		})
 
@@ -533,9 +532,18 @@ func main() {
 
 	//查询狗粮日志
 	ginServer.GET("/getAutoArtifactsPro2", func(context *gin.Context) {
-		data, err := bgiStatus.GetAutoArtifactsPro2()
+
+		fileName := context.Query("fileName")
+		if fileName == "" {
+			context.HTML(http.StatusInternalServerError, "error.html", gin.H{
+				"error": fmt.Errorf("文件名不能为空"),
+			})
+			return
+		}
+		data, err := bgiStatus.GetAutoArtifactsPro2(fileName)
 
 		// 判断是否请求 JSON 数据
+		fmt.Println("=============", context.Query("json"))
 		if context.Query("json") == "1" {
 			if err != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"error": "读取失败"})
@@ -629,10 +637,6 @@ func main() {
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
-	//async := config.GetTravelsDiaryDetailAsync(6, 2, 1)
-	//for i, list := range async.List {
-	//	fmt.Println(i, list)
-	//}
 
 	if Config.IsMysSignIn {
 		//米游社自动签到

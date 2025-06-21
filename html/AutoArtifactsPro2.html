@@ -126,14 +126,24 @@
 
 <div id="rotate-wrapper">
     <h2>{{ .title }}</h2>
-    <h4>及格富A线（狗粮经验：98406，摩拉：20800）=======及格富B线（狗粮经验：76356，摩拉：13800）</h4>
+    <h4>及格富A线（狗粮经验：98406，摩拉：20800）=======及格富B线（狗粮经验：77112，摩拉：16200）</h4>
     <div id="chart"></div>
     <a href="/" class="back-button">返回主页</a>
 </div>
 
 
 <script>
-    fetch('/getAutoArtifactsPro2?json=1')
+
+    //获取浏览器地址参数
+    // 获取当前页面完整的URL
+    let url = window.location.href;
+    // 创建一个URL对象
+    let urlObj = new URL(url);
+    // 使用URLSearchParams获取查询参数部分
+    let params = new URLSearchParams(urlObj.search);
+    let fileName = params.get('fileName'); // 返回 'Qwen'
+
+    fetch("/getAutoArtifactsPro2?fileName="+fileName+"&json=1")
         .then(res => res.json())
         .then(data => {
             const chartDom = document.getElementById('chart');

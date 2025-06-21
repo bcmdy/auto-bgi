@@ -437,16 +437,22 @@ func DeleteBagStatistics() string {
 	autoLog.Sugar.Infof("文件删除成功")
 	return "文件删除成功"
 }
-func GetAutoArtifactsPro() ([]string, error) {
+
+type DogFood struct {
+	FileName string
+	Detail   []string
+}
+
+func GetAutoArtifactsPro() ([]DogFood, error) {
 	// 获取当前目录下所有 .txt 文件
-	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\*.txt", Config.BetterGIAddress))
+	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\*.txt", Config.BetterGIAddress))
 	if err != nil {
 		return nil, err
 	}
 	if len(files) == 0 {
 		return nil, fmt.Errorf("未找到任何txt文件")
 	}
-	var data []string
+	var data []DogFood
 	for _, filename := range files {
 		file, err := os.Open(filename)
 
@@ -457,31 +463,26 @@ func GetAutoArtifactsPro() ([]string, error) {
 		}
 		defer file.Close()
 
-		// 添加文件间隔标题
-		data = append(data, fmt.Sprintf("===== %s =====", filepath.Base(filename)))
+		var dogFood DogFood
+
+		dogFood.FileName = filepath.Base(filename)
 
 		scanner := bufio.NewScanner(file)
+		inHistory := false
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			if strings.Contains(line, "上次结束时间") {
-				re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z`)
-				dateStr := re.FindString(line)
-
-				layout := "2006-01-02T15:04:05.999Z"
-				parsedTime, err := time.Parse(layout, dateStr)
-				if err != nil {
-
-					autoLog.Sugar.Errorf("解析时间出错 (%s): %v\n", filename, err)
-					continue
+			if !inHistory {
+				if strings.HasPrefix(line, "历史收益：") {
+					inHistory = true
 				}
-				after8Hours := parsedTime.Add(8 * time.Hour)
-				formatted := after8Hours.Format("2006-01-02 15:04:05")
-				data = append(data, fmt.Sprintf("上次结束时间:\n\t%s", formatted))
-			} else {
-				data = append(data, fmt.Sprintf("%s", line))
+				continue
 			}
+			dogFood.Detail = append(dogFood.Detail, line)
+
 		}
+
+		data = append(data, dogFood)
 
 		if err := scanner.Err(); err != nil {
 
@@ -500,10 +501,10 @@ type EarningsData struct {
 	Mora   []int    `json:"mora"`
 }
 
-func GetAutoArtifactsPro2() (*EarningsData, error) {
+func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 
 	autoLog.Sugar.Infof("狗粮查询")
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\record.txt", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\%s", Config.BetterGIAddress, fileName))
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -950,9 +951,9 @@ func GroupTime() ([]GroupMap, error) {
 	scanner := bufio.NewScanner(file)
 	var prevLine string
 
-	async := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
-	async1 := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
-	async.List = append(async.List, async1.List...)
+	//async := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
+	//async1 := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
+	//async.List = append(async.List, async1.List...)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -979,11 +980,11 @@ func GroupTime() ([]GroupMap, error) {
 					// 过滤收益
 					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
 					endStr := endTime.Format("2006-01-02 15:04:05")
-					filtered := config.FilterByTime(async.List, startStr, endStr)
-					var totalMoLa int
-					for _, item := range filtered {
-						totalMoLa += item.Num
-					}
+					//filtered := config.FilterByTime(async.List, startStr, endStr)
+					//var totalMoLa int
+					//for _, item := range filtered {
+					//	totalMoLa += item.Num
+					//}
 
 					// 组装
 					results = append(results, GroupMap{
@@ -992,7 +993,7 @@ func GroupTime() ([]GroupMap, error) {
 							StartTime:   startStr,
 							EndTime:     endStr,
 							ExecuteTime: duration.String(),
-							MoLa:        totalMoLa,
+							MoLa:        0,
 						},
 					})
 

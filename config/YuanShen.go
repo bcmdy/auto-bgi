@@ -1,6 +1,8 @@
 package config
 
 import (
+	"auto-bgi/autoLog"
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -17,25 +19,25 @@ import (
 
 var GameRoles gameRolesRes
 
-func init() {
-
-	GetGenShinGameRolesAsync()
-
-	file, err := os.Open("GameInfo.json")
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	bytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return
-	}
-
-	if err := json.Unmarshal(bytes, &GameRoles); err != nil {
-		return
-	}
-}
+//func init() {
+//
+//	GetGenShinGameRolesAsync()
+//
+//	file, err := os.Open("GameInfo.json")
+//	if err != nil {
+//		return
+//	}
+//	defer file.Close()
+//
+//	bytes, err := ioutil.ReadAll(file)
+//	if err != nil {
+//		return
+//	}
+//
+//	if err := json.Unmarshal(bytes, &GameRoles); err != nil {
+//		return
+//	}
+//}
 
 type gameRolesRes struct {
 	RetCode int    `json:"retcode"`
@@ -241,6 +243,74 @@ func FilterByTime(data []TravelsDiaryDetailList, start, end string) []TravelsDia
 		}
 		if !itemTime.Before(startTime) && !itemTime.After(endTime) {
 			result = append(result, item)
+		}
+	}
+	return result
+}
+
+// 原神签到
+func GenShinSign() {
+
+	mapData := make(map[string]interface{})
+	mapData["act_id"] = "e202311201442471"
+	mapData["region"] = GameRoles.Data.List[0].Region
+	mapData["uid"] = GameRoles.Data.List[0].GameId
+	mapData["lang"] = "zh-cn"
+	jsonData, err := json.Marshal(mapData)
+	if err != nil {
+		fmt.Println("JSON 格式化失败:", err)
+	}
+
+	// 定义请求的 URL
+	signUrl := "https://api-takumi.mihoyo.com/event/luna/sign"
+
+	req, err := http.NewRequest("POST", signUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Printf("Error creating POST request: %v\n", err)
+
+	}
+
+	req.Header.Set("cookie", Cfg.Cookie)
+	req.Header.Set("x-rpc-signgame", "hk4e")
+	req.Header.Set("x-rpc-client_type", "5")
+	req.Header.Set("x-rpc-app_version", "2.71.1")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending POST request: %v\n", err)
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var res map[string]interface{}
+	err2 := json.Unmarshal(body, &res)
+	if err2 != nil {
+		autoLog.Sugar.Errorf("签到转换错误: %v\n", err)
+	}
+	if res["message"].(string) == "OK" {
+		autoLog.Sugar.Infof("原神签到成功")
+	} else if res["message"].(string) == "已签到" {
+		autoLog.Sugar.Infof("原神签到成功")
+	} else {
+		autoLog.Sugar.Errorf("原神签到失败: %v\n", res["message"].(string))
+	}
+}
+
+// GetCookieHeader 接收一个 cookie 字符串，返回一个 map[string]string，表示键值对
+func GetCookieHeader() map[string]string {
+	result := make(map[string]string)
+
+	// 按分号分割 cookie 条目
+	pairs := strings.Split(Cfg.Cookie, ";")
+	for _, pair := range pairs {
+		// 去除前后空格
+		trimmedPair := strings.TrimSpace(pair)
+		// 按等号分割键值
+		kv := strings.Split(trimmedPair, "=")
+		if len(kv) == 2 {
+			result[kv[0]] = kv[1]
 		}
 	}
 	return result
