@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <title>执行状态</title>
     <style>
         html, body {
@@ -94,21 +95,55 @@
                 font-size: 14px;
                 padding: 12px;
             }
+            img{
+                opacity: 0.8;
+            }
+            .right-top-swiper{
+                left: 100px;
+            }
         }
+        .right-top-swiper {
+            position: fixed;
+            bottom: 10px;
+            left: 150px;
+            width: 420px;
+            height: 700px;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none; /* 不阻止点击下面按钮 */
+        }
+
+        .right-top-swiper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
     </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
 <body>
 
 <canvas id="animeCanvas"></canvas>
-
-<!--<audio src="https://vod.ruotongmusic.com/sv/33203264-179ccc83f10/33203264-179ccc83f10.wav" autoplay loop style="display:none"></audio>-->
-
+<!-- 固定右上角轮播图 -->
+<div class="swiper right-top-swiper">
+    <div class="swiper-wrapper">
+<!--        <div class="swiper-slide"><img src="./static/image/bd.jpg" alt="bd1" /></div>-->
+<!--        <div class="swiper-slide"><img src="./static/image/ff.png" alt="bd2" /></div>-->
+<!--        <div class="swiper-slide"><img src="./static/image/sh.jpg" alt="bd4" /></div>-->
+<!--        <div class="swiper-slide"><img src="./static/image/ng.jpg" alt="bd5" /></div>-->
+<!--        <div class="swiper-slide"><img src="./static/image/gy.jpg" alt="bd6" /></div>-->
+<!--        <div class="swiper-slide"><img src="./static/image/123.png" alt="bd7" /></div>-->
+    </div>
+</div>
 <div class="container">
-    <h1>当前执行配置组: {{.group}}</h1>
-    <h1>当前执行脚本: {{.line}}</h1>
-    <h1>地图追踪进度：{{.progress}}</h1>
-    <h1>软件运行状态: {{.running}}</h1>
-    <h1>JS: {{.jsProgress}}</h1>
+    <h1 id="group">当前执行配置组:</h1>
+    <h1 id="line">当前执行脚本:</h1>
+    <h1 id="progress">地图追踪进度：</h1>
+    <h1 id="running">软件运行状态:</h1>
+    <h1 id="jsProgress">JS:</h1>
 
     <button onclick="oneLongBtn()">一条龙启动</button>
     <button onclick="closeBgiBtn()">关闭BGI</button>
@@ -124,6 +159,82 @@
 </div>
 
 <script>
+
+    async function getImages() {
+        try {
+            // Use querySelector to get the first element with the class "swiper-wrapper"
+            var swiperWrapper = document.querySelector(".swiper-wrapper");
+
+            // Add a check to ensure the element exists before trying to use it
+            if (!swiperWrapper) {
+                console.error("Error: '.swiper-wrapper' element not found!");
+                return; // Stop the function if the element isn't found
+            }
+
+            await fetch('/images')
+                .then(response => response.json())
+                .then(data => {
+                    var images = data.data;
+                    // Clear existing content to avoid duplicates if called multiple times
+                    swiperWrapper.innerHTML = '';
+
+                    for (let i = 0; i < images.length; i++) {
+                        let slide = document.createElement('div');
+                        slide.classList.add('swiper-slide');
+
+                        let img = document.createElement('img');
+                        img.src = `./static/image/${images[i]}`;
+                        img.alt = `bd${i}`;
+
+                        slide.appendChild(img);
+                        swiperWrapper.appendChild(slide); // This will now work correctly
+                    }
+
+                    // Re-initialize Swiper after new slides are added
+                    // Destroy existing instance if it exists to prevent multiple initializations
+                    if (window.mySwiper) {
+                        window.mySwiper.destroy(true, true);
+                    }
+                    window.mySwiper = new Swiper('.right-top-swiper', {
+                        loop: true,
+                        autoplay: {
+                            delay: 5000,
+                            disableOnInteraction: false
+                        },
+                        effect: 'fade',
+                        fadeEffect: {
+                            crossFade: true
+                        }
+                    });
+                });
+        } catch (err) {
+            console.error("Failed to load images for carousel:", err);
+        }
+    }
+
+    getImages();
+
+    async function refreshStatus() {
+        try {
+            const res = await fetch('/index');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            document.getElementById('group').textContent = '当前执行配置组: ' + data.group;
+            document.getElementById('line').textContent = '当前执行脚本: ' + data.line;
+            document.getElementById('progress').textContent = '地图追踪进度：' + data.progress;
+            document.getElementById('running').textContent = '软件运行状态: ' + data.running;
+            document.getElementById('jsProgress').textContent = 'JS: ' + data.jsProgress;
+        } catch (err) {
+            console.error("刷新失败：", err);
+        }
+    }
+
+    // // 首次执行 & 每隔5秒自动刷新
+    refreshStatus();
+    setInterval(refreshStatus, 10000);
+
+
     function otherBtn() {
         window.location.href = '/other';
     }

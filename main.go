@@ -1,3 +1,4 @@
+//go:generate rsrc -ico favicon.ico -manifest main.manifest -o main.syso
 package main
 
 import (
@@ -103,10 +104,8 @@ func findLastGroup(filename string) (string, error) {
 	}
 	// 输出结果
 	if lastMatch != "" {
-
-		autoLog.Sugar.Infof("最后匹配的行:", lastMatch)
-
-		autoLog.Sugar.Infof("配置组名称:", lastGroup)
+		//autoLog.Sugar.Infof("最后匹配的行:", lastMatch)
+		//autoLog.Sugar.Infof("配置组名称:", lastGroup)
 	} else {
 		errs := fmt.Errorf("没有找到匹配的行", 500)
 		return "", errs
@@ -161,7 +160,7 @@ func main() {
 	//ginServer.SetHTMLTemplate(template.Must(template.New("").ParseFS(htmlFS, "html/*.html")))
 
 	// 提供静态资源服务，把 html 目录映射为 /static 路径
-	ginServer.Static("/static", ".")
+	ginServer.Static("/static", "static")
 
 	ginServer.GET("/log", func(context *gin.Context) {
 
@@ -228,8 +227,13 @@ func main() {
 		}
 	})
 
-	//日志查询
 	ginServer.GET("/", func(c *gin.Context) {
+		// 传递给模板
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
+	//日志查询
+	ginServer.GET("/index", func(c *gin.Context) {
 		// 生成日志文件名
 		date := time.Now().Format("20060102")
 
@@ -240,8 +244,8 @@ func main() {
 
 			autoLog.Sugar.Errorf("Error: %v\n", err)
 		}
-		autoLog.Sugar.Info("Last line containing '.json':")
-		autoLog.Sugar.Info(tojson(line))
+		//autoLog.Sugar.Info("Last line containing '.json':")
+		//autoLog.Sugar.Info(tojson(line))
 
 		group, err := findLastGroup(filename)
 		if err != nil {
@@ -263,13 +267,22 @@ func main() {
 			jsProgress = "无"
 		}
 
-		c.HTML(http.StatusOK, "index.html", map[string]interface{}{
-			"group":      group,
-			"line":       line,
-			"progress":   progress,
-			"running":    running,
-			"jsProgress": jsProgress,
-		})
+		data := make(map[string]interface{})
+		data["group"] = group
+		data["line"] = line
+		data["progress"] = progress
+		data["running"] = running
+		data["jsProgress"] = jsProgress
+
+		c.JSON(http.StatusOK, data)
+
+		//c.HTML(http.StatusOK, "index.html", map[string]interface{}{
+		//	"group":      group,
+		//	"line":       line,
+		//	"progress":   progress,
+		//	"running":    running,
+		//	"jsProgress": jsProgress,
+		//})
 
 	})
 
@@ -502,7 +515,6 @@ func main() {
 			fmt.Println("err:", err)
 			return
 		}
-		fmt.Println(data)
 		task.StartGroups(data["name"])
 		if err != nil {
 			return
@@ -621,6 +633,31 @@ func main() {
 	//测试
 	ginServer.GET("/test", func(context *gin.Context) {
 		control.GetMysQDXy()
+	})
+
+	//读取statuc文件夹所有的图片
+	ginServer.GET("/images", func(context *gin.Context) {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		imageDir := filepath.Join(currentDir, "static/image")
+		files, err := os.ReadDir(imageDir)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		var imageNames []string
+		for _, file := range files {
+			if !file.IsDir() {
+				imageNames = append(imageNames, file.Name())
+			}
+		}
+
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": imageNames})
 	})
 
 	//一条龙

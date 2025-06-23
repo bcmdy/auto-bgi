@@ -1,10 +1,12 @@
 package config
 
 import (
+	"auto-bgi/autoLog"
 	"encoding/json"
 	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type config struct {
@@ -13,7 +15,7 @@ type config struct {
 	BetterGIAddress string   `json:"BetterGIAddress"`
 	WebhookURL      string   `json:"webhookURL"`
 	Content         string   `json:"content"`
-	ConfigName      string   `json:"ConfigName"`
+	ConfigNames     []string `json:"ConfigNames"`
 	BagStatistics   string   `json:"BagStatistics"`
 	LongX           int      `json:"longX"`
 	LongY           int      `json:"longY"`
@@ -44,4 +46,14 @@ func init() {
 	if err := json.Unmarshal(bytes, &Cfg); err != nil {
 		return
 	}
+}
+
+// 获取今天启动的一条龙名字
+func GetTodayOneLongName() string {
+	var oneLongs = Cfg.ConfigNames
+	now := time.Now()
+	weekdayNum := int(now.Weekday())
+	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
+	oneLongName := oneLongs[weekdayNum]
+	return oneLongName
 }

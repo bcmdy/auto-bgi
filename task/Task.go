@@ -149,8 +149,10 @@ func ChangeTaskEnabledList() error {
 
 	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
 
+	OneLongName := config.GetTodayOneLongName()
+
 	//自定义配置路径
-	filename := Config.BetterGIAddress + "\\User\\OneDragon\\" + Config.ConfigName + ".json"
+	filename := Config.BetterGIAddress + "\\User\\OneDragon\\" + OneLongName + ".json"
 
 	// 1. 读取 JSON 文件
 	data, err := os.ReadFile(filename)
@@ -245,35 +247,36 @@ func OneLongTask() {
 	time.Sleep(4000 * time.Millisecond)
 	autoLog.Sugar.Info("修改配置成功")
 
-	control.OpenSoftware(Config.BetterGIAddress + "/BetterGI.exe")
-	// 等待一小会儿
-	time.Sleep(3000 * time.Millisecond)
+	longName := config.GetTodayOneLongName()
 
-	//fmt.Println("启动原神")
-	//control.MouseClick(1267, 536, "left", false)
+	autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
+
+	StartOneDragon(longName)
+
+	//control.OpenSoftware(Config.BetterGIAddress + "/BetterGI.exe")
+	//// 等待一小会儿
+	//time.Sleep(3000 * time.Millisecond)
 	//
-	//fmt.Println("等待一小会儿（等待原神启动）")
-	//time.Sleep(60 * time.Second)
-
-	autoLog.Sugar.Info("切换屏幕")
-	control.SwitchingScreens("更好的原神")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	windows := control.GetWindows()
-	if windows != "更好的原神" {
-		control.SwitchingScreens("更好的原神")
-	}
-
-	time.Sleep(3000 * time.Millisecond)
-
-	autoLog.Sugar.Info("点击一条龙")
-	control.MouseClick(Config.LongX, Config.LongY, "left", false)
-
-	time.Sleep(3000 * time.Millisecond)
-
-	autoLog.Sugar.Info("点击执行")
-	control.MouseClick(Config.ExecuteX, Config.ExecuteY, "left", false)
+	//
+	//autoLog.Sugar.Info("切换屏幕")
+	//control.SwitchingScreens("更好的原神")
+	//
+	//time.Sleep(1000 * time.Millisecond)
+	//
+	//windows := control.GetWindows()
+	//if windows != "更好的原神" {
+	//	control.SwitchingScreens("更好的原神")
+	//}
+	//
+	//time.Sleep(3000 * time.Millisecond)
+	//
+	//autoLog.Sugar.Info("点击一条龙")
+	//control.MouseClick(Config.LongX, Config.LongY, "left", false)
+	//
+	//time.Sleep(3000 * time.Millisecond)
+	//
+	//autoLog.Sugar.Info("点击执行")
+	//control.MouseClick(Config.ExecuteX, Config.ExecuteY, "left", false)
 }
 
 func OneLong() {
@@ -388,26 +391,45 @@ func ListGroups() ([]string, error) {
 // 启动配置组
 func StartGroups(name string) {
 	control.CloseSoftware()
-	time.Sleep(5000 * time.Millisecond)
+	time.Sleep(5 * time.Second)
 
-	// 切换到目标目录
 	if err := os.Chdir(Config.BetterGIAddress); err != nil {
-		fmt.Printf("Failed to change directory to %s: %v\n", Config.BetterGIAddress, err)
+		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
 		return
 	}
 
-	// 直接指定 BetterGI.exe 的完整路径
 	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
+	cmd := exec.Command(betterGIPath, "--startGroups", name)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-	// 定义要执行的命令
-	cmd := exec.Command(betterGIPath, "BetterGI.exe", "--startGroups", name)
-
-	// 执行命令
 	if err := cmd.Run(); err != nil {
-		autoLog.Sugar.Error("启动配置组失败:", err)
+		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
 		return
 	}
 
 	autoLog.Sugar.Infof("%s 启动配置组成功", name)
+}
 
+// 启动一条龙
+func StartOneDragon(name string) {
+	control.CloseSoftware()
+	time.Sleep(5 * time.Second)
+
+	if err := os.Chdir(Config.BetterGIAddress); err != nil {
+		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
+		return
+	}
+
+	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
+	cmd := exec.Command(betterGIPath, "----startOneDragon", name)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		autoLog.Sugar.Errorf("启动一条龙失败: %v", err)
+		return
+	}
+
+	autoLog.Sugar.Infof("%s 启动一条龙成功", name)
 }

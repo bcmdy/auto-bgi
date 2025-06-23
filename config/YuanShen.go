@@ -19,25 +19,25 @@ import (
 
 var GameRoles gameRolesRes
 
-//func init() {
-//
-//	GetGenShinGameRolesAsync()
-//
-//	file, err := os.Open("GameInfo.json")
-//	if err != nil {
-//		return
-//	}
-//	defer file.Close()
-//
-//	bytes, err := ioutil.ReadAll(file)
-//	if err != nil {
-//		return
-//	}
-//
-//	if err := json.Unmarshal(bytes, &GameRoles); err != nil {
-//		return
-//	}
-//}
+func init() {
+
+	GetGenShinGameRolesAsync()
+
+	file, err := os.Open("GameInfo.json")
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return
+	}
+
+	if err := json.Unmarshal(bytes, &GameRoles); err != nil {
+		return
+	}
+}
 
 type gameRolesRes struct {
 	RetCode int    `json:"retcode"`
@@ -161,7 +161,14 @@ type TravelsDiaryDetailList struct {
 }
 
 // 旅行札记收入详情
-func GetTravelsDiaryDetailAsync(month int, type_ int, page int) TravelsDiaryDetail {
+func GetTravelsDiaryDetailAsync(month int, type_ int, page int) (TravelsDiaryDetail, error) {
+
+	//捕获异常
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Errorf("旅行札记收入详情异常详情: %v\n", r)
+		}
+	}()
 
 	GetTravelsDiaryDetailUrl := fmt.Sprintf("https://hk4e-api.mihoyo.com/event/ys_ledger/monthDetail?"+
 		"page=%d"+
@@ -175,8 +182,8 @@ func GetTravelsDiaryDetailAsync(month int, type_ int, page int) TravelsDiaryDeta
 
 	req, err := http.NewRequest("GET", GetTravelsDiaryDetailUrl, nil)
 	if err != nil {
-		fmt.Printf("Error creating POST request: %v\n", err)
-		return TravelsDiaryDetail{}
+		fmt.Printf("请求接口，POST request: %v\n", err)
+		return TravelsDiaryDetail{}, err
 	}
 	req.Header.Set("cookie", Cfg.Cookie)
 	req.Header.Set("Referer", "https://webstatic.mihoyo.com/")
@@ -185,7 +192,7 @@ func GetTravelsDiaryDetailAsync(month int, type_ int, page int) TravelsDiaryDeta
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Error sending POST request: %v\n", err)
-		return TravelsDiaryDetail{}
+		return TravelsDiaryDetail{}, err
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -196,23 +203,23 @@ func GetTravelsDiaryDetailAsync(month int, type_ int, page int) TravelsDiaryDeta
 	err2 := json.Unmarshal(body, &res)
 	if err2 != nil {
 		fmt.Println("Error unmarshalling JSON:", err)
-		return TravelsDiaryDetail{}
+		return TravelsDiaryDetail{}, err
 	}
 	data := res["data"]
 	//转成TravelsDiaryDetail
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println("JSON 格式化失败:", err)
-		return TravelsDiaryDetail{}
+		return TravelsDiaryDetail{}, err
 	}
 	var travelsDiaryDetail TravelsDiaryDetail
 	err = json.Unmarshal(jsonData, &travelsDiaryDetail)
 	if err != nil {
 		fmt.Println("JSON 格式化失败:", err)
-		return TravelsDiaryDetail{}
+		return TravelsDiaryDetail{}, err
 	}
 
-	return travelsDiaryDetail
+	return travelsDiaryDetail, nil
 
 }
 

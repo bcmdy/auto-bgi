@@ -202,7 +202,7 @@ func JsProgress(filename string, pattern string) (string, error) {
 	}
 	// 输出结果
 	if lastMatch != "" {
-		autoLog.Sugar.Infof("最后匹配的行: %s", lastMatch)
+		//autoLog.Sugar.Infof("最后匹配的行: %s", lastMatch)
 	} else {
 		errs := fmt.Errorf("没有找到匹配的行", 500)
 		return "", errs
@@ -241,8 +241,6 @@ func Progress(filename string, line string) (string, error) {
 		log.Fatal("projects 字段不是数组或不存在")
 		return "", err
 	}
-	//fmt.Println(len(projects))
-	fmt.Println(content)
 	pro := "0/0"
 	for i, project := range projects {
 		projectMap := project.(map[string]interface{})
@@ -951,9 +949,13 @@ func GroupTime() ([]GroupMap, error) {
 	scanner := bufio.NewScanner(file)
 	var prevLine string
 
-	//async := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
-	//async1 := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
-	//async.List = append(async.List, async1.List...)
+	async, err := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
+	if err != nil {
+		async.List = []config.TravelsDiaryDetailList{}
+	} else {
+		async1, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
+		async.List = append(async.List, async1.List...)
+	}
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -980,11 +982,11 @@ func GroupTime() ([]GroupMap, error) {
 					// 过滤收益
 					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
 					endStr := endTime.Format("2006-01-02 15:04:05")
-					//filtered := config.FilterByTime(async.List, startStr, endStr)
-					//var totalMoLa int
-					//for _, item := range filtered {
-					//	totalMoLa += item.Num
-					//}
+					filtered := config.FilterByTime(async.List, startStr, endStr)
+					var totalMoLa int
+					for _, item := range filtered {
+						totalMoLa += item.Num
+					}
 
 					// 组装
 					results = append(results, GroupMap{
@@ -993,7 +995,7 @@ func GroupTime() ([]GroupMap, error) {
 							StartTime:   startStr,
 							EndTime:     endStr,
 							ExecuteTime: duration.String(),
-							MoLa:        0,
+							MoLa:        totalMoLa,
 						},
 					})
 
