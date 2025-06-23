@@ -1013,14 +1013,20 @@ func GroupTime() ([]GroupMap, error) {
 	return results, nil
 }
 
-// 判断目录是否存在
-func PathExists() (bool, error) {
+// 判断配置文件是否正确
+func CheckConfig() (bool, error) {
 	_, err := os.Stat(Config.BetterGIAddress)
 	if err == nil {
-		return true, nil
+		fmt.Println("Bgi安装目录设置正确")
 	}
 	if os.IsNotExist(err) {
-		return false, nil
+		return false, fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件BetterGIAddress：例子：D:\\subject\\BetterGI")
 	}
-	return false, err
+	names := Config.ConfigNames
+	if len(names) == 7 {
+		fmt.Println("配置组configNames正确")
+	} else {
+		return false, fmt.Errorf("配置组configNames不正确")
+	}
+	return true, nil
 }

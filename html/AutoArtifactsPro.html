@@ -78,10 +78,10 @@
         }
 
         section.panel {
-            background: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 15px #ffcce6;
+            /*background: rgba(255, 255, 255, 0.8);*/
+            /*box-shadow: 0 0 15px #ffcce6;*/
             border-radius: 20px;
-            padding: 20px 25px;
+            /*padding: 20px 25px;*/
             margin-bottom: 30px;
             position: relative;
         }
@@ -161,11 +161,11 @@
                 padding: 12px;
             }
             img {
-                opacity: 0.4;
+                opacity: 0.9;
             }
         }
         .info-box {
-            background-color: rgba(255, 255, 255, 0.85);
+            /*background-color: rgba(255, 255, 255, 0.85);*/
             border: 2px dashed var(--border-color);
             border-radius: 20px;
             padding: 20px;
@@ -212,7 +212,7 @@
             right: 5px;
             width: 220px;
             height: 400px;
-            z-index: 2;
+            z-index: -1;
             pointer-events: none;
         }
 
@@ -222,6 +222,14 @@
             object-fit: cover;
             /*opacity: 0.8;*/
             border-radius: 10px;
+        }
+        p{
+            font-size: 1em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px #ffd1e0;
+            word-break: break-word;
+            color: #ff6699;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -255,7 +263,7 @@
             <h3>♡ {{ .FileName }}</h3>
             <button class="btn" onclick="getAutoArtifactsPro2Btn('{{ .FileName }}')">转为折线图</button>
             {{ range .Detail }}
-            <p>{{.}}</p>
+            <p >{{.}}</p>
             {{ end }}
 
         </div>
@@ -303,7 +311,7 @@
                 new Swiper(swiperContainer, {
                     loop: true,
                     autoplay: {
-                        delay: 10000,
+                        delay: 5000,
                         disableOnInteraction: false
                     },
                     effect: 'fade',

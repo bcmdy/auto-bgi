@@ -35,11 +35,12 @@ var (
 
 func init() {
 	//判断目录是否设置正确
-	exists, _ := bgiStatus.PathExists()
+	exists, err := bgiStatus.CheckConfig()
 	if !exists {
-		err2 := fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件：例子：D:\\subject\\BetterGI")
-		fmt.Println(err2)
-
+		fmt.Println(err)
+		//程序暂停，任意键退出
+		fmt.Println("=======程序暂停，任意键退出=========")
+		fmt.Scanln()
 		os.Exit(1)
 	}
 }
@@ -244,8 +245,6 @@ func main() {
 
 			autoLog.Sugar.Errorf("Error: %v\n", err)
 		}
-		//autoLog.Sugar.Info("Last line containing '.json':")
-		//autoLog.Sugar.Info(tojson(line))
 
 		group, err := findLastGroup(filename)
 		if err != nil {
@@ -275,14 +274,6 @@ func main() {
 		data["jsProgress"] = jsProgress
 
 		c.JSON(http.StatusOK, data)
-
-		//c.HTML(http.StatusOK, "index.html", map[string]interface{}{
-		//	"group":      group,
-		//	"line":       line,
-		//	"progress":   progress,
-		//	"running":    running,
-		//	"jsProgress": jsProgress,
-		//})
 
 	})
 
@@ -638,6 +629,7 @@ func main() {
 	//读取statuc文件夹所有的图片
 	ginServer.GET("/images", func(context *gin.Context) {
 		currentDir, err := os.Getwd()
+		autoLog.Sugar.Infof("当前目录:%s", currentDir)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 			return

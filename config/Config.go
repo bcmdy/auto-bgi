@@ -17,10 +17,6 @@ type config struct {
 	Content         string   `json:"content"`
 	ConfigNames     []string `json:"ConfigNames"`
 	BagStatistics   string   `json:"BagStatistics"`
-	LongX           int      `json:"longX"`
-	LongY           int      `json:"longY"`
-	ExecuteX        int      `json:"executeX"`
-	ExecuteY        int      `json:"executeY"`
 	Post            string   `json:"post"`
 	IsStartTimeLong bool     `json:"isStartTimeLong"`
 	IsMysSignIn     bool     `json:"isMysSignIn"`

@@ -40,10 +40,10 @@
             max-width: 700px;
             margin: 60px auto;
             padding: 20px;
-            border: 2px solid #ff9ecd;
+            /*border: 2px solid #ff9ecd;*/
             border-radius: 20px;
-            background-color: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 20px #ffaad5;
+            background-color: rgba(255, 255, 255, 0);
+            /*box-shadow: 0 0 20px #ffaad5;*/
         }
 
         h1 {
@@ -95,9 +95,6 @@
                 font-size: 14px;
                 padding: 12px;
             }
-            img{
-                opacity: 0.8;
-            }
             .right-top-swiper{
                 left: 100px;
             }
@@ -105,7 +102,9 @@
         .right-top-swiper {
             position: fixed;
             bottom: 10px;
-            left: 150px;
+
+            left: 2%;
+            /*left: 150px;*/
             width: 420px;
             height: 700px;
             z-index: -1;
@@ -198,7 +197,7 @@
                     window.mySwiper = new Swiper('.right-top-swiper', {
                         loop: true,
                         autoplay: {
-                            delay: 5000,
+                            delay: 10000,
                             disableOnInteraction: false
                         },
                         effect: 'fade',
