@@ -179,6 +179,7 @@ func ChangeTaskEnabledList() error {
 	re := regexp.MustCompile(`\d+`) // 匹配一个或多个连续数字
 	var builder strings.Builder
 
+	builder.WriteString("今日执行一条龙：" + OneLongName + "\n")
 	builder.WriteString("今日执行配置组：")
 	builder.WriteString("\n")
 

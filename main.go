@@ -1,4 +1,3 @@
-//go:generate rsrc -ico favicon.ico -manifest main.manifest -o main.syso
 package main
 
 import (
@@ -635,8 +634,9 @@ func main() {
 			return
 		}
 
-		imageDir := filepath.Join(currentDir, "static/image")
-		files, err := os.ReadDir(imageDir)
+		//imageDir := filepath.Join(currentDir, "static/image")
+
+		files, err := os.ReadDir("static/image")
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 			return
@@ -659,9 +659,7 @@ func main() {
 		autoLog.Sugar.Infof("一条龙开启状态")
 
 	} else {
-
 		autoLog.Sugar.Infof("一条龙关闭状态")
-
 	}
 
 	//检查BGI状态
