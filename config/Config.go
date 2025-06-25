@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"github.com/robfig/cron/v3"
 	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -22,6 +24,7 @@ type config struct {
 	IsMysSignIn     bool     `json:"isMysSignIn"`
 	Backups         []string `json:"backups"`
 	Cookie          string   `json:"cookie"`
+	BasePath        string   `json:"basePath"`
 }
 
 var Cfg config
@@ -42,6 +45,13 @@ func init() {
 	if err := json.Unmarshal(bytes, &Cfg); err != nil {
 		return
 	}
+	// 获取程序的绝对路径
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatalf("无法获取可执行文件路径: %v", err)
+	}
+	// 获取包含可执行文件的目录
+	Cfg.BasePath = filepath.Dir(ex)
 }
 
 // 获取今天启动的一条龙名字
