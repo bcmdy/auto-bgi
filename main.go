@@ -13,6 +13,7 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/thinkerou/favicon"
 	"html/template"
 	"io"
 	"log"
@@ -144,6 +145,7 @@ func main() {
 
 	ginServer.SetTrustedProxies(nil)
 	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
+	ginServer.Use(favicon.New("./favicon.ico"))
 
 	////加载templates中所有模板文件, 使用不同目录下名称相同的模板,注意:一定要放在配置路由之前才得行
 	//ginServer.LoadHTMLGlob("html/*")
@@ -660,6 +662,8 @@ func main() {
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
+	//
+	//config.GetGachaLog(1)
 
 	if Config.IsMysSignIn {
 		//米游社自动签到

@@ -410,6 +410,11 @@ func StartGroups(name string) {
 	}
 
 	autoLog.Sugar.Infof("%s 启动配置组成功", name)
+	//目录切换回来
+	if err := os.Chdir(Config.BasePath); err != nil {
+		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BasePath, err)
+		return
+	}
 }
 
 // 启动一条龙
@@ -423,7 +428,7 @@ func StartOneDragon(name string) {
 	}
 
 	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
-	cmd := exec.Command(betterGIPath, "----startOneDragon", name)
+	cmd := exec.Command(betterGIPath, "--startOneDragon", name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -431,6 +436,11 @@ func StartOneDragon(name string) {
 		autoLog.Sugar.Errorf("启动一条龙失败: %v", err)
 		return
 	}
-
 	autoLog.Sugar.Infof("%s 启动一条龙成功", name)
+
+	//目录切换回来
+	if err := os.Chdir(Config.BasePath); err != nil {
+		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BasePath, err)
+		return
+	}
 }

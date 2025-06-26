@@ -305,6 +305,45 @@ func GenShinSign() {
 	}
 }
 
+// 获取抽卡记录
+func GetGachaLog(page int) (map[string]interface{}, error) {
+	mapData := make(map[string]interface{})
+	mapData["auth_appid"] = "webview_gacha"
+	mapData["game_biz"] = GameRoles.Data.List[0].GameBiz
+	mapData["game_uid"] = GameRoles.Data.List[0].GameId
+	mapData["region"] = GameRoles.Data.List[0].Region
+	jsonData, err := json.Marshal(mapData)
+	if err != nil {
+		fmt.Println("JSON 格式化失败:", err)
+	}
+
+	// 定义请求的 URL
+	signUrl := "https://api-takumi.mihoyo.com/binding/api/genAuthKey"
+
+	req, err := http.NewRequest("POST", signUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Printf("Error creating POST request: %v\n", err)
+	}
+	req.Header.Set("Host", "api-takumi.mihoyo.com")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Referer", "https://webstatic.mihoyo.com")
+	req.Header.Set("x-rpc-app_version", "2.28.1")
+	req.Header.Set("x-rpc-client_type", "5")
+	req.Header.Set("x-rpc-device_id", "CBEC8312-AA77-489E-AE8A-8D498DE24E90")
+	req.Header.Set("x-requested-with", "com.mihoyo.hyperion")
+	req.Header.Set("DS", CreateSecret2("ulInCDohgEs557j0VsPDYnQaaz6KJcv5", signUrl))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending POST request: %v\n", err)
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(body))
+	return mapData, nil
+}
+
 // GetCookieHeader 接收一个 cookie 字符串，返回一个 map[string]string，表示键值对
 func GetCookieHeader() map[string]string {
 	result := make(map[string]string)

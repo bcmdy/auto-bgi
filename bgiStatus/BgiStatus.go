@@ -953,9 +953,16 @@ func GroupTime() ([]GroupMap, error) {
 	if err != nil {
 		async.List = []config.TravelsDiaryDetailList{}
 	} else {
+		time.Sleep(3 * time.Second)
 		async1, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
+		time.Sleep(3 * time.Second)
+		async2, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 3)
 		async.List = append(async.List, async1.List...)
+		async.List = append(async.List, async2.List...)
 	}
+
+	var sunTime time.Duration
+	var sumMoLa int
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -979,6 +986,8 @@ func GroupTime() ([]GroupMap, error) {
 					endTime, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
 					duration := endTime.Sub(temp.StartTime)
 
+					sunTime += duration
+
 					// 过滤收益
 					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
 					endStr := endTime.Format("2006-01-02 15:04:05")
@@ -987,6 +996,7 @@ func GroupTime() ([]GroupMap, error) {
 					for _, item := range filtered {
 						totalMoLa += item.Num
 					}
+					sumMoLa += totalMoLa
 
 					// 组装
 					results = append(results, GroupMap{
@@ -1010,6 +1020,18 @@ func GroupTime() ([]GroupMap, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
+
+	// 计算总时长
+	results = append(results, GroupMap{
+		Title: "合计",
+		Detail: GroupDetail{
+			StartTime:   "00:00:00",
+			EndTime:     "00:00:00",
+			ExecuteTime: sunTime.String(),
+			MoLa:        sumMoLa,
+		},
+	})
+
 	return results, nil
 }
 
