@@ -610,15 +610,15 @@ func main() {
 
 	//统计配置组执行时间
 	ginServer.GET("/other", func(context *gin.Context) {
-		GroupTime, err := bgiStatus.GroupTime()
-		if err != nil {
-			context.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"error": err.Error(),
-			})
-		}
+		GroupTime, _ := bgiStatus.GroupTime()
+
+		//获取米游社签到记录
+		signLog := control.GetMysSignLog()
+
 		context.HTML(http.StatusOK, "other.html", gin.H{
 			"title":     "其他",
 			"GroupTime": GroupTime,
+			"signLog":   signLog,
 		})
 	})
 
@@ -630,7 +630,7 @@ func main() {
 	//读取statuc文件夹所有的图片
 	ginServer.GET("/images", func(context *gin.Context) {
 
-		imageDir := Config.BasePath + "/static/image"
+		imageDir := Config.BasePath + "\\static\\image"
 
 		autoLog.Sugar.Infof("当前目录:%s", imageDir)
 

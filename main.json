@@ -2,13 +2,15 @@
  "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
  "isStartTimeLong": false,
  "isMysSignIn": false,
+ "isMoLaSum": false,
  "OneLongHour": 11,
  "OneLongMinute": 4,
  "webhookURL": "https://qyapi.weixin.qq.com",
  "content": "Bgi破溃了",
- "configNames": ["我的","默认配置","我的","我的","我的","我的","我的"],
+ "configNames": ["我的","我的","我的","我的","我的","我的","我的"],
  "BagStatistics": "晶核,大英雄的经验,水晶块,魔晶块,萃凝晶,苍晶螺",
  "post": ":8082",
  "backups": ["JsScript\\AutoArtifactsPro\\record.txt"],
+ "isControlGroup": false,
  "Cookie": ""
 }

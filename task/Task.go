@@ -144,6 +144,11 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 // 修改TaskEnabledList
 func ChangeTaskEnabledList() error {
 
+	if Config.IsControlGroup == false {
+		autoLog.Sugar.Infof("配置文件中未开启控制配置组")
+		return nil
+	}
+
 	now := time.Now()
 	weekdayNum := int(now.Weekday())
 
@@ -184,8 +189,6 @@ func ChangeTaskEnabledList() error {
 	builder.WriteString("\n")
 
 	for _, s := range aa.Keys() {
-		//fmt.Println(s)
-		//fmt.Println(aa.Get(s))
 
 		numbers := re.FindAllString(s, -1)
 		if numbers == nil {
@@ -199,14 +202,15 @@ func ChangeTaskEnabledList() error {
 		if contains(numbers, weekdayNum) {
 			autoLog.Sugar.Infof("配置组:[" + s + "]已到执行时间")
 			aa.Set(s, true)
-			builder.WriteString(fmt.Sprintf("%s：%v", s, true))
+			//builder.WriteString(fmt.Sprintf("%s：%v", s, true))
+			builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 			builder.WriteString("\n")
 			continue
 		} else {
 			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
 			aa.Set(s, false)
-			builder.WriteString(fmt.Sprintf("%s：%v", s, false))
-			builder.WriteString("\n")
+			//builder.WriteString(fmt.Sprintf("%s：%v", s, false))
+			//builder.WriteString("\n")
 			continue
 		}
 	}
@@ -394,10 +398,10 @@ func StartGroups(name string) {
 	control.CloseSoftware()
 	time.Sleep(5 * time.Second)
 
-	if err := os.Chdir(Config.BetterGIAddress); err != nil {
-		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
-		return
-	}
+	//if err := os.Chdir(Config.BetterGIAddress); err != nil {
+	//	autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
+	//	return
+	//}
 
 	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
 	cmd := exec.Command(betterGIPath, "--startGroups", name)
@@ -422,10 +426,10 @@ func StartOneDragon(name string) {
 	control.CloseSoftware()
 	time.Sleep(5 * time.Second)
 
-	if err := os.Chdir(Config.BetterGIAddress); err != nil {
-		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
-		return
-	}
+	//if err := os.Chdir(Config.BetterGIAddress); err != nil {
+	//	autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
+	//	return
+	//}
 
 	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
 	cmd := exec.Command(betterGIPath, "--startOneDragon", name)
@@ -438,9 +442,4 @@ func StartOneDragon(name string) {
 	}
 	autoLog.Sugar.Infof("%s 启动一条龙成功", name)
 
-	//目录切换回来
-	if err := os.Chdir(Config.BasePath); err != nil {
-		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BasePath, err)
-		return
-	}
 }

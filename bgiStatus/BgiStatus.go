@@ -949,16 +949,21 @@ func GroupTime() ([]GroupMap, error) {
 	scanner := bufio.NewScanner(file)
 	var prevLine string
 
-	async, err := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
-	if err != nil {
-		async.List = []config.TravelsDiaryDetailList{}
-	} else {
-		time.Sleep(3 * time.Second)
-		async1, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
-		time.Sleep(3 * time.Second)
-		async2, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 3)
-		async.List = append(async.List, async1.List...)
-		async.List = append(async.List, async2.List...)
+	var asyncList []config.TravelsDiaryDetailList
+
+	fmt.Println(Config.IsMoLaSum)
+
+	if Config.IsMoLaSum {
+		async, err := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
+		if err == nil {
+			time.Sleep(3 * time.Second)
+			async1, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
+			time.Sleep(3 * time.Second)
+			async2, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 3)
+
+			asyncList = append(async.List, async1.List...)
+			asyncList = append(async.List, async2.List...)
+		}
 	}
 
 	var sunTime time.Duration
@@ -991,7 +996,7 @@ func GroupTime() ([]GroupMap, error) {
 					// 过滤收益
 					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
 					endStr := endTime.Format("2006-01-02 15:04:05")
-					filtered := config.FilterByTime(async.List, startStr, endStr)
+					filtered := config.FilterByTime(asyncList, startStr, endStr)
 					var totalMoLa int
 					for _, item := range filtered {
 						totalMoLa += item.Num

@@ -243,3 +243,17 @@ func GetMysQDXy() {
 
 	fmt.Println("响应内容:", string(body))
 }
+
+func GetMysSignLog() string {
+	readLogURL := "http://127.0.0.1:8888/read-log"
+	resp, err := http.Get(readLogURL)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(body)
+}

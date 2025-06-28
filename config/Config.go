@@ -25,6 +25,8 @@ type config struct {
 	Backups         []string `json:"backups"`
 	Cookie          string   `json:"cookie"`
 	BasePath        string   `json:"basePath"`
+	IsMoLaSum       bool     `json:"isMoLaSum"`
+	IsControlGroup  bool     `json:"isControlGroup" comment:"是否控制配置组"`
 }
 
 var Cfg config
