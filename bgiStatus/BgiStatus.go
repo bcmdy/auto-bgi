@@ -348,7 +348,7 @@ func BagStatistics() ([]Material, error) {
 	for scanner.Scan() {
 		for _, s := range split {
 			// 创建一个正则表达式来匹配 "晶蝶：数字" 模式
-			sprintf := fmt.Sprintf(`%s: (\d+)`, s)
+			sprintf := fmt.Sprintf(`,%s: (\d+)`, s)
 			re := regexp.MustCompile(sprintf)
 
 			line := scanner.Text()
@@ -363,8 +363,7 @@ func BagStatistics() ([]Material, error) {
 			if match != "" {
 				// 提取数字部分并存储
 				split := strings.Split(match, ":")
-
-				bag.Cl = split[0]
+				bag.Cl = strings.Replace(split[0], ",", "", -1)
 				bag.Num = split[1]
 
 				bags = append(bags, bag)

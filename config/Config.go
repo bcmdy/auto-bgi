@@ -25,7 +25,7 @@ type config struct {
 	Backups         []string `json:"backups"`
 	Cookie          string   `json:"cookie"`
 	BasePath        string   `json:"basePath"`
-	IsMoLaSum       bool     `json:"isMoLaSum"`
+	IsMoLaSum       bool     `json:"isMoLaSum" comment:"是否计算摩拉"`
 	IsControlGroup  bool     `json:"isControlGroup" comment:"是否控制配置组"`
 }
 
