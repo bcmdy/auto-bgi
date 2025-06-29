@@ -211,18 +211,20 @@
         });
 
         // 按材料名升序排序
-        dataRows.sort((a, b) => a.cl.localeCompare(b.cl));
+        dataRows.sort((a, b) => {
+            if (a.cl === '摩拉数值' && b.cl !== '摩拉数值') {
+                return -1; // a是摩拉，排前面
+            } else if (a.cl !== '摩拉数值' && b.cl === '摩拉数值') {
+                return 1; // b是摩拉，排前面
+            } else {
+                return a.cl.localeCompare(b.cl); // 都是摩拉或都不是，按字母排序
+            }
+        });
 
         // 清空 tbody
         tbody.innerHTML = '';
 
-        // // 颜色分配和材料记录
-        // const colorMap = {};
-        // const colorPalette = [
-        //     '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
-        //     '#1abc9c', '#d35400', '#43e20a', '#16a085', '#c0392b'
-        // ];
-        // let colorIndex = 0;
+
         let materialMap = {};
         let lastCl = null;
 
@@ -238,12 +240,6 @@
             }
             lastCl = cl;
 
-            // // 分配颜色
-            // if (!colorMap[cl]) {
-            //     colorMap[cl] = colorPalette[colorIndex % colorPalette.length];
-            //     colorIndex++;
-            // }
-            // element.style.backgroundColor = colorMap[cl] + '20'; // 半透明
 
             // 显示数量变化
             if (materialMap[cl] !== undefined) {
