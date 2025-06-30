@@ -188,14 +188,23 @@ func ChangeTaskEnabledList() error {
 	builder.WriteString("今日执行配置组：")
 	builder.WriteString("\n")
 
+	var oneLongLog strings.Builder
+
 	for _, s := range aa.Keys() {
 
 		numbers := re.FindAllString(s, -1)
 		if numbers == nil {
 			get, _ := aa.Get(s)
 
-			builder.WriteString(fmt.Sprintf("%s：%v", s, get))
-			builder.WriteString("\n")
+			if get == true {
+				builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+				builder.WriteString("\n")
+
+				oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+				oneLongLog.WriteString("\n")
+
+				continue
+			}
 			continue
 		}
 		autoLog.Sugar.Infof("匹配的数字:%v", numbers)
@@ -231,6 +240,17 @@ func ChangeTaskEnabledList() error {
 	}
 
 	bgiStatus.SendWeChatNotification(builder.String())
+
+	//将执行配置写入文件，直接覆盖
+	// 定义要写入的内容
+	content := []byte(oneLongLog.String())
+	// 打开文件，如果文件不存在则创建
+	file, err := os.OpenFile("OneLongTask.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("打开文件失败: %v", err)
+	}
+	defer file.Close()
+	file.Write(content)
 
 	return nil
 

@@ -440,6 +440,76 @@ type DogFood struct {
 	Detail   []string
 }
 
+// 获取当前配置组
+func FindLastGroup(filename string) (string, error) {
+
+	pattern := `配置组 "(.*?)" 加载完成，共\d+个脚本，开始执行`
+
+	re := regexp.MustCompile(pattern)
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	// 用于存储最后匹配的行和配置组名称
+	var lastMatch string
+	var lastGroup string
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := re.FindStringSubmatch(line)
+		if matches != nil {
+			lastMatch = line
+			lastGroup = matches[1] // 第一个捕获组是配置组名称
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	// 输出结果
+	if lastMatch != "" {
+		//autoLog.Sugar.Infof("最后匹配的行:", lastMatch)
+		//autoLog.Sugar.Infof("配置组名称:", lastGroup)
+	} else {
+		errs := fmt.Errorf("没有找到匹配的行", 500)
+		return "", errs
+	}
+	return lastGroup, nil
+}
+
+// 获取配置组进度
+func GetGroupP(group string) string {
+	file, err := os.Open("OneLongTask.txt")
+	if err != nil {
+		fmt.Println("打开文件失败：", err)
+		return "未知"
+	}
+	defer file.Close()
+	totalLines := 0
+	gouliangLines := 0
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		totalLines++
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, group) {
+			gouliangLines = totalLines
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("读取文件出错：", err)
+		return "未知"
+	}
+
+	return fmt.Sprintf("%d/%d", gouliangLines, totalLines)
+}
+
 func GetAutoArtifactsPro() ([]DogFood, error) {
 	// 获取当前目录下所有 .txt 文件
 	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\*.txt", Config.BetterGIAddress))
@@ -1055,4 +1125,24 @@ func CheckConfig() (bool, error) {
 		return false, fmt.Errorf("配置组configNames不正确")
 	}
 	return true, nil
+}
+
+func GetGroupPInfo() string {
+
+	//读取文件内容
+	file := "OneLongTask.txt"
+
+	openFile, _ := os.OpenFile(file, os.O_RDWR, os.ModePerm)
+
+	stat, _ := openFile.Stat()
+
+	defer openFile.Close()
+
+	reader := bufio.NewReader(openFile)
+
+	//读取
+	s1 := make([]byte, stat.Size())
+	reader.Read(s1)
+
+	return string(s1)
 }

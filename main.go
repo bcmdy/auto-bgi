@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"syscall"
@@ -71,47 +70,6 @@ func findLastJSONLine(filename string) (string, error) {
 	}
 
 	return lastJSONLine, nil
-}
-
-func findLastGroup(filename string) (string, error) {
-
-	pattern := `配置组 "(.*?)" 加载完成，共\d+个脚本，开始执行`
-
-	re := regexp.MustCompile(pattern)
-
-	file, err := os.Open(filename)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	// 用于存储最后匹配的行和配置组名称
-	var lastMatch string
-	var lastGroup string
-
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
-		if matches != nil {
-			lastMatch = line
-			lastGroup = matches[1] // 第一个捕获组是配置组名称
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-	// 输出结果
-	if lastMatch != "" {
-		//autoLog.Sugar.Infof("最后匹配的行:", lastMatch)
-		//autoLog.Sugar.Infof("配置组名称:", lastGroup)
-	} else {
-		errs := fmt.Errorf("没有找到匹配的行", 500)
-		return "", errs
-	}
-	return lastGroup, nil
 }
 
 var Config = config.Cfg
@@ -247,11 +205,13 @@ func main() {
 			autoLog.Sugar.Errorf("Error: %v\n", err)
 		}
 
-		group, err := findLastGroup(filename)
+		group, err := bgiStatus.FindLastGroup(filename)
 		if err != nil {
-
 			autoLog.Sugar.Errorf("Error: %v\n", err)
 		}
+
+		p := bgiStatus.GetGroupP(group)
+
 		jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
 		progress, err := bgiStatus.Progress(jsonStr, line)
 		if err != nil {
@@ -268,7 +228,7 @@ func main() {
 		}
 
 		data := make(map[string]interface{})
-		data["group"] = group
+		data["group"] = group + "[" + p + "]"
 		data["line"] = line
 		data["progress"] = progress
 		data["running"] = running
@@ -278,47 +238,47 @@ func main() {
 
 	})
 
-	//日志查询
-	ginServer.GET("/mark", func(c *gin.Context) {
-		// 生成日志文件名
-		date := time.Now().Format("20060102")
-
-		filename := filepath.Clean(fmt.Sprintf("%s\\autoLog\\better-genshin-impact%s.autoLog", Config.BetterGIAddress, date))
-
-		line, err := findLastJSONLine(filename)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-		}
-		fmt.Println("Last line containing '.json':")
-		fmt.Println(line)
-
-		group, err := findLastGroup(filename)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-		}
-		jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
-		progress, err := bgiStatus.Progress(jsonStr, line)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-			progress = "0/0"
-		}
-
-		running := bgiStatus.IsWechatRunning()
-
-		jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)")
-		if err != nil {
-			jsProgress = "无"
-		}
-
-		c.JSON(http.StatusOK, map[string]interface{}{
-			"group":      group,
-			"line":       line,
-			"progress":   progress,
-			"running":    running,
-			"jsProgress": jsProgress,
-		})
-
-	})
+	////日志查询
+	//ginServer.GET("/mark", func(c *gin.Context) {
+	//	// 生成日志文件名
+	//	date := time.Now().Format("20060102")
+	//
+	//	filename := filepath.Clean(fmt.Sprintf("%s\\autoLog\\better-genshin-impact%s.autoLog", Config.BetterGIAddress, date))
+	//
+	//	line, err := findLastJSONLine(filename)
+	//	if err != nil {
+	//		fmt.Printf("Error: %v\n", err)
+	//	}
+	//	fmt.Println("Last line containing '.json':")
+	//	fmt.Println(line)
+	//
+	//	group, err := bgiStatus.FindLastGroup(filename)
+	//	if err != nil {
+	//		fmt.Printf("Error: %v\n", err)
+	//	}
+	//	jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
+	//	progress, err := bgiStatus.Progress(jsonStr, line)
+	//	if err != nil {
+	//		fmt.Printf("%v\n", err)
+	//		progress = "0/0"
+	//	}
+	//
+	//	running := bgiStatus.IsWechatRunning()
+	//
+	//	jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)")
+	//	if err != nil {
+	//		jsProgress = "无"
+	//	}
+	//
+	//	c.JSON(http.StatusOK, map[string]interface{}{
+	//		"group":      group,
+	//		"line":       line,
+	//		"progress":   progress,
+	//		"running":    running,
+	//		"jsProgress": jsProgress,
+	//	})
+	//
+	//})
 
 	//一条龙
 	ginServer.POST("/oneLong", func(context *gin.Context) {
@@ -615,10 +575,14 @@ func main() {
 		//获取米游社签到记录
 		signLog := control.GetMysSignLog()
 
+		//获取今日启动配置组
+		groupPInfo := bgiStatus.GetGroupPInfo()
+
 		context.HTML(http.StatusOK, "other.html", gin.H{
-			"title":     "其他",
-			"GroupTime": GroupTime,
-			"signLog":   signLog,
+			"title":      "其他",
+			"GroupTime":  GroupTime,
+			"signLog":    signLog,
+			"groupPInfo": groupPInfo,
 		})
 	})
 
