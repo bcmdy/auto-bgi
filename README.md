@@ -42,12 +42,18 @@
 | OneLongHour     | 每天一条龙启动的小时，前面不能有0，比如1点启动，不能写01     |
 | OneLongMinute   | 每天一条龙启动的分钟，前面不能有0，比如1分启动，不能写01     |
 |                 | 设置好了OneLongHour和OneLongMinute，将会每天定时启动一条龙   |
+| isMoLaSum       | 在其他里面有一个收益摩拉统计，是否开启，配合米游社的Cookie统计，如果不需要取消掉，打开网页速度会快点：true/false |
 | webhookURL      | 企业微信机器人地址                                           |
 | content         | 当bgi关闭的时候，会发送通知，这个是需要发送什么              |
 | configNames     | 这个是你的一条龙配置的名称，根据今天周几，来启动哪一个一条龙，必须要有7个，从星期天开始，例子："configNames": ["我的","默认配置","我的","我的","我的","我的","我的"]<br />表示星期天启动我的配置单，星期一执行默认配置类推。在一条龙的配置组名称后面加上数字，比如：挖矿-0-2-4。意思是这个配置组将会在星期天，星期二，星期四启动，其他时间不启动。每天都要执行的不用加数字，autobgi只控制加数字的，没有加数字的，原来是怎么样就是怎么样。 |
 | BagStatistics   | 背包统计功能，需要配合仓库的背包统计js一起使用，将你需要关注的材料填上，英文逗号隔开（如果你导入了摩拉log的脚本，会自动加入统计，这里不需要填写摩拉） |
 | post            | 修改默认端口，格式：（:8082）                                |
 | backups         | 指定备份文件或者文件夹，具体格式看例子，User文件夹是默认备份的，将会打包成一个压缩包，在autobgi目录的Users文件夹下 |
+| jsName          | js脚本一键更新，自动更新js，此功能不适用所有脚本，谨慎使用，已经测试的脚本我已经加进去了，多个脚本填写方式：["jsName1","jsName2"]。填写脚本的文件名字 |
+| isControlGroup  | 是否控制调度器，就是配置组带数字的要不要控制，如果是茶包s老师的bgi，请填：false |
+| Cookie          | 米游社的cookie，如果需要摩拉统计，就填上                     |
+
+
 
 
 
@@ -58,14 +64,18 @@
  "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
  "isStartTimeLong": false,
  "isMysSignIn": false,
+ "isMoLaSum": false,
  "OneLongHour": 11,
  "OneLongMinute": 4,
  "webhookURL": "https://qyapi.weixin.qq.com",
  "content": "Bgi破溃了",
- "configNames": ["我的","默认配置","我的","我的","我的","我的","我的"],
- "BagStatistics": "晶核,大英雄的经验,水晶块,魔晶块,萃凝晶,苍晶螺",
+ "configNames": ["我的","我的","我的","我的","我的","我的","我的"],
+ "BagStatistics": "晶核,大英雄的经验,水晶块,萃凝晶,苍晶螺,紫晶块,星银矿石",
  "post": ":8082",
- "backups": ["JsScript\\AutoArtifactsPro\\record.txt","AutoPathing\\矿物\\萃凝晶"]
+ "backups": ["JsScript\\AutoArtifactsPro\\records\\默认账户.txt"],
+ "jsName": ["AutoArtifactsPro"],
+ "isControlGroup": true,
+ "Cookie": ""
 }
 ```
 
@@ -75,11 +85,7 @@
 
 这个是测试坐标是否设置对的，通过这个按钮启动的一条龙，配置组将被数字规则控制。这个按钮如果可以正常启动一条龙，那么定时器大概率是没有问题，到时候自动启动。
 
-## 关闭bgi
-
-字面意思
-
-## 关闭原神（启动器）
+## 关闭bgi（原神，启动器）
 
 字面意思
 
@@ -106,6 +112,10 @@
 ## 备份user文件和指定文件
 
 指定备份文件或者文件夹，具体格式看例子，User文件夹是默认备份的，将会打包成一个压缩包，在autobgi目录的Users文件夹下
+
+## 更新指定脚本
+
+可以一键更新填写好的脚本
 
 # 结尾
 
