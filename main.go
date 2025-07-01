@@ -586,9 +586,11 @@ func main() {
 		})
 	})
 
-	//测试
-	ginServer.GET("/test", func(context *gin.Context) {
-		control.GetMysQDXy()
+	//自动更新Js
+	ginServer.POST("/autoJs", func(context *gin.Context) {
+		js := bgiStatus.AutoJs()
+		autoLog.Sugar.Infof("更新Js:%s", js)
+		context.JSON(http.StatusOK, gin.H{"status": "received", "data": js})
 	})
 
 	//读取statuc文件夹所有的图片

@@ -145,8 +145,8 @@
     <h1 id="jsProgress">JS:</h1>
 
     <button onclick="oneLongBtn()">一条龙启动</button>
-    <button onclick="closeBgiBtn()">关闭BGI</button>
-    <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>
+    <button onclick="closeBgiBtn()">关闭BGI(原神,启动器)</button>
+<!--    <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>-->
     <button onclick="todayHarvestBtn()">查看收获前10</button>
     <button onclick="BagStatisticsBtn()">背包统计</button>
     <button onclick="listGroupsBtn()">调度器</button>
@@ -154,6 +154,7 @@
     <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
 <!--    <button onclick="getAutoUpdateJsAndPathingBtn()">更新脚本和地图追踪</button>-->
     <button onclick="getBackupBtn()">备份user文件和指定文件</button>
+    <button onclick="autoJsBtn()">更新指定脚本</button>
     <button onclick="otherBtn()">其他</button>
 </div>
 
@@ -238,9 +239,15 @@
         window.location.href = '/other';
     }
 
+    function autoJsBtn() {
+        fetch('/autoJs', { method: 'POST' })
+            .then(res => alert(res.ok ? "更新成功！" : "更新失败！"))
+            .catch(err => alert("请求出错：" + err));
+    }
+
     function getBackupBtn() {
         fetch('/backup', { method: 'POST' })
-            .then(res => alert(res.ok ? "备份成功！" : "备份失败！"))
+            .then(res => alert(res.ok ? res.data : "备份失败！"))
             .catch(err => alert("请求出错：" + err));
     }
 

@@ -1146,3 +1146,58 @@ func GetGroupPInfo() string {
 
 	return string(s1)
 }
+
+func AutoJs() string {
+
+	//删除文件夹
+	os.RemoveAll("repo")
+	os.RemoveAll("main.zip")
+
+	url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
+	zipFile := "main.zip"
+	err := downloadFile(zipFile, url)
+	if err != nil {
+		return "下载失败"
+	}
+	err2 := unzipRepo(zipFile, "repo", "repo/")
+	if err2 != nil {
+		return "解压失败"
+	}
+
+	jsNames := Config.JsName
+	repoDir := "repo/js"
+
+	for _, jsName := range jsNames {
+		subFolderPath, err := findSubFolder(repoDir, jsName)
+		if err != nil {
+			autoLog.Sugar.Errorf("查找子文件夹失败: %v", err)
+			return fmt.Sprintf("未找到子文件夹: %s", jsName)
+		}
+
+		// 找到子文件夹后，执行复制操作
+		targetPath := filepath.Join(Config.BetterGIAddress, "User", "JsScript", jsName)
+		err2 := copy.Copy(subFolderPath, targetPath)
+		if err2 != nil {
+			fmt.Println(err2)
+		}
+		autoLog.Sugar.Infof("Js脚本: %s 已更新", subFolderPath)
+	}
+
+	return "备份成功"
+}
+
+// 查找 repo 目录下是否存在名为 targetFolder 的子文件夹
+func findSubFolder(root string, targetFolder string) (string, error) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && entry.Name() == targetFolder {
+			return filepath.Join(root, entry.Name()), nil
+		}
+	}
+
+	return "", fmt.Errorf("未找到子文件夹: %s", targetFolder)
+}

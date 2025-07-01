@@ -8,8 +8,6 @@ import (
 	"github.com/vcaesar/imgo"
 	"io"
 	"net/http"
-	"net/url"
-	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -215,33 +213,6 @@ func HttpGet(url string) error {
 	}
 	autoLog.Sugar.Errorf("状态码: %d", resp.StatusCode)
 	return fmt.Errorf("状态码: %d", resp.StatusCode)
-}
-
-func GetMysQDXy() {
-	currentDir, _ := os.Getwd()
-
-	baseURL := "http://127.0.0.1:8888/qdXy"
-	params := url.Values{}
-	params.Add("te", currentDir+"\\modeImage\\qdModel.png")
-	params.Add("ta", currentDir+"\\modeImage\\qdAll.png")
-	fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
-
-	// 发送 GET 请求
-	resp, err := http.Get(fullURL)
-	if err != nil {
-		fmt.Println("请求失败:", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	// 读取响应
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("读取响应失败:", err)
-		return
-	}
-
-	fmt.Println("响应内容:", string(body))
 }
 
 func GetMysSignLog() string {
