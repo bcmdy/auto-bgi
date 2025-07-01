@@ -1174,10 +1174,6 @@ func GetGroupPInfo() string {
 
 func AutoJs() string {
 
-	//删除文件夹
-	os.RemoveAll("repo")
-	os.RemoveAll("main.zip")
-
 	url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
 	zipFile := "main.zip"
 	err := downloadFile(zipFile, url)
@@ -1207,6 +1203,8 @@ func AutoJs() string {
 		}
 		autoLog.Sugar.Infof("Js脚本: %s 已更新", subFolderPath)
 	}
+	os.RemoveAll("repo")
+	os.RemoveAll("main.zip")
 
 	return "备份成功"
 }
