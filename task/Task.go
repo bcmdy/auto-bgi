@@ -214,6 +214,9 @@ func ChangeTaskEnabledList() error {
 			//builder.WriteString(fmt.Sprintf("%s：%v", s, true))
 			builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 			builder.WriteString("\n")
+
+			oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+			oneLongLog.WriteString("\n")
 			continue
 		} else {
 			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
