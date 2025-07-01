@@ -510,6 +510,31 @@ func GetGroupP(group string) string {
 	return fmt.Sprintf("%d/%d", gouliangLines, totalLines)
 }
 
+// 读取manifest.json的version号
+func ReadVersion(filePath string) string {
+	// 打开文件
+	Path := filepath.Join(filePath, "manifest.json")
+	file, err := os.Open(Path)
+	if err != nil {
+		fmt.Println("打开文件失败:", err)
+	}
+	defer file.Close()
+	// 文件内容转map
+	var data map[string]interface{}
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&data)
+	if err != nil {
+		return "未知版本"
+	}
+	// 获取version
+	version, ok := data["version"].(string)
+	if !ok {
+		return "未知版本"
+	}
+	return version
+
+}
+
 func GetAutoArtifactsPro() ([]DogFood, error) {
 	// 获取当前目录下所有 .txt 文件
 	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\*.txt", Config.BetterGIAddress))
@@ -532,7 +557,10 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 
 		var dogFood DogFood
 
-		dogFood.FileName = filepath.Base(filename)
+		//获取版本号
+		version := ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", Config.BetterGIAddress))
+
+		dogFood.FileName = filepath.Base(filename) + "[" + version + "]"
 
 		scanner := bufio.NewScanner(file)
 		inHistory := false
