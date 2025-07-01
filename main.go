@@ -479,16 +479,19 @@ func main() {
 		pro, err := bgiStatus.GetAutoArtifactsPro()
 		autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
+		//获取版本号
+		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", Config.BetterGIAddress))
+
 		if err != nil {
 			// 传递给模板
 			context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
-				"title": "狗粮收益查询",
+				"title": "狗粮收益查询" + "【" + version + "】",
 				"items": nil,
 			})
 			return
 		}
 		context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
-			"title": "狗粮收益查询",
+			"title": "狗粮收益查询" + "【" + version + "】",
 			"items": pro,
 		})
 

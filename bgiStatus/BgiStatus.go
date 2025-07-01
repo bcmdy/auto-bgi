@@ -557,10 +557,7 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 
 		var dogFood DogFood
 
-		//获取版本号
-		version := ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", Config.BetterGIAddress))
-
-		dogFood.FileName = filepath.Base(filename) + "[" + version + "]"
+		dogFood.FileName = filepath.Base(filename)
 
 		scanner := bufio.NewScanner(file)
 		inHistory := false
