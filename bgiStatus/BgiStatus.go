@@ -1160,6 +1160,9 @@ func GetGroupPInfo() string {
 	openFile, _ := os.OpenFile(file, os.O_RDWR, os.ModePerm)
 
 	stat, _ := openFile.Stat()
+	if stat == nil {
+		return ""
+	}
 
 	defer openFile.Close()
 
@@ -1167,7 +1170,10 @@ func GetGroupPInfo() string {
 
 	//读取
 	s1 := make([]byte, stat.Size())
-	reader.Read(s1)
+	_, err := reader.Read(s1)
+	if err != nil {
+		return ""
+	}
 
 	return string(s1)
 }
