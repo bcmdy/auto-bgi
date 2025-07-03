@@ -33,6 +33,10 @@ var (
 )
 
 func init() {
+	// 初始化日志
+	autoLog.Init()
+	defer autoLog.Sync()
+
 	//判断目录是否设置正确
 	exists, err := bgiStatus.CheckConfig()
 	if !exists {
@@ -47,7 +51,7 @@ func init() {
 func findLastJSONLine(filename string) (string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return "", err
+		return "未知", err
 	}
 	defer file.Close()
 
@@ -91,10 +95,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-
-	// 初始化日志
-	autoLog.Init()
-	defer autoLog.Sync()
 
 	gin.SetMode(gin.ReleaseMode)
 
@@ -196,28 +196,37 @@ func main() {
 	ginServer.GET("/index", func(c *gin.Context) {
 		// 生成日志文件名
 		date := time.Now().Format("20060102")
+		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date))
 
-		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.Log", Config.BetterGIAddress, date))
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress)) // 本地日志路径
+		files, err := bgiStatus.FindLogFiles(filePath)
+		if err == nil {
+			//获取最后一个文件
+			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, files[len(files)-1]))
+		}
+
+		autoLog.Sugar.Infof("日志文件名:%s", filename)
+
+		progress := "0/0"
+		group := "未知"
+		GetGroup := "未知"
 
 		line, err := findLastJSONLine(filename)
 		if err != nil {
+			autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
+		} else {
+			group, err := bgiStatus.FindLastGroup(filename)
+			if err != nil {
+				autoLog.Sugar.Errorf("配置组查不到: %v\n", err)
+			} else {
+				jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
+				progress, err = bgiStatus.Progress(jsonStr, line)
+				if err != nil {
+					autoLog.Sugar.Errorf("%v\n", err)
+				}
 
-			autoLog.Sugar.Errorf("Error: %v\n", err)
-		}
-
-		group, err := bgiStatus.FindLastGroup(filename)
-		if err != nil {
-			autoLog.Sugar.Errorf("Error: %v\n", err)
-		}
-
-		p := bgiStatus.GetGroupP(group)
-
-		jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
-		progress, err := bgiStatus.Progress(jsonStr, line)
-		if err != nil {
-
-			autoLog.Sugar.Errorf("%v\n", err)
-			progress = "0/0"
+			}
+			GetGroup = bgiStatus.GetGroupP(group)
 		}
 
 		running := bgiStatus.IsWechatRunning()
@@ -228,7 +237,7 @@ func main() {
 		}
 
 		data := make(map[string]interface{})
-		data["group"] = group + "[" + p + "]"
+		data["group"] = group + "[" + GetGroup + "]"
 		data["line"] = line
 		data["progress"] = progress
 		data["running"] = running
@@ -237,48 +246,6 @@ func main() {
 		c.JSON(http.StatusOK, data)
 
 	})
-
-	////日志查询
-	//ginServer.GET("/mark", func(c *gin.Context) {
-	//	// 生成日志文件名
-	//	date := time.Now().Format("20060102")
-	//
-	//	filename := filepath.Clean(fmt.Sprintf("%s\\autoLog\\better-genshin-impact%s.autoLog", Config.BetterGIAddress, date))
-	//
-	//	line, err := findLastJSONLine(filename)
-	//	if err != nil {
-	//		fmt.Printf("Error: %v\n", err)
-	//	}
-	//	fmt.Println("Last line containing '.json':")
-	//	fmt.Println(line)
-	//
-	//	group, err := bgiStatus.FindLastGroup(filename)
-	//	if err != nil {
-	//		fmt.Printf("Error: %v\n", err)
-	//	}
-	//	jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
-	//	progress, err := bgiStatus.Progress(jsonStr, line)
-	//	if err != nil {
-	//		fmt.Printf("%v\n", err)
-	//		progress = "0/0"
-	//	}
-	//
-	//	running := bgiStatus.IsWechatRunning()
-	//
-	//	jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)")
-	//	if err != nil {
-	//		jsProgress = "无"
-	//	}
-	//
-	//	c.JSON(http.StatusOK, map[string]interface{}{
-	//		"group":      group,
-	//		"line":       line,
-	//		"progress":   progress,
-	//		"running":    running,
-	//		"jsProgress": jsProgress,
-	//	})
-	//
-	//})
 
 	//一条龙
 	ginServer.POST("/oneLong", func(context *gin.Context) {
@@ -370,7 +337,7 @@ func main() {
 			return
 		}
 
-		fmt.Println(j["message"])
+		autoLog.Sugar.Infof("webhook:%s", j["message"])
 
 		c.JSON(http.StatusOK, gin.H{"status": "received", "data": j})
 	})
@@ -631,8 +598,6 @@ func main() {
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
-	//
-	//config.GetGachaLog(1)
 
 	if Config.IsMysSignIn {
 		//米游社自动签到

@@ -226,7 +226,7 @@ func Progress(filename string, line string) (string, error) {
 	// 1. 读取 JSON 文件
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return "", fmt.Errorf("读取文件失败: %v", err)
+		return "", fmt.Errorf("进度读取文件失败:%s", filename)
 	}
 	// 2. 解析为 map[string]interface{}（保持原始结构）
 	var jsonData map[string]interface{}
@@ -675,7 +675,7 @@ type KeyValue struct {
 // 创建一个数组
 var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "运儿", "家",
 	"方巾", "枭羽", "怀钟", "药壶", "银莲", "怀表", "尾羽", "头带", "金杯", "之花", "之杯",
-	"沙漏", "绿花", "银冠", "鹰羽"}
+	"沙漏", "绿花", "银冠", "鹰羽", "冒险", "游医的"}
 
 // analyseLog handles the /api/analyse GET request
 func LogAnalysis() map[string]int {

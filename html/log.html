@@ -9,14 +9,22 @@
         * { box-sizing: border-box; margin:0; padding:0; }
         html, body {
             height: 100%;
-            background-color: #f5f0ff;
             overflow: hidden;
             font-family: "Comic Sans MS", "Mochiy Pop One", "Segoe UI", sans-serif;
-            color: #9966cc;
         }
         body {
             position: relative;
+            background-color: #f5f0ff;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M30,50 Q50,30 70,50 Q50,70 30,50 Z" fill="%23e0d6ff" opacity="0.4"/></svg>');
+            color: #9966cc;
+            transition: all 0.3s ease;
+        }
+        body.hacker {
+            background-color: #000;
+            background-image: radial-gradient(#0f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #0f0;
+            font-family: monospace;
         }
         canvas#animeStars {
             position: fixed;
@@ -35,12 +43,23 @@
             z-index: 2;
             border-radius: 0 0 20px 20px;
             box-shadow: 0 4px 10px rgba(153, 102, 204, 0.2);
+            transition: all 0.3s ease;
+        }
+        body.hacker header {
+            background-color: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid #0f0;
+            box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2);
         }
         h1 {
             margin: 0 0 0.5rem;
             font-size: 1.5rem;
             color: #9966cc;
             text-shadow: 1px 1px 3px #d9b3ff;
+            transition: all 0.3s ease;
+        }
+        body.hacker h1 {
+            color: #0f0;
+            text-shadow: 0 0 5px #0f0;
         }
         select {
             padding: 0.4rem;
@@ -50,6 +69,13 @@
             border: 1px solid #b385ff;
             border-radius: 20px;
             box-shadow: 0 0 5px #d9b3ff;
+            transition: all 0.3s ease;
+        }
+        body.hacker select {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 5px #0f0;
         }
         main {
             position: relative;
@@ -64,12 +90,39 @@
             font-family: "Comic Sans MS", "Segoe UI", sans-serif;
             font-size: 0.9rem;
             color: #8a4fff;
+            transition: all 0.3s ease;
+        }
+        body.hacker main {
+            background-color: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 15px #0f0;
+            color: #0f0;
+            font-family: monospace;
         }
         #log {
             white-space: pre-wrap;
             word-break: break-word;
             overflow-y: auto;
             height: 100%;
+        }
+        #themeToggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 3;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            border: 1px solid #b385ff;
+            background-color: #f0e6ff;
+            color: #9966cc;
+            cursor: pointer;
+            box-shadow: 0 0 5px #d9b3ff;
+            transition: all 0.3s ease;
+        }
+        body.hacker #themeToggle {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 5px #0f0;
         }
         @media (max-width: 768px) {
             h1 { font-size: 1.2rem; }
@@ -87,6 +140,7 @@
 <header>
     <h1>实时日志查看</h1>
     <select id="logSelector"></select>
+    <button id="themeToggle">切换黑客风</button>
 </header>
 
 <main>
@@ -99,14 +153,14 @@
     const ctx = canvas.getContext('2d');
     let width, height;
     const stars = [];
-    
+
     function setup() {
         width = window.innerWidth;
         height = window.innerHeight;
         canvas.width = width;
         canvas.height = height;
-        
-        // 创建星星
+
+        stars.length = 0;
         for (let i = 0; i < 100; i++) {
             stars.push({
                 x: Math.random() * width,
@@ -123,7 +177,7 @@
 
     function draw() {
         ctx.clearRect(0, 0, width, height);
-        
+
         stars.forEach(star => {
             if (star.increasing) {
                 star.brightness += star.speed;
@@ -136,49 +190,41 @@
                     star.increasing = true;
                 }
             }
-            
+
             ctx.beginPath();
             ctx.fillStyle = star.color;
             ctx.globalAlpha = star.brightness;
-            
-            // 绘制五角星
+
             const spikes = 5;
             const outerRadius = star.size;
             const innerRadius = star.size / 2;
             let rot = Math.PI / 2 * 3;
             const step = Math.PI / spikes;
-            
-            ctx.beginPath();
+
             ctx.moveTo(star.x, star.y - outerRadius);
-            
             for (let i = 0; i < spikes; i++) {
                 ctx.lineTo(
                     star.x + Math.cos(rot) * outerRadius,
                     star.y + Math.sin(rot) * outerRadius
                 );
                 rot += step;
-                
                 ctx.lineTo(
                     star.x + Math.cos(rot) * innerRadius,
                     star.y + Math.sin(rot) * innerRadius
                 );
                 rot += step;
             }
-            
-            ctx.lineTo(star.x, star.y - outerRadius);
             ctx.closePath();
             ctx.fill();
             ctx.globalAlpha = 1;
         });
-        
+
         requestAnimationFrame(draw);
     }
 
     setup();
     draw();
-    window.addEventListener('resize', () => {
-        setup();
-    });
+    window.addEventListener('resize', setup);
 
     // 日志加载逻辑
     const logEl = document.getElementById("log");
@@ -187,36 +233,23 @@
 
     function connectWebSocket(name) {
         if (ws) ws.close();
-
         logEl.textContent = `正在连接 ${name} 日志服务...\n`;
         ws = new WebSocket(`ws://${location.host}/ws/${encodeURIComponent(name)}`);
-
-        ws.onmessage = function(event) {
+        ws.onmessage = e => {
             const atBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 10;
-            logEl.textContent += event.data;
-            if (atBottom) {
-                logEl.scrollTop = logEl.scrollHeight;
-            }
+            logEl.textContent += e.data;
+            if (atBottom) logEl.scrollTop = logEl.scrollHeight;
         };
-
-        ws.onopen = function() {
-            logEl.textContent += `[已连接到 ${name}]\n`;
-        };
-
-        ws.onclose = function() {
-            logEl.textContent += "\n[连接已关闭]";
-        };
-
-        ws.onerror = function() {
-            logEl.textContent += "\n[连接出错]";
-        };
+        ws.onopen = () => logEl.textContent += `[已连接到 ${name}]\n`;
+        ws.onclose = () => logEl.textContent += "\n[连接已关闭]";
+        ws.onerror = () => logEl.textContent += "\n[连接出错]";
     }
 
     async function loadLogFiles() {
         try {
             const res = await fetch('/logFiles');
             const data = await res.json();
-            if (data.files && data.files.length > 0) {
+            if (data.files?.length) {
                 selector.innerHTML = '';
                 data.files.forEach(file => {
                     const option = document.createElement('option');
@@ -233,8 +266,10 @@
         }
     }
 
-    selector.addEventListener("change", () => {
-        connectWebSocket(selector.value);
+    selector.addEventListener("change", () => connectWebSocket(selector.value));
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+        document.body.classList.toggle('hacker');
     });
 
     loadLogFiles();
