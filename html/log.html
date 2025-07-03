@@ -2,22 +2,23 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="color-scheme" content="only light">
-    <title>实时日志查看</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>实时日志查看</title>
+    <meta name="color-scheme" content="only light">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
         html, body {
             height: 100%;
             overflow: hidden;
             font-family: "Comic Sans MS", "Mochiy Pop One", "Segoe UI", sans-serif;
+            transition: all 0.3s ease;
         }
         body {
             position: relative;
             background-color: #f5f0ff;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M30,50 Q50,30 70,50 Q50,70 30,50 Z" fill="%23e0d6ff" opacity="0.4"/></svg>');
             color: #9966cc;
-            transition: all 0.3s ease;
         }
         body.hacker {
             background-color: #000;
@@ -77,33 +78,6 @@
             border: 1px solid #0f0;
             box-shadow: 0 0 5px #0f0;
         }
-        main {
-            position: relative;
-            z-index: 2;
-            padding: 1rem;
-            height: calc(100vh - 120px);
-            overflow: auto;
-            margin: 0 1rem 1rem 1rem;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 20px;
-            box-shadow: 0 0 15px #d9b3ff;
-            font-family: "Comic Sans MS", "Segoe UI", sans-serif;
-            font-size: 0.9rem;
-            color: #8a4fff;
-            transition: all 0.3s ease;
-        }
-        body.hacker main {
-            background-color: rgba(0, 0, 0, 0.8);
-            box-shadow: 0 0 15px #0f0;
-            color: #0f0;
-            font-family: monospace;
-        }
-        #log {
-            white-space: pre-wrap;
-            word-break: break-word;
-            overflow-y: auto;
-            height: 100%;
-        }
         #themeToggle {
             position: absolute;
             top: 1rem;
@@ -124,11 +98,59 @@
             border: 1px solid #0f0;
             box-shadow: 0 0 5px #0f0;
         }
+        main {
+            position: relative;
+            z-index: 2;
+            padding: 1rem;
+            height: calc(100vh - 120px);
+            overflow: auto;
+            margin: 0 1rem 1rem 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            box-shadow: 0 0 15px #d9b3ff;
+            color: #8a4fff;
+            font-size: 0.9rem;
+        }
+        body.hacker main {
+            background-color: rgba(0,0,0,0.8);
+            color: #0f0;
+            box-shadow: 0 0 15px #0f0;
+            font-family: monospace;
+        }
+        #log {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-y: auto;
+            height: 100%;
+        }
+        .right-bg-swiper {
+            position: fixed;
+            top: 20%;
+            right: 8rem;
+            width: 456px;
+            height: 592px;
+            z-index: 2;
+            pointer-events: none;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .right-bg-swiper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        /*body.hacker .right-bg-swiper {*/
+        /*    box-shadow: 0 0 10px #0f0;*/
+        /*    !*opacity: 0.4;*!*/
+        /*}*/
+        /*body.hacker .right-bg-swiper img {*/
+        /*    filter: hue-rotate(120deg) brightness(1.2) saturate(2);*/
+        /*}*/
         @media (max-width: 768px) {
-            h1 { font-size: 1.2rem; }
-            main {
-                margin: 0.5rem;
-                font-size: 0.8rem;
+            .right-bg-swiper {
+                width: 200px;
+                height: 200px;
             }
         }
     </style>
@@ -147,8 +169,15 @@
     <div id="log">正在加载日志列表...</div>
 </main>
 
+<!-- 轮播图背景 -->
+<div class="right-bg-swiper">
+    <div class="swiper-wrapper">
+        <!-- 动态插入图片 -->
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
-    // 星星闪烁动画效果
     const canvas = document.getElementById('animeStars');
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -159,7 +188,6 @@
         height = window.innerHeight;
         canvas.width = width;
         canvas.height = height;
-
         stars.length = 0;
         for (let i = 0; i < 100; i++) {
             stars.push({
@@ -174,59 +202,33 @@
             });
         }
     }
-
     function draw() {
         ctx.clearRect(0, 0, width, height);
-
         stars.forEach(star => {
-            if (star.increasing) {
-                star.brightness += star.speed;
-                if (star.brightness >= star.maxBrightness) {
-                    star.increasing = false;
-                }
-            } else {
-                star.brightness -= star.speed;
-                if (star.brightness <= 0) {
-                    star.increasing = true;
-                }
-            }
-
+            star.brightness += star.increasing ? star.speed : -star.speed;
+            if (star.brightness >= star.maxBrightness || star.brightness <= 0) star.increasing = !star.increasing;
             ctx.beginPath();
             ctx.fillStyle = star.color;
             ctx.globalAlpha = star.brightness;
-
-            const spikes = 5;
-            const outerRadius = star.size;
-            const innerRadius = star.size / 2;
-            let rot = Math.PI / 2 * 3;
-            const step = Math.PI / spikes;
-
+            const spikes = 5, outerRadius = star.size, innerRadius = star.size / 2;
+            let rot = Math.PI / 2 * 3, step = Math.PI / spikes;
             ctx.moveTo(star.x, star.y - outerRadius);
             for (let i = 0; i < spikes; i++) {
-                ctx.lineTo(
-                    star.x + Math.cos(rot) * outerRadius,
-                    star.y + Math.sin(rot) * outerRadius
-                );
+                ctx.lineTo(star.x + Math.cos(rot) * outerRadius, star.y + Math.sin(rot) * outerRadius);
                 rot += step;
-                ctx.lineTo(
-                    star.x + Math.cos(rot) * innerRadius,
-                    star.y + Math.sin(rot) * innerRadius
-                );
+                ctx.lineTo(star.x + Math.cos(rot) * innerRadius, star.y + Math.sin(rot) * innerRadius);
                 rot += step;
             }
             ctx.closePath();
             ctx.fill();
             ctx.globalAlpha = 1;
         });
-
         requestAnimationFrame(draw);
     }
-
     setup();
     draw();
     window.addEventListener('resize', setup);
 
-    // 日志加载逻辑
     const logEl = document.getElementById("log");
     const selector = document.getElementById("logSelector");
     let ws;
@@ -266,13 +268,41 @@
         }
     }
 
-    selector.addEventListener("change", () => connectWebSocket(selector.value));
-
     document.getElementById('themeToggle').addEventListener('click', () => {
         document.body.classList.toggle('hacker');
     });
 
+    async function getImages() {
+        try {
+            const swiperWrapper = document.querySelector(".right-bg-swiper .swiper-wrapper");
+            if (!swiperWrapper) return console.error("找不到轮播容器");
+            const res = await fetch('/images');
+            const data = await res.json();
+            const images = data.data || [];
+            swiperWrapper.innerHTML = '';
+            images.forEach((imgSrc, i) => {
+                const slide = document.createElement('div');
+                slide.classList.add('swiper-slide');
+                const img = document.createElement('img');
+                img.src = `./static/image/${imgSrc}`;
+                img.alt = `轮播图${i}`;
+                slide.appendChild(img);
+                swiperWrapper.appendChild(slide);
+            });
+            if (window.mySwiper) window.mySwiper.destroy(true, true);
+            window.mySwiper = new Swiper('.right-bg-swiper', {
+                loop: true,
+                autoplay: { delay: 10000, disableOnInteraction: false },
+                effect: 'fade',
+                fadeEffect: { crossFade: true }
+            });
+        } catch (err) {
+            console.error("轮播图加载失败：", err);
+        }
+    }
+
     loadLogFiles();
+    getImages();
 </script>
 
 </body>

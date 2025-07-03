@@ -215,7 +215,7 @@ func main() {
 		if err != nil {
 			autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
 		} else {
-			group, err := bgiStatus.FindLastGroup(filename)
+			group, err = bgiStatus.FindLastGroup(filename)
 			if err != nil {
 				autoLog.Sugar.Errorf("配置组查不到: %v\n", err)
 			} else {
