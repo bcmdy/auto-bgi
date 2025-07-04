@@ -140,17 +140,29 @@
             object-fit: cover;
             display: block;
         }
-        /*body.hacker .right-bg-swiper {*/
-        /*    box-shadow: 0 0 10px #0f0;*/
-        /*    !*opacity: 0.4;*!*/
-        /*}*/
-        /*body.hacker .right-bg-swiper img {*/
-        /*    filter: hue-rotate(120deg) brightness(1.2) saturate(2);*/
-        /*}*/
+        .homeBtn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 3;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            border: 1px solid #b385ff;
+            background-color: #f0e6ff;
+            color: #9966cc;
+            cursor: pointer;
+            box-shadow: 0 0 5px #d9b3ff;
+            transition: all 0.3s ease;
+        }
+        body.hacker .homeBtn {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 5px #0f0;
+        }
+
         @media (max-width: 768px) {
             .right-bg-swiper {
-                /*width: 200px;*/
-                /*height: 200px;*/
                 display: none;
             }
         }
@@ -161,6 +173,7 @@
 <canvas id="animeStars"></canvas>
 
 <header>
+    <button class="homeBtn" onclick="window.location.href='/'">返回首页</button>
     <h1>实时日志查看</h1>
     <select id="logSelector"></select>
     <button id="themeToggle">切换黑客风</button>

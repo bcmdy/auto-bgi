@@ -124,30 +124,84 @@
             box-shadow: 0 0 20px #ffbbdd;
             transform: scale(1.06);
         }
+        .select-box {
+            margin-bottom: 20px;
+            font-size: 16px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ff99cc;
+            background: #fff0f7;
+            color: #ff6699;
+        }
     </style>
 </head>
 <body>
 <div class="card">
     <div class="title">收获前10的材料</div>
 
-    <div class="data-list" id="data-list"></div>
+    <select id="file-select" class="select-box">
+<!--        <option value="">请选择日志文件</option>-->
+    </select>
+
+    <div class="data-list" id="data-list">请先选择日志文件</div>
 
     <a href="/" class="back-button">返回主页</a>
 </div>
 
 <script>
-    const rawData = {{ .items | tojson }}; // 模板注入数据
-
     const container = document.getElementById("data-list");
+    const select = document.getElementById("file-select");
 
-    Object.entries(rawData)
-        .sort((a, b) => b[1] - a[1]) // 数量从大到小排序
-        .forEach(([key, value]) => {
-            const item = document.createElement("div");
-            item.className = "data-item";
-            item.innerHTML = `${key} <span>${value}</span>`;
-            container.appendChild(item);
+    // 加载日志文件列表
+    fetch("/logFiles")
+        .then(res => res.json())
+        .then(res => {
+            res.files.forEach(file => {
+                const option = document.createElement("option");
+                option.value = file;
+                option.textContent = file;
+                select.appendChild(option);
+            });
+
+            if (res.files.length > 0) {
+                //选择最后一个
+                select.value = res.files[res.files.length - 1];
+                select.dispatchEvent(new Event("change"));  // 手动触发change事件
+            }
+        })
+        .catch(err => {
+            container.innerHTML = "加载日志文件列表失败：" + err.message;
         });
+
+    // 监听下拉框变化
+    select.addEventListener("change", () => {
+        const file = select.value;
+        if (!file) {
+            container.innerHTML = "请先选择日志文件";
+            return;
+        }
+
+        container.innerHTML = "加载中...";
+        fetch(`/api/logAnalysis?file=${encodeURIComponent(file)}`)
+            .then(res => {
+                if (!res.ok) throw new Error("网络错误");
+                return res.json();
+            })
+            .then(data => {
+                container.innerHTML = "";
+                Object.entries(data)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([key, value]) => {
+                        const item = document.createElement("div");
+                        item.className = "data-item";
+                        item.innerHTML = `${key} <span>${value}</span>`;
+                        container.appendChild(item);
+                    });
+            })
+            .catch(err => {
+                container.innerHTML = "加载失败：" + err.message;
+            });
+    });
 </script>
 </body>
-</html> 
+</html>

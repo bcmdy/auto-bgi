@@ -269,44 +269,44 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "原神关闭成功"})
 	})
 
-	ginServer.GET("/TodayHarvest", func(context *gin.Context) {
-
-		// 获取统计结果
-		stats, err := bgiStatus.TodayHarvest()
-		if err != nil {
-			context.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		// 转换为前端更易处理的格式
-		var items []struct {
-			Name  string `json:"name"`
-			Count int    `json:"count"`
-		}
-
-		for name, count := range stats {
-			items = append(items, struct {
-				Name  string `json:"name"`
-				Count int    `json:"count"`
-			}{
-				Name:  name,
-				Count: count,
-			})
-		}
-
-		// 按数量排序
-		sort.Slice(items, func(i, j int) bool {
-			return items[i].Count > items[j].Count
-		})
-
-		// 传递给模板
-		context.HTML(http.StatusOK, "harvest.html", gin.H{
-			"title": "今日收获统计",
-			"items": items,
-		})
-	})
+	//ginServer.GET("/TodayHarvest", func(context *gin.Context) {
+	//
+	//	// 获取统计结果
+	//	stats, err := bgiStatus.TodayHarvest()
+	//	if err != nil {
+	//		context.HTML(http.StatusInternalServerError, "error.html", gin.H{
+	//			"error": err.Error(),
+	//		})
+	//		return
+	//	}
+	//
+	//	// 转换为前端更易处理的格式
+	//	var items []struct {
+	//		Name  string `json:"name"`
+	//		Count int    `json:"count"`
+	//	}
+	//
+	//	for name, count := range stats {
+	//		items = append(items, struct {
+	//			Name  string `json:"name"`
+	//			Count int    `json:"count"`
+	//		}{
+	//			Name:  name,
+	//			Count: count,
+	//		})
+	//	}
+	//
+	//	// 按数量排序
+	//	sort.Slice(items, func(i, j int) bool {
+	//		return items[i].Count > items[j].Count
+	//	})
+	//
+	//	// 传递给模板
+	//	context.HTML(http.StatusOK, "harvest.html", gin.H{
+	//		"title": "今日收获统计",
+	//		"items": items,
+	//	})
+	//})
 
 	//发送截图
 	ginServer.POST("/getImage", func(c *gin.Context) {
@@ -496,12 +496,18 @@ func main() {
 
 	//日志分析
 	ginServer.GET("/logAnalysis", func(context *gin.Context) {
-		res := bgiStatus.LogAnalysis()
 
-		context.HTML(http.StatusOK, "logAnalysis.html", gin.H{
-			"title": "日志分析",
-			"items": res,
-		})
+		context.HTML(http.StatusOK, "logAnalysis.html", nil)
+	})
+
+	ginServer.GET("/api/logAnalysis", func(context *gin.Context) {
+		fileName := context.Query("file")
+		fmt.Println("==========================", fileName)
+
+		res := bgiStatus.LogAnalysis(fileName)
+
+		context.JSON(200, res)
+
 	})
 
 	//自动更新仓库脚本仓库和地图追踪
