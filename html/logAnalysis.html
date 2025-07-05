@@ -165,7 +165,7 @@
 
             if (res.files.length > 0) {
                 //选择最后一个
-                select.value = res.files[res.files.length - 1];
+                select.value = res.files[0];
                 select.dispatchEvent(new Event("change"));  // 手动触发change事件
             }
         })

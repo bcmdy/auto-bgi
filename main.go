@@ -502,7 +502,6 @@ func main() {
 
 	ginServer.GET("/api/logAnalysis", func(context *gin.Context) {
 		fileName := context.Query("file")
-		fmt.Println("==========================", fileName)
 
 		res := bgiStatus.LogAnalysis(fileName)
 
@@ -544,21 +543,25 @@ func main() {
 		})
 	})
 
-	//统计配置组执行时间
 	ginServer.GET("/other", func(context *gin.Context) {
-		GroupTime, _ := bgiStatus.GroupTime()
+		context.HTML(http.StatusOK, "other.html", nil)
+	})
 
-		//获取米游社签到记录
+	// 统计配置组执行时间 - 返回JSON
+	ginServer.GET("/api/other", func(context *gin.Context) {
+
+		fileName := context.Query("file")
+
+		GroupTime, _ := bgiStatus.GroupTime(fileName)
 		signLog := control.GetMysSignLog()
-
-		//获取今日启动配置组
 		groupPInfo := bgiStatus.GetGroupPInfo()
+		gitLog := bgiStatus.GitLog()
 
-		context.HTML(http.StatusOK, "other.html", gin.H{
-			"title":      "其他",
+		context.JSON(http.StatusOK, gin.H{
 			"GroupTime":  GroupTime,
 			"signLog":    signLog,
 			"groupPInfo": groupPInfo,
+			"gitLog":     gitLog,
 		})
 	})
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ .title }}</title>
+    <title>其他</title>
     <link href="./static/css2.css" rel="stylesheet" />
     <style>
         :root {
@@ -13,13 +13,7 @@
             --border-color: #ffc0da;
             --hover-color: rgba(255, 192, 218, 0.3);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: "Comic Sans MS", "Segoe UI", sans-serif;
             background-color: var(--background-light);
@@ -28,7 +22,6 @@
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6eb" opacity="0.6"/><circle cx="70" cy="70" r="7" fill="%23ffc0da" opacity="0.5"/></svg>');
             padding-bottom: 50px;
         }
-
         header {
             background-color: rgba(255, 255, 255, 0.8);
             padding: 30px 0 10px;
@@ -39,14 +32,12 @@
             top: 0;
             z-index: 10;
         }
-
         h1 {
             color: var(--primary-color);
             font-size: 2rem;
             text-shadow: 0 0 10px var(--primary-color);
             margin-top: 15px;
         }
-
         .btn {
             background-color: #fff;
             color: var(--primary-color);
@@ -60,21 +51,18 @@
             margin: 0 10px 10px 0;
             font-weight: bold;
         }
-
         .btn:hover {
             background-color: var(--primary-color);
             color: #fff;
             box-shadow: 0 0 20px var(--primary-color);
             transform: scale(1.05);
         }
-
         .container {
             max-width: 900px;
             margin: 30px auto;
             padding: 0 20px;
             position: relative;
         }
-
         section.panel {
             background: rgba(255, 255, 255, 0.8);
             box-shadow: 0 0 15px #ffcce6;
@@ -83,15 +71,24 @@
             margin-bottom: 30px;
             position: relative;
         }
-
         section.panel h2 {
             color: var(--primary-color);
             font-size: 1.6rem;
             margin-bottom: 15px;
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 5px;
+            display: inline-block;
+            margin-right: 10px;
         }
-
+        select {
+            padding: 5px 10px;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            color: var(--primary-color);
+            background-color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
         table {
             width: 100%;
             border-collapse: separate;
@@ -99,65 +96,23 @@
             border-radius: 20px;
             overflow: hidden;
         }
-
         th, td {
             padding: 15px 20px;
             text-align: left;
             color: var(--text-color);
         }
-
         th {
             background-color: #ffcce6;
             color: #ff5599;
             font-weight: bold;
             border-radius: 10px;
         }
-
         td {
             background-color: rgba(255, 255, 255, 0.5);
             border-radius: 10px;
         }
-
         tr:hover td {
             background-color: var(--hover-color);
-        }
-
-        /* 可爱元素装饰 */
-        .container::before {
-            content: "♡";
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 30px;
-            color: var(--primary-color);
-            opacity: 0.5;
-        }
-
-        .container::after {
-            content: "♡";
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            font-size: 30px;
-            color: var(--primary-color);
-            opacity: 0.5;
-        }
-
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-            h2 {
-                font-size: 1.3rem;
-            }
-            .btn {
-                font-size: 0.9rem;
-                padding: 8px 16px;
-            }
-            th, td {
-                font-size: 0.9rem;
-                padding: 12px;
-            }
         }
         .info-box {
             background-color: rgba(255, 255, 255, 0.85);
@@ -169,19 +124,16 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             position: relative;
         }
-
         .info-box:hover {
             transform: translateY(-4px);
             box-shadow: 0 0 20px var(--primary-color);
         }
-
         .info-box h3 {
             font-size: 1.3rem;
             color: var(--primary-color);
             margin-bottom: 10px;
             text-shadow: 0 0 5px var(--primary-color);
         }
-
         .info-box p {
             margin: 8px 0;
             font-size: 1rem;
@@ -190,6 +142,25 @@
             color: #ff5599;
             font-weight: bold;
         }
+        pre {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 5px solid var(--border-color);
+            border-radius: 10px;
+            font-weight: bold;
+            overflow-x: auto;
+            white-space: pre;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 600px) {
+            pre {
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+        }
+        select{
+            max-width: 300px;
+        }
 
     </style>
 </head>
@@ -197,49 +168,119 @@
 
 <header>
     <button class="btn" onclick="window.location.href='/'">返回首页</button>
-    <h1>{{ .title }}</h1>
+    <h1>其他</h1>
 </header>
 
 <div class="container">
 
-    <!-- 收益板块 -->
-<!--    <section class="panel" id="revenuePanel">-->
-<!--        <h2>收益情况</h2>-->
-<!--        &lt;!&ndash; 这里可以放收益的表格或图表 &ndash;&gt;-->
-<!--        <p>这里显示收益相关的信息，未来可扩展为图表、详细数据等。</p>-->
-<!--    </section>-->
-
-    <!-- 配置组执行时间统计 -->
     <section class="panel" id="executionPanel">
         <h2>配置组执行时间统计</h2>
-        {{ range .GroupTime }}
-        <div class="info-box">
-            <h3>♡ {{ .Title }}</h3>
-            <p><strong>开始时间：</strong>{{ .Detail.StartTime }}</p>
-            <p><strong>结束时间：</strong>{{ .Detail.EndTime }}</p>
-            <p><strong>执行时间：</strong><span class="highlight">{{ .Detail.ExecuteTime }}</span></p>
-            <p><strong>收益摩拉：</strong><span class="highlight">{{.Detail.MoLa }}</span></p>
-        </div>
-        {{ end }}
+        <select id="fileSelect"></select>
+        <div id="groupTimeList"></div>
     </section>
 
-<!--    签到模块-->
-
-    <section class="panel" id="signLog">
-        <h2>米游社签到记录</h2>
-        <pre>{{.signLog}}</pre>
+    <section class="panel" id="gitLog">
+        <h2>仓库更新详情（最新10条）</h2>
     </section>
 
     <section class="panel" id="groupPInfo">
         <h2>今日配置组启动列表</h2>
-        <pre>{{.groupPInfo}}</pre>
     </section>
-    <!-- 以后可以继续添加更多板块 -->
+
+    <section class="panel" id="signLog">
+        <h2>米游社签到记录</h2>
+    </section>
+
+
 
 </div>
 
 <script>
-    // 这里可以写一些各个板块交互的JS
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const fileSelect = document.getElementById('fileSelect');
+
+        // 获取文件列表
+        fetch('/logFiles')
+            .then(response => response.json())
+            .then(fileList => {
+                console.log('文件列表:', fileList.files);
+                if (fileList.files.length === 0) return;
+
+                fileList.files.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file;
+                    option.textContent = file;
+                    fileSelect.appendChild(option);
+                });
+
+                // 默认加载第一个文件的数据
+                loadData(fileList.files[0]);
+            })
+            .catch(err => {
+                console.error('文件列表获取失败', err);
+            });
+
+        fileSelect.addEventListener('change', function () {
+            const selectedFile = fileSelect.value;
+            loadData(selectedFile);
+        });
+
+        function loadData(fileName) {
+            console.log('加载文件:', fileName);
+            fetch(`/api/other?file=${encodeURIComponent(fileName)}`)
+                .then(response => response.json())
+                .then(data => {
+
+                    const groupTimeList = document.getElementById('groupTimeList');
+                    groupTimeList.innerHTML = '';
+
+                    //配置组执行时间统计
+                    let groupTimeData = data.GroupTime;
+                    groupTimeData.forEach(item => {
+                        const infoBox = document.createElement('div');
+                        infoBox.classList.add('info-box');
+                        infoBox.innerHTML = `<h3>${item.Title}</h3>`;
+                        infoBox.innerHTML += `<p><strong>开始时间：${item.Detail.StartTime}</strong></p>`;
+                        infoBox.innerHTML += `<p><strong>结束时间：${item.Detail.EndTime}</strong></p>`;
+                        infoBox.innerHTML += `<p><strong>共用时：${item.Detail.ExecuteTime}</strong></p>`;
+                        infoBox.innerHTML += `<p><strong>摩拉收益：${item.Detail.MoLa}</strong></p>`;
+                        groupTimeList.appendChild(infoBox);
+                    });
+
+                    // 米游社签到记录
+                    const signLogContent = document.getElementById('signLog');
+                    signLogContent.innerHTML = '<h2>米游社签到记录</h2>';
+                    var pre = document.createElement("pre");
+                    pre.innerHTML = data.signLog;
+                    signLogContent.appendChild(pre);
+
+                    // 今日配置组启动列表
+                    const groupPInfoContent = document.getElementById('groupPInfo');
+                    groupPInfoContent.innerHTML = '<h2>今日配置组启动列表</h2>';
+                    var pre = document.createElement("pre");
+                    pre.innerHTML = data.groupPInfo;
+                    groupPInfoContent.appendChild(pre);
+
+                    // 仓库更新详情（最新10条）
+                    const gitLogContent = document.getElementById('gitLog');
+                    gitLogContent.innerHTML = '<h2>仓库更新详情（最新10条）</h2>';
+                    data.gitLog.forEach(item => {
+                        const infoBox = document.createElement('div');
+                        infoBox.classList.add('info-box');
+                        infoBox.innerHTML += `<p><strong>提交人：${item.Author}</strong></p>`;
+                        infoBox.innerHTML += `<p><strong>更新时间：${item.CommitTime}</strong></p>`;
+                        infoBox.innerHTML += `<p><strong>更新信息：${item.Message}</strong></p>`;
+                        gitLogContent.appendChild(infoBox);
+                    })
+
+                })
+                .catch(err => {
+                    console.error('数据加载失败', err);
+                });
+        }
+
+    });
 </script>
 
 </body>
