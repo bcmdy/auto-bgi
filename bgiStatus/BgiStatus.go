@@ -730,41 +730,46 @@ func LogAnalysis(fileName string) map[string]int {
 
 }
 
-// 提取文件名中的日期部分
-func extractDate(name string) string {
-	name = strings.TrimSuffix(name, ".log")
-	name = strings.TrimPrefix(name, "better-genshin-impact")
-	// 只取前8位日期部分
-	if len(name) >= 8 {
-		return name[:8]
-	}
-	return name
-}
-
 func FindLogFiles(dirPath string) ([]string, error) {
-
-	pattern := dirPath + "\\" + "*.log"
+	pattern := filepath.Join(dirPath, "*.log")
 
 	files, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, err
 	}
 
-	var filenames []string
-	for _, f := range files {
-		filenames = append(filenames, filepath.Base(f))
+	// 保存文件名和时间
+	type fileInfo struct {
+		name string
+		time time.Time
 	}
 
-	// 自定义倒序排序
-	sort.Slice(filenames, func(i, j int) bool {
-		// 提取日期部分
-		di := extractDate(filenames[i])
-		dj := extractDate(filenames[j])
-		return di > dj // 倒序：大的日期排前面
+	var fileInfos []fileInfo
+	for _, f := range files {
+		info, err := os.Stat(f)
+		if err != nil {
+			continue // 读取失败跳过
+		}
+		fileInfos = append(fileInfos, fileInfo{
+			name: filepath.Base(f),
+			time: info.ModTime(),
+		})
+	}
+
+	// 按时间倒序排序
+	sort.Slice(fileInfos, func(i, j int) bool {
+		return fileInfos[i].time.After(fileInfos[j].time)
 	})
+
+	// 只返回文件名
+	var filenames []string
+	for _, fi := range fileInfos {
+		filenames = append(filenames, fi.name)
+	}
 
 	return filenames, nil
 }
+
 func UpdateJsAndPathing() error {
 	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
 	autoLog.Sugar.Infof("开始备份user文件夹")

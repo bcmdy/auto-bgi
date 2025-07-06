@@ -196,13 +196,15 @@ func main() {
 	ginServer.GET("/index", func(c *gin.Context) {
 		// 生成日志文件名
 		date := time.Now().Format("20060102")
+
 		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date))
 
 		filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress)) // 本地日志路径
 		files, err := bgiStatus.FindLogFiles(filePath)
+		fmt.Println(files)
 		if err == nil {
 			//获取最后一个文件
-			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, files[len(files)-1]))
+			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, files[0]))
 		}
 
 		autoLog.Sugar.Infof("日志文件名:%s", filename)
