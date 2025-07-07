@@ -1163,7 +1163,7 @@ func CheckConfig() (bool, error) {
 		fmt.Println("Bgi安装目录设置正确")
 	}
 	if os.IsNotExist(err) {
-		return false, fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件BetterGIAddress：例子：D:\\subject\\BetterGI")
+		return false, fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件BetterGIAddress：你有没有加双斜杠呀，没有看网站说明")
 	}
 	names := Config.ConfigNames
 	if len(names) == 7 {
@@ -1235,7 +1235,7 @@ func GitLog() []GitLogStruct {
 	// 迭代前 10 条
 	count := 0
 	err = commitIter.ForEach(func(c *object.Commit) error {
-		autoLog.Sugar.Infof("提交时间：%s | 作者：%s | 更新内容：%s\n", c.Author.When.Format("2006-01-02 15:04:05"), c.Author.Name, c.Message)
+
 		var gitLogStruct GitLogStruct
 		gitLogStruct.CommitTime = c.Author.When.Format("2006-01-02 15:04:05")
 		gitLogStruct.Author = c.Author.Name
@@ -1251,6 +1251,14 @@ func GitLog() []GitLogStruct {
 	if err != nil && err.Error() != "done" {
 		log.Fatal("遍历日志失败:", err)
 	}
+
+	// 按时间倒序排序
+	sort.Slice(logs, func(i, j int) bool {
+		ti, _ := time.Parse("2006-01-02 15:04:05", logs[i].CommitTime)
+		tj, _ := time.Parse("2006-01-02 15:04:05", logs[j].CommitTime)
+		return ti.After(tj)
+	})
+
 	return logs
 }
 
@@ -1272,7 +1280,7 @@ func GitPull() error {
 			autoLog.Sugar.Errorf("克隆失败: %v", err)
 			return fmt.Errorf("克隆失败: %v", err)
 		}
-		fmt.Println("克隆完成")
+		autoLog.Sugar.Info("克隆完成")
 	} else if err == nil {
 		// 已存在，拉取最新
 		autoLog.Sugar.Info("仓库存在，拉取最新代码...")

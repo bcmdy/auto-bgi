@@ -610,6 +610,15 @@ func main() {
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 
+	//更新仓库
+	go func() {
+		err := bgiStatus.GitPull()
+		if err != nil {
+			autoLog.Sugar.Errorf("更新仓库失败:%v", err)
+		}
+	}()
+	go task.UpdateCode()
+
 	if Config.IsMysSignIn {
 		//米游社自动签到
 		go task.MysSignIn()
