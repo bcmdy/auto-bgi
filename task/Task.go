@@ -260,6 +260,7 @@ func ChangeTaskEnabledList() error {
 }
 
 func OneLongTask() {
+
 	//关闭软件
 	control.CloseSoftware()
 
@@ -279,7 +280,11 @@ func OneLongTask() {
 
 	autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
 
+	////开启录屏视频
+	//go control.StartRecord()
+
 	StartOneDragon(longName)
+
 }
 
 func OneLong() {
@@ -393,13 +398,12 @@ func ListGroups() ([]string, error) {
 
 // 启动配置组
 func StartGroups(name string) {
+
 	control.CloseSoftware()
 	time.Sleep(5 * time.Second)
 
-	//if err := os.Chdir(Config.BetterGIAddress); err != nil {
-	//	autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BetterGIAddress, err)
-	//	return
-	//}
+	////开启录屏视频
+	//go control.StartRecord()
 
 	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
 	cmd := exec.Command(betterGIPath, "--startGroups", name)
@@ -412,11 +416,7 @@ func StartGroups(name string) {
 	}
 
 	autoLog.Sugar.Infof("%s 启动配置组成功", name)
-	//目录切换回来
-	if err := os.Chdir(Config.BasePath); err != nil {
-		autoLog.Sugar.Errorf("切换目录失败 [%s]: %v", Config.BasePath, err)
-		return
-	}
+
 }
 
 // 启动一条龙

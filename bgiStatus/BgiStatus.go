@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/otiai10/copy"
 	"github.com/robfig/cron/v3"
@@ -1033,14 +1034,25 @@ type GroupDetail struct {
 	EndTime string
 	// 执行时间
 	ExecuteTime string
-	//摩拉
-	MoLa int
 }
 
 func GroupTime(fileName string) ([]GroupMap, error) {
-	nowTime := time.Now()
-	today := nowTime.Format("2006-01-02")
 	layoutFull := "2006-01-02 15:04:05"
+
+	today := time.Now().Format("2006-01-02")
+
+	//提取文件名字的数字
+	// 正则表达式匹配数字
+	re := regexp.MustCompile(`\d+`)
+	// 查找所有匹配项
+	matches := re.FindAllString(fileName, -1)
+	// 检查是否找到匹配项
+	if len(matches) > 0 {
+		//格式化转换
+		formatted := matches[0][:4] + "-" + matches[0][4:6] + "-" + matches[0][6:]
+
+		today = formatted
+	}
 
 	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, fileName))
 
@@ -1065,25 +1077,7 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 	scanner := bufio.NewScanner(file)
 	var prevLine string
 
-	var asyncList []config.TravelsDiaryDetailList
-
-	fmt.Println(Config.IsMoLaSum)
-
-	if Config.IsMoLaSum {
-		async, err := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 1)
-		if err == nil {
-			time.Sleep(3 * time.Second)
-			async1, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 2)
-			time.Sleep(3 * time.Second)
-			async2, _ := config.GetTravelsDiaryDetailAsync(int(nowTime.Month()), 2, 3)
-
-			asyncList = append(async.List, async1.List...)
-			asyncList = append(async.List, async2.List...)
-		}
-	}
-
 	var sunTime time.Duration
-	var sumMoLa int
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -1112,12 +1106,6 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 					// 过滤收益
 					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
 					endStr := endTime.Format("2006-01-02 15:04:05")
-					filtered := config.FilterByTime(asyncList, startStr, endStr)
-					var totalMoLa int
-					for _, item := range filtered {
-						totalMoLa += item.Num
-					}
-					sumMoLa += totalMoLa
 
 					// 组装
 					results = append(results, GroupMap{
@@ -1126,7 +1114,6 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 							StartTime:   startStr,
 							EndTime:     endStr,
 							ExecuteTime: duration.String(),
-							MoLa:        totalMoLa,
 						},
 					})
 
@@ -1149,7 +1136,6 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 			StartTime:   "00:00:00",
 			EndTime:     "00:00:00",
 			ExecuteTime: sunTime.String(),
-			MoLa:        sumMoLa,
 		},
 	})
 
@@ -1273,8 +1259,10 @@ func GitPull() error {
 		// 本地不存在，克隆
 		autoLog.Sugar.Info("本地不存在，开始克隆...")
 		repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
-			URL:      repoURL,
-			Progress: nil,
+			URL:           repoURL,
+			ReferenceName: plumbing.NewBranchReferenceName("main"),
+			SingleBranch:  true,
+			Progress:      nil,
 		})
 		if err != nil {
 			autoLog.Sugar.Errorf("克隆失败: %v", err)
@@ -1286,40 +1274,31 @@ func GitPull() error {
 		autoLog.Sugar.Info("仓库存在，拉取最新代码...")
 		w, err := repo.Worktree()
 		if err != nil {
-			fmt.Println("获取工作区失败:", err)
 			return fmt.Errorf("获取工作区失败: %v", err)
 		}
-		err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+		err = w.Pull(&git.PullOptions{
+			RemoteName:    "origin",
+			ReferenceName: plumbing.NewBranchReferenceName("main"),
+			Force:         false,
+		})
 		if err != nil && err != git.NoErrAlreadyUpToDate {
 			autoLog.Sugar.Errorf("拉取失败: %v", err)
 			return fmt.Errorf("拉取失败: %v", err)
 		}
 		autoLog.Sugar.Info("拉取完成或已是最新")
 	} else {
-		fmt.Println("打开仓库失败:", err)
 		return fmt.Errorf("打开仓库失败: %v", err)
 	}
 	return nil
 }
 
-func AutoJs() string {
+func AutoJs() (string, error) {
 
 	err := GitPull()
 	if err != nil {
-		return err.Error()
+		return err.Error(), err
 	}
 
-	//url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
-	//zipFile := "main.zip"
-	//err := downloadFile(zipFile, url)
-	//if err != nil {
-	//	return "下载失败"
-	//}
-	//err2 := unzipRepo(zipFile, "repo", "repo/")
-	//if err2 != nil {
-	//	return "解压失败"
-	//}
-	//
 	jsNames := Config.JsName
 	repoDir := "bettergi-scripts-list/repo/js"
 	//
@@ -1327,21 +1306,43 @@ func AutoJs() string {
 		subFolderPath, err := findSubFolder(repoDir, jsName)
 		if err != nil {
 			autoLog.Sugar.Errorf("查找子文件夹失败: %v", err)
-			return fmt.Sprintf("未找到子文件夹: %s", jsName)
+			return fmt.Sprintf("未找到子文件夹: %s", jsName), err
 		}
 
 		// 找到子文件夹后，执行复制操作
 		targetPath := filepath.Join(Config.BetterGIAddress, "User", "JsScript", jsName)
-		err2 := copy.Copy(subFolderPath, targetPath)
-		if err2 != nil {
-			fmt.Println(err2)
+
+		//狗粮特殊处理
+		if jsName == "AutoArtifactsPro" {
+			autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
+			autoLog.Sugar.Infof("开始备份日志文件")
+			copy.Copy(filepath.Join(targetPath, "records"), "./backups/AutoArtifactsPro/")
+			//清理原文件
+			os.RemoveAll(targetPath)
+			autoLog.Sugar.Infof("更新脚本")
+			err2 := copy.Copy(subFolderPath, targetPath)
+			if err2 != nil {
+				autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
+			}
+			autoLog.Sugar.Infof("恢复日志文件")
+			err := copy.Copy("./backups/AutoArtifactsPro/", filepath.Join(targetPath, "records"))
+			if err != nil {
+				autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
+			}
+
+		} else {
+			//清理原文件
+			os.RemoveAll(targetPath)
+			err2 := copy.Copy(subFolderPath, targetPath)
+			if err2 != nil {
+				return err2.Error(), err2
+			}
 		}
+
 		autoLog.Sugar.Infof("Js脚本: %s 已更新", subFolderPath)
 	}
-	//os.RemoveAll("repo")
-	//os.RemoveAll("main.zip")
 
-	return "备份成功"
+	return "备份成功", nil
 }
 
 // 查找 repo 目录下是否存在名为 targetFolder 的子文件夹

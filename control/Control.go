@@ -228,3 +228,12 @@ func GetMysSignLog() string {
 	}
 	return string(body)
 }
+
+func StartRecord() {
+	autoLog.Sugar.Infof("开始录屏")
+	//点击F12开始录屏
+	err := robotgo.KeyTap("f12")
+	if err != nil {
+		return
+	}
+}
