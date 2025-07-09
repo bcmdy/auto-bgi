@@ -190,7 +190,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="./static/swiper-bundle.min.css"></script>
 <script>
     const canvas = document.getElementById('animeStars');
     const ctx = canvas.getContext('2d');
@@ -250,7 +250,10 @@
     function connectWebSocket(name) {
         if (ws) ws.close();
         logEl.textContent = `正在连接 ${name} 日志服务...\n`;
-        ws = new WebSocket(`ws://${location.host}/ws/${encodeURIComponent(name)}`);
+
+        const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(`${protocol}://${location.host}/ws/${encodeURIComponent(name)}`);
+
         ws.onmessage = e => {
             const atBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 10;
             logEl.textContent += e.data;
@@ -260,6 +263,7 @@
         ws.onclose = () => logEl.textContent += "\n[连接已关闭]";
         ws.onerror = () => logEl.textContent += "\n[连接出错]";
     }
+
 
     async function loadLogFiles() {
         try {

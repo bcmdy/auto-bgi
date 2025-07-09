@@ -443,45 +443,43 @@ type DogFood struct {
 }
 
 // 获取当前配置组
-func FindLastGroup(filename string) (string, error) {
-
-	pattern := `配置组 "(.*?)" 加载完成，共\d+个脚本，开始执行`
-
-	re := regexp.MustCompile(pattern)
-
+func FindLastGroup(filename string) (group string, timestamp string, err error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer file.Close()
 
-	// 用于存储最后匹配的行和配置组名称
-	var lastMatch string
-	var lastGroup string
-
 	scanner := bufio.NewScanner(file)
 
+	var prevLine string
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
+		// 拼接上一行和当前行
+		combined := prevLine + " " + line
+
+		// 正则匹配时间和配置组
+		pattern := `\[(\d{2}:\d{2}:\d{2}\.\d{3})\]\s+\[INF\].*?配置组 "(.*?)" 加载完成，共\d+个脚本，开始执行`
+		re := regexp.MustCompile(pattern)
+
+		matches := re.FindStringSubmatch(combined)
 		if matches != nil {
-			lastMatch = line
-			lastGroup = matches[1] // 第一个捕获组是配置组名称
+			timestamp = matches[1]
+			group = matches[2]
 		}
+
+		prevLine = line
 	}
 
 	if err := scanner.Err(); err != nil {
-		return "", err
+		return "", "", err
 	}
-	// 输出结果
-	if lastMatch != "" {
-		//autoLog.Sugar.Infof("最后匹配的行:", lastMatch)
-		//autoLog.Sugar.Infof("配置组名称:", lastGroup)
-	} else {
-		errs := fmt.Errorf("没有找到匹配的行", 500)
-		return "", errs
+
+	if group == "" {
+		return "", "", fmt.Errorf("没有找到匹配的行")
 	}
-	return lastGroup, nil
+
+	return group, timestamp, nil
 }
 
 // 获取配置组进度
@@ -1036,6 +1034,23 @@ type GroupDetail struct {
 	ExecuteTime string
 }
 
+// 提取文件名字日期
+func GetFileNameDate(fileName string) string {
+	//提取文件名字的数字
+	// 正则表达式匹配数字
+	re := regexp.MustCompile(`\d+`)
+	// 查找所有匹配项
+	matches := re.FindAllString(fileName, -1)
+	// 检查是否找到匹配项
+	if len(matches) > 0 {
+		//格式化转换
+		formatted := matches[0][:4] + "-" + matches[0][4:6] + "-" + matches[0][6:]
+
+		return formatted
+	}
+	return ""
+}
+
 func GroupTime(fileName string) ([]GroupMap, error) {
 	layoutFull := "2006-01-02 15:04:05"
 
@@ -1276,6 +1291,18 @@ func GitPull() error {
 		if err != nil {
 			return fmt.Errorf("获取工作区失败: %v", err)
 		}
+
+		// 强制还原本地更改
+		err = w.Reset(&git.ResetOptions{
+			Mode: git.HardReset,
+		})
+		if err != nil {
+			autoLog.Sugar.Errorf("重置工作区失败: %v", err)
+			return fmt.Errorf("重置工作区失败: %v", err)
+		}
+		autoLog.Sugar.Info("本地更改已清除，准备拉取")
+
+		// 拉取更新
 		err = w.Pull(&git.PullOptions{
 			RemoteName:    "origin",
 			ReferenceName: plumbing.NewBranchReferenceName("main"),
@@ -1359,4 +1386,132 @@ func findSubFolder(root string, targetFolder string) (string, error) {
 	}
 
 	return "", fmt.Errorf("未找到子文件夹: %s", targetFolder)
+}
+
+func Archive(data map[string]interface{}) string {
+	title, ok1 := data["Title"].(string)
+	executeTime, ok2 := data["ExecuteTime"].(string)
+
+	if !ok1 || !ok2 {
+		fmt.Println("归档数据字段缺失或格式错误")
+		return "归档数据字段缺失或格式错误"
+	}
+
+	// 检查是否已经归档
+	stmt, err := config.InitDB().Prepare(`SELECT COUNT(*) FROM archive_records WHERE title =?`)
+	if err != nil {
+		fmt.Println("预处理失败:", err)
+		return "预处理失败"
+	}
+	defer stmt.Close()
+	var count int
+	err = stmt.QueryRow(title).Scan(&count)
+	if err != nil {
+		fmt.Println("查询数据库失败:", err)
+		return "查询数据库失败"
+	}
+	if count > 0 {
+		return "已经归档"
+	}
+
+	stmt2, err := config.InitDB().Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
+	if err != nil {
+		fmt.Println("预处理失败:", err)
+		return "预处理失败"
+	}
+	defer stmt2.Close()
+
+	_, err = stmt2.Exec(title, executeTime)
+	if err != nil {
+		fmt.Println("写入数据库失败:", err)
+		return "写入数据库失败"
+	}
+
+	autoLog.Sugar.Infof("成功归档：%s (%s)\n", title, executeTime)
+	return "归档成功"
+
+}
+
+type ArchiveRecords struct {
+	Id          int    `json:"id"`
+	Title       string `json:"title"`
+	ExecuteTime string `json:"execute_time"`
+	CreatedAt   string `json:"created_at"`
+}
+
+// 时间计算
+func CalculateTime(filename, groupName, startTime string) (string, error) {
+	// 解析文件名中的日期
+	fileDate := GetFileNameDate(filename)
+
+	// 查询数据库配置组时长
+	stmt, err := config.InitDB().Prepare(`SELECT execute_time FROM archive_records WHERE title = ?`)
+	if err != nil {
+		return "", err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(groupName)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var archiveRecords ArchiveRecords
+	for rows.Next() {
+		err = rows.Scan(&archiveRecords.ExecuteTime)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// 解析起始时间，例如 09:06:24.391
+	start, err := time.Parse("2006-01-02 15:04:05", fileDate+" "+startTime)
+	if err != nil {
+		return "", err
+	}
+
+	// 将执行时长字符串 "HH:MM:SS" 转为 Duration
+	duration, err := time.ParseDuration(archiveRecords.ExecuteTime)
+	if err != nil {
+		return "", err
+	}
+
+	// 计算预计结束时间
+	expectedEnd := start.Add(duration)
+
+	//判断是否已经超过现在时间
+	if expectedEnd.Before(time.Now()) {
+		return "已经完成", nil
+	}
+
+	// 返回格式化为 "15:04:05.000"
+	return expectedEnd.Format("15:04:05.000"), nil
+}
+
+// 归档查询
+func ListArchive() []ArchiveRecords {
+	stmt, err := config.InitDB().Prepare(`SELECT id, title, execute_time, created_at FROM archive_records`)
+	if err != nil {
+		return nil
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	var archiveRecords []ArchiveRecords
+	for rows.Next() {
+		var record ArchiveRecords
+		err = rows.Scan(&record.Id, &record.Title, &record.ExecuteTime, &record.CreatedAt)
+		if err != nil {
+			continue // 或者记录日志
+		}
+		archiveRecords = append(archiveRecords, record)
+	}
+
+	return archiveRecords
 }

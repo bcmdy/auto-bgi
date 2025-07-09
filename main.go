@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -35,6 +36,7 @@ var (
 func init() {
 	// 初始化日志
 	autoLog.Init()
+	config.InitDB()
 	defer autoLog.Sync()
 
 	//判断目录是否设置正确
@@ -212,15 +214,22 @@ func main() {
 		progress := "0/0"
 		group := "未知"
 		GetGroup := "未知"
+		timestamp := "未知"
 
 		line, err := findLastJSONLine(filename)
 		if err != nil {
 			autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
 		} else {
-			group, err = bgiStatus.FindLastGroup(filename)
+			group, timestamp, err = bgiStatus.FindLastGroup(filename)
 			if err != nil {
 				autoLog.Sugar.Errorf("配置组查不到: %v\n", err)
 			} else {
+				calculateTime, err := bgiStatus.CalculateTime(filename, group, timestamp)
+				if err != nil {
+					timestamp = "未知"
+				} else {
+					timestamp = calculateTime
+				}
 				jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
 				progress, err = bgiStatus.Progress(jsonStr, line)
 				if err != nil {
@@ -240,6 +249,7 @@ func main() {
 
 		data := make(map[string]interface{})
 		data["group"] = group + "[" + GetGroup + "]"
+		data["ExpectedToEnd"] = timestamp
 		data["line"] = line
 		data["progress"] = progress
 		data["running"] = running
@@ -247,6 +257,36 @@ func main() {
 
 		c.JSON(http.StatusOK, data)
 
+	})
+
+	ginServer.GET("/archive", func(c *gin.Context) {
+		// 传递给模板
+		c.HTML(http.StatusOK, "archive.html", nil)
+	})
+
+	//查询归档列表查询
+	ginServer.GET("/api/archiveList", func(c *gin.Context) {
+		// 调用函数获取数据
+		archive := bgiStatus.ListArchive()
+		c.JSON(http.StatusOK, archive)
+	})
+
+	// 删除归档记录
+	ginServer.DELETE("/api/archive", func(c *gin.Context) {
+		idStr := c.Query("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			c.String(http.StatusBadRequest, "无效的ID")
+			return
+		}
+
+		_, err = config.InitDB().Exec("DELETE FROM archive_records WHERE id = ?", id)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "删除失败")
+			return
+		}
+
+		c.String(http.StatusOK, "删除成功")
 	})
 
 	//一条龙
@@ -562,6 +602,17 @@ func main() {
 		}
 
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": imageNames})
+	})
+
+	ginServer.POST("/api/archive", func(c *gin.Context) {
+		var req map[string]interface{}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": "参数解析失败: " + err.Error()})
+			return
+		}
+		bgiStatus.Archive(req)
+
+		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
 	})
 
 	//一条龙

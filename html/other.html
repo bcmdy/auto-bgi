@@ -43,13 +43,13 @@
             color: var(--primary-color);
             border: 2px solid var(--primary-color);
             border-radius: 50px;
-            padding: 10px 20px;
+            padding: 8px 16px;
             font-size: 1rem;
             cursor: pointer;
             box-shadow: 0 0 10px var(--primary-color);
             transition: all 0.3s ease;
-            margin: 0 10px 10px 0;
             font-weight: bold;
+            margin-top: 10px;
         }
         .btn:hover {
             background-color: var(--primary-color);
@@ -61,7 +61,6 @@
             max-width: 900px;
             margin: 30px auto;
             padding: 0 20px;
-            position: relative;
         }
         section.panel {
             background: rgba(255, 255, 255, 0.8);
@@ -69,7 +68,6 @@
             border-radius: 20px;
             padding: 20px 25px;
             margin-bottom: 30px;
-            position: relative;
         }
         section.panel h2 {
             color: var(--primary-color);
@@ -88,31 +86,7 @@
             background-color: #fff;
             font-size: 1rem;
             cursor: pointer;
-        }
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 15px 20px;
-            text-align: left;
-            color: var(--text-color);
-        }
-        th {
-            background-color: #ffcce6;
-            color: #ff5599;
-            font-weight: bold;
-            border-radius: 10px;
-        }
-        td {
-            background-color: rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
-        }
-        tr:hover td {
-            background-color: var(--hover-color);
+            max-width: 300px;
         }
         .info-box {
             background-color: rgba(255, 255, 255, 0.85);
@@ -138,10 +112,6 @@
             margin: 8px 0;
             font-size: 1rem;
         }
-        .info-box .highlight {
-            color: #ff5599;
-            font-weight: bold;
-        }
         pre {
             background-color: rgba(255, 255, 255, 0.8);
             border: 5px solid var(--border-color);
@@ -158,10 +128,6 @@
                 word-break: break-word;
             }
         }
-        select{
-            max-width: 300px;
-        }
-
     </style>
 </head>
 <body>
@@ -174,8 +140,10 @@
 <div class="container">
 
     <section class="panel" id="executionPanel">
-        <h2>配置组执行时间统计</h2>
-        <select id="fileSelect"></select>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h2 style="margin: 0;">配置组执行时间统计</h2>
+            <select id="fileSelect"></select>
+        </div>
         <div id="groupTimeList"></div>
     </section>
 
@@ -191,77 +159,80 @@
         <h2>米游社签到记录</h2>
     </section>
 
-
-
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-
         const fileSelect = document.getElementById('fileSelect');
 
         // 获取文件列表
         fetch('/logFiles')
             .then(response => response.json())
             .then(fileList => {
-                console.log('文件列表:', fileList.files);
                 if (fileList.files.length === 0) return;
-
                 fileList.files.forEach(file => {
                     const option = document.createElement('option');
                     option.value = file;
                     option.textContent = file;
                     fileSelect.appendChild(option);
                 });
-
-                // 默认加载第一个文件的数据
                 loadData(fileList.files[0]);
-            })
-            .catch(err => {
-                console.error('文件列表获取失败', err);
             });
 
         fileSelect.addEventListener('change', function () {
-            const selectedFile = fileSelect.value;
-            loadData(selectedFile);
+            loadData(fileSelect.value);
         });
 
         function loadData(fileName) {
-            console.log('加载文件:', fileName);
             fetch(`/api/other?file=${encodeURIComponent(fileName)}`)
                 .then(response => response.json())
                 .then(data => {
-
                     const groupTimeList = document.getElementById('groupTimeList');
                     groupTimeList.innerHTML = '';
 
-                    //配置组执行时间统计
-                    let groupTimeData = data.GroupTime;
-                    groupTimeData.forEach(item => {
+                    data.GroupTime.forEach(item => {
                         const infoBox = document.createElement('div');
                         infoBox.classList.add('info-box');
-                        infoBox.innerHTML = `<h3>${item.Title}</h3>`;
-                        infoBox.innerHTML += `<p><strong>开始时间：${item.Detail.StartTime}</strong></p>`;
-                        infoBox.innerHTML += `<p><strong>结束时间：${item.Detail.EndTime}</strong></p>`;
-                        infoBox.innerHTML += `<p><strong>共用时：${item.Detail.ExecuteTime}</strong></p>`;
+
+                        infoBox.innerHTML = `
+                            <h3>${item.Title}</h3>
+                            <p><strong>开始时间：${item.Detail.StartTime}</strong></p>
+                            <p><strong>结束时间：${item.Detail.EndTime}</strong></p>
+                            <p><strong>共用时：${item.Detail.ExecuteTime}</strong></p>
+                            <button class="btn archive-single">归档</button>
+                        `;
+
+                        infoBox.querySelector('.archive-single').addEventListener('click', function () {
+                            const archiveItem = {
+                                Title: item.Title,
+                                ExecuteTime: item.Detail.ExecuteTime,
+                            };
+                            fetch('/api/archive', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(archiveItem)
+                            })
+                                .then(res => {
+                                    if (!res.ok) throw new Error('归档失败');
+                                    return res.text();
+                                })
+                                .then(msg => {
+                                    alert('归档成功: ' + msg);
+                                })
+                                .catch(err => {
+                                    console.error('归档失败', err);
+                                    alert('归档失败');
+                                });
+                        });
+
                         groupTimeList.appendChild(infoBox);
                     });
 
-                    // 米游社签到记录
-                    const signLogContent = document.getElementById('signLog');
-                    signLogContent.innerHTML = '<h2>米游社签到记录</h2>';
-                    var pre = document.createElement("pre");
-                    pre.innerHTML = data.signLog;
-                    signLogContent.appendChild(pre);
+                    document.getElementById('signLog').innerHTML = '<h2>米游社签到记录</h2><pre>' + data.signLog + '</pre>';
+                    document.getElementById('groupPInfo').innerHTML = '<h2>今日配置组启动列表</h2><pre>' + data.groupPInfo + '</pre>';
 
-                    // 今日配置组启动列表
-                    const groupPInfoContent = document.getElementById('groupPInfo');
-                    groupPInfoContent.innerHTML = '<h2>今日配置组启动列表</h2>';
-                    var pre = document.createElement("pre");
-                    pre.innerHTML = data.groupPInfo;
-                    groupPInfoContent.appendChild(pre);
-
-                    // 仓库更新详情（最新10条）
                     const gitLogContent = document.getElementById('gitLog');
                     gitLogContent.innerHTML = '<h2>仓库更新详情（最新10条）</h2>';
                     data.gitLog.forEach(item => {
@@ -271,14 +242,9 @@
                         infoBox.innerHTML += `<p><strong>更新时间：${item.CommitTime}</strong></p>`;
                         infoBox.innerHTML += `<p><strong>更新信息：${item.Message}</strong></p>`;
                         gitLogContent.appendChild(infoBox);
-                    })
-
-                })
-                .catch(err => {
-                    console.error('数据加载失败', err);
+                    });
                 });
         }
-
     });
 </script>
 

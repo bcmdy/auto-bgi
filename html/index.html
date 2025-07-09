@@ -134,6 +134,7 @@
 
 <div class="container">
     <h1 id="group">当前执行配置组:</h1>
+    <h1 id="ExpectedToEnd">预计结束时间:</h1>
     <h1 id="line">当前执行脚本:</h1>
     <h1 id="progress">地图追踪进度：</h1>
     <h1 id="running">软件运行状态:</h1>
@@ -151,6 +152,7 @@
     <button onclick="getBackupBtn()">备份user文件和指定文件</button>
     <button onclick="autoJsBtn()">更新指定脚本</button>
     <button onclick="otherBtn()">其他</button>
+    <button onclick="archiveBtn()">归档查询</button>
 </div>
 
 <script>
@@ -216,6 +218,7 @@
             const data = await res.json();
 
             document.getElementById('group').textContent = '当前执行配置组: ' + data.group;
+            document.getElementById('ExpectedToEnd').textContent = '预计结束时间: ' + data.ExpectedToEnd;
             document.getElementById('line').textContent = '当前执行脚本: ' + data.line;
             document.getElementById('progress').textContent = '地图追踪进度：' + data.progress;
             document.getElementById('running').textContent = '软件运行状态: ' + data.running;
@@ -232,6 +235,10 @@
 
     function otherBtn() {
         window.location.href = '/other';
+    }
+
+    function archiveBtn() {
+        window.location.href = '/archive';
     }
 
     function autoJsBtn() {
