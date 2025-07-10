@@ -206,6 +206,8 @@
         /*    pointer-events: none;*/
         /*}*/
 
+
+
         .corner-icon-swiper {
             position: absolute;
             bottom: 2px;
@@ -231,13 +233,51 @@
             color: #ff6699;
             font-weight: bold;
         }
+
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .main-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-color);
+            margin: 0;
+        }
+
+        .title-badge {
+            font-size: 0.75rem;
+            background-color: #ffeaf5;
+            border: 1px solid #ffb6d9;
+            color: #ff5599;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-weight: bold;
+            box-shadow: 0 0 5px rgba(255, 105, 180, 0.3);
+            white-space: nowrap;
+        }
+
+
     </style>
 </head>
 <!-- 在 </body> 前添加 -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <body>
 <div class="container">
-    <h1 class="main-title">{{ .title }}</h1>
+
+    <div class="title-row">
+        <h1 class="main-title">{{ .title }}</h1>
+        {{ if .JsVersion }}
+        <span class="title-badge">[{{ .JsVersion }}]</span>
+        {{ end }}
+    </div>
 
     <div class="button-group">
         <button onclick="window.location.href='/'" class="btn">返回主页</button>
@@ -248,16 +288,8 @@
 
         {{ range .items }}
         <div class="info-box">
-<!--            <img class="corner-icon" src="./static/image/bd.jpg" alt="icon" />-->
-            <!-- Swiper 轮播图容器 -->
             <div class="swiper corner-icon-swiper">
                 <div class="swiper-wrapper">
-<!--                    <div class="swiper-slide"><img src="./static/image/bd.jpg" alt="bd1" /></div>-->
-<!--                    <div class="swiper-slide"><img src="./static/image/ff.png" alt="bd2" /></div>-->
-<!--                    <div class="swiper-slide"><img src="./static/image/sh.jpg" alt="bd4" /></div>-->
-<!--                    <div class="swiper-slide"><img src="./static/image/ng.jpg" alt="bd5" /></div>-->
-<!--                    <div class="swiper-slide"><img src="./static/image/gy.jpg" alt="bd6" /></div>-->
-<!--                    <div class="swiper-slide"><img src="./static/image/123.png" alt="bd7" /></div>-->
                 </div>
             </div>
             <h3>♡ {{ .FileName }}</h3>

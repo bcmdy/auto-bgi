@@ -79,7 +79,12 @@ func SendWeChatNotification(content string) {
 	}
 	defer resp.Body.Close()
 
-	autoLog.Sugar.Info("企业微信机器人配置错误:", resp.Status)
+	if resp.StatusCode != 200 {
+		autoLog.Sugar.Error("企业微信机器人配置错误:", resp.Status)
+
+	} else {
+		autoLog.Sugar.Info("企业微信机器人配置成功:", resp.Status)
+	}
 	autoLog.Sugar.Info("BetterGI 已关闭，通知已发送")
 }
 
@@ -138,6 +143,7 @@ func SendWeChatImage(path string) error {
 
 var notified = false
 var okInform = false
+var okRun = true
 
 func CheckBetterGIStatus() {
 
@@ -150,15 +156,18 @@ func CheckBetterGIStatus() {
 
 		// 检查进程
 		if IsWechatRunning() {
-			//fmt.Print("\rBetterGI 正在运行", time.Now().Format("2006-01-02 15:04:05"))
 
-			autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
-			notified = false // 清除通知状态
+			if okRun {
+				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
+				notified = false // 清除通知状态
+				okRun = false    // 清除通知状态
+			}
 		} else {
 			if !notified {
 				SendWeChatNotification("BetterGI 已经关闭:" + Config.Content)
 				control.CloseYuanShen()
 				notified = true
+				okRun = true
 			} else if !okInform {
 				autoLog.Sugar.Infof("BetterGI 已关闭，已通知过: %s", time.Now().Format("2006-01-02 15:04:05"))
 				okInform = true
@@ -1491,7 +1500,7 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 		"【预计结束时间：" + fileDate + " " + expectedEnd.Format("15:04:05") + "】", nil
 }
 
-// 归档查询
+// ListArchive 归档查询
 func ListArchive() []ArchiveRecords {
 	stmt, err := config.InitDB().Prepare(`SELECT id, title, execute_time, created_at FROM archive_records`)
 	if err != nil {
@@ -1516,4 +1525,35 @@ func ListArchive() []ArchiveRecords {
 	}
 
 	return archiveRecords
+}
+
+// JsVersion 读取脚本的版本号
+func JsVersion(jsName, nowVersion string) string {
+
+	repoDir := "bettergi-scripts-list/repo/js"
+
+	filePath := filepath.Join(repoDir, jsName, "manifest.json")
+	// 读取文件内容
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		autoLog.Sugar.Errorf("读取文件失败: %v", err)
+	}
+	// 解析 JSON
+	var data map[string]interface{}
+	err = json.Unmarshal(content, &data)
+	if err != nil {
+		autoLog.Sugar.Errorf("JsVersion 解析 JSON 失败: %v", err)
+	}
+	// 提取版本号
+	version, ok := data["version"].(string)
+	if !ok {
+		autoLog.Sugar.Errorf("JsVersion 版本号格式错误")
+		return "未知"
+	}
+
+	if nowVersion == version {
+		return "最新"
+	}
+	return "有更新[" + version + "]"
+
 }

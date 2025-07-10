@@ -281,7 +281,7 @@ func OneLongTask() {
 	autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
 
 	////开启录屏视频
-	//go control.StartRecord()
+	go control.StartRecord()
 
 	StartOneDragon(longName)
 

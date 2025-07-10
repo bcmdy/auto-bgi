@@ -159,6 +159,13 @@
     </div>
     <h1>{{ .title }}</h1>
 </header>
+<div class="container" style="margin-top: -20px; margin-bottom: 10px;">
+    <div id="filterContainer" style="background: #fff0f5; border: 1px solid var(--border-color); border-radius: 10px; padding: 10px;">
+        <strong style="color: var(--primary-color);">材料筛选：</strong>
+        <button id="cancelBtn" class="btn" style="margin-left: 10px; font-size: 0.8rem; padding: 5px 10px;">取消选择</button>
+        <span id="checkboxes" style="display: inline-block; margin-top: 5px;"></span>
+    </div>
+</div>
 
 <div class="container">
     <table id="materialTable">
@@ -196,65 +203,88 @@
     window.onload = function () {
         const table = document.getElementById('materialTable');
         const tbody = table.querySelector('tbody');
-
-        // 先获取所有数据行，转成数组
         const rows = Array.from(tbody.querySelectorAll('tr'));
 
-        // 提取数据，方便排序
-        const dataRows = rows.map(row => {
-            return {
-                element: row,
-                date: row.cells[0].textContent.trim(),
-                cl: row.cells[1].textContent.trim(),
-                num: parseInt(row.cells[2].textContent.trim())
-            };
+        // 提取原始数据
+        const originalData = rows.filter(r => r.cells.length === 3).map(row => ({
+            element: row.cloneNode(true),
+            date: row.cells[0].textContent.trim(),
+            cl: row.cells[1].textContent.trim(),
+            num: parseInt(row.cells[2].textContent.trim())
+        }));
+
+        // 排序逻辑（摩拉优先，材料名升序）
+        originalData.sort((a, b) => {
+            if (a.cl === '摩拉数值' && b.cl !== '摩拉数值') return -1;
+            if (a.cl !== '摩拉数值' && b.cl === '摩拉数值') return 1;
+            return a.cl.localeCompare(b.cl);
         });
 
-        // 按材料名升序排序
-        dataRows.sort((a, b) => {
-            if (a.cl === '摩拉数值' && b.cl !== '摩拉数值') {
-                return -1; // a是摩拉，排前面
-            } else if (a.cl !== '摩拉数值' && b.cl === '摩拉数值') {
-                return 1; // b是摩拉，排前面
-            } else {
-                return a.cl.localeCompare(b.cl); // 都是摩拉或都不是，按字母排序
-            }
-        });
+        // 渲染表格
+        function renderTable(dataList) {
+            tbody.innerHTML = '';
+            let lastCl = null;
+            let materialMap = {};
 
-        // 清空 tbody
-        tbody.innerHTML = '';
+            for (let i = 0; i < dataList.length; i++) {
+                const { element, date, cl, num } = dataList[i];
 
-
-        let materialMap = {};
-        let lastCl = null;
-
-        // 按排序结果重新插入行，并插入空行区分材料
-        for (let i = 0; i < dataRows.length; i++) {
-            const { element, date, cl, num } = dataRows[i];
-
-            // 如果材料变化，插入空行
-            if (lastCl !== null && cl !== lastCl) {
-                const spacer = document.createElement('tr');
-                spacer.innerHTML = `<td colspan="3" style="height: 12px; background-color: #ffcce6;"></td>`;
-                tbody.appendChild(spacer);
-            }
-            lastCl = cl;
-
-
-            // 显示数量变化
-            if (materialMap[cl] !== undefined) {
-                const prev = materialMap[cl];
-                const diff = num - prev.num;
-                if (diff !== 0) {
-                    const sign = diff > 0 ? '+' : '';
-                    element.cells[2].textContent = num + ` (${sign}${diff})`;
+                if (lastCl !== null && cl !== lastCl) {
+                    const spacer = document.createElement('tr');
+                    spacer.innerHTML = `<td colspan="3" style="height: 12px; background-color: #ffcce6;"></td>`;
+                    tbody.appendChild(spacer);
                 }
+                lastCl = cl;
+
+                if (materialMap[cl] !== undefined) {
+                    const prev = materialMap[cl];
+                    const diff = num - prev.num;
+                    if (diff !== 0) {
+                        const sign = diff > 0 ? '+' : '';
+                        element.cells[2].textContent = num + ` (${sign}${diff})`;
+                    }
+                }
+
+                materialMap[cl] = { date, num };
+                tbody.appendChild(element);
             }
-
-            materialMap[cl] = { date, num };
-
-            tbody.appendChild(element);
         }
+
+        // 初始化复选框
+        const checkboxContainer = document.getElementById('checkboxes');
+        const uniqueMaterials = [...new Set(originalData.map(r => r.cl))].sort();
+
+        uniqueMaterials.forEach(material => {
+            const label = document.createElement('label');
+            label.style.marginRight = '10px';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = material;
+            checkbox.onchange = filterTable;
+            label.appendChild(checkbox);
+            label.append(' ' + material);
+            checkboxContainer.appendChild(label);
+        });
+
+        // 取消选择按钮逻辑
+        const cancelBtn = document.getElementById('cancelBtn');
+        cancelBtn.onclick = () => {
+            const checkboxes = checkboxContainer.querySelectorAll('input[type=checkbox]');
+            checkboxes.forEach(cb => cb.checked = false);
+            renderTable(originalData); // 恢复所有数据
+        };
+
+        // 根据勾选的材料筛选并渲染
+        function filterTable() {
+            const selected = Array.from(checkboxContainer.querySelectorAll('input:checked')).map(c => c.value);
+            const filteredData = selected.length === 0
+                ? originalData
+                : originalData.filter(row => selected.includes(row.cl));
+            renderTable(filteredData);
+        }
+
+        // 初始渲染
+        renderTable(originalData);
     };
 </script>
 

@@ -452,17 +452,22 @@ func main() {
 		//获取版本号
 		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", Config.BetterGIAddress))
 
+		//查询更新状态
+		jsVersion := bgiStatus.JsVersion("AutoArtifactsPro", version)
+
 		if err != nil {
 			// 传递给模板
 			context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
-				"title": "狗粮收益查询" + "【" + version + "】",
-				"items": nil,
+				"title":     "狗粮收益查询" + "【" + version + "】",
+				"JsVersion": jsVersion,
+				"items":     nil,
 			})
 			return
 		}
 		context.HTML(http.StatusOK, "AutoArtifactsPro.html", gin.H{
-			"title": "狗粮收益查询" + "【" + version + "】",
-			"items": pro,
+			"title":     "狗粮收益查询" + "【" + version + "】",
+			"JsVersion": jsVersion,
+			"items":     pro,
 		})
 
 	})
