@@ -163,6 +163,7 @@
     <div id="filterContainer" style="background: #fff0f5; border: 1px solid var(--border-color); border-radius: 10px; padding: 10px;">
         <strong style="color: var(--primary-color);">材料筛选：</strong>
         <button id="cancelBtn" class="btn" style="margin-left: 10px; font-size: 0.8rem; padding: 5px 10px;">取消选择</button>
+        <button id="allOreBtn" class="btn" style="margin-left: 10px; font-size: 0.8rem; padding: 5px 10px;">选择矿石</button>
         <span id="checkboxes" style="display: inline-block; margin-top: 5px;"></span>
     </div>
 </div>
@@ -273,6 +274,21 @@
             checkboxes.forEach(cb => cb.checked = false);
             renderTable(originalData); // 恢复所有数据
         };
+
+        allore = ["萃凝晶","水晶块","星银矿石","紫晶块","白铁矿","铁块","魔晶块","石珀"]
+
+        // 取消选择按钮逻辑
+        const allOreBtn = document.getElementById('allOreBtn');
+        allOreBtn.onclick = () => {
+            const checkboxes = checkboxContainer.querySelectorAll('input[type=checkbox]');
+            checkboxes.forEach(cb => {
+                if (allore.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+            filterTable()
+        };
+
 
         // 根据勾选的材料筛选并渲染
         function filterTable() {

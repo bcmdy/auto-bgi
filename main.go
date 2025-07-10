@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -446,6 +447,7 @@ func main() {
 
 	//查询狗粮日志
 	ginServer.GET("/getAutoArtifactsPro", func(context *gin.Context) {
+
 		pro, err := bgiStatus.GetAutoArtifactsPro()
 		autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
@@ -557,13 +559,46 @@ func main() {
 
 	// 统计配置组执行时间 - 返回JSON
 	ginServer.GET("/api/other", func(context *gin.Context) {
-
+		var otherGroup sync.WaitGroup
+		otherGroup.Add(4)
 		fileName := context.Query("file")
 
-		GroupTime, _ := bgiStatus.GroupTime(fileName)
-		signLog := control.GetMysSignLog()
-		groupPInfo := bgiStatus.GetGroupPInfo()
-		gitLog := bgiStatus.GitLog()
+		var (
+			GroupTime  []bgiStatus.GroupMap
+			signLog    string
+			groupPInfo string
+			gitLog     []bgiStatus.GitLogStruct
+		)
+
+		//获取配置组执行时长
+		go func() {
+			defer otherGroup.Done()
+			GroupTime, _ = bgiStatus.GroupTime(fileName)
+		}()
+
+		//获取米游社签到日志
+		go func() {
+			defer otherGroup.Done()
+			signLog = control.GetMysSignLog()
+		}()
+
+		//获取今天执行配置组
+		go func() {
+			defer otherGroup.Done()
+			groupPInfo = bgiStatus.GetGroupPInfo()
+		}()
+
+		go func() {
+			defer otherGroup.Done()
+			gitLog = bgiStatus.GitLog()
+		}()
+
+		otherGroup.Wait() // 等待所有 goroutine 完成
+
+		//GroupTime, _ := bgiStatus.GroupTime(fileName)
+		//signLog := control.GetMysSignLog()
+		//groupPInfo := bgiStatus.GetGroupPInfo()
+		//gitLog := bgiStatus.GitLog()
 
 		context.JSON(http.StatusOK, gin.H{
 			"GroupTime":  GroupTime,
