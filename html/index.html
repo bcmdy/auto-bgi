@@ -118,10 +118,14 @@
             object-fit: cover;
             border-radius: 10px;
         }
-
+        .ExpectedToEnd {
+            font-size: 1.2em;
+            color: #ff6699;
+            text-shadow: 0 0 5px #ffd1e0;
+        }
     </style>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
 
 <body>
 
@@ -134,11 +138,11 @@
 
 <div class="container">
     <h1 id="group">当前执行配置组:</h1>
-    <h1 id="ExpectedToEnd">预计结束时间:</h1>
+    <pre id="ExpectedToEnd" class="ExpectedToEnd"></pre>
     <h1 id="line">当前执行脚本:</h1>
     <h1 id="progress">地图追踪进度：</h1>
     <h1 id="running">软件运行状态:</h1>
-    <h1 id="jsProgress">JS:</h1>
+    <h1 id="jsProgress"></h1>
 
     <button onclick="oneLongBtn()">一条龙启动</button>
     <button onclick="closeBgiBtn()">关闭BGI(原神,启动器)</button>
@@ -154,7 +158,7 @@
     <button onclick="otherBtn()">其他</button>
     <button onclick="archiveBtn()">归档查询</button>
 </div>
-
+<script src="./static/swiper-bundle.min.css"></script>
 <script>
 
     async function getImages() {
@@ -218,7 +222,7 @@
             const data = await res.json();
 
             document.getElementById('group').textContent = '当前执行配置组: ' + data.group;
-            document.getElementById('ExpectedToEnd').textContent = '预计结束时间: ' + data.ExpectedToEnd;
+            document.getElementById('ExpectedToEnd').textContent = data.ExpectedToEnd;
             document.getElementById('line').textContent = '当前执行脚本: ' + data.line;
             document.getElementById('progress').textContent = '地图追踪进度：' + data.progress;
             document.getElementById('running').textContent = '软件运行状态: ' + data.running;
@@ -334,7 +338,7 @@
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.angle * Math.PI / 180);
-            
+
             ctx.fillStyle = this.color;
             ctx.beginPath();
             // 绘制樱花花瓣
@@ -351,12 +355,12 @@
 
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         petals.forEach(petal => {
             petal.update();
             petal.draw();
         });
-        
+
         requestAnimationFrame(animate);
     }
 

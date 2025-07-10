@@ -1479,14 +1479,16 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 
 	// 计算预计结束时间
 	expectedEnd := start.Add(duration)
-
-	//判断是否已经超过现在时间
-	if expectedEnd.Before(time.Now()) {
-		return "已经完成", nil
-	}
+	//
+	////判断是否已经超过现在时间
+	//if expectedEnd.Before(time.Now()) {
+	//	return "开始时间："+startTime+" 上次时长："+archiveRecords.ExecuteTime+" 预计结束时间："+, nil
+	//}
 
 	// 返回格式化为 "15:04:05.000"
-	return expectedEnd.Format("15:04:05.000"), nil
+	return "【开始时间：" + fileDate + " " + startTime + "】\n" +
+		"【上次时长：" + archiveRecords.ExecuteTime + "】\n" +
+		"【预计结束时间：" + fileDate + " " + expectedEnd.Format("15:04:05") + "】", nil
 }
 
 // 归档查询
