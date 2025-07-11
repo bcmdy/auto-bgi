@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -1272,10 +1273,24 @@ func GitLog() []GitLogStruct {
 	return logs
 }
 
+var repoURLs = []string{
+	//"https://gitcode.com/huiyadanli/bettergi-scripts-list.git",
+	"https://gitee.com/babalae/bettergi-scripts-list.git",
+	//"https://github.com/babalae/bettergi-scripts-list.git",
+	"https://cnb.cool/bettergi/bettergi-scripts-list.git",
+}
+
 // git拉取代码
 func GitPull() error {
+
 	localPath := "./bettergi-scripts-list"
-	repoURL := "https://gitcode.com/huiyadanli/bettergi-scripts-list.git"
+	//repoURL := "https://gitcode.com/huiyadanli/bettergi-scripts-list.git"
+	repoURL := ""
+	//随机获取一个地址
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	n := r.Intn(len(repoURLs))
+	autoLog.Sugar.Infof("随机获取一个地址：%d==%s", n, repoURLs[n])
+	repoURL = repoURLs[n]
 
 	// 尝试打开本地仓库
 	repo, err := git.PlainOpen(localPath)
@@ -1319,7 +1334,23 @@ func GitPull() error {
 		})
 		if err != nil && err != git.NoErrAlreadyUpToDate {
 			autoLog.Sugar.Errorf("拉取失败: %v", err)
-			return fmt.Errorf("拉取失败: %v", err)
+			n := r.Intn(len(repoURLs))
+			autoLog.Sugar.Infof("随机获取一个地址：%d==%s", n, repoURLs[n])
+			//删除仓库重新拉取
+			os.RemoveAll(localPath)
+			repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
+				URL:           repoURL,
+				ReferenceName: plumbing.NewBranchReferenceName("main"),
+				SingleBranch:  true,
+				Progress:      nil,
+			})
+			if err != nil {
+				autoLog.Sugar.Errorf("克隆失败: %v", err)
+				return fmt.Errorf("克隆失败: %v", err)
+			}
+			autoLog.Sugar.Info("克隆完成")
+
+			return fmt.Errorf("仓库更新成功")
 		}
 		autoLog.Sugar.Info("拉取完成或已是最新")
 	} else {
@@ -1348,7 +1379,6 @@ func AutoJs() (string, error) {
 		// 找到子文件夹后，执行复制操作
 		targetPath := filepath.Join(Config.BetterGIAddress, "User", "JsScript", jsName)
 
-		//狗粮特殊处理
 		if jsName == "AutoArtifactsPro" {
 			autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
 			autoLog.Sugar.Infof("开始备份日志文件")
@@ -1364,6 +1394,25 @@ func AutoJs() (string, error) {
 			err := copy.Copy("./backups/AutoArtifactsPro/", filepath.Join(targetPath, "records"))
 			if err != nil {
 				autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
+			}
+		} else if jsName == "AutoHoeingOneDragon" {
+			autoLog.Sugar.Infof("锄地一条龙脚本特殊处理")
+			autoLog.Sugar.Infof("开始备份日志文件")
+			backupAutoHoeingOneDragon := filepath.Join(targetPath, "assets")
+			copy.Copy(backupAutoHoeingOneDragon, "./backups/AutoHoeingOneDragon/")
+			autoLog.Sugar.Infof("删除原文件")
+			os.RemoveAll(targetPath)
+			autoLog.Sugar.Infof("更新脚本")
+			err2 := copy.Copy(subFolderPath, targetPath)
+			if err2 != nil {
+				autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
+				return "更新脚本失败", err2
+			}
+			autoLog.Sugar.Infof("恢复日志文件")
+			err := copy.Copy("./backups/AutoHoeingOneDragon/", filepath.Join(targetPath, "assets"))
+			if err != nil {
+				autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
+				return "恢复日志文件失败", err
 			}
 
 		} else {
@@ -1488,11 +1537,6 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 
 	// 计算预计结束时间
 	expectedEnd := start.Add(duration)
-	//
-	////判断是否已经超过现在时间
-	//if expectedEnd.Before(time.Now()) {
-	//	return "开始时间："+startTime+" 上次时长："+archiveRecords.ExecuteTime+" 预计结束时间："+, nil
-	//}
 
 	// 返回格式化为 "15:04:05.000"
 	return "【开始时间：" + fileDate + " " + startTime + "】\n" +
