@@ -442,7 +442,7 @@ func UpdateCode() {
 
 	// 定时任务,cron表达式
 	//每1个小时执行一次
-	spec := fmt.Sprintf("0 0 */1 * * *")
+	spec := fmt.Sprintf("0 0 */2 * * *")
 	//spec := fmt.Sprintf("0 %d %d * * *", Config.OneLongMinute, Config.OneLongHour)
 
 	// 定义定时器调用的任务函数

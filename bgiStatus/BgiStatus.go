@@ -1276,8 +1276,8 @@ func GitLog() []GitLogStruct {
 var repoURLs = []string{
 	//"https://gitcode.com/huiyadanli/bettergi-scripts-list.git",
 	"https://gitee.com/babalae/bettergi-scripts-list.git",
-	//"https://github.com/babalae/bettergi-scripts-list.git",
-	"https://cnb.cool/bettergi/bettergi-scripts-list.git",
+	////"https://github.com/babalae/bettergi-scripts-list.git",
+	//"https://cnb.cool/bettergi/bettergi-scripts-list.git",
 }
 
 // git拉取代码
@@ -1289,7 +1289,7 @@ func GitPull() error {
 	//随机获取一个地址
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	n := r.Intn(len(repoURLs))
-	autoLog.Sugar.Infof("随机获取一个地址：%d==%s", n, repoURLs[n])
+	//autoLog.Sugar.Infof("随机获取一个地址：%d==%s", n, repoURLs[n])
 	repoURL = repoURLs[n]
 
 	// 尝试打开本地仓库
@@ -1322,6 +1322,8 @@ func GitPull() error {
 		})
 		if err != nil {
 			autoLog.Sugar.Errorf("重置工作区失败: %v", err)
+			//删除仓库重新拉取
+			os.RemoveAll(localPath)
 			return fmt.Errorf("重置工作区失败: %v", err)
 		}
 		autoLog.Sugar.Info("本地更改已清除，准备拉取")
@@ -1334,23 +1336,8 @@ func GitPull() error {
 		})
 		if err != nil && err != git.NoErrAlreadyUpToDate {
 			autoLog.Sugar.Errorf("拉取失败: %v", err)
-			n := r.Intn(len(repoURLs))
-			autoLog.Sugar.Infof("随机获取一个地址：%d==%s", n, repoURLs[n])
-			//删除仓库重新拉取
-			os.RemoveAll(localPath)
-			repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
-				URL:           repoURL,
-				ReferenceName: plumbing.NewBranchReferenceName("main"),
-				SingleBranch:  true,
-				Progress:      nil,
-			})
-			if err != nil {
-				autoLog.Sugar.Errorf("克隆失败: %v", err)
-				return fmt.Errorf("克隆失败: %v", err)
-			}
-			autoLog.Sugar.Info("克隆完成")
 
-			return fmt.Errorf("仓库更新成功")
+			return fmt.Errorf("拉取失败: %v", err)
 		}
 		autoLog.Sugar.Info("拉取完成或已是最新")
 	} else {
