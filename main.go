@@ -624,11 +624,13 @@ func main() {
 	//读取statuc文件夹所有的图片
 	ginServer.GET("/images", func(context *gin.Context) {
 
-		imageDir := Config.BasePath + "\\static\\image"
+		//imageDir := Config.BasePath + "\\static\\image"
+		//
+		//autoLog.Sugar.Infof("当前目录:%s", imageDir)
 
-		autoLog.Sugar.Infof("当前目录:%s", imageDir)
+		//files, err := os.ReadDir(imageDir)
+		files, err := os.ReadDir("./static/image")
 
-		files, err := os.ReadDir(imageDir)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 			return
