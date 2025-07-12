@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./static/swiper-bundle.min.css" />
-    <title>执行状态</title>
+    <title>autobgi</title>
     <style>
         html, body {
             margin: 0;
@@ -64,31 +64,74 @@
             50% { transform: scale(1.2); }
         }
 
+        .button-group {
+            margin: 24px 0;
+            padding: 16px;
+            border: 2px dashed #ffaad5;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 0 10px #ffe6f0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .button-group h2 {
+            grid-column: span 2;
+            text-align: center;
+            color: #ff6699;
+            text-shadow: 0 0 4px #fff0f5;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
         button {
             width: 100%;
-            margin: 12px 0;
             padding: 14px;
-            font-size: 15px;
-            background-color: #ffd1e0;
-            color: #ff5588;
-            border: 2px solid #ff9ecd;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 0 10px #ffcce6;
-            transition: all 0.2s ease-in-out;
+            font-size: 16px;
             font-weight: bold;
+            background: linear-gradient(145deg, #ffd1e0, #ffe6f0);
+            color: #ff4081;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 4px 4px 10px #ffb6c1, -4px -4px 10px #fff0f5;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 2.5s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            50% { left: 100%; }
+            100% { left: 100%; }
         }
 
         button:hover {
-            background-color: #ff9ecd;
+            transform: scale(1.06);
+            background: linear-gradient(145deg, #ffb6c1, #ffd1e0);
             color: white;
-            box-shadow: 0 0 20px #ff9ecd, 0 0 40px #ff9ecd;
-            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff99cc, 0 0 30px #ff99cc;
         }
 
         @media (max-width: 480px) {
             h1 {
                 font-size: 0.9em;
+            }
+            .button-group {
+                grid-template-columns: 1fr;
             }
 
             button {
@@ -123,6 +166,49 @@
             color: #ff6699;
             text-shadow: 0 0 5px #ffd1e0;
         }
+
+        .status-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 2px dashed #ffaad5;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 10px #ffe6f0;
+            font-size: 15.5px;
+            line-height: 1.8;
+        }
+
+        .status-card h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #ff66a3;
+            text-shadow: 0 0 4px #fff0f5;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-card h2 span {
+            margin-right: 8px;
+        }
+
+
+        .status-card p {
+            margin: 6px 0;
+            color: #ff4081;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .status-card p span:first-child {
+            margin-right: 8px;
+            font-size: 1.2em;
+        }
+
+        .status-card span[id] {
+            font-weight: bold;
+            color: #d9006c;
+        }
     </style>
 </head>
 
@@ -137,26 +223,40 @@
 </div>
 
 <div class="container">
-    <h1 id="group">当前执行配置组:</h1>
-    <pre id="ExpectedToEnd" class="ExpectedToEnd"></pre>
-    <h1 id="line">当前执行脚本:</h1>
-    <h1 id="progress">地图追踪进度：</h1>
-    <h1 id="running">软件运行状态:</h1>
-    <h1 id="jsProgress"></h1>
+    <div class="status-card">
+        <h2 >执行配置组：🧩<span id="group"></span> </h2>
+        <pre id="ExpectedToEnd" class="ExpectedToEnd">加载中...</pre>
+        <p><span>📜</span> 运行脚本：<span id="line">加载中...</span></p>
+        <p><span>🗺️</span> 地图追踪进度：<span id="progress">加载中...</span></p>
+        <p><span>🖥️</span> 软件运行状态：<span id="running">加载中...</span></p>
+        <p><span>✨</span><span id="jsProgress">加载中...</span></p>
+    </div>
 
-    <button onclick="oneLongBtn()">一条龙启动</button>
-    <button onclick="closeBgiBtn()">关闭BGI(原神,启动器)</button>
-<!--    <button onclick="closeYuanShenBtn()">关闭原神(启动器)</button>-->
-    <button onclick="todayHarvestBtn()">查看收获前10</button>
-    <button onclick="BagStatisticsBtn()">背包统计</button>
-    <button onclick="listGroupsBtn()">调度器</button>
-    <button onclick="realTimeLogBtn()">实时日志</button>
-    <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
-<!--    <button onclick="getAutoUpdateJsAndPathingBtn()">更新脚本和地图追踪</button>-->
-    <button onclick="getBackupBtn()">备份user文件和指定文件</button>
-    <button onclick="autoJsBtn()">更新指定脚本</button>
-    <button onclick="otherBtn()">其他</button>
-    <button onclick="archiveBtn()">归档查询</button>
+
+    <div class="button-group">
+        <h2>🚀 自动化</h2>
+        <button onclick="oneLongBtn()">一条龙启动</button>
+        <button onclick="closeBgiBtn()">关闭BGI</button>
+        <button onclick="getBackupBtn()">备份 user 文件</button>
+        <button onclick="autoJsBtn()">更新指定脚本</button>
+    </div>
+
+
+    <div class="button-group">
+        <h2>📊 数据分析</h2>
+        <button onclick="todayHarvestBtn()">查看收获前10</button>
+        <button onclick="BagStatisticsBtn()">背包统计</button>
+        <button onclick="getAutoArtifactsProBtn()">查看狗粮日志</button>
+        <button onclick="archiveBtn()">归档查询</button>
+        <button onclick="otherBtn()">其他</button>
+    </div>
+
+    <div class="button-group">
+        <h2>🧭 BGI相关</h2>
+        <button onclick="listGroupsBtn()">调度器</button>
+        <button onclick="realTimeLogBtn()">实时日志</button>
+    </div>
+
 </div>
 
 <script src="./static/swiper-bundle.min.js"></script>
@@ -222,16 +322,18 @@
             if (!res.ok) return;
             const data = await res.json();
 
-            document.getElementById('group').textContent = '当前执行配置组: ' + data.group;
+            // 更新展示数据（每项为 span）
+            document.getElementById('group').textContent = data.group;
             document.getElementById('ExpectedToEnd').textContent = data.ExpectedToEnd;
-            document.getElementById('line').textContent = '当前执行脚本: ' + data.line;
-            document.getElementById('progress').textContent = '地图追踪进度：' + data.progress;
-            document.getElementById('running').textContent = '软件运行状态: ' + data.running;
-            document.getElementById('jsProgress').textContent = 'JS: ' + data.jsProgress;
+            document.getElementById('line').textContent = data.line;
+            document.getElementById('progress').textContent = data.progress;
+            document.getElementById('running').textContent = data.running;
+            document.getElementById('jsProgress').textContent = data.jsProgress;
         } catch (err) {
             console.error("刷新失败：", err);
         }
     }
+
 
     // // 首次执行 & 每隔5秒自动刷新
     refreshStatus();
