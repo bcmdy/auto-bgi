@@ -1588,3 +1588,25 @@ func JsVersion(jsName, nowVersion string) string {
 	return "有更新[" + version + "]"
 
 }
+
+func ReadLog() {
+	filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress))
+	files, err := FindLogFiles(filePath)
+	if err != nil {
+		return
+	}
+	fileLog := files[0]
+	//实时读取文件
+	file, err := os.Open(filepath.Join(filePath, fileLog))
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	// 定位到文件末尾
+	file.Seek(0, io.SeekEnd)
+	// 实时读取文件内容
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+}

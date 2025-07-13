@@ -190,6 +190,11 @@ func main() {
 		}
 	})
 
+	//实时读取文件
+	ginServer.GET("/readLog", func(c *gin.Context) {
+		bgiStatus.ReadLog()
+	})
+
 	ginServer.GET("/", func(c *gin.Context) {
 		// 传递给模板
 		c.HTML(http.StatusOK, "index.html", nil)
