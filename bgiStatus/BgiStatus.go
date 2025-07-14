@@ -1526,6 +1526,7 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 	expectedEnd := start.Add(duration)
 
 	// 返回格式化为 "15:04:05.000"
+	startTime = start.Format("15:04:05")
 	return "【开始时间：" + fileDate + " " + startTime + "】\n" +
 		"【上次时长：" + archiveRecords.ExecuteTime + "】\n" +
 		"【预计结束时间：" + fileDate + " " + expectedEnd.Format("15:04:05") + "】", nil
