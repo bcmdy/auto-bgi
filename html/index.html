@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./static/swiper-bundle.min.css" />
-    <title>autobgi</title>
+    <title>autobgi-1.5</title>
     <style>
         html, body {
             margin: 0;
@@ -38,12 +38,10 @@
             z-index: 1;
             width: 90%;
             max-width: 700px;
-            margin: 60px auto;
+            margin: 320px auto 60px;
             padding: 20px;
-            /*border: 2px solid #ff9ecd;*/
             border-radius: 20px;
             background-color: rgba(255, 255, 255, 0);
-            /*box-shadow: 0 0 20px #ffaad5;*/
         }
 
         h1 {
@@ -141,13 +139,15 @@
             .right-top-swiper{
                 left: 100px;
             }
+            .container{
+                margin: 400px auto 60px;
+            }
         }
         .right-top-swiper {
             position: fixed;
             bottom: 10px;
 
             left: 2%;
-            /*left: 150px;*/
             width: 420px;
             height: 750px;
             z-index: -1;
@@ -168,14 +168,21 @@
         }
 
         .status-card {
-            background-color: rgba(255, 255, 255, 0.7);
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 700px;
+            z-index: 999;
+            background-color: rgba(255, 255, 255, 0.65);
+            padding: 20px;
             border: 2px dashed #ffaad5;
             border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 0 10px #ffe6f0;
+            box-shadow: 0 4px 20px rgba(255, 174, 209, 0.5);
             font-size: 15.5px;
             line-height: 1.8;
+            backdrop-filter: blur(6px); /* 磨砂美化 */
         }
 
         .status-card h2 {
