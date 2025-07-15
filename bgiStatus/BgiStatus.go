@@ -386,9 +386,46 @@ func BagStatistics() ([]Material, error) {
 			panic(err)
 		}
 	}
+
+	//摩拉统计
 	morasStatistics, _ := MorasStatistics()
 	bags = append(bags, morasStatistics...)
 
+	//原石统计
+	yuanShiStatistics, _ := YuanShiStatistics()
+	bags = append(bags, yuanShiStatistics...)
+
+	return bags, nil
+}
+
+// 原石统计
+func YuanShiStatistics() ([]Material, error) {
+	autoLog.Sugar.Infof("原石统计")
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", Config.BetterGIAddress))
+	file, err := os.Open(filename)
+	if err != nil {
+		autoLog.Sugar.Errorf("没有相关JS")
+	}
+	defer file.Close()
+	var bags []Material
+	// 创建一个扫描器来读取文件
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var bag Material
+		line := scanner.Text()
+		split := strings.Split(line, " —— ")
+		bag.Data = split[0]
+
+		bag.Cl = "原石"
+
+		yuanShiNum := split[3]
+		//提取数字
+		re := regexp.MustCompile(`\d+`)
+		num := re.FindString(yuanShiNum)
+		bag.Num = num
+
+		bags = append(bags, bag)
+	}
 	return bags, nil
 }
 
@@ -400,6 +437,7 @@ func MorasStatistics() ([]Material, error) {
 	// 打开文件
 	file, err := os.Open(filename)
 	if err != nil {
+		autoLog.Sugar.Infof("没有相关JS")
 		return nil, err
 	}
 	defer file.Close()
@@ -442,6 +480,14 @@ func DeleteBagStatistics() string {
 		autoLog.Sugar.Errorf("删除摩拉统计失败")
 
 	}
+
+	autoLog.Sugar.Infof("删除原石统计")
+	filePath3 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", Config.BetterGIAddress))
+	err3 := os.Remove(filePath3)
+	if err3 != nil {
+		autoLog.Sugar.Errorf("删除原石统计失败")
+	}
+
 	autoLog.Sugar.Infof("文件删除成功")
 	return "文件删除成功"
 }
@@ -640,15 +686,15 @@ func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 		// 狗粮
 		DogExpNum := strings.ReplaceAll(parts[2], "狗粮经验", "")
 		number, _ := strconv.Atoi(DogExpNum)
-		if number == -1 {
-			continue
+		if number <= -1 {
+			number = 0
 		}
 
 		// 摩拉
 		MoraNum := strings.ReplaceAll(parts[3], "摩拉", "")
 		number2, _ := strconv.Atoi(MoraNum)
-		if number2 == 0 {
-			continue
+		if number2 <= -1 {
+			number2 = 0
 
 		}
 

@@ -216,8 +216,15 @@
 
         // 排序逻辑（摩拉优先，材料名升序）
         originalData.sort((a, b) => {
+            // 原石第一
+            if (a.cl === '原石' && b.cl !== '原石') return -1;
+            if (a.cl !== '原石' && b.cl === '原石') return 1;
+
+            // 摩拉第二
             if (a.cl === '摩拉数值' && b.cl !== '摩拉数值') return -1;
             if (a.cl !== '摩拉数值' && b.cl === '摩拉数值') return 1;
+
+            // 其他按名称升序
             return a.cl.localeCompare(b.cl);
         });
 
@@ -229,6 +236,13 @@
 
             for (let i = 0; i < dataList.length; i++) {
                 const { element, date, cl, num } = dataList[i];
+
+                if (cl==="原石"){
+                    const pulls = Math.floor(num / 180);
+                    if (pulls>0){
+                        element.cells[1].textContent = `${cl} (${pulls}抽)`;
+                    }
+                }
 
                 if (lastCl !== null && cl !== lastCl) {
                     const spacer = document.createElement('tr');
@@ -244,6 +258,7 @@
                         const sign = diff > 0 ? '+' : '';
                         element.cells[2].textContent = num + ` (${sign}${diff})`;
                     }
+
                 }
 
                 materialMap[cl] = { date, num };
