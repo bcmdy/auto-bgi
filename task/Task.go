@@ -324,7 +324,7 @@ func MysSignIn() {
 	cronTab := cron.New(cron.WithSeconds())
 
 	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", 10, 2)
+	spec := fmt.Sprintf("0 %d %d * * *", 20, 0)
 
 	// 定义定时器调用的任务函数
 	task := func() {
@@ -332,7 +332,7 @@ func MysSignIn() {
 
 		//config.GenShinSign()
 
-		err := control.HttpGet("http://localhost:8888/qd")
+		err := control.HttpGet("http://192.168.3.3:8888/qd")
 		if err != nil {
 
 			autoLog.Sugar.Error("签到失败:", err)

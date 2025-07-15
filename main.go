@@ -24,14 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
-)
-
-var (
-	user32               = syscall.NewLazyDLL("user32.dll")
-	procFindWindow       = user32.NewProc("FindWindowW")
-	procSetForegroundWnd = user32.NewProc("SetForegroundWindow")
 )
 
 func init() {
@@ -600,11 +593,6 @@ func main() {
 
 		otherGroup.Wait() // 等待所有 goroutine 完成
 
-		//GroupTime, _ := bgiStatus.GroupTime(fileName)
-		//signLog := control.GetMysSignLog()
-		//groupPInfo := bgiStatus.GetGroupPInfo()
-		//gitLog := bgiStatus.GitLog()
-
 		context.JSON(http.StatusOK, gin.H{
 			"GroupTime":  GroupTime,
 			"signLog":    signLog,
@@ -629,11 +617,6 @@ func main() {
 	//读取statuc文件夹所有的图片
 	ginServer.GET("/images", func(context *gin.Context) {
 
-		//imageDir := Config.BasePath + "\\static\\image"
-		//
-		//autoLog.Sugar.Infof("当前目录:%s", imageDir)
-
-		//files, err := os.ReadDir(imageDir)
 		files, err := os.ReadDir("./static/image")
 
 		if err != nil {
@@ -672,8 +655,10 @@ func main() {
 		autoLog.Sugar.Infof("一条龙关闭状态")
 	}
 
-	//检查BGI状态
+	////检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
+
+	//go bgiStatus.ReadLog()
 
 	//更新仓库
 	go func() {

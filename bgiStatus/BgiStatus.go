@@ -86,7 +86,6 @@ func SendWeChatNotification(content string) {
 	} else {
 		autoLog.Sugar.Info("企业微信机器人配置成功:", resp.Status)
 	}
-	autoLog.Sugar.Info("BetterGI 已关闭，通知已发送")
 }
 
 // 向企业微信发送通知（图片）
@@ -1456,7 +1455,13 @@ func Archive(data map[string]interface{}) string {
 		return "查询数据库失败"
 	}
 	if count > 0 {
-		return "已经归档"
+		//执行修改
+		stmt2, err := config.InitDB().Prepare(`UPDATE archive_records SET execute_time = ? WHERE title = ?`)
+		if err != nil {
+			autoLog.Sugar.Errorf("预处理失败: %v", err)
+			return "预处理失败"
+		}
+		defer stmt2.Close()
 	}
 
 	stmt2, err := config.InitDB().Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
@@ -1590,24 +1595,52 @@ func JsVersion(jsName, nowVersion string) string {
 
 }
 
+var BgiStatus bool
+
 func ReadLog() {
 	filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress))
 	files, err := FindLogFiles(filePath)
-	if err != nil {
+	if err != nil || len(files) == 0 {
+		fmt.Println("找不到日志文件")
 		return
 	}
 	fileLog := files[0]
-	//实时读取文件
 	file, err := os.Open(filepath.Join(filePath, fileLog))
 	if err != nil {
+		fmt.Println("无法打开日志文件:", err)
 		return
 	}
 	defer file.Close()
+
 	// 定位到文件末尾
 	file.Seek(0, io.SeekEnd)
-	// 实时读取文件内容
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+
+	i := 0
+	notified := false // 用于标记是否已发送通知
+	reader := bufio.NewReader(file)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				time.Sleep(6 * time.Second) // 没有新内容，稍等再读
+				i++
+				if i >= 10 && !notified {
+					SendWeChatNotification("bgi暂停中")
+					BgiStatus = false
+					notified = true // 标记已通知
+				}
+				continue
+			}
+			fmt.Println("读取文件出错:", err)
+			break
+		}
+
+		// 有新日志时重置状态
+		fmt.Print(line)
+		BgiStatus = true
+		i = 0
+		if notified {
+			notified = false // 日志有更新，重置通知标记
+		}
 	}
 }
