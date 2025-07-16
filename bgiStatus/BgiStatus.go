@@ -335,7 +335,7 @@ func BagStatistics() ([]Material, error) {
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
 
 	// 打开文件
-	file, err := os.Open(filename) // 替换为你的文件路径
+	file, err := os.Open(filename)
 	if err != nil {
 		autoLog.Sugar.Errorf("背包统计失败: %v", err)
 	}
@@ -1383,7 +1383,7 @@ func AutoJs() (string, error) {
 	}
 
 	jsNames := Config.JsName
-	repoDir := "bettergi-scripts-list/repo/js"
+	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 	//
 	for _, jsName := range jsNames {
 		subFolderPath, err := findSubFolder(repoDir, jsName)
@@ -1597,7 +1597,7 @@ func ListArchive() []ArchiveRecords {
 // JsVersion 读取脚本的版本号
 func JsVersion(jsName, nowVersion string) string {
 
-	repoDir := "bettergi-scripts-list/repo/js"
+	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 
 	filePath := filepath.Join(repoDir, jsName, "manifest.json")
 	// 读取文件内容
