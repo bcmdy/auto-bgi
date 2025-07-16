@@ -20,7 +20,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -404,7 +403,8 @@ func YuanShiStatistics() ([]Material, error) {
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", Config.BetterGIAddress))
 	file, err := os.Open(filename)
 	if err != nil {
-		autoLog.Sugar.Errorf("没有相关JS")
+		autoLog.Sugar.Errorf("没有相关JS:OCR读取当前抽卡资源并发送通知")
+		return nil, err
 	}
 	defer file.Close()
 	var bags []Material
@@ -414,6 +414,9 @@ func YuanShiStatistics() ([]Material, error) {
 		var bag Material
 		line := scanner.Text()
 		split := strings.Split(line, " —— ")
+		if len(split) < 4 {
+			continue
+		}
 		bag.Data = split[0]
 
 		bag.Cl = "原石"
@@ -1267,24 +1270,29 @@ type GitLogStruct struct {
 
 // 查询git日志
 func GitLog() []GitLogStruct {
-	localPath := "./bettergi-scripts-list"
+	localPath := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
 
 	// 打开仓库
 	repo, err := git.PlainOpen(localPath)
 	if err != nil {
-		log.Fatal("打开仓库失败:", err)
+
+		autoLog.Sugar.Errorf("打开仓库失败: %v", err)
+		return nil
 	}
 
 	// 获取 HEAD 引用
 	ref, err := repo.Head()
 	if err != nil {
-		log.Fatal("获取 HEAD 失败:", err)
+		autoLog.Sugar.Errorf("获取 HEAD 失败: %v", err)
+		return nil
+
 	}
 
 	// 获取日志迭代器
 	commitIter, err := repo.Log(&git.LogOptions{From: ref.Hash()})
 	if err != nil {
-		log.Fatal("获取日志失败:", err)
+		autoLog.Sugar.Errorf("获取日志失败: %v", err)
+		return nil
 	}
 
 	var logs []GitLogStruct
@@ -1305,7 +1313,8 @@ func GitLog() []GitLogStruct {
 	})
 
 	if err != nil && err.Error() != "done" {
-		log.Fatal("遍历日志失败:", err)
+		autoLog.Sugar.Errorf("遍历日志失败: %v", err)
+		return nil
 	}
 
 	// 按时间倒序排序
@@ -1318,41 +1327,17 @@ func GitLog() []GitLogStruct {
 	return logs
 }
 
-var repoURLs = []string{
-	//"https://gitcode.com/huiyadanli/bettergi-scripts-list.git",
-	"https://gitee.com/babalae/bettergi-scripts-list.git",
-	////"https://github.com/babalae/bettergi-scripts-list.git",
-	//"https://cnb.cool/bettergi/bettergi-scripts-list.git",
-}
-
 // git拉取代码
 func GitPull() error {
 
-	localPath := "./bettergi-scripts-list"
-	//repoURL := "https://gitcode.com/huiyadanli/bettergi-scripts-list.git"
-	repoURL := ""
-	//随机获取一个地址
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	n := r.Intn(len(repoURLs))
-	//autoLog.Sugar.Infof("随机获取一个地址：%d==%s", n, repoURLs[n])
-	repoURL = repoURLs[n]
+	localPath := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
 
 	// 尝试打开本地仓库
 	repo, err := git.PlainOpen(localPath)
 	if err == git.ErrRepositoryNotExists {
 		// 本地不存在，克隆
-		autoLog.Sugar.Info("本地不存在，开始克隆...")
-		repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
-			URL:           repoURL,
-			ReferenceName: plumbing.NewBranchReferenceName("main"),
-			SingleBranch:  true,
-			Progress:      nil,
-		})
-		if err != nil {
-			autoLog.Sugar.Errorf("克隆失败: %v", err)
-			return fmt.Errorf("克隆失败: %v", err)
-		}
-		autoLog.Sugar.Info("克隆完成")
+		autoLog.Sugar.Info("仓库不存在，请先去bgi重置或者更新仓库")
+
 	} else if err == nil {
 		// 已存在，拉取最新
 		autoLog.Sugar.Info("仓库存在，拉取最新代码...")
@@ -1360,7 +1345,6 @@ func GitPull() error {
 		if err != nil {
 			return fmt.Errorf("获取工作区失败: %v", err)
 		}
-
 		// 强制还原本地更改
 		err = w.Reset(&git.ResetOptions{
 			Mode: git.HardReset,
