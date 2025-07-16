@@ -238,7 +238,7 @@
                 const { element, date, cl, num } = dataList[i];
 
                 if (cl==="原石"){
-                    const pulls = Math.floor(num / 180);
+                    const pulls = Math.floor(num / 160);
                     if (pulls>0){
                         element.cells[1].textContent = `${cl} (${pulls}抽)`;
                     }
