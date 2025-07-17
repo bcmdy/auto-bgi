@@ -5,6 +5,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/tools"
 	"bufio"
 	"bytes"
 	"crypto/md5"
@@ -1673,4 +1674,206 @@ func ReadLog() {
 			notified = false // 日志有更新，重置通知标记
 		}
 	}
+}
+
+var errorKeywords = []string{
+	"未完整匹配到四人队伍",
+	"未检测到任务触发关键词",
+	"OCR 识别失败",
+	"此路线出现3次卡死，重试一次路线或放弃此路线！",
+	"检测到复苏界面，存在角色被击败",
+	"执行路径时出错",
+}
+
+func isErrorLine(line string) (matched string, ok bool) {
+	for _, keyword := range errorKeywords {
+		if strings.Contains(line, keyword) {
+			return keyword, true
+		}
+	}
+	return "", false
+}
+
+type LogAnalysis2Struct struct {
+	GroupName        string
+	StartTime        string
+	EndTime          string
+	Consuming        string
+	LogAnalysis2Json []LogAnalysis2Json
+	ErrorSummary     map[string]int // 🔸每组内的所有错误统计
+}
+
+type LogAnalysis2Json struct {
+	JsonName  string
+	StartTime string
+	EndTime   string
+	Income    map[string]int // ⬅️ 收入项及其数量
+	Errors    map[string]int // 错误项及其数量
+	Consuming string
+}
+
+// 日志分析
+func LogAnalysis2(fileName string) []LogAnalysis2Struct {
+	filePath := filepath.Join(Config.BetterGIAddress, "log")
+	fullPath := filepath.Join(filePath, fileName)
+
+	file, err := os.Open(fullPath)
+	if err != nil {
+		fmt.Println("无法打开日志文件:", err)
+		return []LogAnalysis2Struct{}
+	}
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+
+	var logAnalysis2Structs []LogAnalysis2Struct
+	var currentStruct *LogAnalysis2Struct
+	var lastLine string
+
+	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
+	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("分析完毕")
+				break
+			}
+			fmt.Println("读取文件出错:", err)
+			break
+		}
+
+		timestampLine := lastLine
+		if tools.HasTimestamp(line) {
+			timestampLine = line
+		}
+
+		// 配置组开始
+		if startRegexp.MatchString(line) {
+			matches := startRegexp.FindStringSubmatch(line)
+			if len(matches) > 1 {
+				currentStruct = &LogAnalysis2Struct{
+					GroupName: matches[1],
+				}
+				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+					currentStruct.StartTime = t
+				} else {
+					fmt.Println("提取开始时间失败:", err)
+				}
+			}
+		}
+
+		// 配置组结束
+		if currentStruct != nil && endRegexp.MatchString(line) {
+			matches := endRegexp.FindStringSubmatch(line)
+			if len(matches) > 1 && matches[1] == currentStruct.GroupName {
+				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+					currentStruct.EndTime = t
+				} else {
+					fmt.Println("提取结束时间失败:", err)
+				}
+
+				// 计算执行时间（可选）
+				currentStruct.Consuming = tools.CalculateDuration(currentStruct.StartTime, currentStruct.EndTime)
+
+				// 🔸合并错误统计
+				currentStruct.ErrorSummary = make(map[string]int)
+				for _, subTask := range currentStruct.LogAnalysis2Json {
+					for errStr, count := range subTask.Errors {
+						currentStruct.ErrorSummary[errStr] += count
+					}
+				}
+
+				logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)
+				currentStruct = nil
+			}
+		}
+
+		// 地图追踪任务开始
+		if currentStruct != nil && strings.HasPrefix(line, "→ 开始执行地图追踪任务") {
+			subTask := LogAnalysis2Json{
+				JsonName: line,
+			}
+			if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+				subTask.StartTime = t
+			}
+			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
+		}
+
+		// 地图追踪结束
+		if currentStruct != nil && strings.HasPrefix(line, "→ 脚本执行结束") {
+			n := len(currentStruct.LogAnalysis2Json)
+			if n > 0 {
+				current := &currentStruct.LogAnalysis2Json[n-1]
+				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+					current.EndTime = t
+					// ✅ 计算任务耗时
+					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
+				}
+			}
+		}
+
+		//JS脚本开始
+		if currentStruct != nil && strings.HasPrefix(line, "→ 开始执行JS脚本") {
+			subTask := LogAnalysis2Json{
+				JsonName: line,
+			}
+			if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+				subTask.StartTime = t
+			}
+			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
+		}
+
+		// JS脚本任务
+		if currentStruct != nil && strings.HasPrefix(line, "→ 脚本执行结束") {
+			n := len(currentStruct.LogAnalysis2Json)
+			if n > 0 {
+				current := &currentStruct.LogAnalysis2Json[n-1]
+				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+					current.EndTime = t
+					// ✅ 计算任务耗时
+					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
+				}
+			}
+		}
+
+		//收入情况
+		pickupRegexp := regexp.MustCompile(`交互或拾取："(.*?)"`)
+
+		if currentStruct != nil && pickupRegexp.MatchString(line) {
+			matches := pickupRegexp.FindStringSubmatch(line)
+			if len(matches) > 1 {
+				item := matches[1]
+				n := len(currentStruct.LogAnalysis2Json)
+				if n > 0 {
+					current := &currentStruct.LogAnalysis2Json[n-1]
+					if current.Income == nil {
+						current.Income = make(map[string]int)
+					}
+					current.Income[item]++
+				}
+			}
+		}
+
+		//错误记录
+		if currentStruct != nil {
+			if matched, ok := isErrorLine(line); ok {
+				n := len(currentStruct.LogAnalysis2Json)
+				if n > 0 {
+					current := &currentStruct.LogAnalysis2Json[n-1]
+					if current.Errors == nil {
+						current.Errors = make(map[string]int)
+					}
+					current.Errors[matched]++
+				}
+			}
+		}
+
+		lastLine = line
+	}
+
+	// 输出结构体内容
+	return logAnalysis2Structs
+
 }

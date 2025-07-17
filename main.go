@@ -655,27 +655,44 @@ func main() {
 		autoLog.Sugar.Infof("一条龙关闭状态")
 	}
 
-	////检查BGI状态
-	go bgiStatus.CheckBetterGIStatus()
+	//日志分析
+	ginServer.GET("/LogAnalysis2Page", func(context *gin.Context) {
 
-	//go bgiStatus.ReadLog()
+		context.HTML(http.StatusOK, "log_analysis.html", nil)
+	})
 
-	//更新仓库
-	go func() {
-		err := bgiStatus.GitPull()
-		if err != nil {
-			autoLog.Sugar.Errorf("更新仓库失败:%v", err)
+	ginServer.GET("/api/LogAnalysis2Page", func(context *gin.Context) {
+		fileName := context.Query("file")
+		if fileName == "" {
+			context.String(http.StatusBadRequest, "缺少 file 参数")
+			return
 		}
-	}()
-	go task.UpdateCode()
 
-	if Config.IsMysSignIn {
-		//米游社自动签到
-		go task.MysSignIn()
-		autoLog.Sugar.Infof("米游社自动签到开启状态")
-	} else {
-		autoLog.Sugar.Infof("米游社自动签到关闭状态")
-	}
+		results := bgiStatus.LogAnalysis2(fileName)
+
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
+	})
+
+	//go bgiStatus.LogAnalysis2("better-genshin-impact20250717.log")
+
+	//检查BGI状态
+	//go bgiStatus.CheckBetterGIStatus()
+	////更新仓库
+	//go func() {
+	//	err := bgiStatus.GitPull()
+	//	if err != nil {
+	//		autoLog.Sugar.Errorf("更新仓库失败:%v", err)
+	//	}
+	//}()
+	//go task.UpdateCode()
+	//
+	//if Config.IsMysSignIn {
+	//	//米游社自动签到
+	//	go task.MysSignIn()
+	//	autoLog.Sugar.Infof("米游社自动签到开启状态")
+	//} else {
+	//	autoLog.Sugar.Infof("米游社自动签到关闭状态")
+	//}
 
 	//服务器端口
 	post := Config.Post
