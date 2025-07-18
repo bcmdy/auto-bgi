@@ -155,7 +155,7 @@
 <header>
     <div class="btn-container">
         <button class="btn" onclick="window.location.href='/'">返回主页</button>
-        <button class="btn" onclick="deleteBagBtn()">清空统计</button>
+        <button class="btn" onclick="deleteBagBtn()">清理统计，只保留一天</button>
     </div>
     <h1>{{ .title }}</h1>
 </header>
@@ -199,6 +199,8 @@
             .catch(err => {
                 alert("请求出错：" + err);
             });
+        //刷新
+        location.reload();
     }
 
     window.onload = function () {

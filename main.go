@@ -673,26 +673,24 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
 	})
 
-	//go bgiStatus.LogAnalysis2("better-genshin-impact20250717.log")
-
 	//检查BGI状态
-	//go bgiStatus.CheckBetterGIStatus()
-	////更新仓库
-	//go func() {
-	//	err := bgiStatus.GitPull()
-	//	if err != nil {
-	//		autoLog.Sugar.Errorf("更新仓库失败:%v", err)
-	//	}
-	//}()
-	//go task.UpdateCode()
-	//
-	//if Config.IsMysSignIn {
-	//	//米游社自动签到
-	//	go task.MysSignIn()
-	//	autoLog.Sugar.Infof("米游社自动签到开启状态")
-	//} else {
-	//	autoLog.Sugar.Infof("米游社自动签到关闭状态")
-	//}
+	go bgiStatus.CheckBetterGIStatus()
+	//更新仓库
+	go func() {
+		err := bgiStatus.GitPull()
+		if err != nil {
+			autoLog.Sugar.Errorf("更新仓库失败:%v", err)
+		}
+	}()
+	go task.UpdateCode()
+
+	if Config.IsMysSignIn {
+		//米游社自动签到
+		go task.MysSignIn()
+		autoLog.Sugar.Infof("米游社自动签到开启状态")
+	} else {
+		autoLog.Sugar.Infof("米游社自动签到关闭状态")
+	}
 
 	//服务器端口
 	post := Config.Post

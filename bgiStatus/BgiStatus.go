@@ -467,33 +467,17 @@ func MorasStatistics() ([]Material, error) {
 // 删除背包统计
 func DeleteBagStatistics() string {
 
-	autoLog.Sugar.Infof("删除背包统计")
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
-	// 删除文件
-	err := os.Remove(filePath)
-	if err != nil {
-		fmt.Println("背包统计删除文件失败:", err)
+	autoLog.Sugar.Infof("清理背包统计")
+	DeleteBag()
 
-	}
+	autoLog.Sugar.Infof("清理摩拉统计")
+	DeleteMoLa()
 
-	autoLog.Sugar.Infof("删除摩拉统计")
-	filePath2 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
-	// 删除文件
-	err2 := os.Remove(filePath2)
-	if err2 != nil {
-		autoLog.Sugar.Errorf("删除摩拉统计失败")
+	autoLog.Sugar.Infof("清理原石统计")
+	DeleteYuanShi()
 
-	}
-
-	autoLog.Sugar.Infof("删除原石统计")
-	filePath3 := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", Config.BetterGIAddress))
-	err3 := os.Remove(filePath3)
-	if err3 != nil {
-		autoLog.Sugar.Errorf("删除原石统计失败")
-	}
-
-	autoLog.Sugar.Infof("文件删除成功")
-	return "文件删除成功"
+	autoLog.Sugar.Infof("清理成功")
+	return "清理成功"
 }
 
 type DogFood struct {
