@@ -254,7 +254,7 @@
         <button onclick="oneLongBtn()">一条龙启动</button>
         <button onclick="closeBgiBtn()">关闭BGI</button>
         <button onclick="getBackupBtn()">备份 user 文件</button>
-        <button onclick="autoJsBtn()">更新指定脚本</button>
+        <button onclick="JsNameBtn()">脚本更新列表</button>
     </div>
 
     <div class="button-group">
@@ -354,10 +354,8 @@
         window.location.href = '/archive';
     }
 
-    function autoJsBtn() {
-        fetch('/autoJs', { method: 'POST' })
-            .then(res => alert(res.ok ? "更新成功！" : "更新失败！"))
-            .catch(err => alert("请求出错：" + err));
+    function JsNameBtn() {
+        window.location.href = '/jsNames';
     }
 
     function getBackupBtn() {

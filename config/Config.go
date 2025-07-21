@@ -12,22 +12,29 @@ import (
 )
 
 type config struct {
-	OneLongHour     int      `json:"OneLongHour"`
-	OneLongMinute   int      `json:"OneLongMinute"`
-	BetterGIAddress string   `json:"BetterGIAddress"`
-	WebhookURL      string   `json:"webhookURL"`
-	Content         string   `json:"content"`
-	ConfigNames     []string `json:"ConfigNames"`
-	BagStatistics   string   `json:"BagStatistics"`
-	Post            string   `json:"post"`
-	IsStartTimeLong bool     `json:"isStartTimeLong"`
-	IsMysSignIn     bool     `json:"isMysSignIn"`
+	OneLong         oneLong  `json:"OneLong"`
+	BetterGIAddress string   `json:"BetterGIAddress" comment:"BetterGI地址"`
+	WebhookURL      string   `json:"webhookURL" comment:"webhook地址"`
+	Content         string   `json:"content" comment:"通知内容"`
+	ConfigNames     []string `json:"ConfigNames" comment:"一条龙配置名称"`
+	BagStatistics   string   `json:"BagStatistics" comment:"需要统计的物品"`
+	Post            string   `json:"post" comment:"post地址"`
+	MySign          MySign   `json:"MySign"`
 	Backups         []string `json:"backups"`
 	Cookie          string   `json:"cookie"`
 	BasePath        string   `json:"basePath"`
-	IsMoLaSum       bool     `json:"isMoLaSum" comment:"是否计算摩拉"`
-	IsControlGroup  bool     `json:"isControlGroup" comment:"是否控制配置组"`
 	JsName          []string `json:"jsName" comment:"需要更新的js名称"`
+}
+
+type oneLong struct {
+	IsStartTimeLong bool `json:"isStartTimeLong" comment:"是否开启一条龙"`
+	OneLongHour     int  `json:"OneLongHour" comment:"一条龙小时"`
+	OneLongMinute   int  `json:"OneLongMinute" comment:"一条龙分钟"`
+}
+
+type MySign struct {
+	IsMySignIn bool   `json:"isMysSignIn" comment:"是否开启我的签到"`
+	Url        string `json:"url" comment:"我的签到url"`
 }
 
 var Cfg config
@@ -36,6 +43,7 @@ var Parser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | c
 func init() {
 	file, err := os.Open("main.json")
 	if err != nil {
+		autoLog.Sugar.Fatalf("打开配置文件失败: %v", err)
 		return
 	}
 	defer file.Close()

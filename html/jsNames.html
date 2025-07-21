@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>脚本更新列表</title>
+    <link href="./static/css2.css" rel="stylesheet"/>
+    <style>
+        :root {
+            --primary-color: #ff6eb4;
+            --background-light: #fff6fb;
+            --text-color: #ff6eb4;
+            --border-color: #ffc0da;
+            --hover-color: rgba(255, 192, 218, 0.3);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-color);
+            min-height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6eb" opacity="0.6"/><circle cx="70" cy="70" r="7" fill="%23ffc0da" opacity="0.5"/></svg>');
+            padding-bottom: 50px;
+        }
+        header {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px 0 10px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--primary-color);
+            border-radius: 0 0 30px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        h1 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--primary-color);
+            margin-top: 15px;
+        }
+        .btn {
+            background-color: #fff;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+            box-shadow: 0 0 20px var(--primary-color);
+            transform: scale(1.05);
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        section.panel {
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px #ffcce6;
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+        }
+        section.panel h2 {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 2px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: rgba(255, 182, 193, 0.2);
+            font-weight: bold;
+            cursor: pointer;
+        }
+        tr.highlight {
+            background-color: rgba(255, 105, 180, 0.1);
+            animation: glow 1.5s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #ffb6c1; }
+            to { box-shadow: 0 0 15px #ff69b4; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <button class="btn" onclick="window.location.href='/'">返回首页</button>
+    <h1>脚本更新列表</h1>
+</header>
+
+<div class="container">
+    <section class="panel">
+        <h2>脚本信息</h2>
+        <div id="pluginListContainer">
+            <table id="pluginTable">
+                <thead>
+                <tr>
+                    <th data-key="ChineseName">脚本中文名</th>
+                    <th data-key="NowVersion">当前版本</th>
+                    <th data-key="NewVersion">最新版本</th>
+                    <th data-key="Mark">状态</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="pluginTableBody">
+                <!-- 数据将通过 JS 动态加载 -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.getElementById('pluginTableBody');
+        let pluginData = [];
+        let currentSort = { key: 'ChineseName', asc: true };
+
+        function renderTable() {
+            tableBody.innerHTML = '';
+            const sorted = [...pluginData];
+            sorted.sort((a, b) => {
+                const valA = String(a[currentSort.key] || '');
+                const valB = String(b[currentSort.key] || '');
+                return currentSort.asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+
+            if (sorted.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">暂无插件数据。</td></tr>';
+                return;
+            }
+
+            sorted.forEach(item => {
+                const row = document.createElement('tr');
+                if (item.Mark === '有更新') row.classList.add('highlight');
+
+                row.innerHTML = `
+          <td>${item.ChineseName}</td>
+          <td>${item.NowVersion}</td>
+          <td>${item.NewVersion}</td>
+          <td>${item.Mark}</td>
+          <td>
+            <button class="btn update-btn" data-name="${item.Name}" ${item.Mark !== '有更新' ? 'disabled' : ''}>更新</button>
+          </td>
+        `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function loadPluginList() {
+            fetch('/api/jsNames')
+                .then(res => res.json())
+                .then(json => {
+                    pluginData = json.data || [];
+                    renderTable();
+                })
+                .catch(() => {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">加载失败</td></tr>';
+                });
+        }
+
+        // 表头排序功能
+        document.querySelectorAll('#pluginTable thead th[data-key]').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.dataset.key;
+                if (currentSort.key === key) {
+                    currentSort.asc = !currentSort.asc;
+                } else {
+                    currentSort.key = key;
+                    currentSort.asc = true;
+                }
+                renderTable();
+            });
+        });
+
+        loadPluginList();
+    });
+
+    document.getElementById('pluginTableBody').addEventListener('click', function (e) {
+        const target = e.target;
+        if (target.classList.contains('update-btn')) {
+            const pluginName = target.dataset.name;
+            target.disabled = true;
+            target.textContent = '更新中...';
+
+            fetch('/api/updateJs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pluginName })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        target.textContent = '已更新';
+                        //刷新页面
+                        window.location.reload();
+
+                    } else {
+                        throw new Error(result.message || '更新失败');
+                    }
+                })
+                .catch(err => {
+                    alert('更新失败：' + err.message);
+                    target.textContent = '更新';
+                    target.disabled = false;
+                });
+        }
+
+    });
+
+</script>
+
+</body>
+</html>

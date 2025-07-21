@@ -144,11 +144,6 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 // 修改TaskEnabledList
 func ChangeTaskEnabledList() error {
 
-	if Config.IsControlGroup == false {
-		autoLog.Sugar.Infof("配置文件中未开启控制配置组")
-		return nil
-	}
-
 	now := time.Now()
 	weekdayNum := int(now.Weekday())
 
@@ -172,6 +167,15 @@ func ChangeTaskEnabledList() error {
 
 		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
 		return err
+	}
+	get, b2 := jsonData.Get("SelectedPeriodList")
+	fmt.Println(get)
+	if !b2 {
+		autoLog.Sugar.Errorf("SelectedPeriodList 字段不存在")
+	} else {
+		autoLog.Sugar.Infof("SelectedPeriodList 字段存在")
+		ReadChaBaoBgiConfig(filename)
+		return nil
 	}
 
 	TaskEnabled, b := jsonData.Get("TaskEnabledList")
@@ -292,7 +296,7 @@ func OneLong() {
 	cronTab := cron.New(cron.WithSeconds())
 
 	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", Config.OneLongMinute, Config.OneLongHour)
+	spec := fmt.Sprintf("0 %d %d * * *", Config.OneLong.OneLongMinute, Config.OneLong.OneLongHour)
 
 	// 定义定时器调用的任务函数
 	task := func() {
@@ -332,7 +336,7 @@ func MysSignIn() {
 
 		//config.GenShinSign()
 
-		err := control.HttpGet("http://192.168.3.3:8888/qd")
+		err := control.HttpGet(Config.MySign.Url + "/qd")
 		if err != nil {
 
 			autoLog.Sugar.Error("签到失败:", err)

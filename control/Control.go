@@ -6,7 +6,6 @@ import (
 	"github.com/go-vgo/robotgo"
 	"github.com/pterm/pterm"
 	"github.com/vcaesar/imgo"
-	"io"
 	"net/http"
 	"os/exec"
 	"syscall"
@@ -213,20 +212,6 @@ func HttpGet(url string) error {
 	}
 	autoLog.Sugar.Errorf("状态码: %d", resp.StatusCode)
 	return fmt.Errorf("状态码: %d", resp.StatusCode)
-}
-
-func GetMysSignLog() string {
-	readLogURL := "http://127.0.0.1:8888/read-log"
-	resp, err := http.Get(readLogURL)
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return ""
-	}
-	return string(body)
 }
 
 func StartRecord() {

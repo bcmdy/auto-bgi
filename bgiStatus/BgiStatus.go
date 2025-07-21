@@ -1202,6 +1202,7 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 
 // 判断配置文件是否正确
 func CheckConfig() (bool, error) {
+	fmt.Println("配置文件路径", Config.BetterGIAddress)
 	_, err := os.Stat(Config.BetterGIAddress)
 	if err == nil {
 		fmt.Println("Bgi安装目录设置正确")
@@ -1358,6 +1359,75 @@ func GitPull() error {
 		return fmt.Errorf("打开仓库失败: %v", err)
 	}
 	return nil
+}
+
+func UpdateJs(jsName string) (string, error) {
+
+	err := GitPull()
+	if err != nil {
+		return err.Error(), err
+	}
+
+	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
+	//
+
+	subFolderPath, err := findSubFolder(repoDir, jsName)
+	if err != nil {
+		autoLog.Sugar.Errorf("查找子文件夹失败: %v", err)
+		return fmt.Sprintf("未找到子文件夹: %s", jsName), err
+	}
+
+	// 找到子文件夹后，执行复制操作
+	targetPath := filepath.Join(Config.BetterGIAddress, "User", "JsScript", jsName)
+
+	if jsName == "AutoArtifactsPro" {
+		autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
+		autoLog.Sugar.Infof("开始备份日志文件")
+		copy.Copy(filepath.Join(targetPath, "records"), "./backups/AutoArtifactsPro/")
+		//清理原文件
+		os.RemoveAll(targetPath)
+		autoLog.Sugar.Infof("更新脚本")
+		err2 := copy.Copy(subFolderPath, targetPath)
+		if err2 != nil {
+			autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
+		}
+		autoLog.Sugar.Infof("恢复日志文件")
+		err := copy.Copy("./backups/AutoArtifactsPro/", filepath.Join(targetPath, "records"))
+		if err != nil {
+			autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
+		}
+	} else if jsName == "AutoHoeingOneDragon" {
+		autoLog.Sugar.Infof("锄地一条龙脚本特殊处理")
+		autoLog.Sugar.Infof("开始备份日志文件")
+		backupAutoHoeingOneDragon := filepath.Join(targetPath, "assets")
+		copy.Copy(backupAutoHoeingOneDragon, "./backups/AutoHoeingOneDragon/")
+		autoLog.Sugar.Infof("删除原文件")
+		os.RemoveAll(targetPath)
+		autoLog.Sugar.Infof("更新脚本")
+		err2 := copy.Copy(subFolderPath, targetPath)
+		if err2 != nil {
+			autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
+			return "更新脚本失败", err2
+		}
+		autoLog.Sugar.Infof("恢复日志文件")
+		err := copy.Copy("./backups/AutoHoeingOneDragon/", filepath.Join(targetPath, "assets"))
+		if err != nil {
+			autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
+			return "恢复日志文件失败", err
+		}
+
+	} else {
+		//清理原文件
+		os.RemoveAll(targetPath)
+		err2 := copy.Copy(subFolderPath, targetPath)
+		if err2 != nil {
+			return err2.Error(), err2
+		}
+	}
+
+	autoLog.Sugar.Infof("Js脚本: %s 已更新", subFolderPath)
+
+	return "备份成功", nil
 }
 
 func AutoJs() (string, error) {
@@ -1860,4 +1930,55 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 	// 输出结构体内容
 	return logAnalysis2Structs
 
+}
+
+type JsNamesInfoStruct struct {
+	Name        string
+	ChineseName string
+	NowVersion  string
+	NewVersion  string
+	Mark        string
+}
+
+func JsNamesInfo() []JsNamesInfoStruct {
+	err := GitPull()
+	if err != nil {
+		fmt.Println("GitPull失败:", err)
+		return []JsNamesInfoStruct{}
+	}
+
+	jsNames := Config.JsName
+	var jsNamesInfoStructs []JsNamesInfoStruct
+	for _, name := range jsNames {
+		var jsNamesInfoStruct JsNamesInfoStruct
+		jsNamesInfoStruct.Name = name
+		//获取现在的版本
+		jsNamesInfoStruct.NowVersion = GetJsNowVersion(name)
+		//获取新的版本
+		jsNamesInfoStruct.NewVersion, jsNamesInfoStruct.ChineseName = GetJsNewVersion(name)
+		if jsNamesInfoStruct.NowVersion == jsNamesInfoStruct.NewVersion {
+			jsNamesInfoStruct.Mark = "无更新"
+		} else {
+			jsNamesInfoStruct.Mark = "有更新"
+		}
+		jsNamesInfoStructs = append(jsNamesInfoStructs, jsNamesInfoStruct)
+	}
+
+	return jsNamesInfoStructs
+}
+
+func GetMysSignLog() string {
+
+	url := Config.MySign.Url
+	readLogURL := "http://" + url + "/read-log"
+	resp, err := http.Get(readLogURL)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(body)
 }

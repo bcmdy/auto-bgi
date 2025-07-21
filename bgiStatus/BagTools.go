@@ -1,7 +1,9 @@
 package bgiStatus
 
 import (
+	"auto-bgi/autoLog"
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -175,4 +177,41 @@ func DeleteYuanShi() {
 	} else {
 		fmt.Println("未找到匹配的记录")
 	}
+}
+
+func GetJsNowVersion(jsName string) string {
+	version := ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\%s", Config.BetterGIAddress, jsName))
+
+	return version
+}
+
+func GetJsNewVersion(jsName string) (string, string) {
+	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
+
+	filePath := filepath.Join(repoDir, jsName, "manifest.json")
+	// 读取文件内容
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		autoLog.Sugar.Errorf("读取文件失败: %v", err)
+	}
+	// 解析 JSON
+	var data map[string]interface{}
+	err = json.Unmarshal(content, &data)
+	if err != nil {
+		autoLog.Sugar.Errorf("GetJsNewVersion 解析 JSON 失败: %v", err)
+	}
+	// 提取版本号
+	version, ok := data["version"].(string)
+	if !ok {
+		autoLog.Sugar.Errorf("GetJsNewVersion 版本号格式错误")
+		return "未知", "未知"
+	}
+	//提取名字
+	name, ok := data["name"].(string)
+	if !ok {
+		autoLog.Sugar.Errorf("GetJsNewVersion 名字格式错误")
+		return "未知", "未知"
+	}
+
+	return version, name
 }

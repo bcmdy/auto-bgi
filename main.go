@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -74,10 +75,7 @@ func findLastJSONLine(filename string) (string, error) {
 
 var Config = config.Cfg
 
-//go:embed html/*
-var htmlFS embed.FS
-
-func tojson(v interface{}) template.JS {
+func toJson(v interface{}) template.JS {
 	a, _ := json.Marshal(v)
 	return template.JS(a)
 }
@@ -90,7 +88,16 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+//go:embed html/*
+var htmlFS embed.FS
+
+//go:embed static/*
+var staticFiles embed.FS
+
 func main() {
+
+	useEmbed := flag.Bool("embed", false, "是否将 static 目录打包进程序")
+	flag.Parse()
 
 	gin.SetMode(gin.ReleaseMode)
 
@@ -106,17 +113,29 @@ func main() {
 
 	tmpl := template.Must(
 		template.New("").Funcs(template.FuncMap{
-			"tojson": tojson,
+			"tojson": toJson,
 		}).ParseFS(htmlFS, "html/*.html"),
 	)
 
 	ginServer.SetHTMLTemplate(tmpl)
 
-	// 引入html
-	//ginServer.SetHTMLTemplate(template.Must(template.New("").ParseFS(htmlFS, "html/*.html")))
+	if *useEmbed {
+		// 使用 embed 打包的静态文件
+		staticFS := http.FS(staticFiles)
+		ginServer.StaticFS("/static", staticFS)
+		ginServer.GET("/test", func(c *gin.Context) {
+			c.String(200, "使用的是 embed 打包的 static")
+		})
+	} else {
+		// 使用本地目录（开发模式）
+		ginServer.Static("/static", "static")
+		ginServer.GET("/test", func(c *gin.Context) {
+			c.String(200, "使用的是本地 static 目录")
+		})
+	}
 
-	// 提供静态资源服务，把 html 目录映射为 /static 路径
-	ginServer.Static("/static", "static")
+	//// 提供静态资源服务，把 html 目录映射为 /static 路径
+	//ginServer.Static("/static", "static")
 
 	ginServer.GET("/log", func(context *gin.Context) {
 
@@ -577,7 +596,7 @@ func main() {
 		//获取米游社签到日志
 		go func() {
 			defer otherGroup.Done()
-			signLog = control.GetMysSignLog()
+			signLog = bgiStatus.GetMysSignLog()
 		}()
 
 		//获取今天执行配置组
@@ -601,18 +620,18 @@ func main() {
 		})
 	})
 
-	//自动更新Js
-	ginServer.POST("/autoJs", func(context *gin.Context) {
-		js, err := bgiStatus.AutoJs()
-		autoLog.Sugar.Infof("更新Js:%s", js)
-
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
-			return
-		}
-
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": js})
-	})
+	////自动更新Js
+	//ginServer.POST("/autoJs", func(context *gin.Context) {
+	//	js, err := bgiStatus.AutoJs()
+	//	autoLog.Sugar.Infof("更新Js:%s", js)
+	//
+	//	if err != nil {
+	//		context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
+	//		return
+	//	}
+	//
+	//	context.JSON(http.StatusOK, gin.H{"status": "received", "data": js})
+	//})
 
 	//读取statuc文件夹所有的图片
 	ginServer.GET("/images", func(context *gin.Context) {
@@ -645,16 +664,6 @@ func main() {
 		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
 	})
 
-	//一条龙
-	if Config.IsStartTimeLong {
-		go task.OneLong()
-
-		autoLog.Sugar.Infof("一条龙开启状态")
-
-	} else {
-		autoLog.Sugar.Infof("一条龙关闭状态")
-	}
-
 	//日志分析
 	ginServer.GET("/LogAnalysis2Page", func(context *gin.Context) {
 
@@ -673,6 +682,41 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
 	})
 
+	ginServer.GET("/jsNames", func(context *gin.Context) {
+		context.HTML(http.StatusOK, "jsNames.html", nil)
+	})
+
+	//查询关注脚本情况
+	ginServer.GET("/api/jsNames", func(context *gin.Context) {
+
+		jsNamesInfo := bgiStatus.JsNamesInfo()
+
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": jsNamesInfo})
+	})
+
+	ginServer.POST("/api/updateJs", func(context *gin.Context) {
+
+		var req struct {
+			Name string `json:"name"`
+		}
+		if err := context.ShouldBindJSON(&req); err != nil || req.Name == "" {
+			context.JSON(400, gin.H{"success": false, "message": "无效的请求参数"})
+			return
+		}
+
+		autoLog.Sugar.Infof("更新插件:%s", req.Name)
+		_, err := bgiStatus.UpdateJs(req.Name)
+		if err != nil {
+			// 成功返回
+			context.JSON(400, gin.H{"err": err})
+			return
+		}
+
+		// 成功返回
+		context.JSON(200, gin.H{"success": true})
+
+	})
+
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 	//更新仓库
@@ -684,12 +728,21 @@ func main() {
 	}()
 	go task.UpdateCode()
 
-	if Config.IsMysSignIn {
+	if Config.MySign.IsMySignIn {
 		//米游社自动签到
 		go task.MysSignIn()
 		autoLog.Sugar.Infof("米游社自动签到开启状态")
 	} else {
 		autoLog.Sugar.Infof("米游社自动签到关闭状态")
+	}
+
+	//一条龙
+	if Config.OneLong.IsStartTimeLong {
+		go task.OneLong()
+		autoLog.Sugar.Infof("一条龙开启状态")
+
+	} else {
+		autoLog.Sugar.Infof("一条龙关闭状态")
 	}
 
 	//服务器端口
@@ -705,5 +758,5 @@ func main() {
 
 }
 
-//go build -o auto-bgi.exe main.go
-//go build -o auto-bgi.exe -ldflags="-H windowsgui" main.go
+//go build
+//go build -embed
