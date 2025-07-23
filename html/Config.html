@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>配置设置</title>
+    <style>
+        body {
+            font-family: "HarmonyOS Sans", "微软雅黑", sans-serif;
+            background: #ffeaf4;
+            padding: 20px;
+            color: #333;
+        }
+
+        h2 {
+            color: #ff5599;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.1);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            color: #ff5599;
+            margin-bottom: 16px;
+            font-size: 18px;
+            border-bottom: 1px dashed #ffc1dd;
+            padding-bottom: 4px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 12px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #fff0f7;
+            box-sizing: border-box;
+            margin-top: 4px;
+        }
+
+        .config-names-container input,
+        .bag-keyword-row input {
+            margin-top: 4px;
+        }
+
+        .bag-keyword-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .bag-keyword-row input {
+            flex-grow: 1;
+        }
+
+        .bag-keyword-row button,
+        button#add-keyword {
+            margin-left: 6px;
+            background-color: #ff99cc;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            padding: 6px 10px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+
+        .bag-keyword-row button:hover,
+        button#add-keyword:hover {
+            background-color: #ff6699;
+        }
+
+        .port-input {
+            display: flex;
+            align-items: center;
+        }
+
+        .port-input span {
+            padding: 0 5px;
+            font-weight: bold;
+        }
+
+        button#submit-btn {
+            background-color: #ff66aa;
+            border: none;
+            padding: 12px 24px;
+            color: white;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button#submit-btn:hover {
+            background-color: #ff3388;
+        }
+
+        .success {
+            color: green;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>配置设置</h2>
+
+<div class="card">
+    <h3>基础设置</h3>
+    <label for="BetterGIAddress">BetterGI 路径</label>
+    <input type="text" id="BetterGIAddress" placeholder="例如：D:\\subject\\lua\\BetterGI" />
+
+    <label for="webhookURL">企业机器人地址</label>
+    <input type="text" id="webhookURL" />
+
+    <label for="content">bgi关闭提示内容</label>
+    <input type="text" id="content" placeholder="可以填 autobgi 的网页链接" />
+
+    <label for="post">端口号</label>
+    <div class="port-input">
+        <span>:</span>
+        <input type="text" id="post" placeholder="8082" />
+    </div>
+</div>
+
+<div class="card">
+    <h3>一条龙配置</h3>
+    <div class="config-names-container" id="config-names-container">
+        <!-- 7个输入框动态生成 -->
+    </div>
+</div>
+
+<div class="card">
+    <h3>背包统计</h3>
+    <div class="bag-keywords-container" id="bag-keywords-container">
+        <!-- 动态关键字输入行 -->
+    </div>
+    <button id="add-keyword" type="button">＋ 添加材料</button>
+</div>
+
+<div class="card">
+    <h3>一条龙时间设置</h3>
+
+    <label>
+        <input type="checkbox" id="isStartTimeLong" />
+        启用一条龙定时启动
+    </label>
+
+    <label for="OneLongHour">启动小时（0~23）</label>
+    <input type="text" id="OneLongHour" placeholder="例如：7" />
+
+    <label for="OneLongMinute">启动分钟（0~59）</label>
+    <input type="text" id="OneLongMinute" placeholder="例如：30" />
+</div>
+
+<div class="card">
+    <h3>米游社签到设置</h3>
+    <label>
+        <input type="checkbox" id="isMysSignIn" />
+        启用米游社签到
+    </label>
+
+    <label for="mysUrl">签到 URL</label>
+    <input type="text" id="mysUrl" placeholder="http://localhost:8888" />
+</div>
+
+<button id="submit-btn" type="button">保存配置</button>
+
+<p id="msg"></p>
+
+<script>
+    const configNamesContainer = document.getElementById('config-names-container');
+    const bagKeywordsContainer = document.getElementById('bag-keywords-container');
+    const addKeywordBtn = document.getElementById('add-keyword');
+    const msgEl = document.getElementById('msg');
+
+    // 生成固定7个配置名称输入框
+    function createConfigNameInputs() {
+        const weekdays = ['星期天', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        configNamesContainer.innerHTML = '';
+        for(let i = 0; i < 7; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '8px';
+
+            const label = document.createElement('label');
+            label.textContent = weekdays[i] + '：';
+            label.style.marginRight = '8px';
+            label.htmlFor = `configName-${i}`;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = `配置名称 ${i+1}`;
+            input.id = `configName-${i}`;
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(input);
+            configNamesContainer.appendChild(wrapper);
+        }
+    }
+
+    // 新增背包关键字行
+    function createBagKeywordRow(value = '') {
+        const row = document.createElement('div');
+        row.className = 'bag-keyword-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '关键字';
+        input.value = value;
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '删除';
+        delBtn.onclick = () => {
+            bagKeywordsContainer.removeChild(row);
+        };
+
+        row.appendChild(input);
+        row.appendChild(delBtn);
+        bagKeywordsContainer.appendChild(row);
+    }
+
+    addKeywordBtn.addEventListener('click', () => {
+        createBagKeywordRow('');
+    });
+
+    // 加载配置数据
+    async function loadConfig() {
+        try {
+            const res = await fetch('/api/config');
+            const json = await res.json();
+            if(json.status !== 'success') throw new Error('接口返回错误');
+            const data = json.data;
+
+            // 填充BetterGI地址等
+            document.getElementById('BetterGIAddress').value = data.BetterGIAddress || '';
+            document.getElementById('webhookURL').value = data.webhookURL || '';
+            document.getElementById('content').value = data.content || '';
+            document.getElementById('post').value = (data.post || '').replace(':', '');
+            document.getElementById('isStartTimeLong').checked = data.OneLong?.isStartTimeLong || false;
+            document.getElementById('OneLongHour').value = data.OneLong?.OneLongHour ?? '';
+            document.getElementById('OneLongMinute').value = data.OneLong?.OneLongMinute ?? '';
+            document.getElementById('isMysSignIn').checked = data.MySign?.isMysSignIn || false;
+            document.getElementById('mysUrl').value = data.MySign?.url || '';
+
+            // 配置名称固定7个
+            createConfigNameInputs();
+            const configNames = data.ConfigNames || [];
+            for(let i=0; i<7; i++) {
+                const input = document.getElementById(`configName-${i}`);
+                input.value = configNames[i] || '';
+            }
+
+            // 背包关键字动态填充
+            bagKeywordsContainer.innerHTML = '';
+            if(data.BagStatistics) {
+                const keys = data.BagStatistics.split(',');
+                keys.forEach(k => {
+                    createBagKeywordRow(k.trim());
+                });
+            } else {
+                createBagKeywordRow(''); // 起码留一个空行方便输入
+            }
+
+            msgEl.textContent = '';
+            msgEl.className = '';
+        } catch(e) {
+            msgEl.textContent = '加载配置失败：' + e.message;
+            msgEl.className = 'error';
+        }
+    }
+
+    // 表单提交
+    async function submitForm() {
+        const configNames = [];
+        for(let i=0; i<7; i++) {
+            const val = document.getElementById(`configName-${i}`).value.trim();
+            configNames.push(val);
+        }
+
+        const bagKeys = [];
+        bagKeywordsContainer.querySelectorAll('input').forEach(input => {
+            const val = input.value.trim();
+            if(val) bagKeys.push(val);
+        });
+
+        const payload = {
+            BetterGIAddress: document.getElementById('BetterGIAddress').value.trim(),
+            webhookURL: document.getElementById('webhookURL').value.trim(),
+            content: document.getElementById('content').value.trim(),
+            ConfigNames: configNames,
+            BagStatistics: bagKeys.join(','),
+            post: ':' + document.getElementById('post').value.trim(),
+            MySign: {
+                isMysSignIn: document.getElementById('isMysSignIn').checked,
+                url: document.getElementById('mysUrl').value.trim()
+            },
+            OneLong: {
+                isStartTimeLong: document.getElementById('isStartTimeLong').checked,
+                OneLongHour: parseInt(document.getElementById('OneLongHour').value.trim()) || 0,
+                OneLongMinute: parseInt(document.getElementById('OneLongMinute').value.trim()) || 0
+            },
+
+        };
+
+        try {
+            const res = await fetch('/api/saveConfig', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            if(result.status === 'success') {
+                msgEl.textContent = '保存成功！';
+                msgEl.className = 'success';
+            } else {
+                throw new Error(result.message || '保存失败');
+            }
+        } catch(e) {
+            msgEl.textContent = '保存失败：' + e.message;
+            msgEl.className = 'error';
+        }
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', submitForm);
+
+    window.onload = loadConfig;
+</script>
+
+</body>
+</html>

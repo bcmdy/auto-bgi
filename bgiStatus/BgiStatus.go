@@ -44,8 +44,6 @@ func IsWechatRunning() bool {
 	return strings.Contains(string(output), "BetterGI.exe")
 }
 
-var Config = config.Cfg
-
 // 向企业微信发送通知（文本）
 func SendWeChatNotification(content string) {
 
@@ -65,7 +63,7 @@ func SendWeChatNotification(content string) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("POST", Config.WebhookURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", config.Cfg.WebhookURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 
 		autoLog.Sugar.Error("Error creating request:", err)
@@ -122,7 +120,7 @@ func SendWeChatImage(path string) error {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("POST", Config.WebhookURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", config.Cfg.WebhookURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 
 		autoLog.Sugar.Error("Error creating request:", err)
@@ -164,7 +162,7 @@ func CheckBetterGIStatus() {
 			}
 		} else {
 			if !notified {
-				SendWeChatNotification("BetterGI 已经关闭:" + Config.Content)
+				SendWeChatNotification("BetterGI 已经关闭:" + config.Cfg.Content)
 				control.CloseYuanShen()
 				notified = true
 				okRun = true
@@ -295,7 +293,7 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 	autoLog.Sugar.Infof("今日收获统计")
 	re := regexp.MustCompile(`^交互或拾取："([^"]*)"`)
 
-	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, fileName))
+	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -333,7 +331,7 @@ type Material struct {
 
 func BagStatistics() ([]Material, error) {
 	autoLog.Sugar.Infof("背包统计")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", config.Cfg.BetterGIAddress))
 
 	// 打开文件
 	file, err := os.Open(filename)
@@ -348,7 +346,7 @@ func BagStatistics() ([]Material, error) {
 	// 创建一个正则表达式来匹配日期格式 "YYYY/M/D HH:MM:SS"
 	re1 := regexp.MustCompile(`\b\d{4}/\d{1,2}/\d{1,2} \d{2}:\d{2}:\d{2}\b`)
 
-	statistics := Config.BagStatistics
+	statistics := config.Cfg.BagStatistics
 
 	split := strings.Split(statistics, ",")
 
@@ -401,7 +399,7 @@ func BagStatistics() ([]Material, error) {
 // 原石统计
 func YuanShiStatistics() ([]Material, error) {
 	autoLog.Sugar.Infof("原石统计")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", Config.BetterGIAddress))
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", config.Cfg.BetterGIAddress))
 	file, err := os.Open(filename)
 	if err != nil {
 		autoLog.Sugar.Errorf("没有相关JS:OCR读取当前抽卡资源并发送通知")
@@ -437,7 +435,7 @@ func YuanShiStatistics() ([]Material, error) {
 func MorasStatistics() ([]Material, error) {
 
 	autoLog.Sugar.Infof("摩拉统计")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", config.Cfg.BetterGIAddress))
 	// 打开文件
 	file, err := os.Open(filename)
 	if err != nil {
@@ -580,7 +578,7 @@ func ReadVersion(filePath string) string {
 
 func GetAutoArtifactsPro() ([]DogFood, error) {
 	// 获取当前目录下所有 .txt 文件
-	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\*.txt", Config.BetterGIAddress))
+	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\*.txt", config.Cfg.BetterGIAddress))
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +637,7 @@ type EarningsData struct {
 func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 
 	autoLog.Sugar.Infof("狗粮查询")
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\%s", Config.BetterGIAddress, fileName))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\%s", config.Cfg.BetterGIAddress, fileName))
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -816,7 +814,7 @@ func UpdateJsAndPathing() error {
 	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
 	autoLog.Sugar.Infof("开始备份user文件夹")
 
-	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
+	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
 	if err4 != nil {
 		return fmt.Errorf("备份失败")
 	}
@@ -846,9 +844,9 @@ func UpdateJsAndPathing() error {
 
 	autoLog.Sugar.Info("已删除压缩包")
 	autoLog.Sugar.Info("开始备份指定文件")
-	for _, path := range Config.Backups {
+	for _, path := range config.Cfg.Backups {
 
-		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
+		file := fmt.Sprintf("%s\\User\\%s", config.Cfg.BetterGIAddress, path)
 
 		err := copy.Copy(file, "./backups/"+path)
 		if err != nil {
@@ -860,7 +858,7 @@ func UpdateJsAndPathing() error {
 	}
 
 	autoLog.Sugar.Info("开始更新脚本文件")
-	err := copy.Copy("./repo/js", Config.BetterGIAddress+"\\User\\JsScript")
+	err := copy.Copy("./repo/js", config.Cfg.BetterGIAddress+"\\User\\JsScript")
 	if err != nil {
 		return err
 	}
@@ -868,11 +866,11 @@ func UpdateJsAndPathing() error {
 	autoLog.Sugar.Info("已更新脚本文件")
 	autoLog.Sugar.Info("开始更新地图追踪文件")
 
-	err2 := os.RemoveAll(Config.BetterGIAddress + "\\User\\AutoPathing")
+	err2 := os.RemoveAll(config.Cfg.BetterGIAddress + "\\User\\AutoPathing")
 	if err2 != nil {
 		return err2
 	}
-	err3 := copy.Copy("./repo/pathing", Config.BetterGIAddress+"\\User\\AutoPathing")
+	err3 := copy.Copy("./repo/pathing", config.Cfg.BetterGIAddress+"\\User\\AutoPathing")
 	if err3 != nil {
 		return err3
 	}
@@ -880,9 +878,9 @@ func UpdateJsAndPathing() error {
 	autoLog.Sugar.Info("开始还原备份文件配置文件")
 	autoLog.Sugar.Info("开始还原备份文件配置文件")
 
-	for _, path := range Config.Backups {
+	for _, path := range config.Cfg.Backups {
 
-		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
+		file := fmt.Sprintf("%s\\User\\%s", config.Cfg.BetterGIAddress, path)
 
 		err := copy.Copy("./backups/"+path, file)
 		if err != nil {
@@ -1043,16 +1041,16 @@ func zipDir(sourceDir, zipFilePath string) error {
 }
 
 func Backup() error {
-	for _, path := range Config.Backups {
+	for _, path := range config.Cfg.Backups {
 
-		file := fmt.Sprintf("%s\\User\\%s", Config.BetterGIAddress, path)
+		file := fmt.Sprintf("%s\\User\\%s", config.Cfg.BetterGIAddress, path)
 
 		copy.Copy(file, "./backups/"+path)
 
 		autoLog.Sugar.Infof("已备份文件: %s\n", path)
 	}
 	autoLog.Sugar.Infof("开始备份user文件夹")
-	err4 := zipDir(Config.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip")
+	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip")
 	if err4 != nil {
 		autoLog.Sugar.Errorf("备份失败: %v")
 		return fmt.Errorf("备份失败")
@@ -1112,7 +1110,7 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 		today = formatted
 	}
 
-	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, fileName))
+	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -1202,15 +1200,15 @@ func GroupTime(fileName string) ([]GroupMap, error) {
 
 // 判断配置文件是否正确
 func CheckConfig() (bool, error) {
-	fmt.Println("配置文件路径", Config.BetterGIAddress)
-	_, err := os.Stat(Config.BetterGIAddress)
+	fmt.Println("配置文件路径", config.Cfg.BetterGIAddress)
+	_, err := os.Stat(config.Cfg.BetterGIAddress)
 	if err == nil {
 		fmt.Println("Bgi安装目录设置正确")
 	}
 	if os.IsNotExist(err) {
 		return false, fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件BetterGIAddress：你有没有加双斜杠呀，没有看网站说明")
 	}
-	names := Config.ConfigNames
+	names := config.Cfg.ConfigNames
 	if len(names) == 7 {
 		fmt.Println("配置组configNames正确")
 	} else {
@@ -1256,7 +1254,7 @@ type GitLogStruct struct {
 
 // 查询git日志
 func GitLog() []GitLogStruct {
-	localPath := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
+	localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
 
 	// 打开仓库
 	repo, err := git.PlainOpen(localPath)
@@ -1316,7 +1314,7 @@ func GitLog() []GitLogStruct {
 // git拉取代码
 func GitPull() error {
 
-	localPath := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
+	localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
 
 	// 尝试打开本地仓库
 	repo, err := git.PlainOpen(localPath)
@@ -1368,7 +1366,7 @@ func UpdateJs(jsName string) (string, error) {
 		return err.Error(), err
 	}
 
-	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
+	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 	//
 
 	subFolderPath, err := findSubFolder(repoDir, jsName)
@@ -1378,7 +1376,7 @@ func UpdateJs(jsName string) (string, error) {
 	}
 
 	// 找到子文件夹后，执行复制操作
-	targetPath := filepath.Join(Config.BetterGIAddress, "User", "JsScript", jsName)
+	targetPath := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", jsName)
 
 	if jsName == "AutoArtifactsPro" {
 		autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
@@ -1437,8 +1435,8 @@ func AutoJs() (string, error) {
 		return err.Error(), err
 	}
 
-	jsNames := Config.JsName
-	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
+	jsNames := config.Cfg.JsName
+	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 	//
 	for _, jsName := range jsNames {
 		subFolderPath, err := findSubFolder(repoDir, jsName)
@@ -1448,7 +1446,7 @@ func AutoJs() (string, error) {
 		}
 
 		// 找到子文件夹后，执行复制操作
-		targetPath := filepath.Join(Config.BetterGIAddress, "User", "JsScript", jsName)
+		targetPath := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", jsName)
 
 		if jsName == "AutoArtifactsPro" {
 			autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
@@ -1652,7 +1650,7 @@ func ListArchive() []ArchiveRecords {
 // JsVersion 读取脚本的版本号
 func JsVersion(jsName, nowVersion string) string {
 
-	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
+	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 
 	filePath := filepath.Join(repoDir, jsName, "manifest.json")
 	// 读取文件内容
@@ -1683,7 +1681,7 @@ func JsVersion(jsName, nowVersion string) string {
 var BgiStatus bool
 
 func ReadLog() {
-	filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
 	files, err := FindLogFiles(filePath)
 	if err != nil || len(files) == 0 {
 		fmt.Println("找不到日志文件")
@@ -1768,7 +1766,7 @@ type LogAnalysis2Json struct {
 
 // 日志分析
 func LogAnalysis2(fileName string) []LogAnalysis2Struct {
-	filePath := filepath.Join(Config.BetterGIAddress, "log")
+	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
 	fullPath := filepath.Join(filePath, fileName)
 
 	file, err := os.Open(fullPath)
@@ -1947,7 +1945,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 		return []JsNamesInfoStruct{}
 	}
 
-	jsNames := Config.JsName
+	jsNames := config.Cfg.JsName
 	var jsNamesInfoStructs []JsNamesInfoStruct
 	for _, name := range jsNames {
 		var jsNamesInfoStruct JsNamesInfoStruct
@@ -1969,7 +1967,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 
 func GetMysSignLog() string {
 
-	url := Config.MySign.Url
+	url := config.Cfg.MySign.Url
 	readLogURL := "http://" + url + "/read-log"
 	resp, err := http.Get(readLogURL)
 	if err != nil {

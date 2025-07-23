@@ -20,6 +20,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -34,15 +35,15 @@ func init() {
 	config.InitDB()
 	defer autoLog.Sync()
 
-	//判断目录是否设置正确
-	exists, err := bgiStatus.CheckConfig()
-	if !exists {
-		fmt.Println(err)
-		//程序暂停，任意键退出
-		fmt.Println("=======程序暂停，任意键退出=========")
-		fmt.Scanln()
-		os.Exit(1)
-	}
+	////判断目录是否设置正确
+	//exists, err := bgiStatus.CheckConfig()
+	//if !exists {
+	//	fmt.Println(err)
+	//	//程序暂停，任意键退出
+	//	fmt.Println("=======程序暂停，任意键退出=========")
+	//	fmt.Scanln()
+	//	os.Exit(1)
+	//}
 }
 
 func findLastJSONLine(filename string) (string, error) {
@@ -72,8 +73,6 @@ func findLastJSONLine(filename string) (string, error) {
 
 	return lastJSONLine, nil
 }
-
-var Config = config.Cfg
 
 func toJson(v interface{}) template.JS {
 	a, _ := json.Marshal(v)
@@ -145,7 +144,7 @@ func main() {
 
 	//查询今日所有日志文件
 	ginServer.GET("/logFiles", func(c *gin.Context) {
-		filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress)) // 本地日志路径
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
 		files, err := bgiStatus.FindLogFiles(filePath)
 		if err != nil {
 			return
@@ -167,7 +166,7 @@ func main() {
 			logName = fmt.Sprintf("better-genshin-impact%s.log", date)
 		}
 
-		filePath := filepath.Join(Config.BetterGIAddress, "log", logName)
+		filePath := filepath.Join(config.Cfg.BetterGIAddress, "log", logName)
 		file, err := os.Open(filePath)
 		if err != nil {
 			conn.WriteMessage(websocket.TextMessage, []byte("无法打开日志文件"))
@@ -217,14 +216,14 @@ func main() {
 		// 生成日志文件名
 		date := time.Now().Format("20060102")
 
-		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", Config.BetterGIAddress, date))
+		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, date))
 
-		filePath := filepath.Clean(fmt.Sprintf("%s\\log", Config.BetterGIAddress)) // 本地日志路径
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
 		files, err := bgiStatus.FindLogFiles(filePath)
 		fmt.Println(files)
 		if err == nil {
 			//获取最后一个文件
-			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", Config.BetterGIAddress, files[0]))
+			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, files[0]))
 		}
 
 		autoLog.Sugar.Infof("日志文件名:%s", filename)
@@ -248,7 +247,7 @@ func main() {
 				} else {
 					timestamp = calculateTime
 				}
-				jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", Config.BetterGIAddress, group+".json")
+				jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", config.Cfg.BetterGIAddress, group+".json")
 				progress, err = bgiStatus.Progress(jsonStr, line)
 				if err != nil {
 					autoLog.Sugar.Errorf("%v\n", err)
@@ -469,7 +468,7 @@ func main() {
 		autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
 		//获取版本号
-		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", Config.BetterGIAddress))
+		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", config.Cfg.BetterGIAddress))
 
 		//查询更新状态
 		jsVersion := bgiStatus.JsVersion("AutoArtifactsPro", version)
@@ -694,6 +693,7 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": jsNamesInfo})
 	})
 
+	//脚本Js更新
 	ginServer.POST("/api/updateJs", func(context *gin.Context) {
 
 		var req struct {
@@ -717,6 +717,57 @@ func main() {
 
 	})
 
+	ginServer.GET("/Config", func(context *gin.Context) {
+		context.HTML(http.StatusOK, "Config.html", nil)
+	})
+
+	//查询配置文件
+	ginServer.GET("/api/config", func(context *gin.Context) {
+		cfg := config.Cfg
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": cfg})
+	})
+
+	ginServer.POST("/api/saveConfig", func(c *gin.Context) {
+		var newConfig config.Config
+
+		if err := c.ShouldBindJSON(&newConfig); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+			return
+		}
+
+		// 序列化为JSON字符串，格式化输出
+		data, err := json.MarshalIndent(newConfig, "", "  ")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "序列化失败", "error": err.Error()})
+			return
+		}
+
+		// 写入 main.json，路径可以自定义，这里示例写当前运行目录
+		filePath := filepath.Join(".", "main.json")
+		err = os.WriteFile(filePath, data, 0644)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "写文件失败", "error": err.Error()})
+			return
+		}
+
+		fmt.Println("配置保存成功:", newConfig)
+		//重新加载配置文件
+		//_ = config.ReloadConfig()
+
+		//c.JSON(http.StatusOK, gin.H{"status": "success", "message": "配置保存成功"})
+
+		// 调用重启脚本
+		cmd := exec.Command("cmd", "/c", "restart.bat")
+		err2 := cmd.Start()
+		if err2 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err2.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "重启命令已执行"})
+
+	})
+
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 	//更新仓库
@@ -728,7 +779,7 @@ func main() {
 	}()
 	go task.UpdateCode()
 
-	if Config.MySign.IsMySignIn {
+	if config.Cfg.MySign.IsMySignIn {
 		//米游社自动签到
 		go task.MysSignIn()
 		autoLog.Sugar.Infof("米游社自动签到开启状态")
@@ -737,7 +788,7 @@ func main() {
 	}
 
 	//一条龙
-	if Config.OneLong.IsStartTimeLong {
+	if config.Cfg.OneLong.IsStartTimeLong {
 		go task.OneLong()
 		autoLog.Sugar.Infof("一条龙开启状态")
 
@@ -746,7 +797,7 @@ func main() {
 	}
 
 	//服务器端口
-	post := Config.Post
+	post := config.Cfg.Post
 	if post == "" {
 		post = ":8082"
 	}

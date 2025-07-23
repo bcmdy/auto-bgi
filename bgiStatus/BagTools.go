@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"auto-bgi/autoLog"
+	"auto-bgi/config"
 	"bufio"
 	"encoding/json"
 	"fmt"
@@ -24,7 +25,7 @@ func compareDate(a, b string) int {
 }
 
 func DeleteBag() {
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", config.Cfg.BetterGIAddress))
 
 	// 打开文件读取内容
 	file, err := os.Open(filePath)
@@ -90,7 +91,7 @@ func DeleteBag() {
 
 func DeleteMoLa() {
 
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", config.Cfg.BetterGIAddress))
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -136,7 +137,7 @@ func DeleteMoLa() {
 }
 
 func DeleteYuanShi() {
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", Config.BetterGIAddress))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", config.Cfg.BetterGIAddress))
 	file, err := os.Open(filePath)
 	if err != nil {
 		panic(err)
@@ -180,13 +181,13 @@ func DeleteYuanShi() {
 }
 
 func GetJsNowVersion(jsName string) string {
-	version := ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\%s", Config.BetterGIAddress, jsName))
+	version := ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\%s", config.Cfg.BetterGIAddress, jsName))
 
 	return version
 }
 
 func GetJsNewVersion(jsName string) (string, string) {
-	repoDir := Config.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
+	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 
 	filePath := filepath.Join(repoDir, jsName, "manifest.json")
 	// 读取文件内容

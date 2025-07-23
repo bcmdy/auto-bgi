@@ -20,8 +20,6 @@ import (
 	"time"
 )
 
-var Config = config.Cfg
-
 // 使用循环遍历检查数字是否包含在数组中
 func contains(slice []string, num int) bool {
 	for _, v := range slice {
@@ -68,7 +66,7 @@ type TaskCycleConfig struct {
 // 计算配置组今日是否执行
 func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 	//读取目录下所有的json文件
-	dir := Config.BetterGIAddress + "\\User\\ScriptGroup"
+	dir := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup"
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return []TaskCycleConfig{}, err
@@ -152,7 +150,7 @@ func ChangeTaskEnabledList() error {
 	OneLongName := config.GetTodayOneLongName()
 
 	//自定义配置路径
-	filename := Config.BetterGIAddress + "\\User\\OneDragon\\" + OneLongName + ".json"
+	filename := config.Cfg.BetterGIAddress + "\\User\\OneDragon\\" + OneLongName + ".json"
 
 	// 1. 读取 JSON 文件
 	data, err := os.ReadFile(filename)
@@ -296,7 +294,7 @@ func OneLong() {
 	cronTab := cron.New(cron.WithSeconds())
 
 	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", Config.OneLong.OneLongMinute, Config.OneLong.OneLongHour)
+	spec := fmt.Sprintf("0 %d %d * * *", config.Cfg.OneLong.OneLongMinute, config.Cfg.OneLong.OneLongHour)
 
 	// 定义定时器调用的任务函数
 	task := func() {
@@ -336,7 +334,7 @@ func MysSignIn() {
 
 		//config.GenShinSign()
 
-		err := control.HttpGet(Config.MySign.Url + "/qd")
+		err := control.HttpGet(config.Cfg.MySign.Url + "/qd")
 		if err != nil {
 
 			autoLog.Sugar.Error("签到失败:", err)
@@ -366,7 +364,7 @@ func MysSignIn() {
 func ListGroups() ([]string, error) {
 	// 指定要读取的文件夹路径
 	//自定义配置路径
-	folderPath := Config.BetterGIAddress + "\\User\\ScriptGroup"
+	folderPath := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup"
 
 	var groupNames []string
 
@@ -409,7 +407,7 @@ func StartGroups(name string) {
 	////开启录屏视频
 	//go control.StartRecord()
 
-	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
+	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 	cmd := exec.Command(betterGIPath, "--startGroups", name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -428,7 +426,7 @@ func StartOneDragon(name string) {
 	control.CloseSoftware()
 	time.Sleep(5 * time.Second)
 
-	betterGIPath := filepath.Join(Config.BetterGIAddress, "BetterGI.exe")
+	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 	cmd := exec.Command(betterGIPath, "--startOneDragon", name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
