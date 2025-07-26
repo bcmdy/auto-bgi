@@ -148,9 +148,6 @@
         <div id="groupTimeList"></div>
     </section>
 
-<!--    <section class="panel" id="gitLog">-->
-<!--        <h2>仓库更新详情（最新10条）</h2>-->
-<!--    </section>-->
 
     <section class="panel" id="groupPInfo">
         <h2>今日配置组启动列表</h2>
@@ -234,16 +231,6 @@
                     document.getElementById('signLog').innerHTML = '<h2>米游社签到记录</h2><pre>' + data.signLog + '</pre>';
                     document.getElementById('groupPInfo').innerHTML = '<h2>今日配置组启动列表</h2><pre>' + data.groupPInfo + '</pre>';
 
-                    const gitLogContent = document.getElementById('gitLog');
-                    gitLogContent.innerHTML = '<h2>仓库更新详情（最新10条）</h2>';
-                    data.gitLog.forEach(item => {
-                        const infoBox = document.createElement('div');
-                        infoBox.classList.add('info-box');
-                        infoBox.innerHTML += `<p><strong>提交人：${item.Author}</strong></p>`;
-                        infoBox.innerHTML += `<p><strong>更新时间：${item.CommitTime}</strong></p>`;
-                        infoBox.innerHTML += `<p><strong>更新信息：${item.Message}</strong></p>`;
-                        gitLogContent.appendChild(infoBox);
-                    });
                 });
         }
     });

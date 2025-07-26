@@ -584,7 +584,7 @@ func main() {
 	// 统计配置组执行时间 - 返回JSON
 	ginServer.GET("/api/other", func(context *gin.Context) {
 		var otherGroup sync.WaitGroup
-		otherGroup.Add(4)
+		otherGroup.Add(3)
 		fileName := context.Query("file")
 
 		var (
