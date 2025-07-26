@@ -573,6 +573,14 @@ func main() {
 		context.HTML(http.StatusOK, "other.html", nil)
 	})
 
+	//获取仓库提交记录（最新的10条）
+	ginServer.GET("/api/gitLog", func(context *gin.Context) {
+		gitLog := bgiStatus.GitLog()
+		context.JSON(http.StatusOK, gin.H{
+			"gitLog": gitLog,
+		})
+	})
+
 	// 统计配置组执行时间 - 返回JSON
 	ginServer.GET("/api/other", func(context *gin.Context) {
 		var otherGroup sync.WaitGroup
@@ -583,7 +591,7 @@ func main() {
 			GroupTime  []bgiStatus.GroupMap
 			signLog    string
 			groupPInfo string
-			gitLog     []bgiStatus.GitLogStruct
+			//gitLog     []bgiStatus.GitLogStruct
 		)
 
 		//获取配置组执行时长
@@ -604,10 +612,10 @@ func main() {
 			groupPInfo = bgiStatus.GetGroupPInfo()
 		}()
 
-		go func() {
-			defer otherGroup.Done()
-			gitLog = bgiStatus.GitLog()
-		}()
+		//go func() {
+		//	defer otherGroup.Done()
+		//	gitLog = bgiStatus.GitLog()
+		//}()
 
 		otherGroup.Wait() // 等待所有 goroutine 完成
 
@@ -615,7 +623,7 @@ func main() {
 			"GroupTime":  GroupTime,
 			"signLog":    signLog,
 			"groupPInfo": groupPInfo,
-			"gitLog":     gitLog,
+			//"gitLog":     gitLog,
 		})
 	})
 

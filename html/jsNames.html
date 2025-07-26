@@ -128,6 +128,26 @@
             </table>
         </div>
     </section>
+
+    <section class="panel">
+        <h2>仓库提交记录</h2>
+        <div id="gitLogContainer">
+            <table id="gitLogTable">
+                <thead>
+                <tr>
+                    <th>提交时间</th>
+                    <th>作者</th>
+                    <th>提交信息</th>
+                </tr>
+                </thead>
+                <tbody id="gitLogBody">
+                <tr><td colspan="3" style="text-align:center;">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
 </div>
 
 <script>
@@ -227,6 +247,37 @@
         }
 
     });
+
+
+    // ==== 加载仓库提交记录 ====
+    function loadGitLog() {
+        const tbody = document.getElementById('gitLogBody');
+        fetch('/api/gitLog')
+            .then(res => res.json())
+            .then(json => {
+                const logs = json.gitLog || [];
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">暂无提交记录。</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${log.CommitTime}</td>
+                    <td>${log.Author}</td>
+                    <td>${log.Message.replace(/\n/g, '<br/>')}</td>
+                `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(() => {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:red;">加载提交记录失败</td></tr>';
+            });
+    }
+
+    // 页面加载完成后同时加载提交记录
+    document.addEventListener('DOMContentLoaded', loadGitLog);
 
 </script>
 

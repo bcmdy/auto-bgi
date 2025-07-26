@@ -20,10 +20,23 @@
   "post": ":8082",
   "MySign": {
     "isMysSignIn": false,
-    "url": "http://localhost:8888"
+    "url": "http://localhost:8883"
   },
   "backups": null,
   "cookie": "",
   "basePath": "",
-  "jsName": null
+  "jsName": [
+    "AutoArtifactsPro",
+    "AEscoffier_chef",
+    "AutoHoeingOneDragon",
+    "AutoLeyLineOutcrop",
+    "七圣召唤七日历练全自动",
+    "EscofierKitchenContraption",
+    "OCR读取当前摩拉记录并发送通知",
+    "背包材料统计",
+    "OCR读取当前抽卡资源并发送通知",
+    "ParametricTrans",
+    "AutoCode",
+    "使用料理"
+  ]
 }

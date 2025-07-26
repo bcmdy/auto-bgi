@@ -84,6 +84,23 @@
             background-color: #ff6699;
         }
 
+
+        button#add-jsname {
+            margin-left: 6px;
+            background-color: #ff99cc;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            padding: 6px 10px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+
+        button#add-jsname:hover {
+            background-color: #ff6699;
+        }
+
         .port-input {
             display: flex;
             align-items: center;
@@ -163,6 +180,14 @@
 </div>
 
 <div class="card">
+    <h3>需要关注的脚本名称</h3>
+    <div class="jsname-container" id="jsname-container">
+        <!-- 动态 jsName 输入框 -->
+    </div>
+    <button id="add-jsname" type="button">＋ 添加脚本名称</button>
+</div>
+
+<div class="card">
     <h3>一条龙时间设置</h3>
 
     <label>
@@ -197,6 +222,8 @@
     const bagKeywordsContainer = document.getElementById('bag-keywords-container');
     const addKeywordBtn = document.getElementById('add-keyword');
     const msgEl = document.getElementById('msg');
+    const jsNameContainer = document.getElementById('jsname-container');
+    const addJsNameBtn = document.getElementById('add-jsname');
 
     // 生成固定7个配置名称输入框
     function createConfigNameInputs() {
@@ -221,6 +248,28 @@
             configNamesContainer.appendChild(wrapper);
         }
     }
+
+    // 创建一条 jsName 输入行
+    function createJsNameRow(value = '') {
+        const row = document.createElement('div');
+        row.className = 'bag-keyword-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '脚本名称';
+        input.value = value;
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '删除';
+        delBtn.onclick = () => jsNameContainer.removeChild(row);
+
+        row.appendChild(input);
+        row.appendChild(delBtn);
+        jsNameContainer.appendChild(row);
+    }
+
+    addJsNameBtn.addEventListener('click', () => createJsNameRow(''));
 
     // 新增背包关键字行
     function createBagKeywordRow(value = '') {
@@ -275,6 +324,14 @@
                 input.value = configNames[i] || '';
             }
 
+            // 加载配置数据时添加
+            if (data.jsName && Array.isArray(data.jsName)) {
+                jsNameContainer.innerHTML = '';
+                data.jsName.forEach(name => createJsNameRow(name));
+            } else {
+                createJsNameRow('');
+            }
+
             // 背包关键字动态填充
             bagKeywordsContainer.innerHTML = '';
             if(data.BagStatistics) {
@@ -308,6 +365,12 @@
             if(val) bagKeys.push(val);
         });
 
+        const jsNames = [];
+        jsNameContainer.querySelectorAll('input').forEach(input => {
+            const val = input.value.trim();
+            if (val) jsNames.push(val);
+        });
+
         const payload = {
             BetterGIAddress: document.getElementById('BetterGIAddress').value.trim(),
             webhookURL: document.getElementById('webhookURL').value.trim(),
@@ -324,6 +387,7 @@
                 OneLongHour: parseInt(document.getElementById('OneLongHour').value.trim()) || 0,
                 OneLongMinute: parseInt(document.getElementById('OneLongMinute').value.trim()) || 0
             },
+            jsName: jsNames,
 
         };
 
