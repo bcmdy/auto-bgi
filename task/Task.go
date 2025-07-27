@@ -404,9 +404,6 @@ func StartGroups(name string) {
 	control.CloseSoftware()
 	time.Sleep(5 * time.Second)
 
-	////开启录屏视频
-	//go control.StartRecord()
-
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 	cmd := exec.Command(betterGIPath, "--startGroups", name)
 	cmd.Stdout = os.Stdout
@@ -465,4 +462,9 @@ func UpdateCode() {
 	cronTab.Start()
 	// 阻塞主线程停止
 	select {}
+}
+
+// 每周一备份users文件夹
+func BackupUsers() {
+
 }

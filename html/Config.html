@@ -101,6 +101,24 @@
             background-color: #ff6699;
         }
 
+
+        button#add-Backups {
+            margin-left: 6px;
+            background-color: #ff99cc;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            padding: 6px 10px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+
+        button#add-Backups:hover {
+            background-color: #ff6699;
+        }
+
+
         .port-input {
             display: flex;
             align-items: center;
@@ -188,6 +206,15 @@
 </div>
 
 <div class="card">
+    <h3>需要备份的文件或者文件夹路径</h3>
+    <div class="Backups-container" id="Backups-container">
+        <!-- 动态 jsName 输入框 -->
+    </div>
+    <button id="add-Backups" type="button">＋ 添加文件或者文件夹</button>
+</div>
+
+
+<div class="card">
     <h3>一条龙时间设置</h3>
 
     <label>
@@ -224,6 +251,9 @@
     const msgEl = document.getElementById('msg');
     const jsNameContainer = document.getElementById('jsname-container');
     const addJsNameBtn = document.getElementById('add-jsname');
+
+    const BackupsContainer = document.getElementById('Backups-container');
+    const addBackupsBtn = document.getElementById('add-Backups');
 
     // 生成固定7个配置名称输入框
     function createConfigNameInputs() {
@@ -270,6 +300,28 @@
     }
 
     addJsNameBtn.addEventListener('click', () => createJsNameRow(''));
+
+    // 创建一条 Backups 输入行
+    function createBackupsRow(value = '') {
+        const row = document.createElement('div');
+        row.className = 'bag-keyword-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '文件夹名称';
+        input.value = value;
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '删除';
+        delBtn.onclick = () => BackupsContainer.removeChild(row);
+
+        row.appendChild(input);
+        row.appendChild(delBtn);
+        BackupsContainer.appendChild(row);
+    }
+    addBackupsBtn.addEventListener('click', () => createBackupsRow(''));
+
 
     // 新增背包关键字行
     function createBagKeywordRow(value = '') {
@@ -371,6 +423,12 @@
             if (val) jsNames.push(val);
         });
 
+        const BackupsNames = [];
+        BackupsContainer.querySelectorAll('input').forEach(input => {
+            const val = input.value.trim();
+            if (val) BackupsNames.push(val);
+        });
+
         const payload = {
             BetterGIAddress: document.getElementById('BetterGIAddress').value.trim(),
             webhookURL: document.getElementById('webhookURL').value.trim(),
@@ -388,6 +446,7 @@
                 OneLongMinute: parseInt(document.getElementById('OneLongMinute').value.trim()) || 0
             },
             jsName: jsNames,
+            backups: BackupsNames,
 
         };
 

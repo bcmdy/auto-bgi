@@ -22,7 +22,9 @@
     "isMysSignIn": false,
     "url": "http://localhost:8883"
   },
-  "backups": null,
+  "backups": [
+    "JsScript\\AutoArtifactsPro\\records\\默认账户.txt"
+  ],
   "cookie": "",
   "basePath": "",
   "jsName": [
@@ -38,5 +40,8 @@
     "ParametricTrans",
     "AutoCode",
     "使用料理"
-  ]
+  ],
+  "control": {
+    "closeYuanShen": false
+  }
 }
