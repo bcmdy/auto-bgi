@@ -814,7 +814,7 @@ func UpdateJsAndPathing() error {
 	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
 	autoLog.Sugar.Infof("开始备份user文件夹")
 
-	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip")
+	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip", true)
 	if err4 != nil {
 		return fmt.Errorf("备份失败")
 	}
@@ -970,69 +970,60 @@ func downloadFile(filename, url string) error {
 	return err
 }
 
-func zipDir(sourceDir, zipFilePath string) error {
-	fmt.Println(sourceDir)
-	fmt.Println(zipFilePath)
+// zipDir 压缩 sourceDir 到 zipFilePath
+// keepRoot = true 时会在压缩包中保留 sourceDir 的目录名
+func zipDir(sourceDir, zipFilePath string, keepRoot bool) error {
+	fmt.Println("压缩目录:", sourceDir)
+	fmt.Println("输出文件:", zipFilePath)
 
-	// 创建一个新的 zip 文件
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
 		return err
 	}
 	defer zipFile.Close()
 
-	// 创建一个新的 zip 写入器
 	zipWriter := zip.NewWriter(zipFile)
 	defer zipWriter.Close()
 
-	// 遍历文件夹中的所有文件和子文件夹
-	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+	base := filepath.Clean(sourceDir)
+	parent := filepath.Dir(base)
+
+	err = filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// 使用 filepath.Rel 获取相对路径
-		relPath, err := filepath.Rel(sourceDir, path)
-		if err != nil {
-			return err
+		if info.IsDir() {
+			// ✅ 不写入目录条目，让解压自动生成
+			return nil
 		}
 
-		// 获取文件在压缩包中的相对路径
+		// 计算压缩包内路径
+		var relPath string
+		if keepRoot {
+			relPath, _ = filepath.Rel(parent, path) // 保留根目录
+		} else {
+			relPath, _ = filepath.Rel(base, path) // 去掉根目录
+		}
+
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
 			return err
 		}
-
-		// 如果是目录，则不需要写入内容，只需创建对应的目录条目
-		if info.IsDir() {
-			header.Name = relPath + "/"
-			header.Method = zip.Store
-			if _, err := zipWriter.CreateHeader(header); err != nil {
-				return err
-			}
-			return nil
-		}
-
-		// 文件的相对路径
-		header.Name = relPath
-
-		// 设置压缩方法
+		header.Name = filepath.ToSlash(relPath) // ✅ 统一分隔符
 		header.Method = zip.Deflate
 
-		// 创建新的文件写入器
 		writer, err := zipWriter.CreateHeader(header)
 		if err != nil {
 			return err
 		}
 
-		// 打开文件进行读取
 		file, err := os.Open(path)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
 
-		// 将文件内容复制到压缩包中
 		_, err = io.Copy(writer, file)
 		return err
 	})
@@ -1050,7 +1041,7 @@ func Backup() error {
 		autoLog.Sugar.Infof("已备份文件: %s\n", path)
 	}
 	autoLog.Sugar.Infof("开始备份user文件夹")
-	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip")
+	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("备份失败: %v")
 		return fmt.Errorf("备份失败")
@@ -1730,7 +1721,7 @@ func ReadLog() {
 
 var errorKeywords = []string{
 	"未完整匹配到四人队伍",
-	"未检测到任务触发关键词",
+	"未识别到突发任务",
 	"OCR 识别失败",
 	"此路线出现3次卡死，重试一次路线或放弃此路线！",
 	"检测到复苏界面，存在角色被击败",

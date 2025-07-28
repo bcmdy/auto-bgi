@@ -25,11 +25,11 @@ type Config struct {
 	Cookie          string   `json:"cookie"`
 	BasePath        string   `json:"basePath"`
 	JsName          []string `json:"jsName" comment:"需要更新的js名称"`
-	Control         Control  `json:"control" comment:"控制配置"`
+	Control         Control  `json:"Control" comment:"控制配置"`
 }
 
 type Control struct {
-	IsCloseYuanShen bool `json:"closeYuanShen" comment:"bgi关闭需要是否关闭原神"`
+	IsCloseYuanShen bool `json:"IsCloseYuanShen" comment:"bgi关闭需要是否关闭原神"`
 }
 
 type oneLong struct {

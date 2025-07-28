@@ -180,6 +180,7 @@
         <span>:</span>
         <input type="text" id="post" placeholder="8082" />
     </div>
+
 </div>
 
 <div class="card">
@@ -227,6 +228,15 @@
 
     <label for="OneLongMinute">启动分钟（0~59）</label>
     <input type="text" id="OneLongMinute" placeholder="例如：30" />
+</div>
+
+
+<div class="card">
+    <h3>控制配置</h3>
+    <label>
+        <input type="checkbox" id="IsCloseYuanShen" />
+        bgi关闭是否需要关闭原神
+    </label>
 </div>
 
 <div class="card">
@@ -357,7 +367,6 @@
             if(json.status !== 'success') throw new Error('接口返回错误');
             const data = json.data;
 
-            // 填充BetterGI地址等
             document.getElementById('BetterGIAddress').value = data.BetterGIAddress || '';
             document.getElementById('webhookURL').value = data.webhookURL || '';
             document.getElementById('content').value = data.content || '';
@@ -367,6 +376,10 @@
             document.getElementById('OneLongMinute').value = data.OneLong?.OneLongMinute ?? '';
             document.getElementById('isMysSignIn').checked = data.MySign?.isMysSignIn || false;
             document.getElementById('mysUrl').value = data.MySign?.url || '';
+            document.getElementById('IsCloseYuanShen').checked = data.Control?.IsCloseYuanShen || false;
+
+            console.log(data.Control?.IsCloseYuanShen || false)
+
 
             // 配置名称固定7个
             createConfigNameInputs();
@@ -447,6 +460,9 @@
             },
             jsName: jsNames,
             backups: BackupsNames,
+            Control: {
+                IsCloseYuanShen: document.getElementById('IsCloseYuanShen').checked
+            }
 
         };
 
@@ -459,6 +475,11 @@
             const result = await res.json();
             if(result.status === 'success') {
                 msgEl.textContent = '保存成功！';
+
+                setTimeout(() => {
+                    window.location.href = '/';
+                    window.location.reload();
+                }, 2000);
                 msgEl.className = 'success';
             } else {
                 throw new Error(result.message || '保存失败');

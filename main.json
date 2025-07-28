@@ -1,6 +1,6 @@
 {
   "OneLong": {
-    "isStartTimeLong": true,
+    "isStartTimeLong": false,
     "OneLongHour": 4,
     "OneLongMinute": 10
   },
@@ -22,9 +22,7 @@
     "isMysSignIn": false,
     "url": "http://localhost:8883"
   },
-  "backups": [
-    "JsScript\\AutoArtifactsPro\\records\\默认账户.txt"
-  ],
+  "backups": [],
   "cookie": "",
   "basePath": "",
   "jsName": [
@@ -41,7 +39,7 @@
     "AutoCode",
     "使用料理"
   ],
-  "control": {
-    "closeYuanShen": false
+  "Control": {
+    "IsCloseYuanShen": true
   }
 }
