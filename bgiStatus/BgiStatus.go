@@ -1528,15 +1528,19 @@ func Archive(data map[string]interface{}) string {
 		fmt.Println("查询数据库失败:", err)
 		return "查询数据库失败"
 	}
+	autoLog.Sugar.Infof("查询数据库是否存在归档记录：%d", count)
 	if count > 0 {
-		//执行修改
+		autoLog.Sugar.Infof("执行修改归档记录")
 		stmt2, err := config.InitDB().Prepare(`UPDATE archive_records SET execute_time = ? WHERE title = ?`)
 		if err != nil {
 			autoLog.Sugar.Errorf("预处理失败: %v", err)
 			return "预处理失败"
 		}
 		defer stmt2.Close()
+		return "修改归档记录成功"
 	}
+
+	autoLog.Sugar.Infof("执行新增归档记录")
 
 	stmt2, err := config.InitDB().Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
 	if err != nil {
@@ -1547,7 +1551,7 @@ func Archive(data map[string]interface{}) string {
 
 	_, err = stmt2.Exec(title, executeTime)
 	if err != nil {
-		fmt.Println("写入数据库失败:", err)
+		autoLog.Sugar.Errorf("写入数据库失败: %v", err)
 		return "写入数据库失败"
 	}
 
