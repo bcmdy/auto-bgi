@@ -95,10 +95,60 @@
             background-color: rgba(255, 105, 180, 0.1);
             animation: glow 1.5s infinite alternate;
         }
+
+        #gitLogTable td ul {
+            list-style: none;
+            padding: 0;
+        }
+        #gitLogTable td li {
+            padding: 2px 0;
+            color: #ff69b4;
+            font-size: 0.9rem;
+        }
         @keyframes glow {
             from { box-shadow: 0 0 5px #ffb6c1; }
             to { box-shadow: 0 0 15px #ff69b4; }
         }
+
+        /* --- 适配移动端 --- */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 5px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .btn {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+            .container {
+                padding: 0 10px;
+                margin: 15px auto;
+            }
+            section.panel {
+                padding: 15px;
+            }
+            section.panel h2 {
+                font-size: 1.2rem;
+            }
+            table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                border-spacing: 0;
+            }
+            th, td {
+                font-size: 0.85rem;
+                padding: 8px;
+                word-break: break-word;
+            }
+            #gitLogTable td ul {
+                font-size: 0.8rem;
+            }
+        }
+
+
     </style>
 </head>
 <body>
@@ -138,6 +188,7 @@
                     <th>提交时间</th>
                     <th>作者</th>
                     <th>提交信息</th>
+                    <th>相关文件</th>
                 </tr>
                 </thead>
                 <tbody id="gitLogBody">
@@ -257,22 +308,26 @@
             .then(json => {
                 const logs = json.gitLog || [];
                 if (logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">暂无提交记录。</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">暂无提交记录。</td></tr>';
                     return;
                 }
                 tbody.innerHTML = '';
                 logs.forEach(log => {
+                    const fileList = (log.Files || [])
+                        .map(f => `<li style="margin-left:15px;">${f}</li>`)
+                        .join('');
                     const row = document.createElement('tr');
                     row.innerHTML = `
                     <td>${log.CommitTime}</td>
                     <td>${log.Author}</td>
                     <td>${log.Message.replace(/\n/g, '<br/>')}</td>
+                    <td><ul style="padding-left:10px;margin:0;">${fileList || '<li>无文件</li>'}</ul></td>
                 `;
                     tbody.appendChild(row);
                 });
             })
             .catch(() => {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:red;">加载提交记录失败</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">加载提交记录失败</td></tr>';
             });
     }
 

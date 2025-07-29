@@ -1241,6 +1241,8 @@ type GitLogStruct struct {
 	Author string
 	//更新内容
 	Message string
+	//提交修改的文件
+	Files []string
 }
 
 // 查询git日志
@@ -1250,7 +1252,6 @@ func GitLog() []GitLogStruct {
 	// 打开仓库
 	repo, err := git.PlainOpen(localPath)
 	if err != nil {
-
 		autoLog.Sugar.Errorf("打开仓库失败: %v", err)
 		return nil
 	}
@@ -1260,7 +1261,6 @@ func GitLog() []GitLogStruct {
 	if err != nil {
 		autoLog.Sugar.Errorf("获取 HEAD 失败: %v", err)
 		return nil
-
 	}
 
 	// 获取日志迭代器
@@ -1271,28 +1271,43 @@ func GitLog() []GitLogStruct {
 	}
 
 	var logs []GitLogStruct
-	// 迭代前 10 条
 	count := 0
-	err = commitIter.ForEach(func(c *object.Commit) error {
 
+	_ = commitIter.ForEach(func(c *object.Commit) error {
 		var gitLogStruct GitLogStruct
 		gitLogStruct.CommitTime = c.Author.When.Format("2006-01-02 15:04:05")
 		gitLogStruct.Author = c.Author.Name
 		gitLogStruct.Message = c.Message
+
+		// ✅ 获取当前提交和父提交的文件差异
+		var fileNames []string
+		if c.NumParents() > 0 {
+			parent, _ := c.Parent(0)
+			patch, _ := parent.Patch(c)
+
+			for _, stat := range patch.Stats() {
+				fileNames = append(fileNames, stat.Name)
+			}
+		} else {
+			// 初始提交，直接列出所有文件
+			tree, _ := c.Tree()
+			_ = tree.Files().ForEach(func(f *object.File) error {
+				fileNames = append(fileNames, f.Name)
+				return nil
+			})
+		}
+
+		gitLogStruct.Files = fileNames
 		logs = append(logs, gitLogStruct)
+
 		count++
 		if count >= 10 {
-			return fmt.Errorf("done") // 手动中断
+			return fmt.Errorf("done")
 		}
 		return nil
 	})
 
-	if err != nil && err.Error() != "done" {
-		autoLog.Sugar.Errorf("遍历日志失败: %v", err)
-		return nil
-	}
-
-	// 按时间倒序排序
+	// 按时间倒序
 	sort.Slice(logs, func(i, j int) bool {
 		ti, _ := time.Parse("2006-01-02 15:04:05", logs[i].CommitTime)
 		tj, _ := time.Parse("2006-01-02 15:04:05", logs[j].CommitTime)
