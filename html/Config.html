@@ -147,6 +147,56 @@
             background-color: #ff3388;
         }
 
+        .help-icon {
+            display: inline-block;
+            margin-left: 6px;
+            background: #ff99cc;
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            text-align: center;
+            line-height: 18px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 弹框遮罩 */
+        .help-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+
+        /* 弹框主体 */
+        .help-box {
+            background: #fff0f7;
+            border: 2px solid #ff99cc;
+            border-radius: 12px;
+            width: 300px;
+            padding: 20px;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 12px rgba(255,105,180,0.3);
+            font-size: 14px;
+        }
+
+        /* 关闭按钮 */
+        .help-close {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #ff5599;
+            font-weight: bold;
+        }
+
         .success {
             color: green;
             text-align: center;
@@ -162,20 +212,35 @@
 </head>
 <body>
 
+<div id="helpOverlay" class="help-overlay" onclick="closeHelp()">
+    <div class="help-box" onclick="event.stopPropagation()">
+        <span class="help-close" onclick="closeHelp()">×</span>
+        <p id="helpContent">这里是帮助说明</p>
+    </div>
+</div>
+
 <h2>配置设置</h2>
 
 <div class="card">
     <h3>基础设置</h3>
-    <label for="BetterGIAddress">BetterGI 路径</label>
-    <input type="text" id="BetterGIAddress" placeholder="例如：D:\\subject\\lua\\BetterGI" />
+    <label for="BetterGIAddress">BetterGI 路径
+        <span class="help-icon" onclick="showHelp('填写 BetterGI 的本地路径，例如 D:\\subject\\lua\\BetterGI。不能有逗号，单斜杠')">?</span>
+    </label>
+    <input type="text" id="BetterGIAddress" />
 
-    <label for="webhookURL">企业机器人地址</label>
+    <label for="webhookURL">企业机器人地址
+        <span class="help-icon" onclick="showHelp('企业微信机器人地址，具体怎么申请，自行解决')">?</span>
+    </label>
     <input type="text" id="webhookURL" />
 
-    <label for="content">bgi关闭提示内容</label>
+    <label for="content">bgi关闭提示内容
+        <span class="help-icon" onclick="showHelp('bgi关闭之后，将会把这个内容发送到企业微信，可以填 autobgi 的网页链接，比如背包的网页地址')">?</span>
+    </label>
     <input type="text" id="content" placeholder="可以填 autobgi 的网页链接" />
 
-    <label for="post">端口号</label>
+    <label for="post">端口号
+        <span class="help-icon" onclick="showHelp('端口号，默认是 8082，如果冲突了可以改成你喜欢的')">?</span>
+    </label>
     <div class="port-input">
         <span>:</span>
         <input type="text" id="post" placeholder="8082" />
@@ -184,14 +249,18 @@
 </div>
 
 <div class="card">
-    <h3>一条龙配置</h3>
+    <h3>一条龙配置
+        <span class="help-icon" onclick="showHelp('这个是你的一条龙配置的名称，根据今天周几，来启动哪一个一条龙，必须要有7个，从星期天开始。')">?</span>
+    </h3>
     <div class="config-names-container" id="config-names-container">
         <!-- 7个输入框动态生成 -->
     </div>
 </div>
 
 <div class="card">
-    <h3>背包统计</h3>
+    <h3>背包统计
+        <span class="help-icon" onclick="showHelp('背包统计功能，需要配合仓库的背包统计，摩拉ocr和原石统计js一起使用，将你需要关注的材料填上，摩拉和原石可以不用填，只要执行了脚本，自动有。')">?</span>
+    </h3>
     <div class="bag-keywords-container" id="bag-keywords-container">
         <!-- 动态关键字输入行 -->
     </div>
@@ -199,7 +268,9 @@
 </div>
 
 <div class="card">
-    <h3>需要关注的脚本名称</h3>
+    <h3>需要关注的脚本名称
+        <span class="help-icon" onclick="showHelp('需要关注的脚本名称，这里填写后，可以在脚本更新列表显示')">?</span>
+    </h3>
     <div class="jsname-container" id="jsname-container">
         <!-- 动态 jsName 输入框 -->
     </div>
@@ -207,7 +278,9 @@
 </div>
 
 <div class="card">
-    <h3>需要备份的文件或者文件夹路径</h3>
+    <h3>需要备份的文件或者文件夹路径
+        <span class="help-icon" onclick="showHelp('需要备份的文件或者文件夹路径，bgi目录下的文件夹路径')">?</span>
+    </h3>
     <div class="Backups-container" id="Backups-container">
         <!-- 动态 jsName 输入框 -->
     </div>
@@ -216,7 +289,9 @@
 
 
 <div class="card">
-    <h3>一条龙时间设置</h3>
+    <h3>一条龙时间设置
+        <span class="help-icon" onclick="showHelp('每天定时启动一条龙，记住，不管你当前bgi在干什么，都会结束，开始一条龙')">?</span>
+    </h3>
 
     <label>
         <input type="checkbox" id="isStartTimeLong" />
@@ -232,7 +307,10 @@
 
 
 <div class="card">
-    <h3>控制配置</h3>
+    <h3>控制配置
+        <span class="help-icon" onclick="showHelp('bgi闪退了，或者关闭了，是否需要自动关闭原神和启动器')">?</span>
+        <span class="help-icon" onclick="showHelp('是否开启每隔一小时发送截图，需要配合企业微信机器人使用')">?</span>
+    </h3>
     <label>
         <input type="checkbox" id="IsCloseYuanShen" />
         bgi关闭是否需要关闭原神
@@ -245,7 +323,9 @@
 </div>
 
 <div class="card">
-    <h3>米游社签到设置</h3>
+    <h3>米游社签到设置
+        <span class="help-icon" onclick="showHelp('米游社签到设置，需要配合米游社签到脚本使用，没有就关闭')">?</span>
+    </h3>
     <label>
         <input type="checkbox" id="isMysSignIn" />
         启用米游社签到
@@ -269,6 +349,19 @@
 
     const BackupsContainer = document.getElementById('Backups-container');
     const addBackupsBtn = document.getElementById('add-Backups');
+
+
+    function showHelp(message) {
+        const overlay = document.getElementById('helpOverlay');
+        const content = document.getElementById('helpContent');
+        content.textContent = message;
+        overlay.style.display = 'block';
+    }
+
+    function closeHelp() {
+        document.getElementById('helpOverlay').style.display = 'none';
+    }
+
 
     // 生成固定7个配置名称输入框
     function createConfigNameInputs() {
