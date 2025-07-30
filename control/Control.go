@@ -58,10 +58,10 @@ func CloseSoftware() {
 func CloseYuanShen() {
 
 	if !config.Cfg.Control.IsCloseYuanShen {
-		autoLog.Sugar.Infof("需要关闭原神")
+		autoLog.Sugar.Infof("不需要关闭原神")
 		return
 	}
-	autoLog.Sugar.Infof("不需要关闭原神")
+	autoLog.Sugar.Infof("需要关闭原神")
 	// 创建命令
 	cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
 

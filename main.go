@@ -627,19 +627,6 @@ func main() {
 		})
 	})
 
-	////自动更新Js
-	//ginServer.POST("/autoJs", func(context *gin.Context) {
-	//	js, err := bgiStatus.AutoJs()
-	//	autoLog.Sugar.Infof("更新Js:%s", js)
-	//
-	//	if err != nil {
-	//		context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
-	//		return
-	//	}
-	//
-	//	context.JSON(http.StatusOK, gin.H{"status": "received", "data": js})
-	//})
-
 	//读取statuc文件夹所有的图片
 	ginServer.GET("/images", func(context *gin.Context) {
 
@@ -786,10 +773,20 @@ func main() {
 			autoLog.Sugar.Errorf("更新仓库失败:%v", err)
 		}
 	}()
+
+	//开启每隔一小时发送截图
+	if config.Cfg.Control.SendWeChatImage {
+		autoLog.Sugar.Infof("开启每隔一小时发送截图")
+		go task.SendWeChatImageTask()
+	} else {
+		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
+	}
+
 	go task.UpdateCode()
 
+	//米游社自动签到
 	if config.Cfg.MySign.IsMySignIn {
-		//米游社自动签到
+
 		go task.MysSignIn()
 		autoLog.Sugar.Infof("米游社自动签到开启状态")
 	} else {

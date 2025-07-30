@@ -1279,7 +1279,6 @@ func GitLog() []GitLogStruct {
 		gitLogStruct.Author = c.Author.Name
 		gitLogStruct.Message = c.Message
 
-		// ✅ 获取当前提交和父提交的文件差异
 		var fileNames []string
 		if c.NumParents() > 0 {
 			parent, _ := c.Parent(0)

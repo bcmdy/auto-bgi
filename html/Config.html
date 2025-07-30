@@ -237,6 +237,11 @@
         <input type="checkbox" id="IsCloseYuanShen" />
         bgi关闭是否需要关闭原神
     </label>
+
+    <label>
+        <input type="checkbox" id="SendWeChatImage" />
+        是否开启每隔一小时发送截图
+    </label>
 </div>
 
 <div class="card">
@@ -377,8 +382,8 @@
             document.getElementById('isMysSignIn').checked = data.MySign?.isMysSignIn || false;
             document.getElementById('mysUrl').value = data.MySign?.url || '';
             document.getElementById('IsCloseYuanShen').checked = data.Control?.IsCloseYuanShen || false;
+            document.getElementById('SendWeChatImage').checked = data.Control?.SendWeChatImage || false;
 
-            console.log(data.Control?.IsCloseYuanShen || false)
 
 
             // 配置名称固定7个
@@ -461,7 +466,8 @@
             jsName: jsNames,
             backups: BackupsNames,
             Control: {
-                IsCloseYuanShen: document.getElementById('IsCloseYuanShen').checked
+                IsCloseYuanShen: document.getElementById('IsCloseYuanShen').checked,
+                SendWeChatImage: document.getElementById('SendWeChatImage').checked
             }
 
         };

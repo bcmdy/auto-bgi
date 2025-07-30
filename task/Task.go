@@ -468,3 +468,46 @@ func UpdateCode() {
 func BackupUsers() {
 
 }
+
+// 每隔半个小时发送截图
+func SendWeChatImageTask() {
+
+	cronTab := cron.New(cron.WithSeconds())
+
+	// 定时任务,cron表达式
+	//每1个小时执行一次
+	spec := fmt.Sprintf("0 0 */1 * * *")
+
+	// 定义定时器调用的任务函数
+	task := func() {
+
+		running := bgiStatus.IsWechatRunning()
+		if !running {
+			return
+		}
+
+		autoLog.Sugar.Infof("图片发送 %v", time.Now().Format("2006-01-02 15:04:05"))
+
+		err := control.ScreenShot()
+		if err != nil {
+			autoLog.Sugar.Error("图片发送失败:", err)
+			return
+		}
+		time.Sleep(2000 * time.Millisecond)
+		err2 := bgiStatus.SendWeChatImage("jt.png")
+		if err2 != nil {
+			autoLog.Sugar.Error("图片发送失败:", err2)
+			return
+		}
+		autoLog.Sugar.Infof("图片发送成功")
+
+	}
+
+	// 添加定时任务
+	cronTab.AddFunc(spec, task)
+	// 启动定时器
+	cronTab.Start()
+	// 阻塞主线程停止
+	select {}
+
+}
