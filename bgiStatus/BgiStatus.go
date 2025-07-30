@@ -1691,7 +1691,8 @@ func JsVersion(jsName, nowVersion string) string {
 
 }
 
-var BgiStatus bool
+var aa string
+var i int
 
 func ReadLog() {
 	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
@@ -1711,33 +1712,27 @@ func ReadLog() {
 	// 定位到文件末尾
 	file.Seek(0, io.SeekEnd)
 
-	i := 0
-	notified := false // 用于标记是否已发送通知
 	reader := bufio.NewReader(file)
 	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				time.Sleep(6 * time.Second) // 没有新内容，稍等再读
+		line, _ := reader.ReadString('\n')
+
+		fmt.Println("-=-", i)
+		if aa == line {
+			if i <= 30 {
 				i++
-				if i >= 10 && !notified {
-					SendWeChatNotification("bgi暂停中")
-					BgiStatus = false
-					notified = true // 标记已通知
-				}
+				fmt.Println("没有动静")
+				aa = line
 				continue
 			}
-			fmt.Println("读取文件出错:", err)
-			break
+		} else {
+			fmt.Println("有动静")
+			aa = line
+			i = 0
 		}
 
-		// 有新日志时重置状态
 		fmt.Print(line)
-		BgiStatus = true
-		i = 0
-		if notified {
-			notified = false // 日志有更新，重置通知标记
-		}
+		time.Sleep(1000 * time.Millisecond)
+
 	}
 }
 
