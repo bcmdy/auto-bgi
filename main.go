@@ -201,12 +201,6 @@ func main() {
 		}
 	})
 
-	//实时读取文件
-	go bgiStatus.ReadLog()
-	//ginServer.GET("/readLog", func(c *gin.Context) {
-	//
-	//})
-
 	ginServer.GET("/", func(c *gin.Context) {
 		// 传递给模板
 		c.HTML(http.StatusOK, "index.html", nil)
@@ -776,6 +770,9 @@ func main() {
 	} else {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
 	}
+
+	//实时读取文件
+	go bgiStatus.ReadLog()
 
 	go task.UpdateCode()
 

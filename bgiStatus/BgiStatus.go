@@ -1715,23 +1715,23 @@ func ReadLog() {
 	reader := bufio.NewReader(file)
 	for {
 		line, _ := reader.ReadString('\n')
-
-		fmt.Println("-=-", i)
+		time.Sleep(1000 * time.Millisecond)
 		if aa == line {
-			if i <= 30 {
+			if i < 30 {
 				i++
-				fmt.Println("没有动静")
 				aa = line
 				continue
+			} else if i == 30 {
+				autoLog.Sugar.Info("bgi" + strconv.Itoa(i) + "秒没有动静")
+				SendWeChatNotification("bgi30秒没有动静")
+				i++
 			}
 		} else {
 			fmt.Println("有动静")
 			aa = line
 			i = 0
 		}
-
 		fmt.Print(line)
-		time.Sleep(1000 * time.Millisecond)
 
 	}
 }
