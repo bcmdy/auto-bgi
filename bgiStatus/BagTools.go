@@ -216,3 +216,20 @@ func GetJsNewVersion(jsName string) (string, string) {
 
 	return version, name
 }
+
+// ClearDir 删除目录下所有文件
+func ClearDir(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		path := filepath.Join(dir, entry.Name())
+		err := os.RemoveAll(path) // 删除文件或整个子目录
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

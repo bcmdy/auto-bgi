@@ -814,7 +814,7 @@ func UpdateJsAndPathing() error {
 	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
 	autoLog.Sugar.Infof("开始备份user文件夹")
 
-	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip", true)
+	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip", true)
 	if err4 != nil {
 		return fmt.Errorf("备份失败")
 	}
@@ -972,7 +972,11 @@ func downloadFile(filename, url string) error {
 
 // zipDir 压缩 sourceDir 到 zipFilePath
 // keepRoot = true 时会在压缩包中保留 sourceDir 的目录名
-func zipDir(sourceDir, zipFilePath string, keepRoot bool) error {
+func ZipDir(sourceDir, zipFilePath string, keepRoot bool) error {
+
+	//清理历史备份
+	_ = ClearDir("Users")
+
 	fmt.Println("压缩目录:", sourceDir)
 	fmt.Println("输出文件:", zipFilePath)
 
@@ -1041,7 +1045,7 @@ func Backup() error {
 		autoLog.Sugar.Infof("已备份文件: %s\n", path)
 	}
 	autoLog.Sugar.Infof("开始备份user文件夹")
-	err4 := zipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
+	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("备份失败: %v")
 		return fmt.Errorf("备份失败")

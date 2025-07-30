@@ -612,18 +612,12 @@ func main() {
 			groupPInfo = bgiStatus.GetGroupPInfo()
 		}()
 
-		//go func() {
-		//	defer otherGroup.Done()
-		//	gitLog = bgiStatus.GitLog()
-		//}()
-
 		otherGroup.Wait() // 等待所有 goroutine 完成
 
 		context.JSON(http.StatusOK, gin.H{
 			"GroupTime":  GroupTime,
 			"signLog":    signLog,
 			"groupPInfo": groupPInfo,
-			//"gitLog":     gitLog,
 		})
 	})
 

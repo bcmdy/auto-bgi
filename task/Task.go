@@ -5,6 +5,7 @@ import (
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/iancoleman/orderedmap"
@@ -298,6 +299,10 @@ func OneLong() {
 
 	// 定义定时器调用的任务函数
 	task := func() {
+
+		autoLog.Sugar.Infof("开始备份User目录")
+		go BackupUsers()
+
 		autoLog.Sugar.Infof("一条龙服务启动 %v", time.Now().Format("2006-01-02 15:04:05"))
 
 		OneLongTask()
@@ -464,9 +469,52 @@ func UpdateCode() {
 	select {}
 }
 
+const interval = 72 * time.Hour
+
 // 每周一备份users文件夹
 func BackupUsers() {
 
+	var lastBackupStr string
+	err := config.InitDB().QueryRow(`SELECT autobgi_value FROM autoBgi_config WHERE autobgi_key = 'BackupUserTime'`).Scan(&lastBackupStr)
+	if err != nil && err != sql.ErrNoRows {
+		autoLog.Sugar.Errorf("查询 BackupUserTime 失败: %v", err)
+		return
+	}
+	// 解析上次时间
+	var lastBackup time.Time
+	if lastBackupStr != "" {
+		parsed, per := time.ParseInLocation("2006-01-02 15:04:05", lastBackupStr, time.Local)
+		if per == nil {
+			lastBackup = parsed
+		} else {
+			autoLog.Sugar.Warnf("时间解析失败(%v)，使用默认时间", per)
+			lastBackup = time.Now().Add(-interval)
+		}
+	}
+
+	now := time.Now()
+
+	if now.Sub(lastBackup) >= interval {
+		autoLog.Sugar.Info("🟢 满足条件，开始备份 users 文件夹...")
+		autoLog.Sugar.Infof("开始备份user文件夹")
+		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
+		if err4 != nil {
+			autoLog.Sugar.Errorf("备份失败: %v")
+			return
+		}
+
+		autoLog.Sugar.Info("备份成功")
+
+		// 更新数据库记录
+		_, err = config.InitDB().Exec(`UPDATE autoBgi_config SET autobgi_value = ? WHERE autobgi_key = 'BackupUserTime'`, time.Now().Format("2006-01-02 15:04:05"))
+		if err != nil {
+			autoLog.Sugar.Errorf("更新 BackupUserTime 失败: %v", err)
+		} else {
+			autoLog.Sugar.Info("✅ 备份完成，时间已更新")
+		}
+	} else {
+		autoLog.Sugar.Infof("⏳ 未满足条件（上次：%v，下次至少需等待：%.0f小时）", lastBackup, (interval - now.Sub(lastBackup)).Hours())
+	}
 }
 
 // 每隔半个小时发送截图
