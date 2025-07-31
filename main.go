@@ -58,7 +58,7 @@ func findLastJSONLine(filename string) (string, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.Contains(line, ".json") {
+		if strings.Contains(line, "→ 脚本执行") {
 			lastJSONLine = line
 		}
 	}

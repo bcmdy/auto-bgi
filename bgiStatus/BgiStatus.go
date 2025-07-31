@@ -1376,7 +1376,6 @@ func UpdateJs(jsName string) (string, error) {
 	}
 
 	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
-	//
 
 	subFolderPath, err := findSubFolder(repoDir, jsName)
 	if err != nil {
@@ -1406,8 +1405,8 @@ func UpdateJs(jsName string) (string, error) {
 	} else if jsName == "AutoHoeingOneDragon" {
 		autoLog.Sugar.Infof("锄地一条龙脚本特殊处理")
 		autoLog.Sugar.Infof("开始备份日志文件")
-		backupAutoHoeingOneDragon := filepath.Join(targetPath, "assets")
-		copy.Copy(backupAutoHoeingOneDragon, "./backups/AutoHoeingOneDragon/")
+		backupAutoHoeingOneDragon := filepath.Join(targetPath, "assets/拾取名单.json")
+		copy.Copy(backupAutoHoeingOneDragon, "./backups/AutoHoeingOneDragon/拾取名单.json")
 		autoLog.Sugar.Infof("删除原文件")
 		os.RemoveAll(targetPath)
 		autoLog.Sugar.Infof("更新脚本")
@@ -1417,7 +1416,7 @@ func UpdateJs(jsName string) (string, error) {
 			return "更新脚本失败", err2
 		}
 		autoLog.Sugar.Infof("恢复日志文件")
-		err := copy.Copy("./backups/AutoHoeingOneDragon/", filepath.Join(targetPath, "assets"))
+		err := copy.Copy("./backups/AutoHoeingOneDragon/拾取名单.json", filepath.Join(targetPath, "assets/拾取名单.json"))
 		if err != nil {
 			autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
 			return "恢复日志文件失败", err

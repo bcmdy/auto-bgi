@@ -517,22 +517,17 @@ func BackupUsers() {
 	}
 }
 
-// 每隔半个小时发送截图
+// 每隔1个小时发送截图
 func SendWeChatImageTask() {
 
 	cronTab := cron.New(cron.WithSeconds())
 
 	// 定时任务,cron表达式
 	//每1个小时执行一次
-	spec := fmt.Sprintf("0 0 */1 * * *")
+	spec := fmt.Sprintf("0 0 * * * *")
 
 	// 定义定时器调用的任务函数
 	task := func() {
-
-		running := bgiStatus.IsWechatRunning()
-		if !running {
-			return
-		}
 
 		autoLog.Sugar.Infof("图片发送 %v", time.Now().Format("2006-01-02 15:04:05"))
 
