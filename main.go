@@ -292,7 +292,7 @@ func main() {
 			return
 		}
 
-		_, err = config.InitDB().Exec("DELETE FROM archive_records WHERE id = ?", id)
+		_, err = config.DB.Exec("DELETE FROM archive_records WHERE id = ?", id)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "删除失败")
 			return
@@ -751,6 +751,139 @@ func main() {
 
 		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "重启命令已执行"})
 
+	})
+
+	//读取所有一条龙配置
+	ginServer.GET("/api/oneLongAllName", func(context *gin.Context) {
+		oneLongInfo := config.OneLongAllName()
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
+	})
+
+	//查询所有天赋书
+	ginServer.GET("/api/talentBooks", func(context *gin.Context) {
+
+		td := &bgiStatus.TalentDomain{}
+		talents, _ := td.QueryAllTalents()
+
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": talents})
+	})
+
+	ginServer.GET("/api/talentBooks/search", func(c *gin.Context) {
+		name := c.Query("name")
+		if name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "msg": "缺少参数 name"})
+			return
+		}
+
+		query := `SELECT domain_name, weekday, material_name FROM talent_domains WHERE material_name = ?`
+		rows, err := config.DB.Query(query, name)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+			return
+		}
+		defer rows.Close()
+
+		var results []bgiStatus.TalentDomain
+		for rows.Next() {
+			var td bgiStatus.TalentDomain
+			if err := rows.Scan(&td.DomainName, &td.Weekday, &td.MaterialName); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			results = append(results, td)
+		}
+
+		if len(results) == 0 {
+			c.JSON(http.StatusOK, gin.H{"status": "not_found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"data":   results,
+		})
+	})
+
+	ginServer.GET("/onelong", func(context *gin.Context) {
+		context.HTML(http.StatusOK, "onelong.html", nil)
+	})
+
+	// 获取一条龙配置
+	ginServer.GET("/api/onelong/config", func(c *gin.Context) {
+		name := c.Query("name")
+		if name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
+			return
+		}
+
+		cfg := config.OneLongConfig(name)
+		c.JSON(http.StatusOK, cfg)
+	})
+
+	//保存一条龙配置
+	ginServer.POST("/api/onelong/saveConfig", func(c *gin.Context) {
+		var newConfig config.OneLongConfigStruct
+
+		if err := c.ShouldBindJSON(&newConfig); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+			return
+		}
+
+		// 保存配置
+		err := config.SaveOneLongConfig(newConfig)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "保存失败", "error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
+	})
+
+	//武器材料
+
+	//查询所有武器升级材料
+	ginServer.GET("/api/WeaponDomain", func(context *gin.Context) {
+
+		td := &bgiStatus.WeaponDomain{}
+		talents, _ := td.QueryAllWeaponMaterials()
+
+		context.JSON(http.StatusOK, gin.H{"status": "success", "data": talents})
+	})
+
+	ginServer.GET("/api/WeaponDomain/search", func(c *gin.Context) {
+		name := c.Query("name")
+		if name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "msg": "缺少参数 name"})
+			return
+		}
+
+		query := `SELECT domain_name, weekday, material_name FROM weapon_domains WHERE material_name = ?`
+		rows, err := config.DB.Query(query, name)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+			return
+		}
+		defer rows.Close()
+
+		var results []bgiStatus.TalentDomain
+		for rows.Next() {
+			var td bgiStatus.TalentDomain
+			if err := rows.Scan(&td.DomainName, &td.Weekday, &td.MaterialName); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			results = append(results, td)
+		}
+
+		if len(results) == 0 {
+			c.JSON(http.StatusOK, gin.H{"status": "not_found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"data":   results,
+		})
 	})
 
 	//检查BGI状态

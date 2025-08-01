@@ -362,12 +362,25 @@
         document.getElementById('helpOverlay').style.display = 'none';
     }
 
+    async function fetchConfigOptions() {
+        try {
+            const res = await fetch('/api/oneLongAllName');
+            const json = await res.json();
+            if (json.status !== 'success') throw new Error('接口返回错误');
+            return json.data || [];
+        } catch (e) {
+            console.error('获取一条龙配置列表失败：', e);
+            return [];
+        }
+    }
 
     // 生成固定7个配置名称输入框
-    function createConfigNameInputs() {
+    async function createConfigNameSelects(selectedValues = []) {
         const weekdays = ['星期天', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const options = await fetchConfigOptions(); // 从接口取配置文件名
         configNamesContainer.innerHTML = '';
-        for(let i = 0; i < 7; i++) {
+
+        for (let i = 0; i < 7; i++) {
             const wrapper = document.createElement('div');
             wrapper.style.marginBottom = '8px';
 
@@ -376,17 +389,28 @@
             label.style.marginRight = '8px';
             label.htmlFor = `configName-${i}`;
 
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.placeholder = `配置名称 ${i+1}`;
-            input.id = `configName-${i}`;
+            const select = document.createElement('select');
+            select.id = `configName-${i}`;
+            select.style.width = '100%';
+            select.style.padding = '6px';
+            select.style.borderRadius = '8px';
+            select.style.border = '1px solid #ccc';
+            select.style.backgroundColor = '#fff0f7';
+
+            // 填充选项
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt.replace('.json', '');
+                if (selectedValues[i] === opt) option.selected = true;
+                select.appendChild(option);
+            });
 
             wrapper.appendChild(label);
-            wrapper.appendChild(input);
+            wrapper.appendChild(select);
             configNamesContainer.appendChild(wrapper);
         }
     }
-
     // 创建一条 jsName 输入行
     function createJsNameRow(value = '') {
         const row = document.createElement('div');
@@ -480,12 +504,8 @@
 
 
             // 配置名称固定7个
-            createConfigNameInputs();
             const configNames = data.ConfigNames || [];
-            for(let i=0; i<7; i++) {
-                const input = document.getElementById(`configName-${i}`);
-                input.value = configNames[i] || '';
-            }
+            await createConfigNameSelects(configNames);
 
             // 加载配置数据时添加
             if (data.jsName && Array.isArray(data.jsName)) {
@@ -517,7 +537,7 @@
     // 表单提交
     async function submitForm() {
         const configNames = [];
-        for(let i=0; i<7; i++) {
+        for (let i = 0; i < 7; i++) {
             const val = document.getElementById(`configName-${i}`).value.trim();
             configNames.push(val);
         }

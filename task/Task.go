@@ -475,7 +475,7 @@ const interval = 72 * time.Hour
 func BackupUsers() {
 
 	var lastBackupStr string
-	err := config.InitDB().QueryRow(`SELECT autobgi_value FROM autoBgi_config WHERE autobgi_key = 'BackupUserTime'`).Scan(&lastBackupStr)
+	err := config.DB.QueryRow(`SELECT autobgi_value FROM autoBgi_config WHERE autobgi_key = 'BackupUserTime'`).Scan(&lastBackupStr)
 	if err != nil && err != sql.ErrNoRows {
 		autoLog.Sugar.Errorf("查询 BackupUserTime 失败: %v", err)
 		return
@@ -506,7 +506,7 @@ func BackupUsers() {
 		autoLog.Sugar.Info("备份成功")
 
 		// 更新数据库记录
-		_, err = config.InitDB().Exec(`UPDATE autoBgi_config SET autobgi_value = ? WHERE autobgi_key = 'BackupUserTime'`, time.Now().Format("2006-01-02 15:04:05"))
+		_, err = config.DB.Exec(`UPDATE autoBgi_config SET autobgi_value = ? WHERE autobgi_key = 'BackupUserTime'`, time.Now().Format("2006-01-02 15:04:05"))
 		if err != nil {
 			autoLog.Sugar.Errorf("更新 BackupUserTime 失败: %v", err)
 		} else {
@@ -524,7 +524,7 @@ func SendWeChatImageTask() {
 
 	// 定时任务,cron表达式
 	//每1个小时执行一次
-	spec := fmt.Sprintf("0 0 * * * *")
+	spec := fmt.Sprintf("0 */10 * * * *")
 
 	// 定义定时器调用的任务函数
 	task := func() {
@@ -536,7 +536,7 @@ func SendWeChatImageTask() {
 			autoLog.Sugar.Error("图片发送失败:", err)
 			return
 		}
-		time.Sleep(2000 * time.Millisecond)
+
 		err2 := bgiStatus.SendWeChatImage("jt.png")
 		if err2 != nil {
 			autoLog.Sugar.Error("图片发送失败:", err2)

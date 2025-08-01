@@ -659,7 +659,8 @@ func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 		}
 		// 1. 分割字符串，获取日期部分
 		parts := strings.Split(line, "，")
-		if len(parts) < 1 {
+		fmt.Println("======", len(parts))
+		if len(parts) != 4 {
 			autoLog.Sugar.Errorf("字符串格式不正确，无法提取日期。")
 			continue
 		}
@@ -667,6 +668,7 @@ func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 
 		// 路线
 		re := regexp.MustCompile(`[a-zA-Z]`)
+
 		letters := re.FindAllString(parts[1], -1)
 
 		// 狗粮
@@ -1533,7 +1535,7 @@ func Archive(data map[string]interface{}) string {
 	}
 
 	// 检查是否已经归档
-	stmt, err := config.InitDB().Prepare(`SELECT COUNT(*) FROM archive_records WHERE title =?`)
+	stmt, err := config.DB.Prepare(`SELECT COUNT(*) FROM archive_records WHERE title =?`)
 	if err != nil {
 		fmt.Println("预处理失败:", err)
 		return "预处理失败"
@@ -1548,7 +1550,7 @@ func Archive(data map[string]interface{}) string {
 	autoLog.Sugar.Infof("查询数据库是否存在归档记录：%d", count)
 	if count > 0 {
 		autoLog.Sugar.Infof("执行修改归档记录")
-		stmt2, err := config.InitDB().Prepare(`UPDATE archive_records SET execute_time = ? WHERE title = ?`)
+		stmt2, err := config.DB.Prepare(`UPDATE archive_records SET execute_time = ? WHERE title = ?`)
 		if err != nil {
 			autoLog.Sugar.Errorf("预处理失败: %v", err)
 			return "预处理失败"
@@ -1559,7 +1561,7 @@ func Archive(data map[string]interface{}) string {
 
 	autoLog.Sugar.Infof("执行新增归档记录")
 
-	stmt2, err := config.InitDB().Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
+	stmt2, err := config.DB.Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
 	if err != nil {
 		fmt.Println("预处理失败:", err)
 		return "预处理失败"
@@ -1590,7 +1592,7 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 	fileDate := GetFileNameDate(filename)
 
 	// 查询数据库配置组时长
-	stmt, err := config.InitDB().Prepare(`SELECT execute_time FROM archive_records WHERE title = ?`)
+	stmt, err := config.DB.Prepare(`SELECT execute_time FROM archive_records WHERE title = ?`)
 	if err != nil {
 		return "", err
 	}
@@ -1634,7 +1636,7 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 
 // ListArchive 归档查询
 func ListArchive() []ArchiveRecords {
-	stmt, err := config.InitDB().Prepare(`SELECT id, title, execute_time, created_at FROM archive_records`)
+	stmt, err := config.DB.Prepare(`SELECT id, title, execute_time, created_at FROM archive_records`)
 	if err != nil {
 		return nil
 	}
@@ -1714,11 +1716,12 @@ func ReadLog() {
 	reader := bufio.NewReader(file)
 	for {
 		line, _ := reader.ReadString('\n')
-		time.Sleep(1000 * time.Millisecond)
+
 		if aa == line {
 			if i < 30 {
 				i++
 				aa = line
+				time.Sleep(1000 * time.Millisecond)
 				continue
 			} else if i == 30 {
 				autoLog.Sugar.Info("bgi" + strconv.Itoa(i) + "秒没有动静")
@@ -1726,11 +1729,9 @@ func ReadLog() {
 				i++
 			}
 		} else {
-			fmt.Println("有动静")
 			aa = line
 			i = 0
 		}
-		fmt.Print(line)
 
 	}
 }

@@ -118,7 +118,7 @@ func ScreenShot() error {
 	img := robotgo.ToImage(imgScreen)
 	imgo.Save("jt.png", img)
 
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	return nil
 }
