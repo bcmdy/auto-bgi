@@ -905,7 +905,8 @@ func main() {
 	}
 
 	//实时读取文件
-	go bgiStatus.ReadLog()
+	//go bgiStatus.ReadLog()
+	go bgiStatus.LogM()
 
 	go task.UpdateCode()
 

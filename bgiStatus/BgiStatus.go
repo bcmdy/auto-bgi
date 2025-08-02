@@ -1743,6 +1743,7 @@ var errorKeywords = []string{
 	"此路线出现3次卡死，重试一次路线或放弃此路线！",
 	"检测到复苏界面，存在角色被击败",
 	"执行路径时出错",
+	"传送点未激活或不存在",
 }
 
 func isErrorLine(line string) (matched string, ok bool) {
@@ -1976,7 +1977,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 func GetMysSignLog() string {
 
 	url := config.Cfg.MySign.Url
-	readLogURL := "http://" + url + "/read-log"
+	readLogURL := url + "/read-log"
 	resp, err := http.Get(readLogURL)
 	if err != nil {
 		return ""
@@ -1987,4 +1988,29 @@ func GetMysSignLog() string {
 		return ""
 	}
 	return string(body)
+}
+
+var Keywords = []string{
+	"未识别到突发任务",
+	"OCR 识别失败",
+	"此路线出现3次卡死，重试一次路线或放弃此路线！",
+	"检测到复苏界面，存在角色被击败",
+	"执行路径时出错",
+	"传送点未激活或不存在",
+}
+
+// 监控日志
+func LogM() {
+
+	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
+	files, err := FindLogFiles(filePath)
+	if err != nil || len(files) == 0 {
+		fmt.Println("找不到日志文件")
+		return
+	}
+	fileLog := files[0]
+
+	monitor := NewLogMonitor(filepath.Join(filePath, fileLog), Keywords, 5)
+	// 启动监控
+	monitor.Monitor()
 }
