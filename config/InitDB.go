@@ -66,8 +66,17 @@ func InitDB() {
 		panic("查询 talent_domains 失败: " + err.Error())
 	}
 
-	// 如果空，批量插入默认天赋本数据
-	if count == 0 {
+	//判断是否需要更新
+	fmt.Println("天赋书是否需要更新数据库:", count != 36)
+
+	if count != 36 {
+
+		// 删除所有数据
+		_, err = db.Exec(`DELETE FROM talent_domains`)
+		if err != nil {
+			panic("删除talent_domains数据失败: " + err.Error())
+		}
+
 		_, err = db.Exec(`
 					INSERT INTO talent_domains (domain_name, weekday, material_name) VALUES
 					('忘却之峡', 1, '自由'),
@@ -120,9 +129,10 @@ func InitDB() {
 		panic("查询 weapon_domains 失败: " + err.Error())
 	}
 
-	fmt.Println(count2)
+	//判断是否需要更新
+	fmt.Println("武器材料是否需要更新数据库:", count != 36)
 
-	if count2 == 0 {
+	if count2 != 36 {
 		_, err = db.Exec(`INSERT INTO weapon_domains (domain_name, weekday, material_name) VALUES
 		-- 塞西莉亚苗圃
 		('塞西莉亚苗圃', 1, '高塔孤王'), ('塞西莉亚苗圃', 4, '高塔孤王'),

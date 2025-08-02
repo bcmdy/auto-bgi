@@ -524,7 +524,7 @@ func SendWeChatImageTask() {
 
 	// 定时任务,cron表达式
 	//每1个小时执行一次
-	spec := fmt.Sprintf("0 */10 * * * *")
+	spec := fmt.Sprintf("0 */59 * * * *")
 
 	// 定义定时器调用的任务函数
 	task := func() {

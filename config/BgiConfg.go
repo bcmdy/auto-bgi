@@ -21,21 +21,23 @@ type OneLongConfigStruct struct {
 	MinResinToKeep           int                    `json:"MinResinToKeep"`
 	SundayEverySelectedValue string                 `json:"SundayEverySelectedValue"`
 	SundaySelectedValue      string                 `json:"SundaySelectedValue"`
+	SereniteaPotTpType       string                 `json:"SereniteaPotTpType"`
 	SecretTreasureObjects    []string               `json:"SecretTreasureObjects"`
 	MondayPartyName          string                 `json:"MondayPartyName"`
 	MondayDomainName         string                 `json:"MondayDomainName"`
 	TuesdayPartyName         string                 `json:"TuesdayPartyName"`
 	TuesdayDomainName        string                 `json:"TuesdayDomainName"`
-	WednesdayPartyName       string                 `json:"WednesdayPartyName"`
-	WednesdayDomainName      string                 `json:"WednesdayDomainName"`
-	ThursdayPartyName        string                 `json:"ThursdayPartyName"`
-	ThursdayDomainName       string                 `json:"ThursdayDomainName"`
-	FridayPartyName          string                 `json:"FridayPartyName"`
-	FridayDomainName         string                 `json:"FridayDomainName"`
-	SaturdayPartyName        string                 `json:"SaturdayPartyName"`
-	SaturdayDomainName       string                 `json:"SaturdayDomainName"`
-	SundayPartyName          string                 `json:"SundayPartyName"`
-	SundayDomainName         string                 `json:"SundayDomainName"`
+
+	WednesdayPartyName  string `json:"WednesdayPartyName"`
+	WednesdayDomainName string `json:"WednesdayDomainName"`
+	ThursdayPartyName   string `json:"ThursdayPartyName"`
+	ThursdayDomainName  string `json:"ThursdayDomainName"`
+	FridayPartyName     string `json:"FridayPartyName"`
+	FridayDomainName    string `json:"FridayDomainName"`
+	SaturdayPartyName   string `json:"SaturdayPartyName"`
+	SaturdayDomainName  string `json:"SaturdayDomainName"`
+	SundayPartyName     string `json:"SundayPartyName"`
+	SundayDomainName    string `json:"SundayDomainName"`
 
 	CompletionAction string `json:"CompletionAction"`
 }
