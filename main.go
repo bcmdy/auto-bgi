@@ -934,11 +934,12 @@ func main() {
 		post = ":8082"
 	}
 	err := ginServer.Run(post)
-	autoLog.Sugar.Infof("启动成功")
+
 	if err != nil {
+		autoLog.Sugar.Errorf("启动失败:%v", err)
 		return
 	}
-
+	autoLog.Sugar.Infof("启动成功")
 }
 
 //go build
