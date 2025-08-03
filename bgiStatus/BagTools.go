@@ -233,3 +233,29 @@ func ClearDir(dir string) error {
 	}
 	return nil
 }
+
+// 获取所有json文件（包含子文件夹），排除特定文件
+func GetAllJSONFiles(root string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil // 继续遍历
+		}
+
+		// 检查是否为json文件
+		if filepath.Ext(info.Name()) == ".json" {
+			// 排除特定文件
+			baseName := info.Name()
+			if baseName == "settings.json" || baseName == "manifest.json" {
+				return nil
+			}
+			files = append(files, path)
+		}
+		return nil
+	})
+	return files, err
+}
