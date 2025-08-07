@@ -298,27 +298,27 @@ export default {
     }
 
     const updatePlugin = async (pluginName) => {
-      isUpdating[pluginName] = true
-      
-      try {
-        const response = await fetch('/api/updateJs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: pluginName })
-        })
-        const result = await response.json()
-        
-        if (result.success) {
-          // 刷新页面
-          window.location.reload()
-        } else {
-          throw new Error(result.message || '更新失败')
-        }
-      } catch (error) {
-        alert('更新失败：' + error.message)
-        isUpdating[pluginName] = false
-      }
+  isUpdating[pluginName] = true
+
+  try {
+    const response = await fetch('/api/updateJs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: pluginName })
+    })
+    const result = await response.json()
+
+    if (result.success) {
+      await loadPluginList() // ✅ 重新加载插件列表，插件数据会更新
+    } else {
+      throw new Error(result.message || '更新失败')
     }
+  } catch (error) {
+    alert('更新失败：' + error.message)
+  } finally {
+    isUpdating[pluginName] = false
+  }
+}
 
     onMounted(() => {
       loadPluginList()
@@ -631,7 +631,7 @@ section.panel h2::after {
 }
 
 .git-log-container {
-  max-height: 500px;
+  //max-height: 1500px;
   overflow-y: auto;
 }
 
@@ -662,7 +662,7 @@ table {
 }
 
 th, td {
-  border: 1px solid rgba(222, 32, 111, 0.4);
+  border: 3px solid rgba(222, 32, 111, 0.4);
   padding: 12px 15px;
   text-align: left;
   position: relative;
@@ -705,9 +705,9 @@ tr {
 }
 
 tr:hover {
-  background: rgba(255, 240, 250, 0.6);
+  background: rgba(107, 226, 205, 0.6);
   transform: scale(1.01);
-  box-shadow: 0 2px 10px rgba(255, 182, 193, 0.2);
+  box-shadow: 3px 2px 10px rgba(251, 9, 46, 0.2);
 }
 
 tr.highlight {

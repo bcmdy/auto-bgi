@@ -1036,7 +1036,7 @@ tr:hover td {
 
 /* 移动端卡片样式 */
 .mobile-list {
-  display: grid;
+  display: none;
   grid-template-columns: 1fr; /* 单列布局 */
   gap: 15px;
   margin-top: 20px;

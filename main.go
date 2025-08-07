@@ -35,16 +35,6 @@ func init() {
 	autoLog.Init()
 	config.InitDB()
 	defer autoLog.Sync()
-
-	////判断目录是否设置正确
-	//exists, err := bgiStatus.CheckConfig()
-	//if !exists {
-	//	fmt.Println(err)
-	//	//程序暂停，任意键退出
-	//	fmt.Println("=======程序暂停，任意键退出=========")
-	//	fmt.Scanln()
-	//	os.Exit(1)
-	//}
 }
 
 func findLastJSONLine(filename string) (string, error) {
