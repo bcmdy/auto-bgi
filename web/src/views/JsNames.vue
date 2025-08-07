@@ -631,7 +631,6 @@ section.panel h2::after {
 }
 
 .git-log-container {
-  //max-height: 1500px;
   overflow-y: auto;
 }
 
