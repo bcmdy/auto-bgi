@@ -1994,14 +1994,14 @@ func GetMysSignLog() string {
 	return string(body)
 }
 
-var Keywords = []string{
-	"未识别到突发任务",
-	"OCR 识别失败",
-	"此路线出现3次卡死，重试一次路线或放弃此路线！",
-	"检测到复苏界面，存在角色被击败",
-	"执行路径时出错",
-	"传送点未激活或不存在",
-}
+//var Keywords = []string{
+//	"未识别到突发任务",
+//	"OCR 识别失败",
+//	"此路线出现3次卡死，重试一次路线或放弃此路线！",
+//	"检测到复苏界面，存在角色被击败",
+//	"执行路径时出错",
+//	"传送点未激活或不存在",
+//}
 
 // 监控日志
 // 监控日志（支持每天变化的日志文件）
@@ -2037,10 +2037,32 @@ func LogM() {
 			}
 
 			// 启动新监控
-			monitor = NewLogMonitor(newLogFile, Keywords, 5)
+			monitor = NewLogMonitor(newLogFile, config.Cfg.LogKeywords, 5)
 			go monitor.Monitor()
 		}
 
 		<-ticker.C
 	}
+}
+
+// 将今日所有配置组归档
+func ArchiveConfig() {
+	// 生成日志文件名
+	date := time.Now().Format("20060102")
+	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
+	//获取今日所有配置组
+	groupTime, _ := GroupTime(filename)
+	for _, groupMap := range groupTime {
+		//将配置组转换为map[string]interface{}
+		configMap := map[string]interface{}{
+			"Title":       groupMap.Title,
+			"ExecuteTime": groupMap.Detail.ExecuteTime,
+		}
+
+		Archive(configMap)
+
+		autoLog.Sugar.Infof("归档配置组 %s", groupMap.Title)
+
+	}
+
 }

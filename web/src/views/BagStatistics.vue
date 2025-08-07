@@ -17,7 +17,10 @@
     </header>
     
     <div class="container filter-section">
-      <div class="filter-container">
+      <button class="btn" @click="toggleFilter" style="margin-bottom:10px;">
+        {{ filterCollapsed ? '展开材料筛选' : '收起材料筛选' }}
+      </button>
+      <div v-show="!filterCollapsed" class="filter-container">
         <div class="filter-header">
           <h3 class="filter-title">
             <span class="filter-icon dancing">🎀</span>
@@ -103,24 +106,27 @@
 
       <!-- 移动端卡片列表 -->
       <div class="mobile-list" v-if="!isLoading && filteredItems.length > 0">
-        <div v-for="(item, index) in filteredItems" :key="index" class="mobile-card">
-          <div v-if="item.type === 'spacer'" class="spacer-card"></div>
-          <div v-else class="material-card">
+        <div v-for="group in groupedMobileMaterials" :key="group.cl" class="mobile-card">
+          <div class="material-card">
             <div class="card-header">
-              <div class="card-date">
-                <span class="date-icon">📅</span>
-                <span class="date-text">{{ item.date }}</span>
-              </div>
+              <span class="date-icon">📦</span>
+              <span class="date-text">{{ group.materialDisplay }}</span>
             </div>
             <div class="card-content">
-              <div class="material-info">
-                <span class="material-icon">📦</span>
-                <span class="material-name">{{ item.materialDisplay }}</span>
-              </div>
-              <div class="quantity-info">
-                <span class="quantity-icon">🔢</span>
-                <span class="quantity-value">{{ item.numDisplay }}</span>
-              </div>
+              <table class="mobile-inner-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>数量</th>
+                  </tr>
+                </thead>
+                <tbody >
+                  <tr v-for="item in group.items" :key="item.date">
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.numDisplay }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -156,10 +162,11 @@ export default {
   data() {
     return {
       title: '背包统计',
-      items: [], // 从API获取的数据
+      items: [],
       selectedMaterials: [],
       allOre: ["萃凝晶", "水晶块", "星银矿石", "紫晶块", "白铁块", "铁块", "魔晶块", "石珀"],
-      isLoading: true
+      isLoading: true,
+      filterCollapsed: true // 新增：筛选区折叠状态
     }
   },
   computed: {
@@ -247,7 +254,42 @@ export default {
       }
 
       return result;
-    }
+    },
+
+    mindsetMaterials() {
+      // 心态相关材料
+      return this.filteredItems.filter(item => item.cl === '原石' || item.cl === '摩拉数值');
+    },
+    otherMaterials() {
+      // 其他材料
+      return this.filteredItems.filter(item => item.cl !== '原石' && item.cl !== '摩拉数值');
+    },
+
+    groupedMobileMaterials() {
+      // 手机端下将材料按名称分组，每组为一个卡片，卡片内按日期排序
+      const groups = {};
+      this.filteredItems.forEach(item => {
+        if (item.type === 'spacer') return;
+        if (!groups[item.cl]) groups[item.cl] = [];
+        groups[item.cl].push(item);
+      });
+      // 返回分组后的数组，每组包含材料名和数据列表
+      return Object.keys(groups).map(cl => {
+        const items = groups[cl];
+        let materialDisplay;
+        if (cl === '原石') {
+          // 原石取最后一个
+          materialDisplay = items[items.length - 1].materialDisplay;
+        } else {
+          materialDisplay = items[0].materialDisplay;
+        }
+        return {
+          cl,
+          materialDisplay,
+          items
+        };
+      });
+    },
   },
   async mounted() {
     await this.loadData();
@@ -300,7 +342,10 @@ export default {
     // 筛选表格（由于使用了computed，这个方法可能不需要）
     filterTable() {
       // 由于使用了响应式数据和computed，筛选会自动触发
-    }
+    },
+    toggleFilter() {
+      this.filterCollapsed = !this.filterCollapsed;
+    },
   }
 }
 </script>
@@ -1066,6 +1111,7 @@ tr:hover td {
   height: 12px;
   background-color: #ffcce6;
   border-radius: 8px;
+  border: 1px solid rgba(226, 7, 102, 0.5);
 }
 
 .material-card .card-header {
@@ -1073,7 +1119,8 @@ tr:hover td {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 10px;
-  border-bottom: 1px dashed rgba(255, 133, 194, 0.3);
+  border-bottom: 3px dashed rgba(255, 133, 194, 0.3);
+  font-weight: bold;
 }
 
 .material-card .card-date {
@@ -1093,6 +1140,7 @@ tr:hover td {
   justify-content: space-between;
   align-items: center;
   gap: 15px;
+  margin-top: 15px;
 }
 
 .material-card .material-info {
@@ -1315,5 +1363,31 @@ tr:hover td {
     padding: 8px 16px;
     font-size: 0.85rem;
   }
+}
+
+/* 移动端内嵌表格格子样式 */
+.mobile-inner-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.mobile-inner-table th,
+.mobile-inner-table td {
+  border: 1px solid #ffbcd9;
+  padding: 8px 10px;
+  text-align: left;
+  background: #fff7fa;
+  font-size: 0.95em;
+}
+
+.mobile-inner-table th {
+  background: #ffbcd9;
+  color: #fff;
+  font-weight: bold;
+}
+
+.mobile-inner-table tr:not(:last-child) td {
+  border-bottom: 1px solid #ffbcd9;
 }
 </style>

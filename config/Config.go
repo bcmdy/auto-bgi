@@ -26,6 +26,7 @@ type Config struct {
 	BasePath        string   `json:"basePath"`
 	JsName          []string `json:"jsName" comment:"需要更新的js名称"`
 	Control         Control  `json:"Control" comment:"控制配置"`
+	LogKeywords     []string `json:"LogKeywords" comment:"日志关键词"`
 }
 
 type Control struct {

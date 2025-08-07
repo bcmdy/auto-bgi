@@ -133,6 +133,10 @@ func (m *LogMonitor) Monitor() {
 					m.sendAlert(msg, false)
 					fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 				}
+				if line == "一条龙和配置组任务结束" {
+					ArchiveConfig()
+					m.sendAlert("一条龙和配置组任务结束，所有配置组已归档", false)
+				}
 			}
 		}
 		time.Sleep(time.Duration(m.ScanInterval) * time.Second)

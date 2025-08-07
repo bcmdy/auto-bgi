@@ -10,7 +10,7 @@
         </div>
       </div>
       <div class="header-content">
-        <button class="btn home-btn" @click="goHome">返回首页</button>
+
         <h1 class="header-title">📜 脚本更新列表 📜</h1>
         <p class="header-subtitle">管理您的脚本，保持最新状态 ✨</p>
       </div>
@@ -18,7 +18,8 @@
 
     <div class="container">
       <section class="panel">
-        <h2>脚本信息</h2>
+        <h2>脚本信息   <button class="btn home-btn" @click="goHome">返回首页</button></h2>
+             
         <div id="pluginListContainer" class="table-container">
           <!-- 桌面端表格 -->
           <table id="pluginTable" class="desktop-table">
@@ -136,8 +137,8 @@
                 <td>{{ log.Author }}</td>
                 <td v-html="log.Message.replace(/\n/g, '<br/>')"></td>
                 <td>
-                  <ul v-if="log.Files && log.Files.length > 0" style="padding-left:10px;margin:0;">
-                    <li v-for="file in log.Files" :key="file" style="margin-left:15px;">{{ file }}</li>
+                  <ul v-if="log.Files && log.Files.length > 0" style="padding-left:10px;margin:0;font-size: 32px;">
+                    <li v-for="file in log.Files" :key="file" style="margin-left:15px;font-size: 16px;">🎉  {{ file }}</li>
                   </ul>
                   <ul v-else style="padding-left:10px;margin:0;">
                     <li>无文件</li>
@@ -156,9 +157,11 @@
                 <span class="empty-sparkle">✨</span>
               </div>
             </div>
-            <div v-else v-for="log in gitLogs" :key="log.CommitTime + log.Author" class="mobile-card">
+            <div v-else v-for="(log,index) in gitLogs" :key="log.CommitTime + log.Author" class="mobile-card">
               <div class="card-header">
+                <h3 style="margin-bottom: 4px;">#{{index+1 }}</h3>
                 <div class="card-time">
+              
                   <span class="time-icon">⏰</span>
                   <span class="time-text">{{ log.CommitTime }}</span>
                 </div>
@@ -479,7 +482,7 @@ export default {
 
 .home-btn:hover {
   background: linear-gradient(135deg, #ff6eb4 0%, #ff8cc8 100%);
-  color: white;
+  color: rgb(255, 255, 255);
   box-shadow: 0 12px 40px rgba(255, 110, 180, 0.4);
   transform: translateY(-3px) scale(1.05);
 }
@@ -532,7 +535,6 @@ h1 {
 }
 
 .btn {
-  background: linear-gradient(135deg, #fff, #fff6fb);
   color: var(--primary-color);
   border: 2px solid var(--primary-color);
   border-radius: 50px;
@@ -544,6 +546,7 @@ h1 {
   font-weight: bold;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(243, 5, 104, 0.3);
 }
 
 .btn::before {
@@ -562,14 +565,12 @@ h1 {
 }
 
 .btn:hover {
-  background: linear-gradient(135deg, var(--primary-color), #ff8e8e);
-  color: #fff;
   box-shadow: 0 6px 20px rgba(255, 110, 180, 0.4);
   transform: translateY(-2px);
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 30px auto;
   padding: 0 20px;
 }
@@ -833,7 +834,7 @@ td {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 246, 251, 0.9) 100%);
     border-radius: 20px;
     padding: 20px;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
     box-shadow: 0 8px 32px rgba(255, 110, 180, 0.15);
     border: 3px solid rgba(180, 32, 248, 0.3);
     backdrop-filter: blur(10px);
