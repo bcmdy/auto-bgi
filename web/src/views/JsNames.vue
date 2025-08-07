@@ -835,7 +835,7 @@ td {
     padding: 20px;
     margin-bottom: 15px;
     box-shadow: 0 8px 32px rgba(255, 110, 180, 0.15);
-    border: 1px solid rgba(255, 192, 218, 0.3);
+    border: 3px solid rgba(180, 32, 248, 0.3);
     backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -860,6 +860,7 @@ td {
   
   .mobile-card:hover {
     transform: translateY(-5px) scale(1.02);
+    background-color: #ff8e8e;
     box-shadow: 0 15px 40px rgba(255, 110, 180, 0.25);
   }
   
