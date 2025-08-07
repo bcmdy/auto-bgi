@@ -182,42 +182,46 @@ func CheckBetterGIStatus() {
 	select {}
 }
 
-func JsProgress(filename string, pattern string) (string, error) {
+func JsProgress(filename string, patterns ...string) (string, error) {
+	// 编译所有的正则表达式
+	var regexps []*regexp.Regexp
+	for _, p := range patterns {
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return "", fmt.Errorf("正则表达式编译失败: %v", err)
+		}
+		regexps = append(regexps, re)
+	}
 
-	// 1. 读取 JSON 文件
-
-	re := regexp.MustCompile(pattern)
-
+	// 打开文件
 	file, err := os.Open(filename)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
-	// 用于存储最后匹配的行和配置组名称
+	// 扫描文件行并尝试匹配所有正则表达式
 	var lastMatch string
-
 	scanner := bufio.NewScanner(file)
-
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
-		if matches != nil {
-			lastMatch = line
-
+		for _, re := range regexps {
+			if re.MatchString(line) {
+				lastMatch = line
+				break // 当前行已经匹配，继续下一行
+			}
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
-	// 输出结果
+
+	// 返回最后一行匹配结果
 	if lastMatch != "" {
-		//autoLog.Sugar.Infof("最后匹配的行: %s", lastMatch)
-	} else {
-		errs := fmt.Errorf("没有找到匹配的行", 500)
-		return "", errs
+		return lastMatch, nil
 	}
-	return lastMatch, nil
+	return "", fmt.Errorf("没有找到匹配的行")
 }
 
 func Progress(filename string, line string) (string, error) {
@@ -1638,13 +1642,13 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 func ListArchive() []ArchiveRecords {
 	stmt, err := config.DB.Prepare(`SELECT id, title, execute_time, created_at FROM archive_records`)
 	if err != nil {
-		return nil
+		return []ArchiveRecords{}
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query()
 	if err != nil {
-		return nil
+		return []ArchiveRecords{}
 	}
 	defer rows.Close()
 
@@ -2000,17 +2004,43 @@ var Keywords = []string{
 }
 
 // 监控日志
+// 监控日志（支持每天变化的日志文件）
 func LogM() {
+	logDir := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
 
-	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
-	files, err := FindLogFiles(filePath)
-	if err != nil || len(files) == 0 {
-		fmt.Println("找不到日志文件")
-		return
+	var currentLogFile string
+	var monitor *LogMonitor
+
+	// 定时任务，每 1 分钟检查一次最新日志文件
+	ticker := time.NewTicker(30 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		files, err := FindLogFiles(logDir)
+		if err != nil || len(files) == 0 {
+			fmt.Println("找不到日志文件")
+			<-ticker.C
+			continue
+		}
+
+		// 假设 FindLogFiles 已经按时间排序，取最新文件
+		newLogFile := filepath.Join(logDir, files[0])
+
+		// 如果日志文件变了，切换监控
+		if newLogFile != currentLogFile {
+			fmt.Printf("检测到新日志文件: %s\n", newLogFile)
+			currentLogFile = newLogFile
+
+			// 停止旧监控
+			if monitor != nil {
+				monitor.Stop() // 需要你在 LogMonitor 中实现 Stop() 关闭 goroutine
+			}
+
+			// 启动新监控
+			monitor = NewLogMonitor(newLogFile, Keywords, 5)
+			go monitor.Monitor()
+		}
+
+		<-ticker.C
 	}
-	fileLog := files[0]
-
-	monitor := NewLogMonitor(filepath.Join(filePath, fileLog), Keywords, 5)
-	// 启动监控
-	monitor.Monitor()
 }

@@ -20,15 +20,16 @@ type LogMonitor struct {
 	WebhookURL   string
 	ScanInterval int
 	lastPosition int64
+	stopChan     chan struct{} // ✅ 新增: 停止信号
 }
 
 // 初始化监控器，复用全局配置
 func NewLogMonitor(logFile string, keywords []string, interval int) *LogMonitor {
 	return &LogMonitor{
-		LogFile:      logFile,
-		Keywords:     keywords,
-		WebhookURL:   config.Cfg.WebhookURL,
-		ScanInterval: interval,
+		LogFile:    logFile,
+		Keywords:   keywords,
+		WebhookURL: config.Cfg.WebhookURL,
+		stopChan:   make(chan struct{}), // ✅ 初始化通道
 	}
 }
 
@@ -146,4 +147,10 @@ func (m *LogMonitor) ManualTest() {
 	} else {
 		fmt.Println("[×] 测试消息发送失败")
 	}
+}
+
+// ✅ 新增: 停止监控
+func (m *LogMonitor) Stop() {
+	close(m.stopChan) // 关闭通道以通知退出
+	fmt.Println("[i] 日志监控已停止:", m.LogFile)
 }
