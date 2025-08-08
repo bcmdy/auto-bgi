@@ -246,8 +246,13 @@ export default {
     }
 
     const sortedPluginData = computed(() => {
+      // 先将有更新的排在最前面
       const sorted = [...pluginData.value]
       sorted.sort((a, b) => {
+        // 有更新优先
+        if (a.Mark === '有更新' && b.Mark !== '有更新') return -1
+        if (a.Mark !== '有更新' && b.Mark === '有更新') return 1
+        // 其余按当前排序规则
         const valA = String(a[currentSort.value.key] || '')
         const valB = String(b[currentSort.value.key] || '')
         return currentSort.value.asc ? valA.localeCompare(valB) : valB.localeCompare(valA)

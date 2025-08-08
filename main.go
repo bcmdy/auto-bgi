@@ -37,34 +37,6 @@ func init() {
 	defer autoLog.Sync()
 }
 
-func findLastJSONLine(filename string) (string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return "未知", err
-	}
-	defer file.Close()
-
-	var lastJSONLine string
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "→ 脚本执行") {
-			lastJSONLine = line
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	if lastJSONLine == "" {
-		return "", fmt.Errorf("no line containing '.json' found")
-	}
-
-	return lastJSONLine, nil
-}
-
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -190,7 +162,7 @@ func main() {
 		GetGroup := "未知"
 		timestamp := "未知"
 
-		line, err := findLastJSONLine(filename)
+		line, err := bgiStatus.FindLastExecLine(filename)
 		if err != nil {
 			autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
 		} else {
@@ -826,13 +798,9 @@ func main() {
 	}
 
 	//实时读取文件
-	//go bgiStatus.ReadLog()
 	go bgiStatus.LogM()
 
-	//go task.UpdateCode()
-
-	////测试
-	//go bgiStatus.ArchiveConfig()
+	//go bgiStatus.JsNamesInfo2()
 
 	//米游社自动签到
 	if config.Cfg.MySign.IsMySignIn {
@@ -861,24 +829,6 @@ func main() {
 		imageListOnce.Do(loadImages) // 只加载一次
 		c.JSON(200, gin.H{"images": imageList})
 
-		//imageDir := "./img"
-		//var images []string
-		//
-		//filepath.WalkDir(imageDir, func(path string, d fs.DirEntry, err error) error {
-		//	if err != nil {
-		//		return err
-		//	}
-		//	if !d.IsDir() {
-		//		ext := filepath.Ext(d.Name())
-		//		switch ext {
-		//		case ".jpg", ".jpeg", ".png", ".gif", ".webp":
-		//			images = append(images, "/img/"+d.Name())
-		//		}
-		//	}
-		//	return nil
-		//})
-		//
-		//c.JSON(200, gin.H{"images": images})
 	})
 
 	// 静态文件服务（放在所有API路由之后）

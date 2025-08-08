@@ -12,7 +12,9 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   config => {
-    console.log('API请求:', config.method?.toUpperCase(), config.url)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('API请求:', config.method?.toUpperCase(), config.url)
+    }
     return config
   },
   error => {
@@ -23,11 +25,15 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   response => {
-    console.log('API响应:', response.status, response.config.url)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('API响应:', response.status, response.config.url)
+    }
     return response.data
   },
   error => {
-    console.error('API请求错误:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('API请求错误:', error)
+    }
     return Promise.reject(error)
   }
 )
@@ -81,4 +87,4 @@ export const apiMethods = {
   startGroups: (name) => api.post('/api/startGroups', { name })
 }
 
-export default api 
+export default api

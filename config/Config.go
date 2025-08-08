@@ -24,7 +24,6 @@ type Config struct {
 	Backups         []string `json:"backups" comment:"需要的备份文件"`
 	Cookie          string   `json:"cookie"`
 	BasePath        string   `json:"basePath"`
-	JsName          []string `json:"jsName" comment:"需要更新的js名称"`
 	Control         Control  `json:"Control" comment:"控制配置"`
 	LogKeywords     []string `json:"LogKeywords" comment:"日志关键词"`
 }
@@ -87,8 +86,88 @@ func ReloadConfig() error {
 		Cfg.BasePath = filepath.Dir(ex)
 	}
 
-	fmt.Println("配置文件加载成功")
+	// 💡 填充默认值
+	fillDefaults(&Cfg)
+
+	// 💾 写回 main.json（已填充默认值）
+	err = writeConfig("main.json", &Cfg)
+	if err != nil {
+		fmt.Println("写回配置文件失败:", err)
+	} else {
+		fmt.Println("配置文件加载并更新默认值成功")
+	}
+
 	return nil
+}
+
+func writeConfig(filename string, cfg *Config) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // 美化格式
+	return encoder.Encode(cfg)
+}
+
+func fillDefaults(cfg *Config) {
+	if cfg.BetterGIAddress == "" {
+		cfg.BetterGIAddress = "D:\\BetterGI"
+	}
+	if cfg.WebhookURL == "" {
+		cfg.WebhookURL = "https://qyapi.weixin.qq.com"
+	}
+	if cfg.Content == "" {
+		cfg.Content = "可以填autobgi的网页链接"
+	}
+	if cfg.ConfigNames == nil || len(cfg.ConfigNames) < 7 {
+		cfg.ConfigNames = []string{"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"}
+	}
+	if cfg.BagStatistics == "" {
+		cfg.BagStatistics = "晶核,大英雄的经验,水晶块,竹笋,螃蟹,劫波莲,兽肉,萃凝晶,紫晶块,星银矿石"
+	}
+	if cfg.Post == "" {
+		cfg.Post = ":8082"
+	}
+	if cfg.Cookie == "" {
+		cfg.Cookie = ""
+	}
+	if cfg.Backups == nil {
+		cfg.Backups = []string{}
+	}
+	if cfg.LogKeywords == nil {
+		cfg.LogKeywords = []string{
+			"未识别到突发任务",
+			"OCR 识别失败",
+			"此路线出现3次卡死，重试一次路线或放弃此路线！",
+			"检测到复苏界面，存在角色被击败",
+			"执行路径时出错",
+			"传送点未激活或不存在"}
+	}
+	if !cfg.OneLong.IsStartTimeLong {
+		cfg.OneLong.IsStartTimeLong = false
+	}
+	if cfg.OneLong.OneLongHour == 0 {
+		cfg.OneLong.OneLongHour = 4
+	}
+	if cfg.OneLong.OneLongMinute == 0 {
+		cfg.OneLong.OneLongMinute = 10
+	}
+	if !cfg.MySign.IsMySignIn {
+		cfg.MySign.IsMySignIn = false
+	}
+	if cfg.MySign.Url == "" {
+		cfg.MySign.Url = "http://localhost:8883"
+	}
+	if cfg.Control.IsCloseYuanShen {
+		cfg.Control.IsCloseYuanShen = false
+	}
+	if cfg.Control.SendWeChatImage {
+		cfg.Control.SendWeChatImage = false
+	}
+
 }
 
 // 获取今天启动的一条龙名字

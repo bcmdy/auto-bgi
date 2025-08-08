@@ -179,50 +179,6 @@
           </div>
         </a-card>
 
-        <!-- 需要关注的脚本名称 -->
-        <a-card title="需要关注的脚本名称" class="config-card script-names">
-          <template #extra>
-            <div class="card-extra">
-              <span class="card-icon">📜</span>
-              <a-tooltip title="需要关注的脚本名称，这里填写后，可以在脚本更新列表显示">
-                <QuestionCircleOutlined class="help-icon-btn" />
-              </a-tooltip>
-            </div>
-          </template>
-
-          <div class="dynamic-list">
-            <div 
-              v-for="(jsName, index) in formData.jsNames" 
-              :key="`js-${index}`"
-              class="list-item"
-            >
-              <div class="item-content">
-                <span class="item-icon">🔧</span>
-                <a-input 
-                  v-model:value="formData.jsNames[index]" 
-                  placeholder="脚本名称"
-                  class="enhanced-input"
-                />
-              </div>
-              <a-button 
-                type="primary" 
-                danger 
-                @click="removeJsName(index)"
-                class="remove-btn"
-                :disabled="formData.jsNames.length <= 1"
-              >
-                <DeleteOutlined />
-              </a-button>
-            </div>
-
-            <a-button type="dashed" @click="addJsName" class="add-btn">
-              <PlusOutlined /> 添加脚本名称
-            </a-button>
-          </div>
-        </a-card>
-
-
-
         <!-- 需要通知的关键字 -->
         <a-card title="需要关注关键字" class="config-card script-names">
           <template #extra>
@@ -237,7 +193,7 @@
           <div class="dynamic-list">
             <div
                 v-for="(LogKeyword, index) in formData.LogKeywords"
-                :key="`js-${index}`"
+                :key="`LogKeyword-${index}`"
                 class="list-item"
             >
               <div class="item-content">
@@ -259,8 +215,8 @@
               </a-button>
             </div>
 
-            <a-button type="dashed" @click="addJsName" class="add-btn">
-              <PlusOutlined /> 添加脚本名称
+            <a-button type="dashed" @click="addLogKeyword" class="add-btn">
+              <PlusOutlined /> 添加关键字
             </a-button>
           </div>
         </a-card>
@@ -464,7 +420,6 @@ const formData = reactive({
   post: '8082',
   ConfigNames: new Array(7).fill(''),
   bagKeywords: [''],
-  jsNames: [''],
   LogKeywords: [''],
   backups: [''],
   OneLong: {
@@ -503,17 +458,6 @@ const addBagKeyword = () => {
 const removeBagKeyword = (index) => {
   if (formData.bagKeywords.length > 1) {
     formData.bagKeywords.splice(index, 1)
-  }
-}
-
-// 添加/删除脚本名称
-const addJsName = () => {
-  formData.jsNames.push('')
-}
-
-const removeJsName = (index) => {
-  if (formData.jsNames.length > 1) {
-    formData.jsNames.splice(index, 1)
   }
 }
 
@@ -562,11 +506,13 @@ const loadConfig = async () => {
         formData.bagKeywords = ['']
       }
 
-      if (data.jsName && Array.isArray(data.jsName)) {
-        formData.jsNames = data.jsName.filter(name => name)
+
+      //日志通知关键字
+      if (data.LogKeywords && Array.isArray(data.LogKeywords)) {
+        formData.LogKeywords = data.LogKeywords.filter(LogKeywords => LogKeywords)
       }
-      if (formData.jsNames.length === 0) {
-        formData.jsNames = ['']
+      if (formData.LogKeywords.length === 0) {
+        formData.LogKeywords = ['']
       }
 
       if (data.backups && Array.isArray(data.backups)) {

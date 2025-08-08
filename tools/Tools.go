@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"time"
 )
@@ -36,7 +37,7 @@ func HasTimestamp(line string) bool {
 	return timePattern.MatchString(line)
 }
 
-// 计算执行手机
+// 计算执行时间
 func CalculateDuration(start, end string) string {
 	layout := "2006-01-02 15:04:05" // 根据日志时间格式调整
 	startTime, err1 := time.Parse(layout, start)
@@ -46,4 +47,22 @@ func CalculateDuration(start, end string) string {
 		return endTime.Sub(startTime).String()
 	}
 	return ""
+}
+
+// ListSubDirsOnly 列出目录下的所有子目录
+func ListSubDirsOnly(dirPath string) ([]string, error) {
+	var subDirs []string
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subDirs = append(subDirs, entry.Name())
+		}
+	}
+
+	return subDirs, nil
 }

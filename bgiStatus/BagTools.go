@@ -186,14 +186,14 @@ func GetJsNowVersion(jsName string) string {
 	return version
 }
 
-func GetJsNewVersion(jsName string) (string, string) {
+func GetJsNewVersion(jsName string) (string, string, error) {
 	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 
 	filePath := filepath.Join(repoDir, jsName, "manifest.json")
 	// 读取文件内容
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		autoLog.Sugar.Errorf("读取文件失败: %v", err)
+		return "未知", "", err
 	}
 	// 解析 JSON
 	var data map[string]interface{}
@@ -205,16 +205,16 @@ func GetJsNewVersion(jsName string) (string, string) {
 	version, ok := data["version"].(string)
 	if !ok {
 		autoLog.Sugar.Errorf("GetJsNewVersion 版本号格式错误")
-		return "未知", "未知"
+		return "未知", "未知", err
 	}
 	//提取名字
 	name, ok := data["name"].(string)
 	if !ok {
 		autoLog.Sugar.Errorf("GetJsNewVersion 名字格式错误")
-		return "未知", "未知"
+		return "未知", "未知", err
 	}
 
-	return version, name
+	return version, name, err
 }
 
 // ClearDir 删除目录下所有文件
@@ -258,4 +258,33 @@ func GetAllJSONFiles(root string) ([]string, error) {
 		return nil
 	})
 	return files, err
+}
+
+// FindLastExecLine 查找文件中最后一行包含 "→ 脚本执行" 的行
+func FindLastExecLine(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "未知", err
+	}
+	defer file.Close()
+
+	var lastLine string
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "→ 开始执行") {
+			lastLine = line
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "未知", err
+	}
+
+	if lastLine == "" {
+		return "未知", fmt.Errorf("未找到包含 '→ 脚本执行' 的行")
+	}
+
+	return lastLine, nil
 }

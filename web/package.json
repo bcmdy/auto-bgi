@@ -19,8 +19,11 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.3.4",
-    "vite": "^4.4.9",
     "eslint": "^8.49.0",
-    "eslint-plugin-vue": "^9.17.0"
+    "eslint-plugin-vue": "^9.17.0",
+    "rollup-plugin-visualizer": "^6.0.3",
+    "terser": "^5.43.1",
+    "vite": "^4.4.9",
+    "vite-plugin-style-import": "^2.0.0"
   }
 }

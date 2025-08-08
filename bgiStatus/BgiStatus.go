@@ -1442,77 +1442,6 @@ func UpdateJs(jsName string) (string, error) {
 	return "备份成功", nil
 }
 
-func AutoJs() (string, error) {
-
-	err := GitPull()
-	if err != nil {
-		return err.Error(), err
-	}
-
-	jsNames := config.Cfg.JsName
-	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
-	//
-	for _, jsName := range jsNames {
-		subFolderPath, err := findSubFolder(repoDir, jsName)
-		if err != nil {
-			autoLog.Sugar.Errorf("查找子文件夹失败: %v", err)
-			return fmt.Sprintf("未找到子文件夹: %s", jsName), err
-		}
-
-		// 找到子文件夹后，执行复制操作
-		targetPath := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", jsName)
-
-		if jsName == "AutoArtifactsPro" {
-			autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
-			autoLog.Sugar.Infof("开始备份日志文件")
-			copy.Copy(filepath.Join(targetPath, "records"), "./backups/AutoArtifactsPro/")
-			//清理原文件
-			os.RemoveAll(targetPath)
-			autoLog.Sugar.Infof("更新脚本")
-			err2 := copy.Copy(subFolderPath, targetPath)
-			if err2 != nil {
-				autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
-			}
-			autoLog.Sugar.Infof("恢复日志文件")
-			err := copy.Copy("./backups/AutoArtifactsPro/", filepath.Join(targetPath, "records"))
-			if err != nil {
-				autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
-			}
-		} else if jsName == "AutoHoeingOneDragon" {
-			autoLog.Sugar.Infof("锄地一条龙脚本特殊处理")
-			autoLog.Sugar.Infof("开始备份日志文件")
-			backupAutoHoeingOneDragon := filepath.Join(targetPath, "assets")
-			copy.Copy(backupAutoHoeingOneDragon, "./backups/AutoHoeingOneDragon/")
-			autoLog.Sugar.Infof("删除原文件")
-			os.RemoveAll(targetPath)
-			autoLog.Sugar.Infof("更新脚本")
-			err2 := copy.Copy(subFolderPath, targetPath)
-			if err2 != nil {
-				autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
-				return "更新脚本失败", err2
-			}
-			autoLog.Sugar.Infof("恢复日志文件")
-			err := copy.Copy("./backups/AutoHoeingOneDragon/", filepath.Join(targetPath, "assets"))
-			if err != nil {
-				autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
-				return "恢复日志文件失败", err
-			}
-
-		} else {
-			//清理原文件
-			os.RemoveAll(targetPath)
-			err2 := copy.Copy(subFolderPath, targetPath)
-			if err2 != nil {
-				return err2.Error(), err2
-			}
-		}
-
-		autoLog.Sugar.Infof("Js脚本: %s 已更新", subFolderPath)
-	}
-
-	return "备份成功", nil
-}
-
 // 查找 repo 目录下是否存在名为 targetFolder 的子文件夹
 func findSubFolder(root string, targetFolder string) (string, error) {
 	entries, err := os.ReadDir(root)
@@ -1952,30 +1881,48 @@ type JsNamesInfoStruct struct {
 }
 
 func JsNamesInfo() []JsNamesInfoStruct {
-	err := GitPull()
-	if err != nil {
+
+	if err := GitPull(); err != nil {
 		fmt.Println("GitPull失败:", err)
-		return []JsNamesInfoStruct{}
+		return nil
 	}
 
-	jsNames := config.Cfg.JsName
-	var jsNamesInfoStructs []JsNamesInfoStruct
-	for _, name := range jsNames {
-		var jsNamesInfoStruct JsNamesInfoStruct
-		jsNamesInfoStruct.Name = name
-		//获取现在的版本
-		jsNamesInfoStruct.NowVersion = GetJsNowVersion(name)
-		//获取新的版本
-		jsNamesInfoStruct.NewVersion, jsNamesInfoStruct.ChineseName = GetJsNewVersion(name)
-		if jsNamesInfoStruct.NowVersion == jsNamesInfoStruct.NewVersion {
-			jsNamesInfoStruct.Mark = "无更新"
-		} else {
-			jsNamesInfoStruct.Mark = "有更新"
+	// 获取本地所有订阅脚本目录
+	scriptDir := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript")
+	subDirs, err := tools.ListSubDirsOnly(scriptDir)
+	if err != nil {
+		autoLog.Sugar.Errorf("获取本地脚本失败: %v", err)
+		return nil
+	}
+
+	jsNamesInfoStructs := make([]JsNamesInfoStruct, 0, len(subDirs))
+
+	for _, name := range subDirs {
+		nowVersion := getJsNowVersion(scriptDir, name)
+		newVersion, chineseName, err := GetJsNewVersion(name)
+		if err != nil {
+			continue
 		}
-		jsNamesInfoStructs = append(jsNamesInfoStructs, jsNamesInfoStruct)
+
+		mark := "无更新"
+		if nowVersion != newVersion {
+			mark = "有更新"
+		}
+
+		jsNamesInfoStructs = append(jsNamesInfoStructs, JsNamesInfoStruct{
+			Name:        name,
+			NowVersion:  nowVersion,
+			NewVersion:  newVersion,
+			ChineseName: chineseName,
+			Mark:        mark,
+		})
 	}
 
 	return jsNamesInfoStructs
+}
+
+func getJsNowVersion(basePath, jsName string) string {
+	return readVersion(filepath.Join(basePath, jsName, "manifest.json"))
 }
 
 func GetMysSignLog() string {
@@ -1994,16 +1941,26 @@ func GetMysSignLog() string {
 	return string(body)
 }
 
-//var Keywords = []string{
-//	"未识别到突发任务",
-//	"OCR 识别失败",
-//	"此路线出现3次卡死，重试一次路线或放弃此路线！",
-//	"检测到复苏界面，存在角色被击败",
-//	"执行路径时出错",
-//	"传送点未激活或不存在",
-//}
+func readVersion(manifestPath string) string {
+	file, err := os.Open(manifestPath)
+	if err != nil {
+		autoLog.Sugar.Warnf("打开文件失败: %v", err)
+		return "未知版本"
+	}
+	defer file.Close()
 
-// 监控日志
+	var data map[string]interface{}
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		autoLog.Sugar.Warnf("解析JSON失败: %d%v", manifestPath, err)
+		return "未知版本"
+	}
+
+	if version, ok := data["version"].(string); ok {
+		return version
+	}
+	return "未知版本"
+}
+
 // 监控日志（支持每天变化的日志文件）
 func LogM() {
 	logDir := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
@@ -2011,7 +1968,6 @@ func LogM() {
 	var currentLogFile string
 	var monitor *LogMonitor
 
-	// 定时任务，每 1 分钟检查一次最新日志文件
 	ticker := time.NewTicker(30 * time.Minute)
 	defer ticker.Stop()
 
@@ -2023,20 +1979,16 @@ func LogM() {
 			continue
 		}
 
-		// 假设 FindLogFiles 已经按时间排序，取最新文件
 		newLogFile := filepath.Join(logDir, files[0])
 
-		// 如果日志文件变了，切换监控
 		if newLogFile != currentLogFile {
 			fmt.Printf("检测到新日志文件: %s\n", newLogFile)
 			currentLogFile = newLogFile
 
-			// 停止旧监控
 			if monitor != nil {
-				monitor.Stop() // 需要你在 LogMonitor 中实现 Stop() 关闭 goroutine
+				monitor.Stop()
 			}
 
-			// 启动新监控
 			monitor = NewLogMonitor(newLogFile, config.Cfg.LogKeywords, 5)
 			go monitor.Monitor()
 		}
