@@ -73,6 +73,26 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+var imageList []string
+var imageListOnce sync.Once
+
+func loadImages() {
+	imageDir := "./img"
+	filepath.WalkDir(imageDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() {
+			ext := filepath.Ext(d.Name())
+			switch ext {
+			case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+				imageList = append(imageList, "/img/"+d.Name())
+			}
+		}
+		return nil
+	})
+}
+
 func main() {
 
 	gin.SetMode(gin.ReleaseMode)
@@ -809,7 +829,10 @@ func main() {
 	//go bgiStatus.ReadLog()
 	go bgiStatus.LogM()
 
-	go task.UpdateCode()
+	//go task.UpdateCode()
+
+	////测试
+	//go bgiStatus.ArchiveConfig()
 
 	//米游社自动签到
 	if config.Cfg.MySign.IsMySignIn {
@@ -834,24 +857,28 @@ func main() {
 
 	// 2. API：返回所有图片的 URL
 	ginServer.GET("/api/images", func(c *gin.Context) {
-		imageDir := "./img"
-		var images []string
 
-		filepath.WalkDir(imageDir, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if !d.IsDir() {
-				ext := filepath.Ext(d.Name())
-				switch ext {
-				case ".jpg", ".jpeg", ".png", ".gif", ".webp":
-					images = append(images, "/img/"+d.Name())
-				}
-			}
-			return nil
-		})
+		imageListOnce.Do(loadImages) // 只加载一次
+		c.JSON(200, gin.H{"images": imageList})
 
-		c.JSON(200, gin.H{"images": images})
+		//imageDir := "./img"
+		//var images []string
+		//
+		//filepath.WalkDir(imageDir, func(path string, d fs.DirEntry, err error) error {
+		//	if err != nil {
+		//		return err
+		//	}
+		//	if !d.IsDir() {
+		//		ext := filepath.Ext(d.Name())
+		//		switch ext {
+		//		case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+		//			images = append(images, "/img/"+d.Name())
+		//		}
+		//	}
+		//	return nil
+		//})
+		//
+		//c.JSON(200, gin.H{"images": images})
 	})
 
 	// 静态文件服务（放在所有API路由之后）

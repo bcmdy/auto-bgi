@@ -221,6 +221,51 @@
           </div>
         </a-card>
 
+
+
+        <!-- 需要通知的关键字 -->
+        <a-card title="需要关注关键字" class="config-card script-names">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">📜</span>
+              <a-tooltip title="需要关注的关键字，这里填写后，只要bgi触发了关键词就会通知企业微信">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+          <div class="dynamic-list">
+            <div
+                v-for="(LogKeyword, index) in formData.LogKeywords"
+                :key="`js-${index}`"
+                class="list-item"
+            >
+              <div class="item-content">
+                <span class="item-icon">🔧</span>
+                <a-input
+                    v-model:value="formData.LogKeywords[index]"
+                    placeholder="关键字"
+                    class="enhanced-input"
+                />
+              </div>
+              <a-button
+                  type="primary"
+                  danger
+                  @click="removeLogKeyword(index)"
+                  class="remove-btn"
+                  :disabled="formData.LogKeywords.length <= 1"
+              >
+                <DeleteOutlined />
+              </a-button>
+            </div>
+
+            <a-button type="dashed" @click="addJsName" class="add-btn">
+              <PlusOutlined /> 添加脚本名称
+            </a-button>
+          </div>
+        </a-card>
+
+
         <!-- 需要备份的文件或文件夹路径 -->
         <a-card title="需要备份的文件或者文件夹路径" class="config-card backup-paths">
           <template #extra>
@@ -420,6 +465,7 @@ const formData = reactive({
   ConfigNames: new Array(7).fill(''),
   bagKeywords: [''],
   jsNames: [''],
+  LogKeywords: [''],
   backups: [''],
   OneLong: {
     isStartTimeLong: false,
@@ -470,6 +516,19 @@ const removeJsName = (index) => {
     formData.jsNames.splice(index, 1)
   }
 }
+
+
+// 添加/删除关键字
+const addLogKeyword = () => {
+  formData.LogKeywords.push('')
+}
+
+const removeLogKeyword = (index) => {
+  if (formData.LogKeywords.length > 1) {
+    formData.LogKeywords.splice(index, 1)
+  }
+}
+
 
 // 添加/删除备份路径
 const addBackup = () => {
