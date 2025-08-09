@@ -1376,70 +1376,84 @@ func GitPull() error {
 
 func UpdateJs(jsName string) (string, error) {
 
-	err := GitPull()
-	if err != nil {
-		return err.Error(), err
-	}
+	repoDir := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "js")
 
-	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
-
+	// 仓库中 js 脚本目录
 	subFolderPath, err := findSubFolder(repoDir, jsName)
 	if err != nil {
 		autoLog.Sugar.Errorf("查找子文件夹失败: %v", err)
 		return fmt.Sprintf("未找到子文件夹: %s", jsName), err
 	}
 
-	// 找到子文件夹后，执行复制操作
+	// 本地 js 脚本目录
 	targetPath := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", jsName)
 
-	if jsName == "AutoArtifactsPro" {
-		autoLog.Sugar.Infof("狗粮pro脚本特殊处理")
-		autoLog.Sugar.Infof("开始备份日志文件")
-		copy.Copy(filepath.Join(targetPath, "records"), "./backups/AutoArtifactsPro/")
-		//清理原文件
-		os.RemoveAll(targetPath)
-		autoLog.Sugar.Infof("更新脚本")
-		err2 := copy.Copy(subFolderPath, targetPath)
-		if err2 != nil {
-			autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
-		}
-		autoLog.Sugar.Infof("恢复日志文件")
-		err := copy.Copy("./backups/AutoArtifactsPro/", filepath.Join(targetPath, "records"))
+	// manifest 中指定的待备份文件或目录
+	manifest, err := config.ReadManifest(subFolderPath)
+	if err != nil {
+		return err.Error(), err
+	}
+	files := manifest.SavedFiles
+
+	// 备份路径
+	backupRoot := filepath.Join("backups", jsName)
+
+	// 开始备份
+	for _, pattern := range files {
+		fullPattern := filepath.Join(targetPath, pattern)
+		matches, err := filepath.Glob(fullPattern)
 		if err != nil {
-			autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
-		}
-	} else if jsName == "AutoHoeingOneDragon" {
-		autoLog.Sugar.Infof("锄地一条龙脚本特殊处理")
-		autoLog.Sugar.Infof("开始备份日志文件")
-		backupAutoHoeingOneDragon := filepath.Join(targetPath, "assets/拾取名单.json")
-		copy.Copy(backupAutoHoeingOneDragon, "./backups/AutoHoeingOneDragon/拾取名单.json")
-		autoLog.Sugar.Infof("删除原文件")
-		os.RemoveAll(targetPath)
-		autoLog.Sugar.Infof("更新脚本")
-		err2 := copy.Copy(subFolderPath, targetPath)
-		if err2 != nil {
-			autoLog.Sugar.Errorf("更新脚本失败: %v", err2)
-			return "更新脚本失败", err2
-		}
-		autoLog.Sugar.Infof("恢复日志文件")
-		err := copy.Copy("./backups/AutoHoeingOneDragon/拾取名单.json", filepath.Join(targetPath, "assets/拾取名单.json"))
-		if err != nil {
-			autoLog.Sugar.Errorf("恢复日志文件失败: %v", err)
-			return "恢复日志文件失败", err
+			autoLog.Sugar.Warnf("路径匹配失败: %s, 错误: %v", fullPattern, err)
+			continue
 		}
 
-	} else {
-		//清理原文件
-		os.RemoveAll(targetPath)
-		err2 := copy.Copy(subFolderPath, targetPath)
-		if err2 != nil {
-			return err2.Error(), err2
+		for _, match := range matches {
+			relPath, _ := filepath.Rel(targetPath, match)
+			dstPath := filepath.Join(backupRoot, relPath)
+
+			err := copy.Copy(match, dstPath)
+			if err != nil {
+				autoLog.Sugar.Warnf("备份失败: %s -> %s, 错误: %v", match, dstPath, err)
+			} else {
+				autoLog.Sugar.Infof("备份成功: %s -> %s", match, dstPath)
+			}
 		}
 	}
 
-	autoLog.Sugar.Infof("Js脚本: %s 已更新", subFolderPath)
+	// 删除原 js 脚本目录
+	os.RemoveAll(targetPath)
 
-	return "备份成功", nil
+	// 拷贝更新的 js 脚本目录
+	err = copy.Copy(subFolderPath, targetPath)
+	if err != nil {
+		return err.Error(), err
+	}
+
+	// 4. 还原备份内容到新脚本目录
+	for _, pattern := range files {
+		backupPattern := filepath.Join(backupRoot, pattern)
+		matches, err := filepath.Glob(backupPattern)
+		if err != nil {
+			autoLog.Sugar.Warnf("还原匹配失败: %s, 错误: %v", backupPattern, err)
+			continue
+		}
+
+		for _, backupItem := range matches {
+			relPath, _ := filepath.Rel(backupRoot, backupItem)
+			restorePath := filepath.Join(targetPath, relPath)
+
+			_ = os.MkdirAll(filepath.Dir(restorePath), os.ModePerm)
+
+			if err := copy.Copy(backupItem, restorePath); err != nil {
+				autoLog.Sugar.Warnf("还原失败: %s -> %s, 错误: %v", backupItem, restorePath, err)
+			} else {
+				autoLog.Sugar.Infof("还原成功: %s -> %s", backupItem, restorePath)
+			}
+		}
+	}
+
+	autoLog.Sugar.Infof("Js脚本: %s 已更新并还原备份内容", jsName)
+	return "更新并还原成功", nil
 }
 
 // 查找 repo 目录下是否存在名为 targetFolder 的子文件夹

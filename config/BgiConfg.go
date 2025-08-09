@@ -107,3 +107,33 @@ func SaveOneLongConfig(cfg OneLongConfigStruct) error {
 	fmt.Println("配置已保存到:", filename)
 	return nil
 }
+
+type ManifestStruct struct {
+	ManifestVersion int      `json:"manifest_version" comment:"版本"`
+	Name            string   `json:"Name" comment:"名称"`
+	Version         string   `json:"Version" comment:"版本"`
+	Description     string   `json:"Description" comment:"描述"`
+	Authors         []Author `json:"authors" comment:"作者"`
+	SettingsUi      string   `json:"settings_ui" comment:"设置界面"`
+	Main            string   `json:"main" comment:"主文件"`
+	SavedFiles      []string `json:"saved_files" comment:"需要备份的文件"`
+}
+
+type Author struct {
+	Name  string `json:"name"`
+	Links string `json:"links"`
+}
+
+// 读取manifest.json
+func ReadManifest(jsName string) (ManifestStruct, error) {
+	manifestPath := filepath.Join(jsName, "manifest.json")
+	file, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return ManifestStruct{}, err
+	}
+	var manifest ManifestStruct
+	if err := json.Unmarshal(file, &manifest); err != nil {
+		return ManifestStruct{}, err
+	}
+	return manifest, nil
+}

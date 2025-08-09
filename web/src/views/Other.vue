@@ -38,7 +38,6 @@
           <h3>日志文件</h3>
           <select 
             v-model="selectedFile" 
-            @change="loadAnalysisData" 
             class="file-select"
             :disabled="loading || logFiles.length === 0"
           >
@@ -192,6 +191,14 @@ export default {
   async mounted() {
     await this.loadLogFiles()
   },
+  watch: {
+    // 监听 selectedFile 变化，自动加载分析数据
+    selectedFile(newVal, oldVal) {
+      if (newVal && newVal !== oldVal) {
+        this.loadAnalysisData()
+      }
+    }
+  },
   methods: {
     // 加载日志文件列表
     async loadLogFiles() {
@@ -199,8 +206,8 @@ export default {
         const response = await api.get('/api/logFiles')
         this.logFiles = response.files || []
         if (this.logFiles.length > 0) {
-          this.selectedFile = this.logFiles[0]
-          await this.loadAnalysisData()
+          this.selectedFile = this.logFiles[this.logFiles.length - 1] // 默认选择最新的文件
+          // 不再这里调用 loadAnalysisData，交由 watch 处理
         }
       } catch (error) {
         console.error('加载日志文件列表失败:', error)
@@ -214,6 +221,7 @@ export default {
       
       this.loading = true
       try {
+
         const response = await api.get(`/api/LogAnalysis2Page?file=${encodeURIComponent(this.selectedFile)}`)
         this.analysisData = response.data || []
         // 重置当前活跃组和展开状态
@@ -1243,8 +1251,6 @@ export default {
   line-height: 1;
 }
 
-
-
 @media (max-width: 600px) {
   .panel-header {
     flex-direction: column;
@@ -1496,7 +1502,7 @@ export default {
   .back-to-top-icon {
     font-size: 1rem;
   }
-  
+
   .back-to-top-text {
     font-size: 0.6rem;
   }
