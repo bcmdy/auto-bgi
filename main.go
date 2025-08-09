@@ -447,16 +447,6 @@ func main() {
 
 	})
 
-	//自动更新仓库脚本仓库和地图追踪
-	ginServer.POST("/autoUpdateJsAndPathing", func(context *gin.Context) {
-		err := bgiStatus.UpdateJsAndPathing()
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
-			return
-		}
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "更新成功"})
-	})
-
 	//备份文件
 	ginServer.POST("/backup", func(context *gin.Context) {
 		err := bgiStatus.Backup()
@@ -479,10 +469,6 @@ func main() {
 			"title": "配置组执行",
 			"tasks": list,
 		})
-	})
-
-	ginServer.GET("/other", func(context *gin.Context) {
-		context.HTML(http.StatusOK, "other.html", nil)
 	})
 
 	//获取仓库提交记录（最新的10条）
