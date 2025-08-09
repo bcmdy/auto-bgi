@@ -10,7 +10,7 @@
     </div>
 
     <section class="panel" id="executionPanel">
-      <h2>{{ title }}</h2>
+<!--      <h2>{{ title }}</h2>-->
 
       <div v-if="loading" class="loading-container">
         <div class="loading-spinner"></div>
@@ -38,6 +38,10 @@
             📊 转为折线图
           </button>
         </div>
+        <h4 style="margin-bottom: 10px">
+          {{ item.Mark }}
+        </h4>
+
         <div class="file-details">
           <div class="detail-item" v-for="(detail, detailIndex) in item.Detail" :key="detailIndex">
             {{ detail }}
@@ -127,7 +131,8 @@ export default {
         items.value = [
           {
             FileName: 'example1.txt',
-            Detail: ['暂无数据，请检查后端服务']
+            Detail: ['暂无数据，请检查后端服务'],
+            Mark: '暂无数据'
           }
         ]
       } finally {
@@ -170,6 +175,12 @@ export default {
   padding: 0;
 }
 
+.button-group{
+  display: flex;
+  justify-content: flex-end;
+
+}
+
 .container {
   font-family: "Comic Sans MS", "Segoe UI", sans-serif;
   background-color: var(--background-light);
@@ -191,9 +202,9 @@ h1 {
 }
 
 .btn {
-  background-color: #fff;
+  background-color: #f8eaea;
   color: var(--primary-color);
-  border: 2px solid var(--primary-color);
+  border: 3px solid var(--primary-color);
   border-radius: 50px;
   padding: 10px 20px;
   font-size: 1rem;
@@ -206,7 +217,7 @@ h1 {
 
 .btn:hover {
   background-color: var(--primary-color);
-  color: #fff;
+  color: #a22b2b;
   box-shadow: 0 0 20px var(--primary-color);
   transform: scale(1.05);
 }
@@ -379,10 +390,10 @@ tr:hover td {
 
 /* 文件详情区域 */
 .file-details {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgb(244, 218, 228);
   border-radius: 15px;
   padding: 15px;
-  border: 1px solid rgba(255, 192, 218, 0.5);
+  border: 1px solid rgba(78, 6, 36, 0.5);
 }
 
 .detail-item {

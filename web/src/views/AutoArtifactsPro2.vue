@@ -37,7 +37,7 @@ const route = useRoute()
 const router = useRouter()
 
 // 响应式数据
-const title = ref('狗粮Pro收益折线图')
+const title = ref('狗粮批发收益折线图')
 const loading = ref(true)
 const error = ref('')
 const chartContainer = ref(null)

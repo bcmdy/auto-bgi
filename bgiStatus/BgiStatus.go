@@ -484,6 +484,7 @@ func DeleteBagStatistics() string {
 
 type DogFood struct {
 	FileName string
+	Mark     string
 	Detail   []string
 }
 
@@ -582,7 +583,7 @@ func ReadVersion(filePath string) string {
 
 func GetAutoArtifactsPro() ([]DogFood, error) {
 	// 获取当前目录下所有 .txt 文件
-	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\*.txt", config.Cfg.BetterGIAddress))
+	files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply\\records\\*.txt", config.Cfg.BetterGIAddress))
 	if err != nil {
 		return nil, err
 	}
@@ -610,7 +611,10 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if !inHistory {
-				if strings.HasPrefix(line, "历史收益：") {
+				if strings.Contains(line, "上次运行收尾路线") {
+					replace := strings.ReplaceAll(line, "上次运行收尾路线：", "")
+					dogFood.Mark = replace
+
 					inHistory = true
 				}
 				continue
@@ -641,7 +645,7 @@ type EarningsData struct {
 func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 
 	autoLog.Sugar.Infof("狗粮查询")
-	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro\\records\\%s", config.Cfg.BetterGIAddress, fileName))
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply\\records\\%s", config.Cfg.BetterGIAddress, fileName))
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -656,14 +660,13 @@ func GetAutoArtifactsPro2(fileName string) (*EarningsData, error) {
 
 		line := scanner.Text()
 		if !inHistory {
-			if strings.HasPrefix(line, "历史收益：") {
+			if strings.Contains(line, "上次运行收尾路线") {
 				inHistory = true
 			}
 			continue
 		}
 		// 1. 分割字符串，获取日期部分
 		parts := strings.Split(line, "，")
-		fmt.Println("======", len(parts))
 		if len(parts) != 4 {
 			autoLog.Sugar.Errorf("字符串格式不正确，无法提取日期。")
 			continue
@@ -1900,7 +1903,6 @@ func JsNamesInfo() []JsNamesInfoStruct {
 
 	if err := GitPull(); err != nil {
 		fmt.Println("GitPull失败:", err)
-		return nil
 	}
 
 	// 获取本地所有订阅脚本目录

@@ -393,16 +393,16 @@ func main() {
 		autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
 		//获取版本号
-		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AutoArtifactsPro", config.Cfg.BetterGIAddress))
+		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply", config.Cfg.BetterGIAddress))
 
 		//查询更新状态
-		jsVersion := bgiStatus.JsVersion("AutoArtifactsPro", version)
+		jsVersion := bgiStatus.JsVersion("AAA-Artifacts-Bulk-Supply", version)
 
 		if err != nil {
 			// 传递给模板
 
 			context.JSON(http.StatusInternalServerError, gin.H{
-				"title":     "狗粮收益查询" + "【" + version + "】",
+				"title":     "狗粮批发查询" + "【" + version + "】",
 				"JsVersion": jsVersion,
 				"items":     nil,
 			})
@@ -411,7 +411,7 @@ func main() {
 		}
 
 		context.JSON(http.StatusOK, gin.H{
-			"title":     "狗粮收益查询" + "【" + version + "】",
+			"title":     "狗粮批发查询" + "【" + version + "】",
 			"JsVersion": jsVersion,
 			"items":     pro,
 		})
