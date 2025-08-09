@@ -6,6 +6,7 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/task"
+	"auto-bgi/tools"
 	"bufio"
 	"embed"
 	"encoding/json"
@@ -35,6 +36,12 @@ func init() {
 	autoLog.Init()
 	config.InitDB()
 	defer autoLog.Sync()
+	ip, err := tools.GetLocalIP()
+	if err != nil {
+		autoLog.Sugar.Infof("获取本机IP失败: %v", err)
+	}
+	autoLog.Sugar.Infof("本机IP: %s", ip)
+
 }
 
 var upgrader = websocket.Upgrader{

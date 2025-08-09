@@ -1724,6 +1724,8 @@ type LogAnalysis2Json struct {
 func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
 	fullPath := filepath.Join(filePath, fileName)
+	//从文件名字从提取日期
+	date := GetFileNameDate(fileName)
 
 	file, err := os.Open(fullPath)
 	if err != nil {
@@ -1764,7 +1766,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 				currentStruct = &LogAnalysis2Struct{
 					GroupName: matches[1],
 				}
-				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 					currentStruct.StartTime = t
 				} else {
 					fmt.Println("提取开始时间失败:", err)
@@ -1776,7 +1778,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 		if currentStruct != nil && endRegexp.MatchString(line) {
 			matches := endRegexp.FindStringSubmatch(line)
 			if len(matches) > 1 && matches[1] == currentStruct.GroupName {
-				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 					currentStruct.EndTime = t
 				} else {
 					fmt.Println("提取结束时间失败:", err)
@@ -1803,7 +1805,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 			subTask := LogAnalysis2Json{
 				JsonName: line,
 			}
-			if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 				subTask.StartTime = t
 			}
 			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
@@ -1814,7 +1816,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 			n := len(currentStruct.LogAnalysis2Json)
 			if n > 0 {
 				current := &currentStruct.LogAnalysis2Json[n-1]
-				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 					current.EndTime = t
 					// ✅ 计算任务耗时
 					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
@@ -1827,7 +1829,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 			subTask := LogAnalysis2Json{
 				JsonName: line,
 			}
-			if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 				subTask.StartTime = t
 			}
 			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
@@ -1838,7 +1840,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 			n := len(currentStruct.LogAnalysis2Json)
 			if n > 0 {
 				current := &currentStruct.LogAnalysis2Json[n-1]
-				if t, err := tools.ExtractLogTime(timestampLine); err == nil {
+				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 					current.EndTime = t
 					// ✅ 计算任务耗时
 					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)

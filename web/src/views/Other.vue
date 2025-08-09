@@ -1,18 +1,27 @@
 <template>
   <div class="other-page">
     <!-- 页面头部 -->
-    <header class="page-header">
-      <button class="btn" @click="$router.push('/')">返回首页</button>
-      <h1>详细日志分析</h1>
+    <header class="page-header enhanced-header">
+      <div class="header-bg"></div>
+      <div class="header-content">
+        <div class="header-logo">
+          <span class="logo-icon">🧩</span>
+        </div>
+        <div class="header-title-group">
+          <h1>详细日志分析</h1>
+        </div>
+        <button class="btn header-btn" @click="$router.push('/')">返回首页</button>
+      </div>
+      <div class="header-divider"></div>
     </header>
 
     <!-- 书签导航 -->
     <div v-if="analysisData.length > 0" class="bookmark-nav">
-      <div class="bookmark-header">
+      <div class="bookmark-header" @click="toggleBookmark">
         <span class="bookmark-title">📑 快速导航</span>
-        <button class="bookmark-toggle" @click="toggleBookmark" :class="{ 'active': bookmarkVisible }">
+        <!-- <button class="bookmark-toggle"  :class="{ 'active': bookmarkVisible }">
           {{ bookmarkVisible ? '◀' : '▶' }}
-        </button>
+        </button> -->
       </div>
       <transition name="slide-left">
         <div v-if="bookmarkVisible" class="bookmark-list">
@@ -69,7 +78,7 @@
           >
             <!-- 卡片头部 - 始终可见 -->
             <div class="group-header">
-              <div class="group-title">
+              <div class="group-title" @click="toggleGroupDetails(group.GroupName)">
                 <div class="group-icon">🔧</div>
                 <div class="group-main-info">
                   <h3 class="group-name">{{ group.GroupName }}</h3>
@@ -85,10 +94,10 @@
                 <button class="btn archive-btn-always" @click="archiveGroup(group)" title="归档此配置组">
                   📥 归档
                 </button>
-                <button class="toggle-btn" @click="toggleGroupDetails(group.GroupName)">
+                <!-- <button class="toggle-btn" @click="toggleGroupDetails(group.GroupName)">
                   <span v-if="expandedGroups.includes(group.GroupName)" style="color: #ff6eb4;">📖 收起</span>
                   <span v-else style="color: #ff6eb4;">📋 详情</span>
-                </button>
+                </button> -->
               </div>
             </div>
 
@@ -184,7 +193,7 @@ export default {
       analysisData: [],
       loading: false,
       expandedGroups: [], // 记录展开的配置组
-      bookmarkVisible: true, // 书签是否可见
+      bookmarkVisible: false, // 书签是否可见，默认折叠
       currentActiveGroup: '' // 当前活跃的配置组
     }
   },
@@ -206,7 +215,7 @@ export default {
         const response = await api.get('/api/logFiles')
         this.logFiles = response.files || []
         if (this.logFiles.length > 0) {
-          this.selectedFile = this.logFiles[this.logFiles.length - 1] // 默认选择最新的文件
+          this.selectedFile = this.logFiles[0] // 默认选择最新的文件
           // 不再这里调用 loadAnalysisData，交由 watch 处理
         }
       } catch (error) {
@@ -288,11 +297,14 @@ export default {
 
     // 切换书签显示/隐藏
     toggleBookmark() {
+
       this.bookmarkVisible = !this.bookmarkVisible
     },
 
     // 滚动到指定配置组
     scrollToGroup(groupName) {
+      // 点击导航时自动展开导航
+      this.bookmarkVisible = true
       const element = document.getElementById(`group-${groupName}`)
       if (element) {
         element.scrollIntoView({ 
@@ -409,32 +421,100 @@ export default {
   z-index: 10;
 }
 
-.page-header h1 {
-  color: var(--primary-color);
-  font-size: 2rem;
-  text-shadow: 0 0 10px var(--primary-color);
-  margin-top: 15px;
+.page-header.enhanced-header {
+  position: relative;
+  background: linear-gradient(90deg, #fff6fb 60%, #ff9ecf 100%);
+  box-shadow: 0 8px 32px rgba(255, 110, 180, 0.15), 0 2px 8px rgba(255, 110, 180, 0.08);
+  border-radius: 0 0 36px 36px;
+  padding: 0;
+  margin-bottom: 10px;
+  overflow: hidden;
+  z-index: 10;
 }
 
-.btn {
-  background-color: #fff;
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
-  border-radius: 50px;
-  padding: 8px 16px;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 0 10px var(--primary-color);
-  transition: all 0.3s ease;
-  font-weight: bold;
-  margin-top: 10px;
+.header-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 20% 40%, #e9a0d1 0%, #ecccde 60%, transparent 100%);
+  opacity: 0.7;
+  z-index: 0;
 }
 
-.btn:hover {
-  background-color: var(--primary-color);
+.header-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 36px 0 18px 0;
+  z-index: 1;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.logo-icon {
+  font-size: 2.8rem;
+  background: linear-gradient(45deg, #ff6eb4, #ff9ecf);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(255, 110, 180, 0.18);
+  padding: 10px 16px;
   color: #fff;
-  box-shadow: 0 0 20px var(--primary-color);
-  transform: scale(1.05);
+  border: 2px solid #ffc0da;
+}
+
+.header-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.page-header.enhanced-header h1 {
+  color: #ff6eb4;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0;
+  text-shadow: 0 2px 12px #ffc0da;
+  letter-spacing: 2px;
+}
+
+
+
+.header-btn {
+  margin-top: 0;
+  margin-left: auto;
+  font-size: 1rem;
+  padding: 10px 22px;
+  border-radius: 30px;
+  box-shadow: 0 2px 8px #ffc0da;
+  background: linear-gradient(45deg, #fff, #ffe3f3);
+  color: #ff6eb4;
+  border: 2px solid #ff6eb4;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.header-btn:hover {
+  background: linear-gradient(45deg, #ff6eb4, #ff9ecf);
+  color: #fff;
+  box-shadow: 0 4px 16px #ff9ecf;
+  transform: scale(1.07);
+}
+
+.header-divider {
+  width: 80%;
+  height: 4px;
+  margin: 0 auto 0 auto;
+  background: linear-gradient(90deg, #ff6eb4 0%, #ff9ecf 100%);
+  border-radius: 2px;
+  box-shadow: 0 2px 8px #ffc0da;
+  opacity: 0.25;
+  margin-bottom: 2px;
 }
 
 .container {
@@ -542,6 +622,7 @@ export default {
   justify-content: space-between;
   font-weight: bold;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .bookmark-title {
@@ -549,7 +630,7 @@ export default {
   color: #000;
 }
 
-.bookmark-toggle {
+/* .bookmark-toggle {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
@@ -569,7 +650,7 @@ export default {
 .bookmark-toggle.active {
   background: rgba(255, 255, 255, 0.9);
   color: var(--primary-color);
-}
+} */
 
 .bookmark-list {
   max-height: 60vh;
@@ -800,6 +881,7 @@ export default {
   align-items: center;
   gap: 15px;
   flex: 1;
+  cursor: pointer;
 }
 
 .group-icon {

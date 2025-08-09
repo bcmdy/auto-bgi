@@ -462,7 +462,6 @@ const removeBagKeyword = (index) => {
 }
 
 
-// 添加/删除关键字
 const addLogKeyword = () => {
   formData.LogKeywords.push('')
 }
@@ -474,7 +473,6 @@ const removeLogKeyword = (index) => {
 }
 
 
-// 添加/删除备份路径
 const addBackup = () => {
   formData.backups.push('')
 }
@@ -550,7 +548,6 @@ const handleSubmit = async () => {
       ConfigNames: formData.ConfigNames,
       BagStatistics: formData.bagKeywords.filter(k => k.trim()).join(','),
       post: ':' + formData.post,
-      jsName: formData.jsNames.filter(name => name.trim()),
       backups: formData.backups.filter(backup => backup.trim()),
       OneLong: formData.OneLong,
       Control: formData.Control,
