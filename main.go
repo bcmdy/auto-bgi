@@ -278,21 +278,6 @@ func main() {
 
 	})
 
-	//webhook接口
-	ginServer.POST("/webhook", func(c *gin.Context) {
-		var j map[string]interface{}
-
-		// 绑定JSON数据到map
-		if err := c.ShouldBindJSON(&j); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		autoLog.Sugar.Infof("webhook:%s", j["message"])
-
-		c.JSON(http.StatusOK, gin.H{"status": "received", "data": j})
-	})
-
 	//米游社签到
 	ginServer.POST("/MysSignIn", func(context *gin.Context) {
 
@@ -770,6 +755,17 @@ func main() {
 			"status": "success",
 			"data":   results,
 		})
+	})
+
+	//webhook
+	ginServer.POST("/webhook", func(c *gin.Context) {
+		var payload map[string]interface{}
+		if err := c.ShouldBindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
+			return
+		}
+
+		fmt.Println("===============webhook", payload)
 	})
 
 	//检查BGI状态
