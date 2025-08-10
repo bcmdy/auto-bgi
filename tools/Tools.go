@@ -1,11 +1,11 @@
 package tools
 
 import (
-	"auto-bgi/config"
 	"fmt"
 	"net"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -90,22 +90,47 @@ func ListSubDirsOnly(dirPath string) ([]string, error) {
 	return subDirs, nil
 }
 
-func GetLocalIP() (string, error) {
-	addrs, err := net.InterfaceAddrs()
+func GetLocalIPs() ([]string, error) {
+	var ips []string
+
+	ifaces, err := net.Interfaces()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ip := ipnet.IP.To4(); ip != nil {
-				// 跳过 169.254.x.x（APIPA）
-				if ip[0] == 169 && ip[1] == 254 {
-					continue
+	for _, iface := range ifaces {
+		// 跳过未启用和回环接口
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		// 跳过 Docker、VMWare、VPN 等虚拟网卡
+		name := strings.ToLower(iface.Name)
+		if strings.Contains(name, "docker") ||
+			strings.Contains(name, "vmnet") ||
+			strings.Contains(name, "vbox") {
+			continue
+		}
+
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ip := ipnet.IP.To4(); ip != nil {
+					// 跳过 APIPA 地址 169.254.x.x
+					if ip[0] == 169 && ip[1] == 254 {
+						continue
+					}
+					ips = append(ips, ip.String())
 				}
-				return ip.String() + config.Cfg.Post, nil
 			}
 		}
 	}
-	return "", fmt.Errorf("没有找到有效的局域网 IP")
+
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("没有找到有效的局域网 IP")
+	}
+	return ips, nil
 }

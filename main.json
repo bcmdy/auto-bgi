@@ -1,15 +1,15 @@
 {
   "OneLong": {
-    "isStartTimeLong": false,
+    "isStartTimeLong": true,
     "OneLongHour": 4,
-    "OneLongMinute": 10
+    "OneLongMinute": 12
   },
   "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
   "webhookURL": "https://qyapi.weixin.qq.com",
   "content": "可以填autobgi的网页链接",
   "ConfigNames": [
     "我的",
-    "我的",
+    "版本更新",
     "我的",
     "我的",
     "我的",
@@ -24,17 +24,15 @@
   },
   "backups": [],
   "cookie": "",
-  "basePath": "C:\\Users\\Administrator\\AppData\\Local\\JetBrains\\GoLand2024.1\\tmp\\GoLand",
+  "basePath": "",
   "Control": {
     "IsCloseYuanShen": false,
     "SendWeChatImage": false
   },
   "LogKeywords": [
-    "未识别到突发任务",
-    "OCR 识别失败",
-    "此路线出现3次卡死，重试一次路线或放弃此路线！",
-    "检测到复苏界面，存在角色被击败",
-    "执行路径时出错",
-    "传送点未激活或不存在"
+    "登录",
+    "注册",
+    "登录成功",
+    "注册成功"
   ]
 }

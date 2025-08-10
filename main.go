@@ -36,12 +36,14 @@ func init() {
 	autoLog.Init()
 	config.InitDB()
 	defer autoLog.Sync()
-	ip, err := tools.GetLocalIP()
+	ips, err := tools.GetLocalIPs()
 	if err != nil {
 		autoLog.Sugar.Infof("获取本机IP失败: %v", err)
+	} else {
+		for _, ip := range ips {
+			autoLog.Sugar.Infof("本机IP: %s", ip)
+		}
 	}
-	autoLog.Sugar.Infof("本机IP: %s", ip)
-
 }
 
 var upgrader = websocket.Upgrader{

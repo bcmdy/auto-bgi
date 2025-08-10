@@ -358,12 +358,12 @@ export default {
 
 /* 按钮样式 */
 .cute-btn {
-  background: linear-gradient(135deg, #fff 0%, #fff6fb 100%);
+  background: linear-gradient(135deg, #fde0e0 0%, #dda6c2 100%);
   color: var(--primary-color);
   border: 3px solid var(--primary-color);
   border-radius: 25px;
   padding: 10px 20px;
-  font-size: 1rem;
+  font-size: 2rem;
   cursor: pointer;
   box-shadow: 0 4px 15px var(--shadow-color);
   transition: all 0.3s ease;
@@ -374,8 +374,8 @@ export default {
 }
 
 .cute-btn:hover {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #bde1e2 0%, #dda6c2 100%);
+  color: #31bfe2;
   box-shadow: 0 6px 20px var(--shadow-color);
   transform: translateY(-2px) scale(1.05);
 }
@@ -524,7 +524,7 @@ export default {
 .title-cell, .time-cell, .action-cell {
   padding: 12px 15px;
   border: none;
-  border-bottom: 1px solid rgba(255, 192, 218, 0.3);
+  border-bottom: 5px solid rgba(245, 118, 171, 0.3);
   transition: all 0.3s ease;
   display: table-cell;
   vertical-align: middle;
@@ -835,7 +835,7 @@ tr.fade-out {
   }
   
   .cute-table {
-    min-width: 600px;
+    min-width: 650px;
   }
 
   .desktop-table {
