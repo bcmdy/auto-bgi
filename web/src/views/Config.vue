@@ -373,6 +373,73 @@
           </div>
         </a-card>
 
+        <!-- 1Remote 配置 -->
+        <a-card title="1Remote远程监控" class="config-card one-remote-config">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">🖥️</span>
+              <a-tooltip title="远程监控配置，填写日志路径和关键字，支持自动监控远程连接断开等事件">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+          <div class="one-remote-content">
+            <a-form-item class="checkbox-item">
+              <a-checkbox v-model:checked="formData.OneRemote.IsMonitor" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon">🖥️</span>
+                  启用远程监控
+                </span>
+              </a-checkbox>
+            </a-form-item>
+            <!-- 只有勾选时才显示下面内容 -->
+            <div v-show="formData.OneRemote.IsMonitor">
+              <a-form-item label="日志文件路径" name="OneRemoteLogFilePath" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">📄</span>
+                  <a-input
+                    v-model:value="formData.OneRemote.LogFilePath"
+                    placeholder="C:\Users\Administrator\Desktop\1Remote-1.2.0-net9-x64\.logs"
+                    class="enhanced-input"
+                  />
+                </div>
+                <div class="help-text">
+                  <span class="help-icon">💡</span>
+                  填写 OneRemote 的日志文件夹路径，到 .logs 目录下，例如 C:\Users\Administrator\Desktop\1Remote-1.2.0-net9-x64\.logs
+                </div>
+              </a-form-item>
+              <div class="dynamic-list">
+                <div
+                  v-for="(keyword, index) in formData.OneRemote.LogKeywords"
+                  :key="`oneremote-keyword-${index}`"
+                  class="list-item"
+                >
+                  <div class="item-content">
+                    <span class="item-icon">🔑</span>
+                    <a-input
+                      v-model:value="formData.OneRemote.LogKeywords[index]"
+                      placeholder="远程监控关键字"
+                      class="enhanced-input"
+                    />
+                  </div>
+                  <a-button
+                    type="primary"
+                    danger
+                    @click="removeOneRemoteKeyword(index)"
+                    class="remove-btn"
+                    :disabled="formData.OneRemote.LogKeywords.length <= 1"
+                  >
+                    <DeleteOutlined />
+                  </a-button>
+                </div>
+                <a-button type="dashed" @click="addOneRemoteKeyword" class="add-btn">
+                  <PlusOutlined /> 添加关键字
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </a-card>
+
         <!-- 提交按钮 -->
         <div class="submit-section">
           <a-button 
@@ -434,6 +501,11 @@ const formData = reactive({
   MySign: {
     isMysSignIn: false,
     url: ''
+  },
+  OneRemote: {
+    IsMonitor: true,
+    LogFilePath: '',
+    LogKeywords: ['']
   }
 })
 
@@ -480,6 +552,15 @@ const addBackup = () => {
 const removeBackup = (index) => {
   if (formData.backups.length > 1) {
     formData.backups.splice(index, 1)
+  }
+}
+
+const addOneRemoteKeyword = () => {
+  formData.OneRemote.LogKeywords.push('')
+}
+const removeOneRemoteKeyword = (index) => {
+  if (formData.OneRemote.LogKeywords.length > 1) {
+    formData.OneRemote.LogKeywords.splice(index, 1)
   }
 }
 
@@ -531,6 +612,10 @@ const loadConfig = async () => {
       if (data.MySign) {
         Object.assign(formData.MySign, data.MySign)
       }
+
+      if (data.OneRemote) {
+        Object.assign(formData.OneRemote, data.OneRemote)
+      }
     }
   } catch (error) {
     message.error('加载配置失败: ' + error.message)
@@ -549,9 +634,13 @@ const handleSubmit = async () => {
       BagStatistics: formData.bagKeywords.filter(k => k.trim()).join(','),
       post: ':' + formData.post,
       backups: formData.backups.filter(backup => backup.trim()),
+      LogKeywords: formData.LogKeywords.filter(k => k.trim()).length > 0
+        ? formData.LogKeywords.filter(k => k.trim())
+        : [''],
       OneLong: formData.OneLong,
       Control: formData.Control,
-      MySign: formData.MySign
+      MySign: formData.MySign,
+      OneRemote: formData.OneRemote
     }
 
     await apiMethods.updateConfig(payload)

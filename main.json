@@ -30,9 +30,13 @@
     "SendWeChatImage": false
   },
   "LogKeywords": [
-    "登录",
-    "注册",
-    "登录成功",
-    "注册成功"
-  ]
+    "1314"
+  ],
+  "OneRemote": {
+    "IsMonitor": false,
+    "LogFilePath": "1Remote",
+    "LogKeywords": [
+      "OnRdpClientDisconnected"
+    ]
+  }
 }

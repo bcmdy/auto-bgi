@@ -819,6 +819,47 @@ func FindLogFiles(dirPath string) ([]string, error) {
 	return filenames, nil
 }
 
+func FindLogFiles1Remote(dirPath string) ([]string, error) {
+	// 匹配 1Remote.log_20250810.md 这种文件名
+	pattern := filepath.Join(dirPath, "1Remote.log_*.md")
+
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	// 保存文件名和修改时间
+	type fileInfo struct {
+		name string
+		time time.Time
+	}
+
+	var fileInfos []fileInfo
+	for _, f := range files {
+		info, err := os.Stat(f)
+		if err != nil {
+			continue // 读取失败跳过
+		}
+		fileInfos = append(fileInfos, fileInfo{
+			name: filepath.Base(f), // 只保存文件名
+			time: info.ModTime(),
+		})
+	}
+
+	// 按修改时间倒序排序（最新的在前）
+	sort.Slice(fileInfos, func(i, j int) bool {
+		return fileInfos[i].time.After(fileInfos[j].time)
+	})
+
+	// 只返回文件名
+	var filenames []string
+	for _, fi := range fileInfos {
+		filenames = append(filenames, fi.name)
+	}
+
+	return filenames, nil
+}
+
 func UpdateJsAndPathing() error {
 	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
 	autoLog.Sugar.Infof("开始备份user文件夹")
@@ -2008,6 +2049,46 @@ func LogM() {
 			}
 
 			monitor = NewLogMonitor(newLogFile, config.Cfg.LogKeywords, 5)
+			go monitor.Monitor()
+		}
+
+		<-ticker.C
+	}
+}
+
+func Log1Remote() {
+
+	var currentLogFile string
+	var monitor *LogMonitor
+
+	// 关键字
+	keywords := []string{
+		"OnRdpClientDisconnected",
+	}
+
+	// 每 30 分钟检查一次最新日志文件
+	ticker := time.NewTicker(30 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		files, err := FindLogFiles1Remote(config.Cfg.OneRemote.LogFilePath)
+		if err != nil || len(files) == 0 {
+			fmt.Println("找不到 1Remote 日志文件")
+			<-ticker.C
+			continue
+		}
+
+		newLogFile := filepath.Join(config.Cfg.OneRemote.LogFilePath, files[0]) // 最新文件
+
+		if newLogFile != currentLogFile {
+			fmt.Printf("检测到新的 1Remote 日志文件: %s\n", newLogFile)
+			currentLogFile = newLogFile
+
+			if monitor != nil {
+				monitor.Stop()
+			}
+
+			monitor = NewLogMonitor(newLogFile, keywords, 5)
 			go monitor.Monitor()
 		}
 

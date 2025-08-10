@@ -41,7 +41,7 @@ func init() {
 		autoLog.Sugar.Infof("获取本机IP失败: %v", err)
 	} else {
 		for _, ip := range ips {
-			autoLog.Sugar.Infof("本机IP: %s", ip)
+			autoLog.Sugar.Infof("本机IP: %s:%s", ip, config.Cfg.Post)
 		}
 	}
 }
@@ -280,18 +280,6 @@ func main() {
 
 	})
 
-	//米游社签到
-	ginServer.POST("/MysSignIn", func(context *gin.Context) {
-
-		err := control.HttpGet("http://localhost:8888/qd")
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
-			return
-		}
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "米游社签到成功"})
-		return
-	})
-
 	//背包统计
 	ginServer.GET("/api/BagStatistics", func(context *gin.Context) {
 		statistics, err := bgiStatus.BagStatistics()
@@ -432,6 +420,7 @@ func main() {
 
 	})
 
+	//查询收获前10的材料
 	ginServer.GET("/api/logAnalysis", func(context *gin.Context) {
 		fileName := context.Query("file")
 
@@ -525,11 +514,6 @@ func main() {
 	})
 
 	//日志分析
-	ginServer.GET("/LogAnalysis2Page", func(context *gin.Context) {
-
-		context.HTML(http.StatusOK, "log_analysis.html", nil)
-	})
-
 	ginServer.GET("/api/LogAnalysis2Page", func(context *gin.Context) {
 		fileName := context.Query("file")
 		if fileName == "" {
@@ -572,10 +556,6 @@ func main() {
 		// 成功返回
 		context.JSON(200, gin.H{"success": true})
 
-	})
-
-	ginServer.GET("/Config", func(context *gin.Context) {
-		context.HTML(http.StatusOK, "Config.html", nil)
 	})
 
 	//查询配置文件
@@ -791,7 +771,10 @@ func main() {
 	//实时读取文件
 	go bgiStatus.LogM()
 
-	//go bgiStatus.JsNamesInfo2()
+	if config.Cfg.OneRemote.IsMonitor {
+		go bgiStatus.Log1Remote()
+		autoLog.Sugar.Infof("1Remote监控开启状态")
+	}
 
 	//米游社自动签到
 	if config.Cfg.MySign.IsMySignIn {
@@ -814,10 +797,11 @@ func main() {
 	// 1. 静态资源挂载（直接让前端可以访问图片）
 	ginServer.Static("/img", "./img")
 
+	imageListOnce.Do(loadImages) // 只加载一次
+
 	// 2. API：返回所有图片的 URL
 	ginServer.GET("/api/images", func(c *gin.Context) {
 
-		imageListOnce.Do(loadImages) // 只加载一次
 		c.JSON(200, gin.H{"images": imageList})
 
 	})

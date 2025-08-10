@@ -13,19 +13,26 @@ import (
 )
 
 type Config struct {
-	OneLong         oneLong  `json:"OneLong" comment:"一条龙配置"`
-	BetterGIAddress string   `json:"BetterGIAddress" comment:"BetterGI地址"`
-	WebhookURL      string   `json:"webhookURL" comment:"webhook地址"`
-	Content         string   `json:"content" comment:"通知内容"`
-	ConfigNames     []string `json:"ConfigNames" comment:"一条龙配置名称"`
-	BagStatistics   string   `json:"BagStatistics" comment:"需要统计的物品"`
-	Post            string   `json:"post" comment:"post地址"`
-	MySign          MySign   `json:"MySign" comment:"米游社签到"`
-	Backups         []string `json:"backups" comment:"需要的备份文件"`
-	Cookie          string   `json:"cookie"`
-	BasePath        string   `json:"basePath"`
-	Control         Control  `json:"Control" comment:"控制配置"`
-	LogKeywords     []string `json:"LogKeywords" comment:"日志关键词"`
+	OneLong         oneLong   `json:"OneLong" comment:"一条龙配置"`
+	BetterGIAddress string    `json:"BetterGIAddress" comment:"BetterGI地址"`
+	WebhookURL      string    `json:"webhookURL" comment:"webhook地址"`
+	Content         string    `json:"content" comment:"通知内容"`
+	ConfigNames     []string  `json:"ConfigNames" comment:"一条龙配置名称"`
+	BagStatistics   string    `json:"BagStatistics" comment:"需要统计的物品"`
+	Post            string    `json:"post" comment:"post地址"`
+	MySign          MySign    `json:"MySign" comment:"米游社签到"`
+	Backups         []string  `json:"backups" comment:"需要的备份文件"`
+	Cookie          string    `json:"cookie"`
+	BasePath        string    `json:"basePath"`
+	Control         Control   `json:"Control" comment:"控制配置"`
+	LogKeywords     []string  `json:"LogKeywords" comment:"日志关键词"`
+	OneRemote       OneRemote `json:"OneRemote" comment:"1Remote配置"`
+}
+
+type OneRemote struct {
+	IsMonitor   bool     `json:"IsMonitor" comment:"是否开启1Remote监控"`
+	LogFilePath string   `json:"LogFilePath" comment:"1Remote日志文件路径"`
+	LogKeywords []string `json:"LogKeywords" comment:"1Remote日志关键词"`
 }
 
 type Control struct {

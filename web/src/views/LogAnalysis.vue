@@ -8,7 +8,6 @@
           <span class="main-title">收获前10的材料</span>
           <span class="icon">✨</span>
         </div>
-        <!-- <div class="subtitle">二次元风格数据分析统计</div> -->
         <div class="divider"></div>
       </div>
 

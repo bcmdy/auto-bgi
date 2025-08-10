@@ -6,10 +6,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/go-vgo/robotgo"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -138,6 +140,11 @@ func (m *LogMonitor) Monitor() {
 					ArchiveConfig()
 					m.sendAlert("一条龙和配置组任务结束，所有配置组已归档", false)
 				}
+				if strings.Contains(line, "OnRdpClientDisconnected") {
+					m.sendAlert("RDP 客户端断开连接", false)
+					aaa()
+
+				}
 			}
 
 		case <-m.stopChan:
@@ -158,4 +165,60 @@ func (m *LogMonitor) ManualTest() {
 
 func (m *LogMonitor) Stop() {
 	close(m.stopChan)
+}
+
+var (
+	user32         = syscall.NewLazyDLL("user32.dll")
+	procKeybdEvent = user32.NewProc("keybd_event")
+)
+
+const (
+	VK_LWIN         = 0x5B // 左 Win 键
+	VK_D            = 0x44 // D 键
+	KEYEVENTF_KEYUP = 0x0002
+)
+
+// 调用 Windows API 模拟键盘事件
+func keybdEvent(bVk byte, bScan byte, dwFlags uint32, dwExtraInfo uintptr) {
+	procKeybdEvent.Call(
+		uintptr(bVk),
+		uintptr(bScan),
+		uintptr(dwFlags),
+		dwExtraInfo,
+	)
+}
+
+// Win+D 返回桌面
+func pressWinD() {
+	keybdEvent(VK_LWIN, 0, 0, 0)               // 按下 Win
+	keybdEvent(VK_D, 0, 0, 0)                  // 按下 D
+	time.Sleep(50 * time.Millisecond)          // 稍微延迟
+	keybdEvent(VK_D, 0, KEYEVENTF_KEYUP, 0)    // 松开 D
+	keybdEvent(VK_LWIN, 0, KEYEVENTF_KEYUP, 0) // 松开 Win
+}
+
+func aaa() {
+	fmt.Println("正在执行会话关闭后操作...")
+	time.Sleep(2 * time.Second)
+
+	// 返回 Windows 桌面（Win + D）
+	pressWinD()
+
+	time.Sleep(1 * time.Second)
+
+	// 按下 Alt + M
+	robotgo.KeyDown("alt")
+	robotgo.KeyTap("m")
+	time.Sleep(500 * time.Millisecond)
+	robotgo.KeyUp("alt")
+	robotgo.KeyUp("m")
+
+	time.Sleep(100 * time.Millisecond)
+
+	// 按两次 Enter，间隔 0.3 秒
+	robotgo.KeyTap("enter")
+	time.Sleep(300 * time.Millisecond)
+	robotgo.KeyTap("enter")
+
+	fmt.Println("操作完成！")
 }
