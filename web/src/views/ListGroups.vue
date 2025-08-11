@@ -22,20 +22,17 @@
         <div class="sparkle">💫</div>
       </div>
       <div class="container">
-        <div class="btn-container">
-          <button class="btn home-btn" @click="$router.push('/')">
-            <span class="btn-icon">🏠</span>
-            返回主页
-          </button>
-        </div>
-        <h1 class="page-title">
+      
+        <!-- <h1 class="page-title">
           <span class="title-decoration">🌸</span>
           {{ pageTitle }}
           <span class="title-decoration">🌸</span>
         </h1>
-        <div class="subtitle">管理您的配置组，让一切井井有条 ✨</div>
+        <div class="subtitle">管理您的配置组，让一切井井有条 ✨</div> -->
       </div>
     </header>
+
+       
 
     <div class="container">
       <!-- 加载状态 -->
@@ -51,6 +48,8 @@
         <p class="loading-text">正在加载配置组...</p>
       </div>
 
+     
+
       <!-- 配置组列表 -->
       <div v-else-if="groups.length > 0" class="groups-container">
         <div class="groups-header">
@@ -59,6 +58,12 @@
             配置组列表
             <span class="groups-count">({{ groups.length }})</span>
           </h2>
+                 <div class="btn-container">
+          <button class="btn home-btn" @click="$router.push('/')">
+            <span class="btn-icon">🏠</span>
+            返回主页
+          </button>
+        </div>
           <div class="header-actions">
             <button class="btn ghost" @click="selectedGroups.length === groups.length ? clearSelection() : selectAll()">
               <span class="btn-icon">✅</span>
@@ -70,6 +75,10 @@
             </button>
           </div>
         </div>
+
+
+ 
+
         
         <div class="groups-grid">
           <div 
@@ -337,7 +346,8 @@ onUnmounted(() => {
 
 /* 页面头部 */
 .page-header {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 246, 251, 0.9) 100%);
+  /* background: linear-gradient(135deg, rgba(183, 217, 226, 0.95) 0%, rgba(42, 64, 71, 0.9) 100%); */
+  border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 40px 0 30px;
   text-align: center;
   box-shadow: 0 8px 32px var(--glow-color);
@@ -383,7 +393,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover; /* 可选值: cover, contain, fill, scale-down */
-  object-position: center; /* 图片位置控制: center, top, bottom, left, right, 或具体坐标如 50% 25% */
+  object-position: 10%; /* 图片位置控制: center, top, bottom, left, right, 或具体坐标如 50% 25% */
   border-radius: 0 0 40px 40px;
 }
 
@@ -436,12 +446,12 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
+  /* background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.8) 0%,
     rgba(255, 246, 251, 0.7) 50%,
     rgba(255, 214, 235, 0.6) 100%
-  );
+  ); */
   z-index: 0;
   border-radius: 0 0 40px 40px;
 }
@@ -507,6 +517,8 @@ onUnmounted(() => {
   display: inline-block;
   animation: bounce 2s infinite;
   margin: 0 15px;
+  font-size: xx-large;
+  color: #000;
 }
 
 .title-decoration:nth-child(3) {
@@ -569,7 +581,7 @@ onUnmounted(() => {
 
 .btn.primary {
   background: linear-gradient(135deg, #ff2f9d 0%, #ff7cc8 100%);
-  color: #ffffff;
+  color: #e64ec5;
   border: 1px solid #c81b74;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
   border-radius: 14px;
@@ -578,7 +590,7 @@ onUnmounted(() => {
 }
 .btn.primary:hover {
   background: linear-gradient(135deg, #ff1890 0%, #ff6eb4 100%);
-  color: #ffffff;
+  color: #ff4af0;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   box-shadow: 0 14px 28px rgba(255, 110, 180, 0.38);
 }
@@ -589,7 +601,7 @@ onUnmounted(() => {
 .btn.primary:disabled {
   opacity: 1;
   background: linear-gradient(135deg, #e97bad 0%, #f8c2da 100%);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(219, 43, 181, 0.92);
   cursor: not-allowed;
   border: 1px solid rgba(0,0,0,0.04);
   filter: none;
@@ -601,7 +613,7 @@ onUnmounted(() => {
   box-shadow: 0 6px 18px rgba(255, 110, 180, 0.18);
 }
 .btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(51, 23, 23, 0.95);
   color: var(--primary-color);
   box-shadow: 0 12px 40px var(--glow-color);
 }
@@ -989,12 +1001,13 @@ onUnmounted(() => {
 }
 .start-btn:hover {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: #fff;
+  color: #f51aac;
   border-color: transparent;
   box-shadow: 0 12px 28px rgba(255, 110, 180, 0.35);
+
 }
 .start-btn:disabled {
-  background: linear-gradient(135deg, #ffe6f4 0%, #ffeef7 100%);
+  background: linear-gradient(135deg, #e274b3 0%, #c01b73 100%);
   color: #cc6a9e;
   border-color: #ffcee5;
   box-shadow: none;
@@ -1078,6 +1091,7 @@ onUnmounted(() => {
   
   .title-decoration {
     margin: 0 8px;
+    color: aqua;
   }
 
   .groups-grid {
@@ -1101,7 +1115,7 @@ onUnmounted(() => {
   
   /* 移动端轮播图适配 */
   .page-header {
-    min-height: 250px; /* 移动端减小高度 */
+    min-height: 30ch; /* 移动端减小高度 */
   }
   
   .header-carousel {

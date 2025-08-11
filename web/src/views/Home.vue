@@ -40,6 +40,7 @@
         <button v-for="(button, index) in automationButtons" :key="index" @click="button.action">
           {{ button.text }}
         </button>
+  
       </div>
 
       <!-- BGI相关按钮组 -->
@@ -50,11 +51,12 @@
         </button>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import api, { apiMethods } from '@/utils/api'
@@ -104,6 +106,8 @@ const bgiButtons = ref([
 let statusInterval = null
 let petals = []
 let animationId = null
+const showScanModal = ref(false)
+const scanResult = ref('')
 
 // 樱花花瓣类
 class Petal {
@@ -299,6 +303,17 @@ const automationButtons = ref([
   { text: '脚本更新列表', action: () => router.push('/jsNames') }
 ])
 
+
+const closeScanModal = () => {
+  showScanModal.value = false
+  if (window._html5QrCodeInstance) {
+    window._html5QrCodeInstance.stop().then(() => {
+      window._html5QrCodeInstance.clear()
+      window._html5QrCodeInstance = null
+    })
+  }
+}
+
 // 生命周期
 onMounted(() => {
   // 初始化樱花动画
@@ -323,6 +338,7 @@ onMounted(() => {
     }
   })
 })
+
 </script>
 
 <style scoped>
@@ -722,4 +738,5 @@ button:hover {
     font-size: 0.9rem;
   }
 }
+
 </style>
