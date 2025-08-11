@@ -649,7 +649,7 @@ button:hover {
   }
   
   .right-top-swiper {
-    left: 70px;
+    right: 10px;
   }
   
   .container {

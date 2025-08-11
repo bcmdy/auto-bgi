@@ -776,7 +776,8 @@ func main() {
 
 	// 2. API：返回所有图片的 URL
 	ginServer.GET("/api/images", func(c *gin.Context) {
-
+		c.Header("Cache-Control", "public, max-age=86400")
+		c.Header("Expires", time.Now().AddDate(0, 0, 3).Format(http.TimeFormat))
 		c.JSON(200, gin.H{"images": imageList})
 
 	})
