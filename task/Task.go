@@ -403,24 +403,23 @@ func ListGroups() ([]string, error) {
 	return groupNames, nil
 }
 
-// 启动配置组
-func StartGroups(name string) {
-
+// StartGroups 启动配置组
+func StartGroups(names []string) error {
 	control.CloseSoftware()
 	time.Sleep(5 * time.Second)
 
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
-	cmd := exec.Command(betterGIPath, "--startGroups", name)
+	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
+	cmd := exec.Command(betterGIPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
 		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
-		return
+		return err
 	}
-
-	autoLog.Sugar.Infof("%s 启动配置组成功", name)
-
+	autoLog.Sugar.Infof("启动配置组成功: %v", names)
+	return nil
 }
 
 // 启动一条龙

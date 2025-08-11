@@ -57,8 +57,18 @@
           <h2>
             <span class="header-icon">📋</span>
             配置组列表
-            <span class="groups-count" style="color:#ff6eb4;">({{ groups.length }})</span>
+            <span class="groups-count">({{ groups.length }})</span>
           </h2>
+          <div class="header-actions">
+            <button class="btn ghost" @click="selectedGroups.length === groups.length ? clearSelection() : selectAll()">
+              <span class="btn-icon">✅</span>
+              {{ selectedGroups.length === groups.length && groups.length > 0 ? '取消全选' : '全选' }}
+            </button>
+            <button class="btn primary" @click="startSelected" :disabled="isStarting || selectedGroups.length === 0">
+              <span class="btn-icon">{{ isStarting ? '⏳' : '🚀' }}</span>
+              启动所选 ({{ selectedGroups.length }})
+            </button>
+          </div>
         </div>
         
         <div class="groups-grid">
@@ -66,8 +76,13 @@
             v-for="(group, index) in groups" 
             :key="group" 
             class="group-card"
+            :class="{ selected: isSelected(group) }"
             :style="{ animationDelay: (index * 0.1) + 's' }"
           >
+            <label class="select-checkbox">
+              <input type="checkbox" :checked="isSelected(group)" @change="toggleSelect(group)" />
+              <span class="checkbox-ui"></span>
+            </label>
             <div class="card-header">
               <div class="group-icon">⚙️</div>
               <h3 class="group-name">{{ group }}</h3>
@@ -111,6 +126,7 @@ const pageTitle = ref('配置组列表')
 const groups = ref([])
 const loading = ref(true)
 const isStarting = ref(false)
+const selectedGroups = ref([])
 const carouselImages = ref([])
 const currentImageIndex = ref(0)
 let carouselInterval = null
@@ -179,7 +195,40 @@ const startGroup = async (groupName) => {
   
   isStarting.value = true
   try {
-    await apiMethods.startGroups(groupName)
+    await apiMethods.startGroups([groupName])
+    message.success('启动成功！')
+  } catch (error) {
+    console.error('启动失败:', error)
+    message.error('启动失败！')
+  } finally {
+    isStarting.value = false
+  }
+}
+
+// 多选相关（保留原有交互，轻度美化）
+const isSelected = (groupName) => selectedGroups.value.includes(groupName)
+const toggleSelect = (groupName) => {
+  if (isSelected(groupName)) {
+    selectedGroups.value = selectedGroups.value.filter(name => name !== groupName)
+  } else {
+    selectedGroups.value = [...selectedGroups.value, groupName]
+  }
+}
+const selectAll = () => {
+  selectedGroups.value = Array.isArray(groups.value) ? [...new Set(groups.value)] : []
+}
+const clearSelection = () => {
+  selectedGroups.value = []
+}
+const startSelected = async () => {
+  if (isStarting.value) return
+  if (selectedGroups.value.length === 0) {
+    message.warning('请先选择配置组')
+    return
+  }
+  isStarting.value = true
+  try {
+    await apiMethods.startGroups(selectedGroups.value)
     message.success('启动成功！')
   } catch (error) {
     console.error('启动失败:', error)
@@ -210,8 +259,10 @@ onUnmounted(() => {
   --accent-color: #ffb3d9;
   --background-light: #fff6fb;
   --background-gradient: linear-gradient(135deg, #fff6fb 0%, #ffe6f2 50%, #ffd6eb 100%);
-  --text-color: #ff6eb4;
-  --text-dark: #e91e63;
+  --text-color: #ff6eb4; /* 强调色 */
+  --text-dark: #e91e63; /* 深粉强调 */
+  --text-base: #333333; /* 主体文字 */
+  --text-muted: #666666; /* 次要文字 */
   --border-color: #ffc0da;
   --hover-color: rgba(255, 192, 218, 0.3);
   --card-shadow: 0 8px 32px rgba(255, 110, 180, 0.15);
@@ -227,7 +278,7 @@ onUnmounted(() => {
 .list-groups-page {
   font-family: "Comic Sans MS", "Segoe UI", sans-serif;
   background: var(--background-gradient);
-  color: var(--text-color);
+  color: var(--text-base);
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
@@ -476,9 +527,9 @@ onUnmounted(() => {
 
 .subtitle {
   font-size: 1.1rem;
-  color: var(--text-dark);
+  color: var(--text-muted);
   margin-top: 10px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .container {
@@ -510,6 +561,54 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   backdrop-filter: blur(5px);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #ff2f9d 0%, #ff7cc8 100%);
+  color: #ffffff;
+  border: 1px solid #c81b74;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  padding: 10px 18px;
+  box-shadow: 0 10px 24px rgba(255, 110, 180, 0.32);
+}
+.btn.primary:hover {
+  background: linear-gradient(135deg, #ff1890 0%, #ff6eb4 100%);
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 14px 28px rgba(255, 110, 180, 0.38);
+}
+.btn.primary:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,110,180,0.28), 0 12px 26px rgba(255,110,180,0.36); }
+.btn:focus { outline: none; }
+.btn:focus-visible { outline: none; }
+.btn::-moz-focus-inner { border: 0; }
+.btn.primary:disabled {
+  opacity: 1;
+  background: linear-gradient(135deg, #e97bad 0%, #f8c2da 100%);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: not-allowed;
+  border: 1px solid rgba(0,0,0,0.04);
+  filter: none;
+}
+.btn.ghost {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--text-base);
+  border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 6px 18px rgba(255, 110, 180, 0.18);
+}
+.btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary-color);
+  box-shadow: 0 12px 40px var(--glow-color);
+}
+.btn.ghost:disabled {
+  opacity: 1;
+  color: var(--text-muted);
+  border-color: #e9b8cf;
 }
 
 .btn-icon {
@@ -621,10 +720,38 @@ onUnmounted(() => {
 
 .groups-header h2 {
   font-size: 1.8rem;
-  color: var(--text-dark);
+  color: var(--text-base);
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  padding: 8px 16px;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(255, 110, 180, 0.22);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.header-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.search-input {
+  padding: 10px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 30px;
+  outline: none;
+  min-width: 220px;
+  background: #fff;
+  color: var(--text-base);
+  box-shadow: var(--card-shadow);
+}
+.search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--hover-color);
 }
 
 .header-icon {
@@ -639,12 +766,14 @@ onUnmounted(() => {
 }
 
 .groups-count {
-  background: var(--primary-color);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8em;
+  background: linear-gradient(135deg, #ff379f 0%, #ff8bcf 100%);
+  color: #ffffff;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.9em;
   margin-left: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 10px 24px rgba(255, 110, 180, 0.35);
 }
 
 /* 配置组网格 */
@@ -668,6 +797,60 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.select-checkbox {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  z-index: 2;
+}
+.select-checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.select-checkbox .checkbox-ui {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid #d14e8f;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  transition: all 0.18s ease-in-out;
+}
+.select-checkbox .checkbox-ui:hover {
+  transform: scale(1.04);
+}
+.select-checkbox input:checked + .checkbox-ui {
+  background: linear-gradient(135deg, #ff2f9d 0%, #ff7cc8 100%);
+  border-color: #b5166b;
+  box-shadow: 0 0 0 2px rgba(255,110,180,0.28), 0 8px 20px rgba(255, 110, 180, 0.35);
+  transform: scale(1.02);
+}
+.select-checkbox .checkbox-ui::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%) scale(0.6);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.select-checkbox input:checked + .checkbox-ui::after {
+  opacity: 1;
+  transform: translate(-50%, -55%) scale(1);
+}
+/* 移除内圈白色高光环 */
+
 .group-card::before {
   content: '';
   position: absolute;
@@ -687,6 +870,23 @@ onUnmounted(() => {
 .group-card:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 20px 50px var(--glow-color);
+}
+
+.group-card.selected {
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(255,110,180,0.25), 0 16px 36px rgba(255,110,180,0.28);
+  background: linear-gradient(135deg, #fff0f6 0%, #ffe4f0 100%);
+}
+.group-card.selected::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(180deg, #ff2f9d, #ff8bcf);
+  border-top-left-radius: 24px;
+  border-bottom-left-radius: 24px;
 }
 
 @keyframes cardSlideIn {
@@ -718,7 +918,7 @@ onUnmounted(() => {
 }
 
 .group-name {
-  color: var(--text-dark);
+  color: var(--text-base);
   font-size: 1.4rem;
   font-weight: bold;
   margin: 0;
@@ -729,7 +929,7 @@ onUnmounted(() => {
 }
 
 .group-description {
-  color: var(--text-color);
+  color: var(--text-muted);
   margin-bottom: 10px;
   font-size: 1rem;
 }
@@ -776,7 +976,28 @@ onUnmounted(() => {
   padding: 12px 20px;
   font-size: 1rem;
   font-weight: bold;
-  border: 1px solid #ff6eb4;
+  border: 1px solid #ffb3d9;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff 0%, #fff6fb 100%);
+  color: var(--primary-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 8px 20px rgba(255, 110, 180, 0.18);
+}
+.start-btn:hover {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 12px 28px rgba(255, 110, 180, 0.35);
+}
+.start-btn:disabled {
+  background: linear-gradient(135deg, #ffe6f4 0%, #ffeef7 100%);
+  color: #cc6a9e;
+  border-color: #ffcee5;
+  box-shadow: none;
 }
 
 /* 空状态 */
@@ -814,13 +1035,39 @@ onUnmounted(() => {
 .empty-state p {
   font-size: 1.1rem;
   margin-bottom: 30px;
-  color: var(--text-color);
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
 .reload-btn {
   font-size: 1.1rem;
   padding: 15px 30px;
+}
+
+/* 浮动工具条 */
+.floating-toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+}
+.floating-toolbar .toolbar-info {
+  color: var(--text-dark);
+  font-weight: bold;
+}
+.floating-toolbar .toolbar-actions {
+  display: flex;
+  gap: 10px;
 }
 
 /* 响应式设计 */

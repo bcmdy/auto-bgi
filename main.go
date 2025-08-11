@@ -340,13 +340,14 @@ func main() {
 	//启动配置组
 	ginServer.POST("/api/startGroups", func(context *gin.Context) {
 
-		var data map[string]string
+		var data []string
 		err := context.BindJSON(&data)
 		if err != nil {
 			fmt.Println("err:", err)
 			return
 		}
-		task.StartGroups(data["name"])
+
+		err = task.StartGroups(data)
 		if err != nil {
 			return
 		}

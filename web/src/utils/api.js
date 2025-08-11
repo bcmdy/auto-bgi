@@ -84,7 +84,10 @@ export const apiMethods = {
   getBagStatistics: () => api.get('/api/BagStatistics'),
   
   // 启动配置组
-  startGroups: (name) => api.post('/api/startGroups', { name })
+  startGroups: (names) => {
+    const payload = Array.isArray(names) ? names : [names]
+    return api.post('/api/startGroups', payload)
+  }
 }
 
 export default api
