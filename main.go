@@ -41,7 +41,7 @@ func init() {
 		autoLog.Sugar.Infof("获取本机IP失败: %v", err)
 	} else {
 		for _, ip := range ips {
-			autoLog.Sugar.Infof("本机IP: %s:%s", ip, config.Cfg.Post)
+			autoLog.Sugar.Infof("本机IP: %s%s", ip, config.Cfg.Post)
 		}
 	}
 }
@@ -70,6 +70,7 @@ func loadImages() {
 				imageList = append(imageList, "/img/"+d.Name())
 			}
 		}
+		autoLog.Sugar.Infof("加载图片: %s", path)
 		return nil
 	})
 }
@@ -282,7 +283,7 @@ func main() {
 
 	//背包统计
 	ginServer.GET("/api/BagStatistics", func(context *gin.Context) {
-		statistics, err := bgiStatus.BagStatistics()
+		statistics, _ := bgiStatus.BagStatistics()
 
 		// 按材料名称排序，再按日期排序
 		sort.Slice(statistics, func(i, j int) bool {
@@ -296,15 +297,6 @@ func main() {
 			tj, _ := time.Parse(layout, statistics[j].Data)
 			return ti.Before(tj)
 		})
-
-		if err != nil {
-			// 传递给模板
-			context.HTML(http.StatusOK, "bg.html", gin.H{
-				"title": "背包统计",
-				"items": nil,
-			})
-			return
-		}
 
 		context.JSON(http.StatusOK, statistics)
 
@@ -438,20 +430,6 @@ func main() {
 			return
 		}
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "备份成功"})
-	})
-
-	ginServer.GET("/CalculateTaskEnabledList", func(context *gin.Context) {
-		list, err := task.CalculateTaskEnabledList()
-		if err != nil {
-			context.String(http.StatusInternalServerError, "任务状态读取失败: %v", err)
-			return
-		}
-
-		// 渲染 HTML 模板
-		context.HTML(http.StatusOK, "CalculateTaskEnabledList.html", gin.H{
-			"title": "配置组执行",
-			"tasks": list,
-		})
 	})
 
 	//获取仓库提交记录（最新的10条）
@@ -655,10 +633,6 @@ func main() {
 			"status": "success",
 			"data":   results,
 		})
-	})
-
-	ginServer.GET("/onelong", func(context *gin.Context) {
-		context.HTML(http.StatusOK, "onelong.html", nil)
 	})
 
 	// 获取一条龙配置

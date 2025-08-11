@@ -34,7 +34,7 @@
   ],
   "OneRemote": {
     "IsMonitor": false,
-    "LogFilePath": "1Remote",
+    "LogFilePath": "",
     "LogKeywords": [
       "OnRdpClientDisconnected"
     ]
