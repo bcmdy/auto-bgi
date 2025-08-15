@@ -1,36 +1,43 @@
 {
   "OneLong": {
-    "isStartTimeLong": true,
-    "OneLongHour": 4,
-    "OneLongMinute": 12
+    "isStartTimeLong": false,
+    "OneLongHour": 9,
+    "OneLongMinute": 0
   },
   "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
-  "webhookURL": "https://qyapi.weixin.qq.com",
+  "webhookURL": "https://example.com/webhook",
   "content": "可以填autobgi的网页链接",
   "ConfigNames": [
-    "我的",
-    "版本更新",
-    "我的",
-    "我的",
-    "我的",
-    "版本更新",
-    "清体"
+    "默认配置",
+    "默认配置",
+    "默认配置",
+    "默认配置",
+    "默认配置",
+    "默认配置",
+    "默认配置"
   ],
   "BagStatistics": "晶核,大英雄的经验,水晶块,竹笋,螃蟹,劫波莲,兽肉,萃凝晶,紫晶块,星银矿石",
   "post": ":8082",
   "MySign": {
-    "isMysSignIn": false,
-    "url": "http://localhost:8883"
+    "isMysSignIn": true,
+    "url": "http://localhost:8888"
   },
   "backups": [],
   "cookie": "",
-  "basePath": "",
+  "basePath": "C:\\Users\\Administrator\\AppData\\Local\\JetBrains\\GoLand2024.1\\tmp\\GoLand",
   "Control": {
     "IsCloseYuanShen": false,
     "SendWeChatImage": false
   },
   "LogKeywords": [
-    "1314"
+    "未识别到突发任务",
+    "OCR 识别失败",
+    "此路线出现3次卡死",
+    "重试一次路线或放弃此路线！",
+    "检测到复苏界面",
+    "存在角色被击败",
+    "执行路径时出错",
+    "传送点未激活或不存在"
   ],
   "OneRemote": {
     "IsMonitor": false,
@@ -38,5 +45,9 @@
     "LogKeywords": [
       "OnRdpClientDisconnected"
     ]
+  },
+  "ScreenRecord": {
+    "IsRecord": true,
+    "ScriptGroupName": "订单"
   }
 }

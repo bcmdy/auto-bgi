@@ -159,7 +159,10 @@ func main() {
 
 		filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
 		files, err := bgiStatus.FindLogFiles(filePath)
-		fmt.Println(files)
+		if len(files) == 0 {
+			autoLog.Sugar.Errorf("日志文件不存在")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "日志文件不存在"})
+		}
 		if err == nil {
 			//获取最后一个文件
 			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, files[0]))
@@ -571,7 +574,6 @@ func main() {
 		//重新加载配置文件
 		_ = config.ReloadConfig()
 		time.Sleep(1 * time.Second)
-		//c.JSON(http.StatusOK, gin.H{"status": "success", "message": "配置保存成功"})
 
 		// 调用重启脚本
 		cmd := exec.Command("cmd", "/c", "restart.bat")
@@ -847,7 +849,14 @@ func main() {
 		c.Data(http.StatusOK, contentType, content)
 	})
 
-	//服务器端口
+	if len(os.Args) > 1 {
+		if os.Args[1] == "oneLong" {
+			task.OneLong()
+			autoLog.Sugar.Infof("一条龙启动")
+		}
+	}
+
+	////服务器端口
 	post := config.Cfg.Post
 	if post == "" {
 		post = ":8082"
@@ -858,7 +867,12 @@ func main() {
 		autoLog.Sugar.Errorf("启动失败:%v", err)
 		return
 	}
-	autoLog.Sugar.Infof("启动成功")
+
+	//err = ginServer.RunTLS(post, "certFile/cert.pem", "certFile/key.pem")
+	//if err != nil {
+	//	autoLog.Sugar.Errorf("启动失败:%v", err)
+	//}
+
 }
 
 //前端打包
@@ -869,4 +883,4 @@ func main() {
 //go build
 
 //打包脚本
-//  .\build.bat
+//  build.bat

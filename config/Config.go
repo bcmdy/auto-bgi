@@ -13,26 +13,32 @@ import (
 )
 
 type Config struct {
-	OneLong         oneLong   `json:"OneLong" comment:"一条龙配置"`
-	BetterGIAddress string    `json:"BetterGIAddress" comment:"BetterGI地址"`
-	WebhookURL      string    `json:"webhookURL" comment:"webhook地址"`
-	Content         string    `json:"content" comment:"通知内容"`
-	ConfigNames     []string  `json:"ConfigNames" comment:"一条龙配置名称"`
-	BagStatistics   string    `json:"BagStatistics" comment:"需要统计的物品"`
-	Post            string    `json:"post" comment:"post地址"`
-	MySign          MySign    `json:"MySign" comment:"米游社签到"`
-	Backups         []string  `json:"backups" comment:"需要的备份文件"`
-	Cookie          string    `json:"cookie"`
-	BasePath        string    `json:"basePath"`
-	Control         Control   `json:"Control" comment:"控制配置"`
-	LogKeywords     []string  `json:"LogKeywords" comment:"日志关键词"`
-	OneRemote       OneRemote `json:"OneRemote" comment:"1Remote配置"`
+	OneLong         oneLong      `json:"OneLong" comment:"一条龙配置"`
+	BetterGIAddress string       `json:"BetterGIAddress" comment:"BetterGI地址"`
+	WebhookURL      string       `json:"webhookURL" comment:"webhook地址"`
+	Content         string       `json:"content" comment:"通知内容"`
+	ConfigNames     []string     `json:"ConfigNames" comment:"一条龙配置名称"`
+	BagStatistics   string       `json:"BagStatistics" comment:"需要统计的物品"`
+	Post            string       `json:"post" comment:"post地址"`
+	MySign          MySign       `json:"MySign" comment:"米游社签到"`
+	Backups         []string     `json:"backups" comment:"需要的备份文件"`
+	Cookie          string       `json:"cookie"`
+	BasePath        string       `json:"basePath"`
+	Control         Control      `json:"Control" comment:"控制配置"`
+	LogKeywords     []string     `json:"LogKeywords" comment:"日志关键词"`
+	OneRemote       OneRemote    `json:"OneRemote" comment:"1Remote配置"`
+	ScreenRecord    ScreenRecord `json:"ScreenRecord" comment:"录屏配置"`
+}
+
+type ScreenRecord struct {
+	IsRecord        bool   `json:"IsRecord" comment:"是否开启录屏"`
+	ScriptGroupName string `json:"ScriptGroupName" comment:"配置组名称"`
 }
 
 type OneRemote struct {
 	IsMonitor   bool     `json:"IsMonitor" comment:"是否开启1Remote监控"`
 	LogFilePath string   `json:"LogFilePath" comment:"1Remote日志文件路径"`
-	LogKeywords []string `json:"LogKeywords" comment:"1Remote日志关键词"`
+	LogKeywords []string `json:"LogKeywords" comment:"1Remote日志关键词" default:[]string{"OnRdpClientDisconnected"}`
 }
 
 type Control struct {
@@ -64,6 +70,7 @@ func init() {
 
 // ReloadConfig 重新加载配置文件
 func ReloadConfig() error {
+
 	file, err := os.Open("main.json")
 	if err != nil {
 		fmt.Println("ReloadConfig打开配置文件失败: %v", err)
@@ -93,7 +100,34 @@ func ReloadConfig() error {
 		Cfg.BasePath = filepath.Dir(ex)
 	}
 
+	DefaultConfig()
+
+	//重新写入
+	// 写入 main.json，路径可以自定义，这里示例写当前运行目录
+	filePath := filepath.Join(".", "main.json")
+	data, err := json.MarshalIndent(Cfg, "", "  ")
+	err = os.WriteFile(filePath, data, 0644)
+	if err != nil {
+		fmt.Println("ReloadConfig写文件失败: %v", err)
+		return err
+	}
+
 	return nil
+}
+
+// 配置验证补全
+func DefaultConfig() {
+	if len(Cfg.ConfigNames) != 7 {
+		Cfg.ConfigNames = []string{"默认配置", "默认配置", "默认配置", "默认配置", "默认配置", "默认配置", "默认配置"}
+	}
+
+	if Cfg.OneRemote.LogKeywords == nil {
+		Cfg.OneRemote.LogKeywords = []string{"OnRdpClientDisconnected"}
+	}
+	if Cfg.LogKeywords == nil {
+		Cfg.LogKeywords = []string{"未识别到突发任务", "OCR 识别失败", "此路线出现3次卡死", "重试一次路线或放弃此路线！", "检测到复苏界面", "存在角色被击败", "执行路径时出错", "传送点未激活或不存在"}
+	}
+
 }
 
 // 获取今天启动的一条龙名字

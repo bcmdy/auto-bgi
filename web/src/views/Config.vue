@@ -438,6 +438,38 @@
               </div>
             </div>
           </div>
+        </a-card >
+
+<!--        录屏设置-->
+        <a-card title="录屏设置" class="config-card one-remote-config">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">🔍</span>
+              <a-tooltip title="需要配合班迪录屏使用,各个群里都有,班迪录屏需要为开启状态，默认启动录屏和停止录屏快捷键需要是F12，尽量自己在班迪录屏设置一个时间限制吧，防止程序报错，没有停止">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+          <a-form-item class="checkbox-item">
+            <a-checkbox v-model:checked="formData.ScreenRecord.IsRecord" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon">🔍️</span>
+                  启用录屏功能
+                </span>
+            </a-checkbox>
+          </a-form-item>
+
+          <a-form-item label="配置组名称" name="ScriptGroupName" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
+            <div class="input-wrapper">
+              <span class="input-icon">🔍</span>
+              <a-input
+                  v-model:value="formData.ScreenRecord.ScriptGroupName"
+                  placeholder="配置组名称"
+                  class="enhanced-input"
+              />
+            </div>
+          </a-form-item>
         </a-card>
 
         <!-- 提交按钮 -->
@@ -506,6 +538,10 @@ const formData = reactive({
     IsMonitor: true,
     LogFilePath: '',
     LogKeywords: ['']
+  },
+  ScreenRecord: {
+    IsRecord: false,
+    ScriptGroupName: ''
   }
 })
 
@@ -570,6 +606,8 @@ const loadConfig = async () => {
     const response = await apiMethods.getConfig()
     const data = response.data
 
+    console.log(data)
+
     if (data) {
       formData.BetterGIAddress = data.BetterGIAddress || ''
       formData.webhookURL = data.webhookURL || ''
@@ -616,6 +654,9 @@ const loadConfig = async () => {
       if (data.OneRemote) {
         Object.assign(formData.OneRemote, data.OneRemote)
       }
+      if (data.ScreenRecord) {
+        Object.assign(formData.ScreenRecord, data.ScreenRecord)
+      }
     }
   } catch (error) {
     message.error('加载配置失败: ' + error.message)
@@ -640,7 +681,8 @@ const handleSubmit = async () => {
       OneLong: formData.OneLong,
       Control: formData.Control,
       MySign: formData.MySign,
-      OneRemote: formData.OneRemote
+      OneRemote: formData.OneRemote,
+      ScreenRecord: formData.ScreenRecord
     }
 
     await apiMethods.updateConfig(payload)

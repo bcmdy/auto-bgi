@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"auto-bgi/config"
+	"auto-bgi/control"
 	"bufio"
 	"bytes"
 	"encoding/json"
@@ -143,7 +144,19 @@ func (m *LogMonitor) Monitor() {
 				if strings.Contains(line, "OnRdpClientDisconnected") {
 					m.sendAlert("RDP 客户端断开连接", false)
 					aaa()
+				}
+				if config.Cfg.ScreenRecord.IsRecord {
 
+					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 加载完成") {
+						m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+"开始录屏", false)
+						// 开始录屏
+						control.StartRecord()
+					}
+					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 执行结束") {
+						m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+" 结束录屏", false)
+						// 结束录屏
+						control.StopRecord()
+					}
 				}
 			}
 

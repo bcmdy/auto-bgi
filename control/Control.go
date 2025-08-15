@@ -229,3 +229,12 @@ func StartRecord() {
 		return
 	}
 }
+
+func StopRecord() {
+	autoLog.Sugar.Infof("结束录屏")
+	//点击F12结束录屏
+	err := robotgo.KeyTap("f12")
+	if err != nil {
+		return
+	}
+}
