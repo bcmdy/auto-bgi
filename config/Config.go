@@ -38,7 +38,7 @@ type ScreenRecord struct {
 type OneRemote struct {
 	IsMonitor   bool     `json:"IsMonitor" comment:"是否开启1Remote监控"`
 	LogFilePath string   `json:"LogFilePath" comment:"1Remote日志文件路径"`
-	LogKeywords []string `json:"LogKeywords" comment:"1Remote日志关键词" default:[]string{"OnRdpClientDisconnected"}`
+	LogKeywords []string `json:"LogKeywords" comment:"1Remote日志关键词"`
 }
 
 type Control struct {

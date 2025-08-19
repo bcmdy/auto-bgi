@@ -57,11 +57,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import api, { apiMethods } from '@/utils/api'
 
 const router = useRouter()
+
 
 // 响应式数据
 const animeCanvas = ref(null)
@@ -268,22 +269,38 @@ const startHeaderCarousel = () => {
 }
 
 // 按钮事件处理
-const handleOneLong = async () => {
-  try {
-    await apiMethods.startOneLong()
-    message.success('启动成功！')
-  } catch (error) {
-    message.error('启动失败！')
-  }
+const handleOneLong = () => {
+  Modal.confirm({
+    title: '确认启动？',
+    content: '是否要执行【一条龙启动】操作？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await apiMethods.startOneLong()
+        message.success('启动成功！')
+      } catch (error) {
+        message.error('启动失败！')
+      }
+    }
+  })
 }
 
-const handleCloseBgi = async () => {
-  try {
-    await apiMethods.closeBgi()
-    message.success('关闭成功！')
-  } catch (error) {
-    message.error('关闭失败！')
-  }
+const handleCloseBgi = () => {
+  Modal.confirm({
+    title: '确认关闭？',
+    content: '是否要关闭【BGI】？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await apiMethods.closeBgi()
+        message.success('关闭成功！')
+      } catch (error) {
+        message.error('关闭失败！')
+      }
+    }
+  })
 }
 
 const handleBackup = async () => {
@@ -342,6 +359,62 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
+/* 粉色卡通风确认框样式 */
+.ant-modal-confirm {
+  border-radius: 20px !important;
+  overflow: hidden;
+  animation: modalPop 0.3s ease-out;
+}
+
+.ant-modal-confirm .ant-modal-content {
+  background: linear-gradient(135deg, #ffe6f0, #fff0f5) !important;
+  border: 2px dashed #ffaad5;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(255, 174, 209, 0.5);
+}
+
+.ant-modal-confirm .ant-modal-confirm-title {
+  color: #ff66a3 !important;
+  font-weight: bold;
+  text-shadow: 0 0 5px #fff0f5;
+}
+
+.ant-modal-confirm .ant-modal-confirm-content {
+  color: #d9006c !important;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.ant-modal-confirm .ant-btn-primary {
+  background: linear-gradient(145deg, #ff99cc, #ff66a3) !important;
+  border: none !important;
+  border-radius: 30px;
+  box-shadow: 0 0 12px #ff99cc;
+}
+
+.ant-modal-confirm .ant-btn-primary:hover {
+  background: linear-gradient(145deg, #ff66a3, #ff3385) !important;
+  box-shadow: 0 0 18px #ff66a3;
+}
+
+.ant-modal-confirm .ant-btn-default {
+  border-radius: 30px;
+  background: #fff0f5 !important;
+  border: 1px solid #ffb6c1 !important;
+  color: #ff4081 !important;
+}
+
+.ant-modal-confirm .ant-btn-default:hover {
+  background: #ffe6f0 !important;
+  color: #d9006c !important;
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* ============ 基础样式 ============ */
 .home-container {
   position: relative;

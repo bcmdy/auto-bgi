@@ -244,21 +244,21 @@ func main() {
 	})
 
 	//一条龙
-	ginServer.POST("/oneLong", func(context *gin.Context) {
+	ginServer.POST("/api/oneLong", func(context *gin.Context) {
 
 		task.OneLongTask()
 
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "一条龙启动成功"})
 	})
 
-	ginServer.POST("/closeBgi", func(context *gin.Context) {
+	ginServer.POST("/api/closeBgi", func(context *gin.Context) {
 
 		control.CloseSoftware()
 
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "BGI关闭成功"})
 	})
 
-	ginServer.POST("/closeYuanShen", func(context *gin.Context) {
+	ginServer.POST("/api/closeYuanShen", func(context *gin.Context) {
 
 		control.CloseYuanShen()
 
@@ -266,7 +266,7 @@ func main() {
 	})
 
 	//发送截图
-	ginServer.POST("/getImage", func(c *gin.Context) {
+	ginServer.POST("/api/getImage", func(c *gin.Context) {
 
 		err := control.ScreenShot()
 		if err != nil {

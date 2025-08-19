@@ -47,8 +47,8 @@ export const apiMethods = {
   getImages: () => api.get('/api/images'),
   
   // 系统操作
-  startOneLong: () => api.post('/oneLong'),
-  closeBgi: () => api.post('/closeBgi'),
+  startOneLong: () => api.post('/api/oneLong'),
+  closeBgi: () => api.post('/api/closeBgi'),
   closeYuanShen: () => api.post('/closeYuanShen'),
   backup: () => api.post('/backup'),
   autoUpdateJsAndPathing: () => api.post('/autoUpdateJsAndPathing'),
