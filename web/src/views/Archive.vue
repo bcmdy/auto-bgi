@@ -20,7 +20,9 @@
           <span class="title-text">归档记录列表</span>
           <span class="title-sparkle">✨</span>
         </h1>
+         <a-button type="primary" class="deleteBtn" @click="allDelete">全部删除</a-button>
       </div>
+     
     </header>
 
     <div class="container">
@@ -29,7 +31,9 @@
           <h2 class="cute-subtitle">
             <span class="subtitle-icon">📋</span>
             <span class="subtitle-text">归档记录</span>
+
           </h2>
+
           <div class="panel-decoration">
             <div class="corner-decoration corner-tl">🌸</div>
             <div class="corner-decoration corner-tr">🌸</div>
@@ -152,6 +156,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiMethods } from '@/utils/api'
+import { message, Modal } from 'ant-design-vue'
 
 export default {
   name: 'Archive',
@@ -225,6 +230,28 @@ export default {
       router.push('/')
     }
 
+    // 全部删除归档记录
+    const allDelete =() => {
+
+      Modal.confirm({
+        title: '确认删除?',
+        content: '确认删除所有归档记录吗？',
+        okText: '确定',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await apiMethods.deleteAllArchive()
+            message.success('全部归档记录已删除！')
+          } catch (error) {
+            console.log('删除失败:', error)
+            message.error('删除失败，请稍后重试')
+          }
+        }
+      })
+
+    }
+  
+
     onMounted(() => {
       loadArchiveList()
     })
@@ -237,7 +264,8 @@ export default {
       error,
       sortBy,
       deleteItem,
-      goHome
+      goHome,
+      allDelete
     }
   }
 }
@@ -804,6 +832,27 @@ tr.fade-out {
   );
 }
 
+.deleteBtn{
+  text-align: center;
+  margin-top: 20px;
+  border: 1px solid #ff6b6b;
+  background-color: #ffe6f2;
+  color: #ff6b6b;
+  height: 40px;
+  width: 100px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+}
+
+.deleteBtn:hover{
+  background-color: #ff6b6b;
+  color: white;
+  border: 1px solid #ff6b6b;
+  cursor: pointer;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .cute-title {
@@ -942,7 +991,8 @@ tr.fade-out {
   }
   
   .subtitle-text {
-    font-size: 1rem;
+    font-size: 2rem;
+    margin-left: 20px;
   }
   
   .cute-panel {

@@ -63,12 +63,11 @@ export const apiMethods = {
   getLogFiles: () => api.get('/api/logFiles'),
   getLogAnalysis: (file) => api.get('/api/logAnalysis', { params: { file } }),
   
-  // 归档查询
+  // 归档
   getArchive: (params) => api.get('/archive', { params }),
-  
-  // 归档列表相关
   getArchiveList: () => api.get('/api/archiveList'),
   deleteArchive: (id) => api.delete(`/api/archive?id=${id}`),
+  deleteAllArchive: () => api.delete(`/api/allArchives`),
   
   // 其他功能
   getOther: () => api.get('/other'),

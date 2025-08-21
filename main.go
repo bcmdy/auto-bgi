@@ -243,6 +243,17 @@ func main() {
 		c.String(http.StatusOK, "删除成功")
 	})
 
+	// 删除全部归档记录
+	ginServer.DELETE("/api/allArchives", func(c *gin.Context) {
+		_, err := config.DB.Exec("DELETE FROM archive_records")
+		if err != nil {
+			c.String(http.StatusInternalServerError, "删除失败")
+			return
+		}
+
+		c.String(http.StatusOK, "删除成功")
+	})
+
 	//一条龙
 	ginServer.POST("/api/oneLong", func(context *gin.Context) {
 

@@ -1639,7 +1639,8 @@ func ListArchive() []ArchiveRecords {
 	}
 	defer rows.Close()
 
-	var archiveRecords []ArchiveRecords
+	//var archiveRecords []ArchiveRecords
+	archiveRecords := make([]ArchiveRecords, 0)
 	for rows.Next() {
 		var record ArchiveRecords
 		err = rows.Scan(&record.Id, &record.Title, &record.ExecuteTime, &record.CreatedAt)
