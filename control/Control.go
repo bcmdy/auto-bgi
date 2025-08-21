@@ -222,7 +222,6 @@ func HttpGet(url string) error {
 }
 
 func StartRecord() {
-	autoLog.Sugar.Infof("开始录屏")
 	//点击F12开始录屏
 	err := robotgo.KeyTap("f12")
 	if err != nil {
@@ -231,7 +230,6 @@ func StartRecord() {
 }
 
 func StopRecord() {
-	autoLog.Sugar.Infof("结束录屏")
 	//点击F12结束录屏
 	err := robotgo.KeyTap("f12")
 	if err != nil {

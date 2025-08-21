@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"bufio"
@@ -146,16 +147,23 @@ func (m *LogMonitor) Monitor() {
 					aaa()
 				}
 				if config.Cfg.ScreenRecord.IsRecord {
-
 					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 加载完成") {
 						m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+"开始录屏", false)
 						// 开始录屏
 						control.StartRecord()
+
+						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
+						autoLog.Sugar.Infof("配置组 %s 加载完成，开始录屏", line)
+
 					}
 					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 执行结束") {
 						m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+" 结束录屏", false)
 						// 结束录屏
 						control.StopRecord()
+
+						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
+						autoLog.Sugar.Infof("配置组 %s 执行结束，结束录屏", line)
+
 					}
 				}
 			}

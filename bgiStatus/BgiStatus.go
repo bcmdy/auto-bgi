@@ -2027,7 +2027,7 @@ func LogM() {
 	var currentLogFile string
 	var monitor *LogMonitor
 
-	ticker := time.NewTicker(30 * time.Minute)
+	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -2104,7 +2104,7 @@ func ArchiveConfig() {
 	//获取今日所有配置组
 	groupTime, _ := GroupTime(filename)
 	for _, groupMap := range groupTime {
-		//将配置组转换为map[string]interface{}
+
 		configMap := map[string]interface{}{
 			"Title":       groupMap.Title,
 			"ExecuteTime": groupMap.Detail.ExecuteTime,

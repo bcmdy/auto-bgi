@@ -20,7 +20,7 @@ if %errorlevel%==0 (
 )
 
 :: 3. 启动程序（第一个引号是窗口标题，可为空）
-start "" "%~dp0auto-bgi.exe"
+start "auto-bgi" "%~dp0auto-bgi.exe"
 
 echo auto-bgi.exe 已重新启动
 pause
