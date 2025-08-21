@@ -1736,6 +1736,8 @@ var errorKeywords = []string{
 	"检测到复苏界面，存在角色被击败",
 	"执行路径时出错",
 	"传送点未激活或不存在",
+	"疑似卡死，尝试脱离...",
+	"此追踪脚本未正常走完！",
 }
 
 func isErrorLine(line string) (matched string, ok bool) {
@@ -1754,15 +1756,17 @@ type LogAnalysis2Struct struct {
 	Consuming        string
 	LogAnalysis2Json []LogAnalysis2Json
 	ErrorSummary     map[string]int // 🔸每组内的所有错误统计
+	SumIncome        map[string]int // 🔸每组内的所有收入统计
 }
 
 type LogAnalysis2Json struct {
-	JsonName  string
-	StartTime string
-	EndTime   string
-	Income    map[string]int // ⬅️ 收入项及其数量
-	Errors    map[string]int // 错误项及其数量
-	Consuming string
+	JsonName   string
+	StartTime  string
+	EndTime    string
+	Income     map[string]int // ⬅️ 收入项及其数量
+	Errors     map[string]int // 错误项及其数量
+	ErrorsMark map[string]int
+	Consuming  string
 }
 
 // 日志分析
@@ -1784,6 +1788,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 	var logAnalysis2Structs []LogAnalysis2Struct
 	var currentStruct *LogAnalysis2Struct
 	var lastLine string
+	var xy string
 
 	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
 	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
@@ -1906,7 +1911,12 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 					if current.Income == nil {
 						current.Income = make(map[string]int)
 					}
+					// 初始化收入统计
+					if currentStruct.SumIncome == nil {
+						currentStruct.SumIncome = make(map[string]int)
+					}
 					current.Income[item]++
+					currentStruct.SumIncome[item]++
 				}
 			}
 		}
@@ -1920,9 +1930,18 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 					if current.Errors == nil {
 						current.Errors = make(map[string]int)
 					}
+					if current.ErrorsMark == nil {
+						current.ErrorsMark = make(map[string]int)
+					}
 					current.Errors[matched]++
+					current.ErrorsMark[xy]++
 				}
 			}
+		}
+
+		//坐标记录
+		if strings.Contains(line, "粗略接近途经点，位置") {
+			xy = line
 		}
 
 		lastLine = line

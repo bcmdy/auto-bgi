@@ -103,12 +103,19 @@
 
             <!-- 卡片内容 - 可折叠 -->
             <transition name="slide-down">
-              <div v-if="expandedGroups.includes(group.GroupName)" class="group-content">
+                <div v-if="expandedGroups.includes(group.GroupName)" class="group-content">
                                  <div class="error-section">
                    <h4 class="section-title">❗ 错误汇总</h4>
                    <div class="error-summary" v-html="formatMap(group.ErrorSummary)"></div>
-                 </div>
-                
+                </div>
+
+                <!-- 收入汇总 -->
+                <div  class="group-content" >
+                  <h4 class="section-title" style="cursor: pointer;" @click="lookIncome">💰 查询收入汇总</h4>
+                  <div class="error-summary income" v-html="formatMap(group.SumIncome)"></div>
+                </div>
+
+             
                 <!-- 子任务详情 -->
                 <div v-if="group.LogAnalysis2Json && group.LogAnalysis2Json.length > 0" class="tasks-section">
                   <h4 class="section-title">📝 子任务详情</h4>
@@ -138,6 +145,8 @@
                         <div class="task-errors">
                           <strong>⚠️ 错误：</strong>
                           <div class="error-content" v-html="formatMap(sub.Errors)"></div>
+                           <strong>⚠️ 相关坐标：</strong>
+                          <div class="error-content" v-html="formatMap(sub.ErrorsMark)"></div>
                         </div>
                       </div>
                     </div>
@@ -388,6 +397,17 @@ export default {
       } catch (error) {
         console.error('滚动到顶部失败:', error)
       }
+    },
+    // 查询收入汇总
+    lookIncome(){
+      const incomeElements = document.querySelectorAll('.income');
+      incomeElements.forEach(el => {
+        if (el.style.display === 'none') {
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+      });
     }
   }
 }
@@ -1053,6 +1073,10 @@ export default {
     0 2px 8px rgba(255, 110, 180, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   margin-top: 15px;
+}
+
+.income{
+  display: none;
 }
 
 .error-summary br {
