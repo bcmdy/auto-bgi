@@ -1529,48 +1529,60 @@ func Archive(data map[string]interface{}) string {
 	}
 
 	// 检查是否已经归档
-	stmt, err := config.DB.Prepare(`SELECT COUNT(*) FROM archive_records WHERE title =?`)
+	stmt, err := config.DB.Prepare(`SELECT COUNT(*) FROM archive_records WHERE title = ?`)
 	if err != nil {
 		fmt.Println("预处理失败:", err)
 		return "预处理失败"
 	}
 	defer stmt.Close()
+
 	var count int
 	err = stmt.QueryRow(title).Scan(&count)
 	if err != nil {
 		fmt.Println("查询数据库失败:", err)
 		return "查询数据库失败"
 	}
+
 	autoLog.Sugar.Infof("查询数据库是否存在归档记录：%d", count)
+
 	if count > 0 {
-		autoLog.Sugar.Infof("执行修改归档记录")
-		stmt2, err := config.DB.Prepare(`UPDATE archive_records SET execute_time = ? WHERE title = ?`)
+		autoLog.Sugar.Infof("存在归档记录，执行删除操作")
+
+		// 删除已存在的归档记录
+		delStmt, err := config.DB.Prepare(`DELETE FROM archive_records WHERE title = ?`)
 		if err != nil {
-			autoLog.Sugar.Errorf("预处理失败: %v", err)
-			return "预处理失败"
+			autoLog.Sugar.Errorf("删除预处理失败: %v", err)
+			return "删除预处理失败"
 		}
-		defer stmt2.Close()
-		return "修改归档记录成功"
+		defer delStmt.Close()
+
+		_, err = delStmt.Exec(title)
+		if err != nil {
+			autoLog.Sugar.Errorf("删除数据库记录失败: %v", err)
+			return "删除数据库记录失败"
+		}
+
+		autoLog.Sugar.Infof("删除归档记录成功")
 	}
 
 	autoLog.Sugar.Infof("执行新增归档记录")
 
-	stmt2, err := config.DB.Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
+	// 插入新归档记录
+	insertStmt, err := config.DB.Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
 	if err != nil {
 		fmt.Println("预处理失败:", err)
 		return "预处理失败"
 	}
-	defer stmt2.Close()
+	defer insertStmt.Close()
 
-	_, err = stmt2.Exec(title, executeTime)
+	_, err = insertStmt.Exec(title, executeTime)
 	if err != nil {
 		autoLog.Sugar.Errorf("写入数据库失败: %v", err)
 		return "写入数据库失败"
 	}
 
-	autoLog.Sugar.Infof("成功归档：%s (%s)\n", title, executeTime)
+	autoLog.Sugar.Infof("成功归档：%s (%s)", title, executeTime)
 	return "归档成功"
-
 }
 
 type ArchiveRecords struct {
