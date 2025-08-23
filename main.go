@@ -277,7 +277,7 @@ func main() {
 	})
 
 	//发送截图
-	ginServer.POST("/api/getImage", func(c *gin.Context) {
+	ginServer.POST("/api/sendImage", func(c *gin.Context) {
 
 		err := control.ScreenShot()
 		if err != nil {

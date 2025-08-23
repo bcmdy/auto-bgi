@@ -312,24 +312,42 @@ const handleBackup = async () => {
   }
 }
 
+// 发送桌面截图
+const sendImage = () => {
+  Modal.confirm({
+    title: '确认发送？',
+    content: '是否要发送当前桌面截图？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const response = await apiMethods.sendImage()
+        scanResult.value = response.message || '发送成功！'
+        Modal.info({
+          title: '发送结果',
+          content: scanResult.value,
+          okText: '关闭'
+        })
+      } catch (error) {
+        message.error('发送失败！')
+      }
+    }
+  })
+
+}
+
+
 // 自动化按钮配置
 const automationButtons = ref([
   { text: '一条龙启动', action: handleOneLong },
   { text: '关闭BGI', action: handleCloseBgi },
   { text: '备份 user 文件', action: handleBackup },
-  { text: '脚本更新列表', action: () => router.push('/jsNames') }
+  { text: '脚本更新列表', action: () => router.push('/jsNames') },
+  { text: '发送桌面截图', action: sendImage }
 ])
 
 
-const closeScanModal = () => {
-  showScanModal.value = false
-  if (window._html5QrCodeInstance) {
-    window._html5QrCodeInstance.stop().then(() => {
-      window._html5QrCodeInstance.clear()
-      window._html5QrCodeInstance = null
-    })
-  }
-}
+
 
 // 生命周期
 onMounted(() => {

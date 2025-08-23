@@ -45,6 +45,9 @@ export const apiMethods = {
   
   // 获取轮播图图片列表
   getImages: () => api.get('/api/images'),
+
+  // 发送桌面截图
+  sendImage: () => api.post('/api/sendImage'),
   
   // 系统操作
   startOneLong: () => api.post('/api/oneLong'),

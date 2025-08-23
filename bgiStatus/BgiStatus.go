@@ -1121,7 +1121,10 @@ type GroupDetail struct {
 }
 
 // 提取文件名字日期
-func GetFileNameDate(fileName string) string {
+func GetFileNameDate(filePath string) string {
+
+	fileName := filepath.Base(filePath)
+
 	//提取文件名字的数字
 	// 正则表达式匹配数字
 	re := regexp.MustCompile(`\d+`)
