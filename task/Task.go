@@ -5,8 +5,14 @@ import (
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/internal/gamecheckin"
+	"auto-bgi/internal/logger"
+	"auto-bgi/internal/mihoyobbs"
+	"auto-bgi/internal/mysConfig"
+	"auto-bgi/internal/utils"
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/iancoleman/orderedmap"
 	"github.com/robfig/cron/v3"
@@ -82,7 +88,7 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 			filePath := filepath.Join(dir, file.Name())
 			//fmt.Println("正在读取文件:", filePath)
 			// 打开 JSON 文件
-			configFile, err2 := os.Open(filePath) // 假设 JSON 文件名为 config.json
+			configFile, err2 := os.Open(filePath) // 假设 JSON 文件名为 mysConfig.json
 			if err2 != nil {
 				return []TaskCycleConfig{}, err2
 			}
@@ -104,7 +110,7 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 			}
 			// 获取 taskCycleConfig 内容
 			// 需要逐步深入嵌套的 map
-			pathingConfig, ok := result["config"].(map[string]interface{})["pathingConfig"].(map[string]interface{})
+			pathingConfig, ok := result["mysConfig"].(map[string]interface{})["pathingConfig"].(map[string]interface{})
 			if !ok {
 				fmt.Println("Failed to get pathingConfig")
 				return []TaskCycleConfig{}, fmt.Errorf("Failed to get pathingConfig")
@@ -334,14 +340,16 @@ func MysSignIn() {
 	task := func() {
 		fmt.Print("米游社签到服务启动", time.Now().Format("2006-01-02 15:04:05"))
 
-		//config.GenShinSign()
+		//mysConfig.GenShinSign()
 
-		err := control.HttpGet(config.Cfg.MySign.Url + "/qd")
-		if err != nil {
+		MiYouSheSign()
 
-			autoLog.Sugar.Error("签到失败:", err)
-			return
-		}
+		//err := control.HttpGet(config.Cfg.MySign.Url + "/qd")
+		//if err != nil {
+		//
+		//	autoLog.Sugar.Error("签到失败:", err)
+		//	return
+		//}
 
 		time.Sleep(1000 * time.Millisecond)
 
@@ -549,4 +557,56 @@ func SendWeChatImageTask() {
 	// 阻塞主线程停止
 	select {}
 
+}
+
+// 米游社签到
+func MiYouSheSign() {
+	// 解析命令行参数
+	var configPath string
+	flag.StringVar(&configPath, "mysConfig", "mysConfig.yaml", "配置文件路径")
+	flag.Parse()
+
+	// 初始化随机数种子
+	utils.InitRandom()
+
+	// 加载配置文件
+	logger.Info("正在加载配置文件: %s", configPath)
+	if err := mysConfig.LoadConfig(configPath); err != nil {
+		logger.Error("加载配置文件失败: %v", err)
+		os.Exit(1)
+	}
+
+	// 检查Cookie是否配置
+	if mysConfig.GlobalConfig.Account.Cookie == "" {
+		logger.Error("Cookie未配置，请先在配置文件中设置Cookie")
+		os.Exit(1)
+	}
+
+	// 生成设备ID（如果未配置）
+	if mysConfig.GlobalConfig.Device.ID == "" {
+		deviceID := utils.GetDeviceID(mysConfig.GlobalConfig.Account.Cookie)
+		mysConfig.GlobalConfig.Device.ID = deviceID
+		logger.Info("自动生成设备ID: %s", deviceID)
+	}
+
+	logger.Info("米游社签到工具启动")
+
+	// 运行米游社签到
+	if mysConfig.GlobalConfig.Mihoyobbs.Enable {
+		logger.Info("开始米游社签到任务")
+		mihoyobbsClient := mihoyobbs.NewMihoyobbs()
+		if err := mihoyobbsClient.Run(); err != nil {
+			logger.Error("米游社签到失败: %v", err)
+		}
+	}
+
+	// 运行游戏签到
+	if mysConfig.GlobalConfig.Games.CN.Enable {
+		logger.Info("开始游戏签到任务")
+		if err := gamecheckin.RunAllGames(); err != nil {
+			logger.Error("游戏签到失败: %v", err)
+		}
+	}
+
+	logger.Info("所有任务完成")
 }

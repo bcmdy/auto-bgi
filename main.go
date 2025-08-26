@@ -727,6 +727,15 @@ func main() {
 		})
 	})
 
+	//读取js的md文件
+	ginServer.GET("/api/md", func(c *gin.Context) {
+		jsName := c.Query("jsName")
+
+		jsMd := bgiStatus.ReadJsMd(jsName)
+		c.JSON(http.StatusOK, gin.H{"status": "success", "data": jsMd})
+
+	})
+
 	//webhook
 	ginServer.POST("/webhook", func(c *gin.Context) {
 		var payload map[string]interface{}
@@ -768,6 +777,7 @@ func main() {
 	if config.Cfg.MySign.IsMySignIn {
 
 		go task.MysSignIn()
+
 		autoLog.Sugar.Infof("米游社自动签到开启状态")
 	} else {
 		autoLog.Sugar.Infof("米游社自动签到关闭状态")
