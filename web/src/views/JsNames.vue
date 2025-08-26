@@ -138,7 +138,17 @@
                 <td v-html="log.Message.replace(/\n/g, '<br/>')"></td>
                 <td>
                   <ul v-if="log.Files && log.Files.length > 0" style="padding-left:10px;margin:0;font-size: 32px;">
-                    <li v-for="file in log.Files" :key="file" style="margin-left:15px;font-size: 16px;">🎉  {{ file }}</li>
+                    <li v-for="file in log.Files" :key="file" style="margin-left:15px;font-size: 16px;">
+                      🎉  {{ file }}
+                      <button 
+                        v-if="isRepoTriplePath(file)" 
+                        class="btn detail-btn desktop-detail-btn" 
+                        @click="openDetailFromFile(file)"
+                        :disabled="isLoadingDetail[getRepoKey(file)]"
+                      >
+                        {{ isLoadingDetail[getRepoKey(file)] ? '加载中...' : '查看详情' }}
+                      </button>
+                    </li>
                   </ul>
                   <ul v-else style="padding-left:10px;margin:0;">
                     <li>无文件</li>
@@ -178,7 +188,17 @@
                 <span class="files-icon">📁</span>
                 <div class="files-content">
                   <ul v-if="log.Files && log.Files.length > 0">
-                    <li v-for="file in log.Files" :key="file">{{ file }}</li>
+                    <li v-for="file in log.Files" :key="file">
+                      {{ file }}
+                      <button 
+                        v-if="isRepoTriplePath(file)" 
+                        class="btn detail-btn" 
+                        @click="openDetailFromFile(file)"
+                        :disabled="isLoadingDetail[getRepoKey(file)]"
+                      >
+                        {{ isLoadingDetail[getRepoKey(file)] ? '加载中...' : '查看详情' }}
+                      </button>
+                    </li>
                   </ul>
                   <span v-else class="no-files">无文件</span>
                 </div>
@@ -188,11 +208,33 @@
         </div>
       </section>
     </div>
+
+    <!-- 详情模态框 -->
+    <div v-if="showDetailModal" class="modal-overlay" @click="closeDetailModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>📖 {{ currentJsName }} - README详情</h3>
+          <button class="modal-close-btn" @click="closeDetailModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="isLoadingDetail[currentJsName]" class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>正在加载README内容...</p>
+          </div>
+          <div v-else-if="jsDetailHtml" class="detail-content markdown-body" v-html="jsDetailHtml"></div>
+          <div v-else class="no-content">
+            <p>暂无README内容</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, computed, onMounted, reactive } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { useRouter } from 'vue-router'
 
 export default {
@@ -204,6 +246,28 @@ export default {
     const gitLogLoading = ref(true)
     const currentSort = ref({ key: 'ChineseName', asc: true })
     const isUpdating = reactive({})
+    
+    // 详情模态框相关
+    const showDetailModal = ref(false)
+    const currentJsName = ref('')
+    const jsDetailContent = ref('')
+    const jsDetailHtml = ref('')
+    const isLoadingDetail = reactive({})
+
+    // 配置 GitHub Flavored Markdown 渲染
+    marked.setOptions({
+      gfm: true,
+      breaks: true
+    })
+
+    const renderMarkdownToHtml = (markdownText) => {
+      try {
+        const rawHtml = marked.parse(markdownText || '')
+        return DOMPurify.sanitize(rawHtml)
+      } catch (e) {
+        return ''
+      }
+    }
     
     // Header轮播图相关
     const headerCarouselImages = ref([])
@@ -328,6 +392,65 @@ export default {
   }
 }
 
+    // 判断是否为 repo/**/**/** 结构，至少包含 repo/<group>/<name>/...
+    const isRepoTriplePath = (filePath) => {
+      return /^repo\/[^^\/]+\/[^^\/]+\//.test(filePath)
+    }
+
+    // 提取 repo/<group>/<name>/ 的两个段
+    const getRepoSegments = (filePath) => {
+      const match = filePath.match(/^repo\/([^\/]+)\/([^\/]+)\//)
+      if (!match) return { group: '', name: '' }
+      return { group: match[1], name: match[2] }
+    }
+
+    // 作为加载状态键值
+    const getRepoKey = (filePath) => {
+      const { group, name } = getRepoSegments(filePath)
+      return group && name ? `${group}/${name}` : filePath
+    }
+
+
+
+    // 从文件路径打开详情：提取 repo/<group>/<name>，并调用 /api/md?group=&name=
+    const openDetailFromFile = async (filePath) => {
+      if (!isRepoTriplePath(filePath)) return
+      const { group, name } = getRepoSegments(filePath)
+      const key = `${group}/${name}`
+
+      currentJsName.value = name
+      showDetailModal.value = true
+      isLoadingDetail[key] = true
+      jsDetailContent.value = ''
+      jsDetailHtml.value = ''
+
+      try {
+        const response = await fetch(`/api/md?group=${encodeURIComponent(group)}&name=${encodeURIComponent(name)}`)
+        const result = await response.json()
+
+        if (result.status === 'success') {
+          jsDetailContent.value = result.data || ''
+          jsDetailHtml.value = renderMarkdownToHtml(jsDetailContent.value)
+        } else {
+          jsDetailContent.value = '获取README内容失败'
+        }
+      } catch (error) {
+        console.error('获取README失败：', error)
+        jsDetailContent.value = '获取README内容失败：' + error.message
+        jsDetailHtml.value = ''
+      } finally {
+        isLoadingDetail[key] = false
+      }
+    }
+
+    // 关闭详情模态框
+    const closeDetailModal = () => {
+      showDetailModal.value = false
+      currentJsName.value = ''
+      jsDetailContent.value = ''
+      jsDetailHtml.value = ''
+    }
+
     onMounted(() => {
       loadPluginList()
       loadGitLog()
@@ -345,7 +468,18 @@ export default {
       updatePlugin,
       getSortIcon,
       headerCarouselImages, // 暴露header轮播图数据
-      headerCurrentImageIndex // 暴露header轮播图当前图片索引
+      headerCurrentImageIndex, // 暴露header轮播图当前图片索引
+      // 详情模态框相关
+      showDetailModal,
+      currentJsName,
+      jsDetailContent,
+      jsDetailHtml,
+      isLoadingDetail,
+      isRepoTriplePath,
+      getRepoSegments,
+      getRepoKey,
+      openDetailFromFile,
+      closeDetailModal
     }
   }
 }
@@ -1214,6 +1348,246 @@ td {
   }
 }
 
+/* 详情按钮样式 */
+.detail-btn {
+  background: linear-gradient(135deg, #fff, #fff6fb);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  border-radius: 15px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  margin-left: 8px;
+  min-width: 50px;
+}
+
+.detail-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-color), #ff8e8e);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 110, 180, 0.3);
+}
+
+.detail-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5;
+  color: #999;
+  border-color: #ddd;
+}
+
+.desktop-detail-btn {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  margin-left: 5px;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.28); /* 降低遮罩层暗度 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 246, 251, 0.95));
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(255, 110, 180, 0.3);
+  max-width: 90%;
+  max-height: 90%;
+  width: 800px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 110, 180, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  color: white;
+  padding: 20px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close-btn {
+  background: rgba(255, 105, 180, 0.3);
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 20, 147, 0.5);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 25px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.loading-content {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 110, 180, 0.2);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.detail-content {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid rgba(255, 110, 180, 0.25);
+}
+
+.detail-content pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #333;
+  margin: 0;
+  overflow-x: auto;
+}
+
+/* GitHub风格 Markdown 简要样式 */
+.markdown-body {
+  color: #1f2328;
+  line-height: 1.6;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3,
+.markdown-body h4, .markdown-body h5, .markdown-body h6 {
+  margin: 1em 0 0.6em;
+  font-weight: 600;
+}
+.markdown-body h1 { font-size: 1.6em; }
+.markdown-body h2 { font-size: 1.4em; }
+.markdown-body h3 { font-size: 1.2em; }
+.markdown-body p { margin: 0.6em 0; }
+.markdown-body ul, .markdown-body ol { padding-left: 1.5em; }
+.markdown-body code {
+  background: rgba(27,31,35,0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+.markdown-body pre code {
+  display: block;
+  padding: 1em;
+  overflow-x: auto;
+}
+.markdown-body blockquote {
+  margin: 0.8em 0;
+  padding: 0.5em 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+  background: rgba(0,0,0,0.02);
+}
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.markdown-body table th,
+.markdown-body table td {
+  border: 1px solid #dfe2e5;
+  padding: 6px 13px;
+}
+.markdown-body a { color: #0969da; }
+
+/* 强化滚动条外观（更清晰） */
+.modal-body::-webkit-scrollbar { width: 10px; }
+.modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ff69b4, #ff1493);
+  border-radius: 8px;
+}
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 105, 180, 0.2);
+  border-radius: 8px;
+}
+
+.no-content {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-color);
+  font-style: italic;
+}
+
+/* 移动端模态框优化 */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-height: 85%;
+  }
+  
+  .modal-header {
+    padding: 15px 20px;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .modal-body {
+    padding: 20px;
+    max-height: 70vh;
+  }
+  
+  .detail-content {
+    padding: 15px;
+  }
+  
+  .detail-content pre {
+    font-size: 0.8rem;
+  }
+  
+  .detail-btn {
+    font-size: 0.6rem;
+    padding: 3px 6px;
+    margin-left: 5px;
+  }
+}
+
 /* 深色模式支持 */
 @media (prefers-color-scheme: dark) {
   :root {
@@ -1237,5 +1611,26 @@ td {
   td {
     color: #e0e0e0;
   }
+  
+  /* 暗色模式下整体提亮、增强对比 */
+  .modal-overlay { background: rgba(0, 0, 0, 0.35); }
+  .modal-content {
+    background: linear-gradient(135deg, rgba(250, 250, 252, 0.98), rgba(255, 247, 251, 0.98));
+    color: #1f2328;
+  }
+  .modal-header { color: #fff; }
+  .detail-content {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 110, 180, 0.35);
+  }
+  .detail-content pre { color: #1f2328; }
+  .markdown-body { color: #1f2328; }
+  .markdown-body code { background: rgba(27,31,35,0.07); }
+  .markdown-body blockquote {
+    color: #4a5568;
+    background: rgba(0,0,0,0.03);
+    border-left-color: #e2e8f0;
+  }
+  .markdown-body a { color: #2563eb; }
 }
 </style>
