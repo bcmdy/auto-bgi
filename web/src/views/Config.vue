@@ -1443,7 +1443,7 @@ onMounted(() => {
 }
 
 /* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   .config-container {
     background: linear-gradient(135deg, #2a1a2e 0%, #16213e 50%, #1a1a2e 100%);
   }
@@ -1462,5 +1462,5 @@ onMounted(() => {
     background: rgba(255, 240, 247, 0.1);
     color: #ccc;
   }
-}
+} */
 </style>

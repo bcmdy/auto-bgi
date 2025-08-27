@@ -5,6 +5,7 @@ import (
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/internal/mysConfig"
 	"auto-bgi/task"
 	"auto-bgi/tools"
 	"bufio"
@@ -774,6 +775,7 @@ func main() {
 	}
 
 	//米游社自动签到
+	mysConfig.LoadConfig("mysConfig.yaml")
 	if config.Cfg.MySign.IsMySignIn {
 
 		go task.MysSignIn()
