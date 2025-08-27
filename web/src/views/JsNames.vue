@@ -394,7 +394,8 @@ export default {
 
     // 判断是否为 repo/**/**/** 结构，至少包含 repo/<group>/<name>/...
     const isRepoTriplePath = (filePath) => {
-      return /^repo\/[^^\/]+\/[^^\/]+\//.test(filePath)
+      // return /^repo\/[^^\/]+\/[^^\/]+\//.test(filePath)
+      return true
     }
 
     // 提取 repo/<group>/<name>/ 的两个段
@@ -425,7 +426,7 @@ export default {
       jsDetailHtml.value = ''
 
       try {
-        const response = await fetch(`/api/md?group=${encodeURIComponent(group)}&name=${encodeURIComponent(name)}`)
+        const response = await fetch(`/api/md?filePath=${filePath}`)
         const result = await response.json()
 
         if (result.status === 'success') {

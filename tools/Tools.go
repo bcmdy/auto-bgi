@@ -134,3 +134,17 @@ func GetLocalIPs() ([]string, error) {
 	}
 	return ips, nil
 }
+
+// 安全提取日志时间，如果 line 为空或提取失败，则返回默认时间
+func ExtractLogTime2Safe(date string, line string) string {
+	if line == "" {
+		// 如果没有行信息，直接返回当日最后时间
+		return fmt.Sprintf("%s 23:59:59", date)
+	}
+	t, err := ExtractLogTime2(date, line)
+	if err != nil || t == "" {
+		// 提取失败，则返回当日最后时间
+		return fmt.Sprintf("%s 23:59:59", date)
+	}
+	return t
+}

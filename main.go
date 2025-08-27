@@ -729,10 +729,9 @@ func main() {
 
 	//读取js的md文件
 	ginServer.GET("/api/md", func(c *gin.Context) {
-		group := c.Query("group")
-		name := c.Query("name")
+		filePath := c.Query("filePath")
 
-		jsMd := bgiStatus.ReadMd(group, name)
+		jsMd := bgiStatus.ReadMd(filePath)
 		c.JSON(http.StatusOK, gin.H{"status": "success", "data": jsMd})
 
 	})
