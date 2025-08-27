@@ -456,6 +456,7 @@ export default {
       loadPluginList()
       loadGitLog()
       getHeaderImages() // 在组件挂载时获取header轮播图
+      
     })
 
     return {
@@ -487,6 +488,7 @@ export default {
 </script>
 
 <style scoped>
+
 :root {
   --primary-color: #ff6eb4;
   --background-light: #fff6fb;
@@ -496,11 +498,19 @@ export default {
   --grid-color: rgba(255, 182, 193, 0.1);
 }
 
+html {
+  color-scheme: light;
+}
+
+
 * { 
   box-sizing: border-box; 
   margin: 0; 
   padding: 0; 
 }
+
+
+
 
 /* ============ Header轮播图样式 ============ */
 .page-header {
@@ -1590,48 +1600,36 @@ td {
 }
 
 /* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-light: #1a1a1a;
-    --text-color: #ff8e8e;
-    --border-color: #ff8e8e;
-  }
-  
+/* ✅ 深色模式下保持粉色主题 */
+/* @media (prefers-color-scheme: dark) {
+  body,
   .js-names-page {
-    background-color: var(--background-light);
+    background: var(--background-light) !important;
+    color: var(--text-color) !important;
   }
-  
-  section.panel {
-    background: linear-gradient(135deg, rgba(40, 40, 40, 0.9), rgba(50, 50, 50, 0.9));
+
+  .panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 250, 255, 0.95)) !important;
+    color: var(--text-color) !important;
   }
-  
-  table {
-    background: rgba(40, 40, 40, 0.8);
+
+  .js-table {
+    background: #fff !important;
+    color: var(--text-color) !important;
   }
-  
-  td {
-    color: #e0e0e0;
+
+  .js-table th {
+    background: var(--secondary-color) !important;
+    color: #fff !important;
   }
-  
-  /* 暗色模式下整体提亮、增强对比 */
-  .modal-overlay { background: rgba(0, 0, 0, 0.35); }
-  .modal-content {
-    background: linear-gradient(135deg, rgba(250, 250, 252, 0.98), rgba(255, 247, 251, 0.98));
-    color: #1f2328;
+
+  .js-table td {
+    color: var(--text-color) !important;
   }
-  .modal-header { color: #fff; }
-  .detail-content {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(255, 110, 180, 0.35);
+
+  .btn {
+    background: var(--primary-color) !important;
+    color: white !important;
   }
-  .detail-content pre { color: #1f2328; }
-  .markdown-body { color: #1f2328; }
-  .markdown-body code { background: rgba(27,31,35,0.07); }
-  .markdown-body blockquote {
-    color: #4a5568;
-    background: rgba(0,0,0,0.03);
-    border-left-color: #e2e8f0;
-  }
-  .markdown-body a { color: #2563eb; }
-}
+} */
 </style>
