@@ -17,7 +17,7 @@
     </header>
     
     <div class="container filter-section">
-      <button class="btn" @click="toggleFilter" style="margin-bottom:10px;">
+      <button class="btn" @click="toggleFilter" style="margin-bottom:10px;border: 4px solid #ffcce6;">
         {{ filterCollapsed ? '展开材料筛选' : '收起材料筛选' }}
       </button>
       <div v-show="!filterCollapsed" class="filter-container">
@@ -78,7 +78,19 @@
           </div>
         </div>
       </div>
+          <!-- 超过8000材料 -->
+    <div>
+         <button class="filter-btn ore-btn" @click="checkBag">
+              <span class="btn-icon">💎</span>
+              <span class="btn-text">超过8000材料</span>
+              <span class="btn-wave">〜</span>
+            </button>
+            
     </div>
+    </div>
+
+
+
 
     <div class="container">
       <!-- 桌面端表格 -->
@@ -151,6 +163,25 @@
       </div>
     </div>
   </div>
+
+    <!-- 详情模态框 -->
+    <div v-if="showDetailModal" class="modal-overlay" >
+       <div class="modal-content" @click.stop>
+       <div class="modal-header">
+          <h3>超过8000材料</h3>
+          <button class="modal-close-btn" @click="closeDetailModal">✕</button>
+        </div>
+         <div class="modal-body">
+        
+            <ul>
+              <li v-for="(value, key) in checkBagData" :key="key" style="text-align: center;">
+                {{ key }}：{{ value }}
+              </li>
+            </ul>
+        </div>
+      </div>
+    </div>
+
 </template>
 
 <script>
@@ -166,7 +197,10 @@ export default {
       selectedMaterials: [],
       allOre: ["萃凝晶", "水晶块", "星银矿石", "紫晶块", "白铁块", "铁块", "魔晶块", "石珀"],
       isLoading: true,
-      filterCollapsed: true // 新增：筛选区折叠状态
+      filterCollapsed: true, // 新增：筛选区折叠状态
+      showDetailModal:false,
+      checkBagData:{}
+
     }
   },
   computed: {
@@ -294,6 +328,7 @@ export default {
   async mounted() {
     await this.loadData();
   },
+  
   methods: {
     // 加载数据
     async loadData() {
@@ -312,6 +347,19 @@ export default {
     // 返回主页
     goHome() {
       this.$router.push('/');
+    },
+
+    //
+    async checkBag(){
+      this.showDetailModal=true
+      const data = await api.get('/api/checkBag');
+      console.log(data)
+      this.checkBagData=data
+      
+    },
+
+    closeDetailModal(){
+        this.showDetailModal=false
     },
 
     // 删除背包数据
@@ -394,6 +442,21 @@ h1 {
   justify-content: center;
   gap: 15px;
   flex-wrap: wrap;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.28); /* 降低遮罩层暗度 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .btn {
@@ -508,6 +571,74 @@ h1 {
   padding: 20px;
   position: relative;
 }
+
+.modal-content {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 246, 251, 0.95));
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(255, 110, 180, 0.3);
+  max-width: 90%;
+  max-height: 90%;
+  width: 800px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 110, 180, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  color: white;
+  padding: 20px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+
+.modal-close-btn {
+  background: rgba(255, 105, 180, 0.3);
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 20, 147, 0.5);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 25px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+
+/* 强化滚动条外观（更清晰） */
+.modal-body::-webkit-scrollbar { width: 10px; }
+.modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ff69b4, #ff1493);
+  border-radius: 8px;
+}
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 105, 180, 0.2);
+  border-radius: 8px;
+}
+
 
 table {
   width: 100%;
@@ -1179,6 +1310,11 @@ tr:hover td {
   .container {
     margin: 20px auto;
     padding: 15px;
+  }
+
+  .modal-body {
+    padding: 20px;
+    max-height: 70vh;
   }
   
   /* 桌面端表格隐藏 */

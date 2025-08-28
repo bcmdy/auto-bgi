@@ -400,6 +400,53 @@ func BagStatistics() ([]Material, error) {
 	return bags, nil
 }
 
+func CheckBag() map[string]int {
+	autoLog.Sugar.Infof("背包检查")
+	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", config.Cfg.BetterGIAddress))
+
+	file, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	// 正则匹配物品名和数量
+	itemRegex := regexp.MustCompile(`([\p{Han}「」·A-Za-z0-9]+):\s*([0-9?]+)`)
+
+	allItems := make(map[string]int)
+
+	// 遍历整个文件，逐行解析
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, ":") {
+			matches := itemRegex.FindAllStringSubmatch(line, -1)
+			for _, match := range matches {
+				name := match[1]
+				qtyStr := match[2]
+				if qtyStr == "?" {
+					continue
+				}
+				qty, _ := strconv.Atoi(qtyStr)
+				allItems[name] = qty
+			}
+		}
+	}
+
+	liquidationItems := make(map[string]int)
+
+	// 检查是否有物品数量超过8000
+	for item, qty := range allItems {
+		if qty > 8000 {
+			liquidationItems[item] = qty
+		}
+	}
+
+	return liquidationItems
+
+}
+
 // 原石统计
 func YuanShiStatistics() ([]Material, error) {
 	autoLog.Sugar.Infof("原石统计")

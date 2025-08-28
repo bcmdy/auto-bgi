@@ -1599,37 +1599,4 @@ td {
   }
 }
 
-/* 深色模式支持 */
-/* ✅ 深色模式下保持粉色主题 */
-/* @media (prefers-color-scheme: dark) {
-  body,
-  .js-names-page {
-    background: var(--background-light) !important;
-    color: var(--text-color) !important;
-  }
-
-  .panel {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 250, 255, 0.95)) !important;
-    color: var(--text-color) !important;
-  }
-
-  .js-table {
-    background: #fff !important;
-    color: var(--text-color) !important;
-  }
-
-  .js-table th {
-    background: var(--secondary-color) !important;
-    color: #fff !important;
-  }
-
-  .js-table td {
-    color: var(--text-color) !important;
-  }
-
-  .btn {
-    background: var(--primary-color) !important;
-    color: white !important;
-  }
-} */
 </style>

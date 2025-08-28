@@ -317,6 +317,12 @@ func main() {
 
 	})
 
+	//检查背包材料是否超过8000
+	ginServer.GET("/api/checkBag", func(context *gin.Context) {
+		checkBag := bgiStatus.CheckBag()
+		context.JSON(http.StatusOK, checkBag)
+	})
+
 	//删除背包统计记录
 	ginServer.POST("/deleteBag", func(context *gin.Context) {
 		isOk := bgiStatus.DeleteBagStatistics()
