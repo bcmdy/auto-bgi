@@ -303,6 +303,9 @@ func OneLong() {
 	// 定义定时器调用的任务函数
 	task := func() {
 
+		//更新监控文件
+		bgiStatus.LogM()
+
 		autoLog.Sugar.Infof("开始备份User目录")
 		go BackupUsers()
 

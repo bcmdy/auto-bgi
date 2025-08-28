@@ -29,6 +29,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -2102,12 +2103,15 @@ func readVersion(manifestPath string) string {
 	return "未知版本"
 }
 
+var monitor *LogMonitor
+var monitorMu sync.Mutex
+var currentLogFile string
+
 // 监控日志（支持每天变化的日志文件）
 func LogM() {
+	monitorMu.Lock()
+	defer monitorMu.Unlock()
 	logDir := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
-
-	var currentLogFile string
-	var monitor *LogMonitor
 
 	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
@@ -2140,8 +2144,8 @@ func LogM() {
 
 func Log1Remote() {
 
-	var currentLogFile string
-	var monitor *LogMonitor
+	var Log1RemoteCurrentLogFile string
+	var Log1RemoteMonitor *LogMonitor
 
 	// 关键字
 	keywords := []string{
@@ -2162,16 +2166,16 @@ func Log1Remote() {
 
 		newLogFile := filepath.Join(config.Cfg.OneRemote.LogFilePath, files[0]) // 最新文件
 
-		if newLogFile != currentLogFile {
+		if newLogFile != Log1RemoteCurrentLogFile {
 			fmt.Printf("检测到新的 1Remote 日志文件: %s\n", newLogFile)
-			currentLogFile = newLogFile
+			Log1RemoteCurrentLogFile = newLogFile
 
-			if monitor != nil {
-				monitor.Stop()
+			if Log1RemoteMonitor != nil {
+				Log1RemoteMonitor.Stop()
 			}
 
-			monitor = NewLogMonitor(newLogFile, keywords, 5)
-			go monitor.Monitor()
+			Log1RemoteMonitor = NewLogMonitor(newLogFile, keywords, 5)
+			go Log1RemoteMonitor.Monitor()
 		}
 
 		<-ticker.C

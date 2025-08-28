@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -28,6 +29,7 @@ type Config struct {
 	LogKeywords     []string     `json:"LogKeywords" comment:"日志关键词"`
 	OneRemote       OneRemote    `json:"OneRemote" comment:"1Remote配置"`
 	ScreenRecord    ScreenRecord `json:"ScreenRecord" comment:"录屏配置"`
+	BgiLog          string       `json:"BgiLog" comment:"bgi日志"`
 }
 
 type ScreenRecord struct {
@@ -100,6 +102,11 @@ func ReloadConfig() error {
 		Cfg.BasePath = filepath.Dir(ex)
 	}
 
+	//读取bgi日志
+	logDir := filepath.Clean(fmt.Sprintf("%s\\log", Cfg.BetterGIAddress))
+	files, err := FindLogFiles(logDir)
+	Cfg.BgiLog = files[0]
+
 	DefaultConfig()
 
 	//重新写入
@@ -138,4 +145,44 @@ func GetTodayOneLongName() string {
 	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
 	oneLongName := oneLongs[weekdayNum]
 	return oneLongName
+}
+
+func FindLogFiles(dirPath string) ([]string, error) {
+	pattern := filepath.Join(dirPath, "*.log")
+
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	// 保存文件名和时间
+	type fileInfo struct {
+		name string
+		time time.Time
+	}
+
+	var fileInfos []fileInfo
+	for _, f := range files {
+		info, err := os.Stat(f)
+		if err != nil {
+			continue // 读取失败跳过
+		}
+		fileInfos = append(fileInfos, fileInfo{
+			name: filepath.Base(f),
+			time: info.ModTime(),
+		})
+	}
+
+	// 按时间倒序排序
+	sort.Slice(fileInfos, func(i, j int) bool {
+		return fileInfos[i].time.After(fileInfos[j].time)
+	})
+
+	// 只返回文件名
+	var filenames []string
+	for _, fi := range fileInfos {
+		filenames = append(filenames, fi.name)
+	}
+
+	return filenames, nil
 }

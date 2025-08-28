@@ -225,6 +225,7 @@ func StartRecord() {
 	//点击F12开始录屏
 	err := robotgo.KeyTap("f12")
 	if err != nil {
+		autoLog.Sugar.Errorf("开始录屏失败: %v", err)
 		return
 	}
 }
@@ -233,6 +234,7 @@ func StopRecord() {
 	//点击F12结束录屏
 	err := robotgo.KeyTap("f12")
 	if err != nil {
+		autoLog.Sugar.Errorf("结束录屏失败: %v", err)
 		return
 	}
 }
