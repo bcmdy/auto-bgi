@@ -19,12 +19,24 @@ func ReadMd(filePath string) string {
 		}
 	}
 
+	path := ""
 	split := strings.Split(filePath, "/")
 
-	path := ""
-
-	for i := range len(split) - 1 {
-		path += split[i] + "/"
+	if strings.Contains(filePath, "/js/") {
+		path = split[0] + "/" + split[1] + "/" + split[2]
+	} else if strings.Contains(filePath, "/combat/") {
+		filename := filepath.Clean(fmt.Sprintf("%s\\Repos\\bettergi-scripts-list-git\\%s", config.Cfg.BetterGIAddress, filePath))
+		// 读取文件内容
+		data, err := os.ReadFile(filename)
+		if err != nil {
+			autoLog.Sugar.Errorf("ReadMd读取文件失败: %v", err)
+			return "作者没有写说明文档"
+		}
+		return string(data)
+	} else {
+		for i := range len(split) - 1 {
+			path += split[i] + "/"
+		}
 	}
 
 	filename := filepath.Clean(fmt.Sprintf("%s\\Repos\\bettergi-scripts-list-git\\%s\\README.md", config.Cfg.BetterGIAddress, path))
