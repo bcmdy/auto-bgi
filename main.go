@@ -757,12 +757,12 @@ func main() {
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
 	//更新仓库
-	go func() {
-		err := bgiStatus.GitPull()
-		if err != nil {
-			autoLog.Sugar.Errorf("更新仓库失败:%v", err)
-		}
-	}()
+	//go func() {
+	//	err := bgiStatus.GitPull()
+	//	if err != nil {
+	//		autoLog.Sugar.Errorf("更新仓库失败:%v", err)
+	//	}
+	//}()
 
 	//开启每隔一小时发送截图
 	if config.Cfg.Control.SendWeChatImage {
@@ -880,12 +880,12 @@ func main() {
 
 	if len(os.Args) > 1 {
 		if os.Args[1] == "oneLong" {
-			task.OneLong()
+			task.OneLongTask()
 			autoLog.Sugar.Infof("一条龙启动")
 		}
 	}
 
-	////服务器端口
+	//服务器端口
 	post := config.Cfg.Post
 	if post == "" {
 		post = ":8082"

@@ -270,8 +270,20 @@ func ChangeTaskEnabledList() error {
 
 func OneLongTask() {
 
+	//更新监控文件
+	bgiStatus.LogM()
+
+	autoLog.Sugar.Infof("开始备份User目录")
+	go BackupUsers()
+
 	//关闭软件
 	control.CloseSoftware()
+
+	// 等待一小会儿
+	time.Sleep(3000 * time.Millisecond)
+
+	//批量更新脚本
+	bgiStatus.BatchUpdateScript()
 
 	// 等待一小会儿
 	time.Sleep(3000 * time.Millisecond)
@@ -302,12 +314,6 @@ func OneLong() {
 
 	// 定义定时器调用的任务函数
 	task := func() {
-
-		//更新监控文件
-		bgiStatus.LogM()
-
-		autoLog.Sugar.Infof("开始备份User目录")
-		go BackupUsers()
 
 		autoLog.Sugar.Infof("一条龙服务启动 %v", time.Now().Format("2006-01-02 15:04:05"))
 

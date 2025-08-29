@@ -3,6 +3,7 @@ package bgiStatus
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/tools"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,4 +51,42 @@ func ReadMd(filePath string) string {
 
 	return string(data)
 
+}
+
+// 批量更新脚本
+func BatchUpdateScript() {
+	if err := GitPull(); err != nil {
+		autoLog.Sugar.Errorf("仓库更新失败，再次尝试一下:%s", err.Error())
+		if err := GitPull(); err != nil {
+			autoLog.Sugar.Errorf("仓库再次更新失败:%s", err.Error())
+			return
+		}
+	}
+
+	// 获取本地所有订阅脚本目录
+	scriptDir := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript")
+	subDirs, err := tools.ListSubDirsOnly(scriptDir)
+	if err != nil {
+		autoLog.Sugar.Errorf("获取本地脚本失败: %v", err)
+		return
+	}
+
+	for _, name := range subDirs {
+		nowVersion := getJsNowVersion(scriptDir, name)
+		newVersion, chineseName, err := GetJsNewVersion(name)
+		if err != nil {
+			continue
+		}
+		if nowVersion != newVersion {
+			// 开始更新
+			_, err := UpdateJs(name)
+			if err != nil {
+				autoLog.Sugar.Errorf("更新脚本失败: %v", err)
+				continue
+			}
+			autoLog.Sugar.Infof("更新脚本成功: %s", chineseName)
+			SendWeChatNotification(fmt.Sprintf("脚本 %s 已更新,版本号:%s", chineseName, newVersion))
+		}
+
+	}
 }

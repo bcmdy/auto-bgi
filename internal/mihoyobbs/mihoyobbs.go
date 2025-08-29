@@ -142,27 +142,37 @@ func (m *Mihoyobbs) Run() error {
 	}
 
 	// 社区签到
+	logger.Info("社区签到")
 	if mysConfig.GlobalConfig.Mihoyobbs.Checkin {
 		if err := m.checkin(); err != nil {
 			logger.Error("社区签到失败: %v", err)
 		}
 	}
 
+	utils.RandomSleep(1, 3)
+
 	// 看帖任务
+	logger.Info("看帖任务")
 	if mysConfig.GlobalConfig.Mihoyobbs.Read && !m.taskDo.Read {
 		if err := m.readPosts(); err != nil {
 			logger.Error("看帖任务失败: %v", err)
 		}
 	}
 
+	utils.RandomSleep(1, 3)
+
 	// 点赞任务
+	logger.Info("点赞任务")
 	if mysConfig.GlobalConfig.Mihoyobbs.Like && !m.taskDo.Like {
 		if err := m.likePosts(); err != nil {
 			logger.Error("点赞任务失败: %v", err)
 		}
 	}
 
+	utils.RandomSleep(1, 3)
+
 	// 分享任务
+	logger.Info("分享任务")
 	if mysConfig.GlobalConfig.Mihoyobbs.Share && !m.taskDo.Share {
 		if err := m.sharePost(); err != nil {
 			logger.Error("分享任务失败: %v", err)
@@ -210,8 +220,8 @@ func (m *Mihoyobbs) getTasksListWithRetry(update bool) error {
 
 	var taskResp TaskListResponse
 	if err := resp.JSON(&taskResp); err != nil {
-		logger.Error("JSON解析失败: %v", err)
-		logger.Error("响应内容: %s", resp.String())
+		//logger.Error("JSON解析失败: %v", err)
+		//logger.Error("响应内容: %s", resp.String())
 		return fmt.Errorf("JSON解析失败: %v", err)
 	}
 
