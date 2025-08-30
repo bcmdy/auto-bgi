@@ -30,13 +30,7 @@ type Config struct {
 	ScreenRecord    ScreenRecord `json:"ScreenRecord" comment:"录屏配置"`
 	BgiLog          string       `json:"BgiLog" comment:"bgi日志"`
 	Notice          Notice       `json:"Notice" comment:"通知配置"`
-	AIConfig        AIConfig     `json:"AIConfig" comment:"AI配置"`
 }
-type AIConfig struct {
-	APIKey string `json:"APIKey" comment:"APIKey"`
-	Model  string `json:"Model" comment:"模型"`
-}
-
 type Notice struct {
 	Type     string   `json:"Type" comment:"通知类型"`
 	Wechat   string   `json:"Wechat" comment:"企业微信webhook地址"`
