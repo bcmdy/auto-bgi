@@ -250,7 +250,7 @@ func ChangeTaskEnabledList() error {
 
 	}
 
-	bgiStatus.SendWeChatNotification(builder.String())
+	bgiStatus.SentText(builder.String())
 
 	//将执行配置写入文件，直接覆盖
 	// 定义要写入的内容
@@ -582,12 +582,7 @@ func SendWeChatImageTask() {
 			return
 		}
 
-		err2 := bgiStatus.SendWeChatImage("jt.png")
-		if err2 != nil {
-			autoLog.Sugar.Error("图片发送失败:", err2)
-			return
-		}
-		autoLog.Sugar.Infof("图片发送成功")
+		bgiStatus.SentImage("jt.png")
 
 	}
 

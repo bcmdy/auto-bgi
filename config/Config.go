@@ -16,7 +16,6 @@ import (
 type Config struct {
 	OneLong         oneLong      `json:"OneLong" comment:"一条龙配置"`
 	BetterGIAddress string       `json:"BetterGIAddress" comment:"BetterGI地址"`
-	WebhookURL      string       `json:"webhookURL" comment:"webhook地址"`
 	Content         string       `json:"content" comment:"通知内容"`
 	ConfigNames     []string     `json:"ConfigNames" comment:"一条龙配置名称"`
 	BagStatistics   string       `json:"BagStatistics" comment:"需要统计的物品"`
@@ -30,6 +29,19 @@ type Config struct {
 	OneRemote       OneRemote    `json:"OneRemote" comment:"1Remote配置"`
 	ScreenRecord    ScreenRecord `json:"ScreenRecord" comment:"录屏配置"`
 	BgiLog          string       `json:"BgiLog" comment:"bgi日志"`
+	Notice          Notice       `json:"Notice" comment:"通知配置"`
+}
+
+type Notice struct {
+	Type     string   `json:"Type" comment:"通知类型"`
+	Wechat   string   `json:"Wechat" comment:"企业微信webhook地址"`
+	TGNotice TGNotice `json:"TGNotice" comment:"TG通知配置"`
+}
+
+type TGNotice struct {
+	TGToken string `json:"TGToken" comment:"TG机器人token"`
+	ChatID  int64  `json:"ChatID" comment:"TG聊天ID"`
+	Proxy   string `json:"Proxy" comment:"TG代理"`
 }
 
 type ScreenRecord struct {
@@ -105,8 +117,11 @@ func ReloadConfig() error {
 	//读取bgi日志
 	logDir := filepath.Clean(fmt.Sprintf("%s\\log", Cfg.BetterGIAddress))
 	files, err := FindLogFiles(logDir)
-	Cfg.BgiLog = files[0]
-
+	if len(files) == 0 {
+		Cfg.BgiLog = "无"
+	} else {
+		Cfg.BgiLog = files[0]
+	}
 	DefaultConfig()
 
 	//重新写入

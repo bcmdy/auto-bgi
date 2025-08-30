@@ -85,7 +85,7 @@ func BatchUpdateScript() string {
 				continue
 			}
 			autoLog.Sugar.Infof("更新脚本成功: %s", chineseName)
-			SendWeChatNotification(fmt.Sprintf("脚本 %s 已更新,版本号:%s", chineseName, newVersion))
+			SentText(fmt.Sprintf("脚本 %s 已更新,版本号:%s", chineseName, newVersion))
 		}
 
 	}

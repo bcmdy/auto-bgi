@@ -170,6 +170,7 @@ func main() {
 		if len(files) == 0 {
 			autoLog.Sugar.Errorf("日志文件不存在")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "日志文件不存在"})
+			return
 		}
 		if err == nil {
 			//获取最后一个文件
@@ -292,11 +293,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
 			return
 		} else {
-			err := bgiStatus.SendWeChatImage("jt.png")
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
-				return
-			}
+			bgiStatus.SentImage("jt.png")
 			c.JSON(http.StatusOK, gin.H{"status": "received", "data": "发送成功"})
 			return
 		}

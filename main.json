@@ -5,7 +5,6 @@
     "OneLongMinute": 55
   },
   "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
-  "webhookURL": "https://example.com/webhook",
   "content": "可以填autobgi的网页链接",
   "ConfigNames": [
     "默认配置",
@@ -50,5 +49,14 @@
     "IsRecord": false,
     "ScriptGroupName": "订单"
   },
-  "BgiLog": "better-genshin-impact20250830.log"
+  "BgiLog": "better-genshin-impact20250830.log",
+  "Notice": {
+    "Type": "TG",
+    "Wechat": "http://localhost:8080",
+    "TGNotice": {
+      "TGToken": "8362412280:AAHwxQC4vtu5KY7MYpK44hExLI17Mi1FWyU",
+      "ChatID": 5202176051,
+      "Proxy": "http://192.168.3.3:7897"
+    }
+  }
 }

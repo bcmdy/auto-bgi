@@ -30,7 +30,7 @@ func NewLogMonitor(logFile string, keywords []string, interval int) *LogMonitor 
 	return &LogMonitor{
 		LogFile:      logFile,
 		Keywords:     keywords,
-		WebhookURL:   config.Cfg.WebhookURL,
+		WebhookURL:   config.Cfg.Notice.Wechat,
 		ScanInterval: interval,
 		stopChan:     make(chan struct{}),
 	}
