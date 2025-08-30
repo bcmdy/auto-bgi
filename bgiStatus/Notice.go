@@ -17,8 +17,13 @@ import (
 )
 
 func init() {
+
 	if err := InitTG(config.Cfg.Notice.TGNotice.TGToken, config.Cfg.Notice.TGNotice.Proxy); err != nil {
-		autoLog.Sugar.Errorf("Telegram bot初始化失败: %v", err)
+
+		sprintf := fmt.Sprintf("Telegram bot初始化失败: %v", err)
+		fmt.Println(sprintf)
+	} else {
+		fmt.Println("Telegram bot配置成功")
 	}
 }
 
@@ -137,6 +142,7 @@ func InitTG(token, proxy string) error {
 	var err error
 	bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
 	if err != nil {
+		fmt.Println("TG配置错误", err)
 		return err
 	}
 	log.Printf("[TG] bot authorized: @%s", bot.Self.UserName)
@@ -146,7 +152,7 @@ func InitTG(token, proxy string) error {
 // 发送纯文本
 func sendTGNotification(text string) error {
 	if bot == nil {
-		return nil
+		return fmt.Errorf("TG配置错误")
 	}
 	_, err := bot.Send(tgbotapi.NewMessage(config.Cfg.Notice.TGNotice.ChatID, text))
 	return err
@@ -155,7 +161,7 @@ func sendTGNotification(text string) error {
 // 发送图片（本地路径）
 func sendTGImage(path string) error {
 	if bot == nil {
-		return nil
+		return fmt.Errorf("TG配置错误")
 	}
 	photo := tgbotapi.NewPhoto(config.Cfg.Notice.TGNotice.ChatID, tgbotapi.FilePath(path))
 	_, err := bot.Send(photo)
@@ -177,19 +183,20 @@ func SentText(text string) {
 	autoLog.Sugar.Error("通知-文本未知通知类型")
 }
 
-func SentImage(path string) {
+func SentImage(path string) error {
 	if config.Cfg.Notice.Type == "TG" {
 		err := sendTGImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-TG图片发送失败:", err)
 		}
-		return
+		return fmt.Errorf("通知-TG图片发送失败:%v", err)
 	} else if config.Cfg.Notice.Type == "Wechat" {
 		err := sendWeChatImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-微信图片发送失败:", err)
 		}
-		return
+		return fmt.Errorf("通知-微信图片发送失败:%v", err)
 	}
 	autoLog.Sugar.Error("通知-图片未知通知类型")
+	return fmt.Errorf("通知-图片未知通知类型")
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"auto-bgi/AI"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -10,11 +9,9 @@ import (
 	"auto-bgi/task"
 	"auto-bgi/tools"
 	"bufio"
-	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudwego/eino/schema"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -296,7 +293,11 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
 			return
 		} else {
-			bgiStatus.SentImage("jt.png")
+			err2 := bgiStatus.SentImage("jt.png")
+			if err2 != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err2})
+				return
+			}
 			c.JSON(http.StatusOK, gin.H{"status": "received", "data": "发送成功"})
 			return
 		}
@@ -769,48 +770,6 @@ func main() {
 		}
 
 		fmt.Println("===============webhook", payload)
-	})
-
-	// POST /chat-stream
-	ginServer.POST("/api/chatStream", func(c *gin.Context) {
-		var body struct {
-			Messages []struct {
-				Role    string `json:"role"`
-				Content string `json:"content"`
-			} `json:"messages"`
-		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-
-		// 转 []*schema.Message
-		var msgs []*schema.Message
-		for _, m := range body.Messages {
-			msgs = append(msgs, &schema.Message{
-				Role:    schema.RoleType(m.Role),
-				Content: m.Content,
-			})
-		}
-
-		// 请求超时
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Minute)
-		defer cancel()
-
-		// 调用 AI 包的 StreamChat
-		if err := AI.StreamChat(ctx, msgs, c.Writer); err != nil {
-			// 错误已在 StreamChat 中写入 SSE
-			return
-		}
-	})
-
-	// 快速演示接口
-	ginServer.GET("/api/quickDemo", func(c *gin.Context) {
-		msgs := []*schema.Message{
-			{Role: "system", Content: "You are a helpful assistant."},
-			{Role: "user", Content: "用一句话介绍Golang的并发优势。"},
-		}
-		_ = AI.StreamChat(c.Request.Context(), msgs, c.Writer)
 	})
 
 	//检查BGI状态
