@@ -27,6 +27,15 @@ import (
 	"time"
 )
 
+func containsInt(slice []int, val int) bool {
+	for _, v := range slice {
+		if v == val {
+			return true
+		}
+	}
+	return false
+}
+
 // 使用循环遍历检查数字是否包含在数组中
 func contains(slice []string, num int) bool {
 	for _, v := range slice {
@@ -220,7 +229,7 @@ func ChangeTaskEnabledList() error {
 
 		// 有“周x”字样 → 判断今天是否在 numbers 里
 		autoLog.Sugar.Infof("匹配的数字:%v", numbers)
-		if contains(numbers, weekdayNum) {
+		if containsInt(numbers, weekdayNum) {
 			autoLog.Sugar.Infof("配置组:[" + s + "]已到执行时间")
 			aa.Set(s, true)
 			builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
