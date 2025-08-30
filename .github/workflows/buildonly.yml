@@ -1,0 +1,72 @@
+name: 🏗 Manual Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '要编译的分支'
+        required: true
+        default: 'tgbot'
+        type: choice
+        options:
+          - tgbot
+          - main
+          - dev
+          # 如需更多分支，继续往下加
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # 1. 检出指定分支
+      - name: 🧾 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      # 2. 安装 Node
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 3. 安装 Go
+      - name: 🐹 Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+          cache: false
+
+      # 4. 前端 & 后端联合构建
+      - name: 🏗 Build frontend & backend
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          Write-Host "===== Build frontend ====="
+          Remove-Item -Recurse -Force web/dist -ErrorAction SilentlyContinue
+          cd web
+          npm ci --silent --no-audit --no-fund
+          npm run build
+          if (-not (Test-Path dist)) {
+              throw "❌ 前端构建失败，dist 目录不存在"
+          }
+          cd ..
+
+          Write-Host "===== Build backend ====="
+          go mod tidy
+          go build -ldflags="-s -w" -o auto-bgi.exe
+          if (-not (Test-Path auto-bgi.exe)) {
+              throw "❌ Go 编译失败，auto-bgi.exe 未生成"
+          }
+
+      # 5. 上传产物
+      - name: 📤 Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-${{ github.event.inputs.branch }}-${{ github.run_number }}
+          path: auto-bgi.exe
+          retention-days: 30
