@@ -146,109 +146,114 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 	return TaskCycleConfigs, nil
 }
 
-// 修改TaskEnabledList
+// 修改 TaskEnabledList
 func ChangeTaskEnabledList() error {
-
 	now := time.Now()
 	weekdayNum := int(now.Weekday())
-	if weekdayNum == 0 { // 让星期天对应 7，与“周7”保持一致
-		weekdayNum = 7
-	}
 
 	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
 
 	OneLongName := config.GetTodayOneLongName()
-
-	// 自定义配置路径
 	filename := config.Cfg.BetterGIAddress + "\\User\\OneDragon\\" + OneLongName + ".json"
 
-	// 1. 读取 JSON 文件
+	// 1. 读取 JSON
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		autoLog.Sugar.Errorf("一条龙读取文件失败%s: %v", OneLongName, err)
 		return err
 	}
 
-	// 2. 解析为 orderedData
+	// 2. 解析
 	jsonData := orderedmap.New()
 	if err := json.Unmarshal(data, &jsonData); err != nil {
-
 		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
 		return err
 	}
 
-	// 如果存在 SelectedPeriodList 则交给 ReadChaBaoBgiConfig 处理
 	if _, ok := jsonData.Get("SelectedPeriodList"); ok {
 		autoLog.Sugar.Infof("SelectedPeriodList 字段存在")
 		ReadChaBaoBgiConfig(filename)
 		return nil
 	}
 
-	// 3. 读取 TaskEnabledList
-	TaskEnabledRaw, ok := jsonData.Get("TaskEnabledList")
-	if !ok {
+	TaskEnabled, b := jsonData.Get("TaskEnabledList")
+	if !b {
 		autoLog.Sugar.Errorf("TaskEnabledList 字段不存在")
 		return fmt.Errorf("TaskEnabledList 字段不存在")
 	}
-	taskEnabled, ok := TaskEnabledRaw.(orderedmap.OrderedMap)
-	if !ok {
-		autoLog.Sugar.Errorf("TaskEnabledList 类型断言失败")
-		return fmt.Errorf("TaskEnabledList 类型断言失败")
-	}
+	aa := TaskEnabled.(orderedmap.OrderedMap)
 
-	// 4. 构造日志
+	// === 只改这里：把“周137”里的 1、3、7 拆出 ===
+	weekRe := regexp.MustCompile(`周(\d+)`) // 捕获周后面所有数字
+	extractWeekdays := func(s string) []int {
+		var days []int
+		for _, m := range weekRe.FindAllStringSubmatch(s, -1) {
+			for _, ch := range m[1] { // "137" → '1','3','7'
+				if d := int(ch - '0'); d >= 1 && d <= 7 {
+					days = append(days, d)
+				}
+			}
+		}
+		return days
+	}
+	// ==============================================
+
 	var builder strings.Builder
 	var oneLongLog strings.Builder
 	builder.WriteString("今日执行一条龙：" + OneLongName + "\n")
 	builder.WriteString("今日执行配置组：\n")
 
-	// 5. 正则匹配“周x”
-	weekRe := regexp.MustCompile(`周(\d)`)
-
-	for _, key := range taskEnabled.Keys() {
-		val, _ := taskEnabled.Get(key)
-		// 没有“周x”字样的开关保持原值
-		matches := weekRe.FindAllStringSubmatch(key, -1)
-		shouldRun := false
-		for _, m := range matches {
-			if len(m) == 2 {
-				if w, _ := strconv.Atoi(m[1]); w == weekdayNum {
-					shouldRun = true
-					break
-				}
+	for _, s := range aa.Keys() {
+		// 先尝试用“周x”规则解析
+		numbers := extractWeekdays(s)
+		if len(numbers) == 0 {
+			// 没有“周x”字样 → 保持原值
+			get, _ := aa.Get(s)
+			if get == true {
+				builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+				builder.WriteString("\n")
+				oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+				oneLongLog.WriteString("\n")
 			}
+			continue
 		}
 
-		// 没有匹配到“周x”则保持原值；否则按星期控制
-		if len(matches) > 0 {
-			taskEnabled.Set(key, shouldRun)
+		// 有“周x”字样 → 判断今天是否在 numbers 里
+		autoLog.Sugar.Infof("匹配的数字:%v", numbers)
+		if contains(numbers, weekdayNum) {
+			autoLog.Sugar.Infof("配置组:[" + s + "]已到执行时间")
+			aa.Set(s, true)
+			builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+			builder.WriteString("\n")
+			oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
+			oneLongLog.WriteString("\n")
+			continue
 		} else {
-			shouldRun = val == true
-		}
-
-		if shouldRun {
-			builder.WriteString(fmt.Sprintf("%s：执行\n", key))
-			oneLongLog.WriteString(fmt.Sprintf("%s：执行\n", key))
+			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
+			aa.Set(s, false)
+			continue
 		}
 	}
+
+	// 写回文件
 	updatedData, err := json.MarshalIndent(jsonData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("JSON 编码失败")
 	}
-
-	// 6. 写回文件
 	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
-
 		autoLog.Sugar.Errorf("写入文件失败: %v", err)
 		return fmt.Errorf("自定义配置写入文件失败")
-
 	}
 
-	// 7. 发送日志 & 写入 OneLongTask.txt
 	bgiStatus.SentText(builder.String())
-	if err := os.WriteFile("OneLongTask.txt", []byte(oneLongLog.String()), 0644); err != nil {
+	content := []byte(oneLongLog.String())
+	file, err := os.OpenFile("OneLongTask.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
 		return fmt.Errorf("打开文件失败: %v", err)
 	}
+	defer file.Close()
+	file.Write(content)
+
 	return nil
 }
 
