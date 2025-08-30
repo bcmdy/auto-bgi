@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -173,8 +174,7 @@ func ChangeTaskEnabledList() error {
 		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
 		return err
 	}
-	get, b2 := jsonData.Get("SelectedPeriodList")
-	fmt.Println(get)
+	_, b2 := jsonData.Get("SelectedPeriodList")
 	if !b2 {
 		autoLog.Sugar.Errorf("SelectedPeriodList 字段不存在")
 	} else {
@@ -269,40 +269,45 @@ func ChangeTaskEnabledList() error {
 }
 
 func OneLongTask() {
+	autoLog.Sugar.Info("开始执行一条龙任务")
 
-	//更新监控文件
-	bgiStatus.LogM()
+	//// 1. 并行执行日志监控
+	//go func() {
+	//	autoLog.Sugar.Info("启动日志监控")
+	//	bgiStatus.LogM()
+	//}()
 
-	autoLog.Sugar.Infof("开始备份User目录")
-	go BackupUsers()
+	// 2. 并行执行用户目录备份
+	go func() {
+		autoLog.Sugar.Info("开始备份 User 目录")
+		BackupUsers()
+	}()
 
-	//关闭软件
+	// 3. 关闭软件（同步，后续任务依赖此步骤）
 	control.CloseSoftware()
+	autoLog.Sugar.Info("软件已关闭")
 
-	// 等待一小会儿
-	time.Sleep(3000 * time.Millisecond)
-
-	//批量更新脚本
-	bgiStatus.BatchUpdateScript()
-
-	// 等待一小会儿
-	time.Sleep(3000 * time.Millisecond)
-
-	//修改我的配置
-	err := ChangeTaskEnabledList()
-	if err != nil {
-		autoLog.Sugar.Errorf("修改配置失败: %v", err)
+	// 4. 批量更新脚本
+	autoLog.Sugar.Info("开始批量更新脚本")
+	if err := bgiStatus.BatchUpdateScript(); err != "" {
+		autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
+		return
 	}
 
-	time.Sleep(4000 * time.Millisecond)
+	// 5. 修改配置
+	if err := ChangeTaskEnabledList(); err != nil {
+		autoLog.Sugar.Errorf("修改配置失败: %v", err)
+		return
+	}
 	autoLog.Sugar.Info("修改配置成功")
 
+	// 6. 启动今日一条龙
 	longName := config.GetTodayOneLongName()
-
 	autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
 
 	StartOneDragon(longName)
 
+	autoLog.Sugar.Info("一条龙任务执行完成")
 }
 
 func OneLong() {
@@ -423,12 +428,21 @@ func StartGroups(names []string) error {
 	time.Sleep(5 * time.Second)
 
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
-	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
-	cmd := exec.Command(betterGIPath, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	// 检查文件是否存在
+	if _, err := os.Stat(betterGIPath); err != nil {
+		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
+		return err
+	}
+
+	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
+
+	cmd := exec.Command(betterGIPath, args...)
+
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	err := cmd.Start()
+	if err != nil {
 		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
 		return err
 	}
@@ -437,20 +451,39 @@ func StartGroups(names []string) error {
 }
 
 // 启动一条龙
+// StartOneDragon 启动一条龙任务（异步）
 func StartOneDragon(name string) {
+	autoLog.Sugar.Infof("准备启动一条龙：%s", name)
+
+	// 关闭软件
 	control.CloseSoftware()
-	time.Sleep(5 * time.Second)
 
+	// 延迟，确保软件关闭完成
+	delay := 3 * time.Second
+	autoLog.Sugar.Infof("等待 %v 后启动...", delay)
+	time.Sleep(delay)
+
+	// 构建执行路径
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
-	cmd := exec.Command(betterGIPath, "--startOneDragon", name)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	// 检查文件是否存在
+	if _, err := os.Stat(betterGIPath); err != nil {
+		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
+		return
+	}
+
+	// 构建命令
+	cmd := exec.Command(betterGIPath, "--startOneDragon", name)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // 可选：隐藏窗口
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	err := cmd.Start()
+	if err != nil {
 		autoLog.Sugar.Errorf("启动一条龙失败: %v", err)
 		return
 	}
-	autoLog.Sugar.Infof("%s 启动一条龙成功", name)
+	autoLog.Sugar.Infof("启动一条龙成功: %s", name)
+
 }
 
 // 定时更新代码

@@ -54,12 +54,12 @@ func ReadMd(filePath string) string {
 }
 
 // 批量更新脚本
-func BatchUpdateScript() {
+func BatchUpdateScript() string {
 	if err := GitPull(); err != nil {
 		autoLog.Sugar.Errorf("仓库更新失败，再次尝试一下:%s", err.Error())
 		if err := GitPull(); err != nil {
 			autoLog.Sugar.Errorf("仓库再次更新失败:%s", err.Error())
-			return
+			return "仓库再次更新失败"
 		}
 	}
 
@@ -68,7 +68,7 @@ func BatchUpdateScript() {
 	subDirs, err := tools.ListSubDirsOnly(scriptDir)
 	if err != nil {
 		autoLog.Sugar.Errorf("获取本地脚本失败: %v", err)
-		return
+		return "获取本地脚本失败"
 	}
 
 	for _, name := range subDirs {
@@ -89,4 +89,5 @@ func BatchUpdateScript() {
 		}
 
 	}
+	return ""
 }

@@ -50,7 +50,6 @@ func CloseSoftware() {
 		pterm.DefaultBasicText.Println("执行命令出错:", err)
 	}
 	pterm.DefaultBasicText.Println("命令输出:", string(output))
-	//fmt.Printf("命令输出:\n%s\n", string(output))
 
 }
 

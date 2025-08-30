@@ -743,6 +743,16 @@ func main() {
 
 	})
 
+	//批量更新仓库
+	ginServer.GET("/api/batchUpdate", func(c *gin.Context) {
+		script := bgiStatus.BatchUpdateScript()
+		if script != "" {
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": script})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功"})
+	})
+
 	//webhook
 	ginServer.POST("/webhook", func(c *gin.Context) {
 		var payload map[string]interface{}
@@ -756,13 +766,6 @@ func main() {
 
 	//检查BGI状态
 	go bgiStatus.CheckBetterGIStatus()
-	//更新仓库
-	//go func() {
-	//	err := bgiStatus.GitPull()
-	//	if err != nil {
-	//		autoLog.Sugar.Errorf("更新仓库失败:%v", err)
-	//	}
-	//}()
 
 	//开启每隔一小时发送截图
 	if config.Cfg.Control.SendWeChatImage {

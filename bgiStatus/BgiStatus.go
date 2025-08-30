@@ -29,7 +29,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -1445,8 +1444,6 @@ func GitPull() error {
 		})
 		if err != nil {
 			autoLog.Sugar.Errorf("重置工作区失败: %v", err)
-			//删除仓库重新拉取
-			os.RemoveAll(localPath)
 			return fmt.Errorf("重置工作区失败: %v", err)
 		}
 		autoLog.Sugar.Info("本地更改已清除，准备拉取")
@@ -2104,13 +2101,10 @@ func readVersion(manifestPath string) string {
 }
 
 var monitor *LogMonitor
-var monitorMu sync.Mutex
 var currentLogFile string
 
 // 监控日志（支持每天变化的日志文件）
 func LogM() {
-	monitorMu.Lock()
-	defer monitorMu.Unlock()
 	logDir := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
 
 	ticker := time.NewTicker(10 * time.Minute)

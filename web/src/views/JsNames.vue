@@ -13,13 +13,17 @@
 
         <h1 class="header-title">📜 脚本更新列表 📜</h1>
         <p class="header-subtitle">管理您的脚本，保持最新状态 ✨</p>
+                   <button class="btn home-btn" @click="goHome">返回首页</button>
+            <button class="btn home-btn" style="margin-left:150px;" @click="batchUpdate()">批量更新</button>
       </div>
     </header>
 
     <div class="container">
+           
       <section class="panel">
-        <h2>脚本信息   <button class="btn home-btn" @click="goHome">返回首页</button></h2>
-             
+          
+        <h2>脚本信息   </h2>
+ 
         <div id="pluginListContainer" class="table-container">
           <!-- 桌面端表格 -->
           <table id="pluginTable" class="desktop-table">
@@ -328,6 +332,8 @@ export default {
       router.push('/')
     }
 
+
+
     const sortTable = (key) => {
       if (currentSort.value.key === key) {
         currentSort.value.asc = !currentSort.value.asc
@@ -352,6 +358,25 @@ export default {
       } catch (error) {
         console.error('加载插件列表失败：', error)
         pluginData.value = []
+      }
+    }
+
+   const batchUpdate = async ()=>{
+
+      try {
+        const response = await fetch('/api/batchUpdate')
+  
+        const json = await response.json()
+        console.log(json)
+         if (json.status="success") {
+          alert(json.message)
+          await loadPluginList() // ✅ 重新加载插件列表，插件数据会更新
+        } else {
+          throw new Error(json.message || '更新失败')
+        }
+
+      } catch (error) {
+        console.error('批量更新失败', error)
       }
     }
 
@@ -456,6 +481,7 @@ export default {
       loadPluginList()
       loadGitLog()
       getHeaderImages() // 在组件挂载时获取header轮播图
+
       
     })
 
@@ -481,7 +507,8 @@ export default {
       getRepoSegments,
       getRepoKey,
       openDetailFromFile,
-      closeDetailModal
+      closeDetailModal,
+            batchUpdate
     }
   }
 }

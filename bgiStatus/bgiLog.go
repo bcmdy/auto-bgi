@@ -144,6 +144,7 @@ func (m *LogMonitor) Monitor() {
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {
 					m.sendAlert("RDP 客户端断开连接", false)
+					autoLog.Sugar.Infof("RDP 客户端断开连接")
 					aaa()
 				}
 				if config.Cfg.ScreenRecord.IsRecord {
@@ -219,7 +220,7 @@ func pressWinD() {
 }
 
 func aaa() {
-	fmt.Println("正在执行会话关闭后操作...")
+	autoLog.Sugar.Infof("正在执行会话关闭后操作...")
 	time.Sleep(2 * time.Second)
 
 	// 返回 Windows 桌面（Win + D）
@@ -241,5 +242,5 @@ func aaa() {
 	time.Sleep(300 * time.Millisecond)
 	robotgo.KeyTap("enter")
 
-	fmt.Println("操作完成！")
+	autoLog.Sugar.Infof("操作完成！")
 }
