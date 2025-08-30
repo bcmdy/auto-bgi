@@ -9,7 +9,7 @@ on:
         default: 'tgbot'
         type: choice
         options:
-          - tgbot
+          - weekfix
           - main
           - dev
           # 如需更多分支，继续往下加
