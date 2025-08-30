@@ -41,21 +41,21 @@
             </a-form-item>
 
             <a-form-item 
-              label="企业机器人地址" 
-              name="webhookURL"
+              label="基础路径" 
+              name="basePath"
               class="form-item-enhanced"
             >
               <div class="input-wrapper">
-                <span class="input-icon">🤖</span>
+                <span class="input-icon">📂</span>
                 <a-input 
-                  v-model:value="formData.webhookURL" 
-                  placeholder="企业微信机器人地址"
+                  v-model:value="formData.basePath" 
+                  placeholder="C:\Users\Administrator\AppData\Local\JetBrains\GoLand2023.1\tmp\GoLand"
                   class="enhanced-input"
                 />
               </div>
               <div class="help-text">
                 <span class="help-icon">💡</span>
-                企业微信机器人地址，具体怎么申请，自行解决
+                填写基础路径
               </div>
             </a-form-item>
 
@@ -89,7 +89,7 @@
                   <a-input style="width: 30px" value=":" disabled class="port-separator" />
                   <a-input 
                     v-model:value="formData.post" 
-                    placeholder="8082" 
+                    placeholder="10086" 
                     style="width: calc(100% - 30px)" 
                     class="enhanced-input"
                   />
@@ -97,9 +97,10 @@
               </div>
               <div class="help-text">
                 <span class="help-icon">💡</span>
-                端口号，默认是 8082，如果冲突了可以改成你喜欢的
+                端口号，默认是 10086，如果冲突了可以改成你喜欢的
               </div>
             </a-form-item>
+
           </div>
         </a-card>
 
@@ -221,7 +222,6 @@
           </div>
         </a-card>
 
-
         <!-- 需要备份的文件或文件夹路径 -->
         <a-card title="需要备份的文件或者文件夹路径" class="config-card backup-paths">
           <template #extra>
@@ -292,7 +292,7 @@
                     v-model:value="formData.OneLong.OneLongHour" 
                     :min="0" 
                     :max="23" 
-                    placeholder="例如：7"
+                    placeholder="例如：13"
                     class="enhanced-input-number"
                   />
                 </a-form-item>
@@ -303,7 +303,7 @@
                     v-model:value="formData.OneLong.OneLongMinute" 
                     :min="0" 
                     :max="59" 
-                    placeholder="例如：30"
+                    placeholder="例如：55"
                     class="enhanced-input-number"
                   />
                 </a-form-item>
@@ -472,6 +472,116 @@
           </a-form-item>
         </a-card>
 
+        <!-- 通知设置 -->
+        <a-card title="通知设置" class="config-card notice-settings">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">📢</span>
+              <a-tooltip title="通知设置，支持微信和Telegram通知">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+          <div class="notice-content">
+                         <a-form-item label="通知类型" name="NoticeType" class="form-item-enhanced">
+               <div class="input-wrapper">
+                 <span class="input-icon">📢</span>
+                 <a-select 
+                   v-model:value="formData.Notice.Type" 
+                   placeholder="选择通知类型"
+                   class="enhanced-select"
+                 >
+                   <a-select-option value="TG">TG</a-select-option>
+                   <a-select-option value="WeChat">Wechat</a-select-option>
+                 </a-select>
+               </div>
+             </a-form-item>
+
+            <a-form-item label="微信通知地址" name="WechatNotice" class="form-item-enhanced" v-show="formData.Notice.Type === 'WeChat'">
+              <div class="input-wrapper">
+                <span class="input-icon">💬</span>
+                <a-input 
+                  v-model:value="formData.Notice.Wechat" 
+                  placeholder="微信通知地址"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+            <div v-show="formData.Notice.Type === 'TG'" class="tg-settings">
+              <a-form-item label="Telegram Token" name="TGToken" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">🤖</span>
+                  <a-input 
+                    v-model:value="formData.Notice.TGNotice.TGToken" 
+                    placeholder="Telegram Bot Token"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+
+              <a-form-item label="Chat ID" name="ChatID" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">💬</span>
+                  <a-input 
+                    v-model:value="formData.Notice.TGNotice.ChatID" 
+                    placeholder="Telegram Chat ID"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+
+              <a-form-item label="代理地址" name="Proxy" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">🌐</span>
+                  <a-input 
+                    v-model:value="formData.Notice.TGNotice.Proxy" 
+                    placeholder="代理地址（可选）"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+            </div>
+          </div>
+        </a-card>
+
+        <!-- AI配置 -->
+        <a-card title="AI配置" class="config-card ai-config">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">🤖</span>
+              <a-tooltip title="AI配置设置，用于AI相关功能">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+          <div class="ai-content">
+            <a-form-item label="API Key" name="APIKey" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🔑</span>
+                <a-input 
+                  v-model:value="formData.AIConfig.APIKey" 
+                  placeholder="AI API Key"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+            <a-form-item label="模型" name="Model" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🧠</span>
+                <a-input 
+                  v-model:value="formData.AIConfig.Model" 
+                  placeholder="AI模型名称"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+          </div>
+        </a-card>
+
         <!-- 提交按钮 -->
         <div class="submit-section">
           <a-button 
@@ -514,17 +624,17 @@ const getDayIcon = (index) => {
 // 表单数据
 const formData = reactive({
   BetterGIAddress: '',
-  webhookURL: '',
+  cookie: '',
   content: '',
-  post: '8082',
+  post: '10086',
   ConfigNames: new Array(7).fill(''),
   bagKeywords: [''],
   LogKeywords: [''],
   backups: [''],
   OneLong: {
     isStartTimeLong: false,
-    OneLongHour: 7,
-    OneLongMinute: 30
+    OneLongHour: 13,
+    OneLongMinute: 55
   },
   Control: {
     IsCloseYuanShen: false,
@@ -535,13 +645,28 @@ const formData = reactive({
     url: ''
   },
   OneRemote: {
-    IsMonitor: true,
+    IsMonitor: false,
     LogFilePath: '',
     LogKeywords: ['']
   },
   ScreenRecord: {
     IsRecord: false,
     ScriptGroupName: ''
+  },
+  BgiLog: '',
+  basePath: '',
+  Notice: {
+    Type: 'TG',
+    Wechat: '',
+    TGNotice: {
+      TGToken: '',
+      ChatID: '',
+      Proxy: ''
+    }
+  },
+  AIConfig: {
+    APIKey: '',
+    Model: ''
   }
 })
 
@@ -569,7 +694,6 @@ const removeBagKeyword = (index) => {
   }
 }
 
-
 const addLogKeyword = () => {
   formData.LogKeywords.push('')
 }
@@ -579,7 +703,6 @@ const removeLogKeyword = (index) => {
     formData.LogKeywords.splice(index, 1)
   }
 }
-
 
 const addBackup = () => {
   formData.backups.push('')
@@ -594,6 +717,7 @@ const removeBackup = (index) => {
 const addOneRemoteKeyword = () => {
   formData.OneRemote.LogKeywords.push('')
 }
+
 const removeOneRemoteKeyword = (index) => {
   if (formData.OneRemote.LogKeywords.length > 1) {
     formData.OneRemote.LogKeywords.splice(index, 1)
@@ -610,9 +734,11 @@ const loadConfig = async () => {
 
     if (data) {
       formData.BetterGIAddress = data.BetterGIAddress || ''
-      formData.webhookURL = data.webhookURL || ''
+      formData.cookie = data.cookie || ''
       formData.content = data.content || ''
       formData.post = (data.post || '').replace(':', '')
+      formData.basePath = data.basePath || ''
+      formData.BgiLog = data.BgiLog || ''
       
       formData.ConfigNames = data.ConfigNames || new Array(7).fill('')
       
@@ -622,7 +748,6 @@ const loadConfig = async () => {
       if (formData.bagKeywords.length === 0) {
         formData.bagKeywords = ['']
       }
-
 
       //日志通知关键字
       if (data.LogKeywords && Array.isArray(data.LogKeywords)) {
@@ -654,8 +779,17 @@ const loadConfig = async () => {
       if (data.OneRemote) {
         Object.assign(formData.OneRemote, data.OneRemote)
       }
+
       if (data.ScreenRecord) {
         Object.assign(formData.ScreenRecord, data.ScreenRecord)
+      }
+
+      if (data.Notice) {
+        Object.assign(formData.Notice, data.Notice)
+      }
+
+      if (data.AIConfig) {
+        Object.assign(formData.AIConfig, data.AIConfig)
       }
     }
   } catch (error) {
@@ -669,7 +803,7 @@ const handleSubmit = async () => {
   try {
     const payload = {
       BetterGIAddress: formData.BetterGIAddress,
-      webhookURL: formData.webhookURL,
+      cookie: formData.cookie,
       content: formData.content,
       ConfigNames: formData.ConfigNames,
       BagStatistics: formData.bagKeywords.filter(k => k.trim()).join(','),
@@ -682,7 +816,11 @@ const handleSubmit = async () => {
       Control: formData.Control,
       MySign: formData.MySign,
       OneRemote: formData.OneRemote,
-      ScreenRecord: formData.ScreenRecord
+      ScreenRecord: formData.ScreenRecord,
+      BgiLog: formData.BgiLog,
+      basePath: formData.basePath,
+      Notice: formData.Notice,
+      AIConfig: formData.AIConfig
     }
 
     await apiMethods.updateConfig(payload)
@@ -1135,12 +1273,36 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.95) !important;
 }
 
+.enhanced-select {
+  width: 100%;
+}
+
+.enhanced-select :deep(.ant-select-selector) {
+  padding-left: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.enhanced-select :deep(.ant-select-selection-item) {
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
 :deep(.ant-select-selector) {
   height: 44px !important;
   border-radius: 12px !important;
   border: 2px solid rgba(255, 153, 204, 0.3) !important;
   background: linear-gradient(135deg, rgba(255, 240, 247, 0.8), rgba(255, 250, 253, 0.9)) !important;
   transition: all 0.3s ease;
+  display: flex !important;
+  align-items: center !important;
+}
+
+:deep(.ant-select-selection-item) {
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 :deep(.ant-select:hover .ant-select-selector) {
@@ -1315,6 +1477,19 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* 通知设置 */
+.notice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tg-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* 提交按钮 */

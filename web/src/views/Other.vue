@@ -11,6 +11,7 @@
           <h1>详细日志分析</h1>
         </div>
         <button class="btn header-btn" @click="$router.push('/')">返回首页</button>
+
       </div>
       <div class="header-divider"></div>
     </header>
@@ -91,6 +92,10 @@
                 </div>
               </div>
               <div class="group-actions">
+                <button class="btn ai-analysis-btn-small" @click="performAIAnalysisForGroup(group.GroupName)" title="AI分析此配置组" :disabled="aiAnalysisLoading">
+                  <span v-if="aiAnalysisLoading && currentAnalyzingGroup === group.GroupName" class="ai-loading-text">🔍 分析中...</span>
+                  <span v-else>🔍 AI分析</span>
+                </button>
                 <button class="btn archive-btn-always" @click="archiveGroup(group)" title="归档此配置组">
                   📥 归档
                 </button>
@@ -185,7 +190,41 @@
       <span class="back-to-top-text">顶部</span>
     </button>
 
-
+    <!-- AI分析结果弹窗 -->
+    <div v-if="showAIModal" class="ai-modal-overlay" @click="closeAIModal">
+      <div class="ai-modal" @click.stop>
+                 <div class="ai-modal-header">
+           <h3>
+             🔍 错误分析报告 - {{ currentAnalyzingGroup || selectedGroup }}
+             <span v-if="aiStreaming" class="streaming-status">(正在生成...)</span>
+             <span v-else-if="aiAnalysisLoading" class="loading-status">(分析中...)</span>
+           </h3>
+                      <div class="ai-modal-actions">
+             <button class="btn download-btn" @click="downloadAIAnalysisResult" title="下载报告">
+               📥 下载
+             </button>
+             <button class="btn copy-btn" @click="copyAIAnalysisResult" title="复制内容">
+               📋 复制
+             </button>
+             <button class="btn close-btn" @click="closeAIModal" title="关闭">
+               ✕
+             </button>
+           </div>
+        </div>
+                 <div class="ai-modal-content">
+           <div v-if="aiAnalysisLoading && !aiAnalysisResult" class="ai-loading">
+             <div class="ai-loading-spinner"></div>
+             <p>正在分析错误信息，请稍候...</p>
+           </div>
+           <div v-else class="ai-result">
+             <div v-html="formatMarkdown(aiAnalysisResult)"></div>
+             <div v-if="aiStreaming" class="streaming-indicator">
+               <span class="typing-dots">正在生成</span>
+             </div>
+           </div>
+         </div>
+      </div>
+    </div>
 
   </div>
 </template>
@@ -199,15 +238,23 @@ export default {
     return {
       logFiles: [],
       selectedFile: '',
+      selectedGroup: '', // 当前选中的配置组
       analysisData: [],
       loading: false,
       expandedGroups: [], // 记录展开的配置组
       bookmarkVisible: false, // 书签是否可见，默认折叠
-      currentActiveGroup: '' // 当前活跃的配置组
+      currentActiveGroup: '', // 当前活跃的配置组
+      aiAnalysisLoading: false, // AI分析加载状态
+      aiAnalysisResult: '', // AI分析结果
+      showAIModal: false, // 是否显示AI分析结果弹窗
+      aiStreaming: false, // 是否正在流式输出
+      currentAnalyzingGroup: '' // 当前正在分析的配置组
     }
   },
   async mounted() {
     await this.loadLogFiles()
+    // 初始化防抖滚动函数
+    this.debouncedScrollToBottom = this.debounce(this.scrollToBottom, 100)
   },
   watch: {
     // 监听 selectedFile 变化，自动加载分析数据
@@ -408,12 +455,551 @@ export default {
           el.style.display = 'none';
         }
       });
-    }
+    },
+    
+    // AI分析功能 - 分析指定配置组
+    async performAIAnalysisForGroup(groupName) {
+      if (this.aiAnalysisLoading) return
+      
+      this.aiAnalysisLoading = true
+      this.currentAnalyzingGroup = groupName
+      this.selectedGroup = groupName // 设置当前选中的配置组
+      this.aiAnalysisResult = ''
+      this.showAIModal = true
+      this.aiStreaming = false
+      
+      try {
+        // 获取指定配置组的数据
+        const currentGroupData = this.analysisData.find(group => group.GroupName === groupName)
+        
+        if (!currentGroupData) {
+          this.$message?.error('未找到配置组的数据')
+          return
+        }
+        
+        // 构建发送给AI的消息
+        const analysisDataStr = JSON.stringify(currentGroupData, null, 2)
+        const messages = [
+          {
+            role: 'user',
+            content: `请分析以下配置组"${groupName}"的日志数据中的错误信息，生成一份详细的错误分析报表。包括：
+
+1. **错误统计概览**
+   - 总错误数量
+   - 错误类型分布
+2. **错误详情分析**
+   - 错误发生的子任务
+   - 各类错误的具体描述
+   - 错误相关的坐标信息（坐标信息是错误发生的坐标，不是任务的坐标）
+请生成一份结构化的Markdown格式错误分析报表，表格形式，不要回答其他东西。
+
+配置组数据：
+${analysisDataStr}`
+          }
+        ]
+        
+        // 调用流式API
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 120000) // 2分钟超时
+        
+        const response = await fetch('/api/chatStream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messages }),
+          signal: controller.signal
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let result = ''
+        this.aiStreaming = true // 开始流式输出
+        
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6)
+              if (data === '[DONE]') {
+                break
+              }
+              try {
+                const parsed = JSON.parse(data)
+                // 处理你的SSE数据格式
+                if (parsed.content && parsed.role !== 'error') {
+                  result += parsed.content
+                  this.aiAnalysisResult = result
+                  // 使用防抖来优化滚动性能
+                  this.debouncedScrollToBottom()
+                }
+              } catch (e) {
+                // 忽略解析错误
+              }
+            } else if (line.startsWith('event: error')) {
+              // 处理错误事件
+              console.error('SSE错误事件:', line)
+              throw new Error('AI分析超时或发生错误')
+                //关闭弹窗
+                closeAIModal()
+            }
+          }
+        }
+        
+        this.aiStreaming = false // 结束流式输出
+        
+        clearTimeout(timeoutId) // 清理超时定时器
+        
+        this.$message?.success('错误分析完成！')
+        
+        // 如果结果为空，显示提示
+        if (!result.trim()) {
+          this.$message?.warning('错误分析结果为空，请重试')
+        }
+        
+      } catch (error) {
+        console.error('AI分析失败:', error)
+        
+        // 根据错误类型显示不同的错误信息
+        if (error.name === 'AbortError') {
+          this.$message?.error('错误分析超时，请重试')
+        } else if (error.message.includes('context deadline exceeded')) {
+          this.$message?.error('错误分析超时，请稍后重试')
+        } else if (error.message.includes('Failed to fetch')) {
+          this.$message?.error('网络连接失败，请检查网络')
+        } else {
+          this.$message?.error('错误分析失败: ' + error.message)
+        }
+      } finally {
+        this.aiAnalysisLoading = false
+        this.currentAnalyzingGroup = ''
+      }
+    },
+    
+
+     
+     // 关闭AI分析弹窗
+     closeAIModal() {
+       this.showAIModal = false
+       this.aiAnalysisResult = ''
+       this.selectedGroup = '' // 重置选中的配置组
+     },
+     
+     // 复制AI分析结果
+     copyAIAnalysisResult() {
+       if (this.aiAnalysisResult) {
+         navigator.clipboard.writeText(this.aiAnalysisResult).then(() => {
+           this.$message?.success('已复制到剪贴板')
+         }).catch(() => {
+           this.$message?.error('复制失败')
+         })
+       }
+     },
+     
+           // 下载AI分析结果为HTML
+      downloadAIAnalysisResult() {
+        if (!this.aiAnalysisResult) {
+          this.$message?.error('没有可下载的内容')
+          return
+        }
+
+        try {
+          this.$message?.info('正在生成错误分析报告...')
+          
+          // 创建完整的HTML文档，包含优化的样式
+          const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>错误分析报告 - ${this.currentAnalyzingGroup || this.selectedGroup}</title>
+              <style>
+                @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+                
+                * {
+                  box-sizing: border-box;
+                }
+                
+                body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+                  margin: 0;
+                  padding: 20px;
+                  background: #ffffff;
+                  color: #1f2328;
+                  line-height: 1.6;
+                  font-size: 16px;
+                }
+                
+                .ai-result {
+                  background: #ffffff;
+                  padding: 30px;
+                  border-radius: 6px;
+                  border: 1px solid #d0d7de;
+                  max-width: 1200px;
+                  margin: 0 auto;
+                }
+                
+                h1, h2, h3, h4, h5, h6 {
+                  margin: 1em 0 0.6em;
+                  font-weight: 600;
+                  color: #24292f;
+                  border-bottom: 1px solid #d0d7de;
+                  padding-bottom: 0.3em;
+                }
+                
+                h1 { 
+                  font-size: 2em; 
+                }
+                
+                h2 { 
+                  font-size: 1.5em; 
+                }
+                
+                h3 { 
+                  font-size: 1.25em; 
+                }
+                
+                h4 { 
+                  font-size: 1em; 
+                }
+                
+                p { 
+                  margin: 0.6em 0; 
+                  line-height: 1.6;
+                  color: #1f2328;
+                }
+                
+                ul, ol { 
+                  padding-left: 2em; 
+                  margin: 0.6em 0;
+                }
+                
+                li {
+                  margin: 0.25em 0;
+                  line-height: 1.6;
+                  color: #1f2328;
+                }
+                
+                code {
+                  background: #f6f8fa;
+                  color: #1f2328;
+                  padding: 0.2em 0.4em;
+                  border-radius: 6px;
+                  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+                  font-size: 85%;
+                  border: 1px solid rgba(175, 184, 193, 0.2);
+                }
+                
+                pre {
+                  background: #f6f8fa;
+                  border: 1px solid #d0d7de;
+                  border-radius: 6px;
+                  padding: 16px;
+                  overflow: auto;
+                  margin: 1em 0;
+                }
+                
+                pre code {
+                  background: transparent;
+                  padding: 0;
+                  border-radius: 0;
+                  font-size: 85%;
+                  line-height: 1.45;
+                  color: #1f2328;
+                  border: none;
+                }
+                
+                blockquote {
+                  margin: 1em 0;
+                  padding: 20px 25px;
+                  color: #6b7280;
+                  border-left: 5px solid #ff6eb4;
+                  background: linear-gradient(135deg, rgba(255, 110, 180, 0.05), rgba(255, 158, 207, 0.05));
+                  border-radius: 0 15px 15px 0;
+                  position: relative;
+                  font-style: italic;
+                }
+                
+                blockquote::before {
+                  content: '💭';
+                  position: absolute;
+                  top: 10px;
+                  right: 15px;
+                  font-size: 1.5em;
+                  opacity: 0.4;
+                }
+                
+                table {
+                  border-collapse: collapse;
+                  width: 100%;
+                  margin: 1em 0;
+                  font-size: 85%;
+                  line-height: 1.6;
+                }
+                
+                table th, table td {
+                  border: 1px solid #d0d7de;
+                  padding: 6px 13px;
+                  text-align: left;
+                }
+                
+                table th {
+                  background: #f6f8fa;
+                  color: #1f2328;
+                  font-weight: 600;
+                }
+                
+                table tr:nth-child(even) {
+                  background: #f6f8fa;
+                }
+                
+                table tr:nth-child(odd) {
+                  background: #ffffff;
+                }
+                
+                a { 
+                  color: #0969da; 
+                  text-decoration: none;
+                }
+                
+                a:hover {
+                  text-decoration: underline;
+                }
+                
+                strong {
+                  font-weight: 600;
+                  color: #1f2328;
+                }
+                
+                em {
+                  font-style: italic;
+                  color: #1f2328;
+                }
+                
+                hr {
+                  height: 0.25em;
+                  padding: 0;
+                  margin: 24px 0;
+                  background: #d0d7de;
+                  border: 0;
+                }
+                
+                @media print {
+                  body {
+                    background: white !important;
+                    font-size: 14px;
+                  }
+                  
+                  .ai-result {
+                    border: 1px solid #ddd !important;
+                    padding: 20px;
+                  }
+                  
+                  h1, h2, h3, h4, h5, h6 {
+                    color: #333 !important;
+                  }
+                  
+                  p, li {
+                    color: #333 !important;
+                  }
+                }
+                
+                @media (max-width: 768px) {
+                  body {
+                    padding: 10px;
+                    font-size: 14px;
+                  }
+                  
+                  .ai-result {
+                    padding: 20px;
+                    border-radius: 6px;
+                  }
+                  
+                  h1 { font-size: 1.8em; }
+                  h2 { font-size: 1.5em; }
+                  h3 { font-size: 1.3em; }
+                  h4 { font-size: 1.1em; }
+                  
+                  ul, ol {
+                    padding-left: 1.5em;
+                  }
+                  
+                  li {
+                    margin: 0.2em 0;
+                    font-size: 14px;
+                  }
+                  
+                  table {
+                    font-size: 0.8em;
+                  }
+                  
+                  table th, table td {
+                    padding: 4px 8px;
+                  }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="ai-result">
+                <h1>错误分析报告 - ${this.currentAnalyzingGroup || this.selectedGroup}</h1>
+                ${this.formatMarkdown(this.aiAnalysisResult)}
+              </div>
+            </body>
+            </html>
+          `
+          
+          // 检测是否为移动设备
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          
+          if (isMobile) {
+            // 移动端下载策略
+            this.downloadForMobile(htmlContent)
+          } else {
+            // 桌面端下载策略
+            this.downloadForDesktop(htmlContent)
+          }
+          
+        } catch (error) {
+          console.error('生成错误分析报告失败:', error)
+          this.$message?.error('生成错误分析报告失败，请重试')
+        }
+      },
+
+      // 移动端下载方法
+      downloadForMobile(htmlContent) {
+        try {
+          const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+          const url = URL.createObjectURL(blob)
+          
+          // 移动端使用新窗口打开，用户可以手动保存
+          const newWindow = window.open(url, '_blank')
+          if (newWindow) {
+            this.$message?.success('报告已在新窗口打开，请手动保存')
+          } else {
+            // 如果弹窗被阻止，提供备用方案
+            this.$message?.info('请复制以下链接到浏览器地址栏打开：')
+            console.log('下载链接:', url)
+            setTimeout(() => URL.revokeObjectURL(url), 30000) // 30秒后清理
+          }
+        } catch (error) {
+          console.error('移动端下载失败:', error)
+          this.$message?.error('移动端下载失败，请使用桌面浏览器')
+        }
+      },
+
+      // 桌面端下载方法
+      downloadForDesktop(htmlContent) {
+        try {
+          const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `错误分析报告_${this.currentAnalyzingGroup || this.selectedGroup}_${this.selectedFile}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.html`
+          a.style.display = 'none'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+          
+          this.$message?.success('错误分析报告已下载')
+        } catch (error) {
+          console.error('桌面端下载失败:', error)
+          this.$message?.error('下载失败，请重试')
+        }
+      },
+     
+           // 格式化Markdown内容
+      formatMarkdown(markdown) {
+        if (!markdown) return ''
+        
+        let result = markdown
+        
+        // 处理表格 - 更准确的表格解析
+        const tableRegex = /(\|.*\|[\r\n]+)+/g
+        result = result.replace(tableRegex, (tableMatch) => {
+          console.log('Found table:', tableMatch)
+          const lines = tableMatch.trim().split('\n').filter(line => line.trim())
+          let tableHtml = '<table>'
+          
+          lines.forEach((line, index) => {
+            const cells = line.split('|').slice(1, -1).map(cell => cell.trim())
+            if (cells.length > 0) {
+              const tag = index === 0 ? 'th' : 'td' // 第一行作为表头
+              const rowHtml = cells.map(cell => `<${tag}>${cell}</${tag}>`).join('')
+              tableHtml += `<tr>${rowHtml}</tr>`
+            }
+          })
+          
+          tableHtml += '</table>'
+          console.log('Generated table HTML:', tableHtml)
+          return tableHtml
+        })
+          
+          // 处理标题
+          .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+          
+          // 处理粗体和斜体
+          .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+          
+          // 处理代码
+          .replace(/`(.*?)`/gim, '<code>$1</code>')
+          
+          // 处理列表项
+          .replace(/^- (.*$)/gim, '<li>$1</li>')
+          .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+          
+          // 处理换行
+          .replace(/\n/gim, '<br>')
+        
+        // 将连续的li标签包装在ul中
+        result = result.replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>')
+        
+        return result
+      },
+      
+      // 防抖滚动到底部
+      debouncedScrollToBottom: null,
+      
+      // 滚动到底部
+      scrollToBottom() {
+        this.$nextTick(() => {
+          const modalContent = document.querySelector('.ai-modal-content')
+          if (modalContent) {
+            modalContent.scrollTop = modalContent.scrollHeight
+          }
+        })
+      },
+      
+      // 防抖函数
+      debounce(func, wait) {
+        let timeout
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout)
+            func(...args)
+          }
+          clearTimeout(timeout)
+          timeout = setTimeout(later, wait)
+        }
+      }
   }
 }
 </script>
 
-<style scoped>
+<style>
 :root {
   --primary-color: #ff6eb4;
   --background-light: #fff6fb;
@@ -524,6 +1110,50 @@ export default {
   color: #fff;
   box-shadow: 0 4px 16px #ff9ecf;
   transform: scale(1.07);
+}
+
+
+
+.ai-analysis-btn-small {
+  margin-right: 8px;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px #ffc0da;
+  background: linear-gradient(45deg, #4CAF50, #66BB6A);
+  color: white;
+  border: 1px solid #4CAF50;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.ai-analysis-btn-small:hover:not(:disabled) {
+  background: linear-gradient(45deg, #66BB6A, #4CAF50);
+  color: #fff;
+  box-shadow: 0 3px 12px #66BB6A;
+  transform: scale(1.05);
+}
+
+.ai-analysis-btn-small:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ai-loading-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-loading-text::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .header-divider {
@@ -829,12 +1459,12 @@ export default {
 
 .stats-count {
   font-size: 1.2rem;
-  color: #ff6eb4;
+  color: #14050c;
 }
 
 .stats-label {
   font-size: 0.9rem;
-  color: #ff6eb4;
+  color: #f4ecf0;
 }
 
 /* 配置组卡片样式 - 增强层次感 */
@@ -960,7 +1590,7 @@ export default {
 
 .duration-badge {
   background: linear-gradient(45deg, var(--primary-color), #ff9ecf);
-  color: #ff6eb4;
+  color: #f7eef2;
   padding: 4px 12px;
   border-radius: 15px;
   font-size: 0.85rem;
@@ -1352,9 +1982,343 @@ export default {
   margin-bottom: 2px;
 }
 
-.back-to-top-text {
-  font-size: 0.7rem;
-  line-height: 1;
+  .back-to-top-text {
+    font-size: 0.7rem;
+    line-height: 1;
+  }
+
+/* AI分析弹窗样式 */
+.ai-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.ai-modal {
+  background: linear-gradient(135deg, #ffffff, #fefcff);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(255, 110, 180, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 800px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--border-color);
+  overflow: hidden;
+}
+
+.ai-modal-header {
+  background: linear-gradient(45deg, var(--primary-color), #ff9ecf);
+  color: white;
+  padding: 20px 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ai-modal-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.ai-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.download-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.download-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.copy-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 12px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.ai-modal-content {
+  flex: 1;
+  padding: 25px;
+  overflow-y: auto;
+  max-height: calc(90vh - 100px);
+}
+
+.ai-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--primary-color);
+}
+
+.ai-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 110, 180, 0.2);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* GitHub风格 Markdown 样式 */
+.ai-result {
+  color: #1f2328;
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  font-size: 16px;
+}
+
+
+
+.ai-result h1, .ai-result h2, .ai-result h3,
+.ai-result h4, .ai-result h5, .ai-result h6 {
+  margin: 1em 0 0.6em;
+  font-weight: 600;
+  color: #24292f;
+  border-bottom: 1px solid #d0d7de;
+  padding-bottom: 0.3em;
+}
+
+
+
+.ai-result h1 { 
+  font-size: 2em; 
+}
+
+.ai-result h2 { 
+  font-size: 1.5em; 
+}
+
+.ai-result h3 { 
+  font-size: 1.25em; 
+}
+
+.ai-result h4 { 
+  font-size: 1em; 
+}
+
+.ai-result p { 
+  margin: 0.6em 0; 
+  line-height: 1.6;
+  color: #1f2328;
+}
+
+.ai-result ul, .ai-result ol { 
+  padding-left: 2em; 
+  margin: 0.6em 0;
+}
+
+.ai-result li {
+  margin: 0.25em 0;
+  line-height: 1.6;
+  color: #1f2328;
+}
+
+.ai-result code {
+  background: #f6f8fa;
+  color: #1f2328;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 85%;
+  border: 1px solid rgba(175, 184, 193, 0.2);
+}
+
+.ai-result pre {
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  margin: 1em 0;
+}
+
+.ai-result pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 85%;
+  line-height: 1.45;
+  color: #1f2328;
+  border: none;
+}
+
+.ai-result blockquote {
+  margin: 1em 0;
+  padding: 0 1em;
+  color: #656d76;
+  border-left: 0.25em solid #d0d7de;
+  background: transparent;
+}
+
+.ai-result table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 85%;
+  line-height: 1.6;
+}
+
+.ai-result table th,
+.ai-result table td {
+  border: 1px solid #d0d7de;
+  padding: 6px 13px;
+  text-align: left;
+}
+
+.ai-result table th {
+  background: #f6f8fa;
+  color: #1f2328;
+  font-weight: 600;
+}
+
+.ai-result table tr:nth-child(even) {
+  background: #f6f8fa;
+}
+
+.ai-result table tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.ai-result a { 
+  color: #0969da; 
+  text-decoration: none;
+}
+
+.ai-result a:hover {
+  text-decoration: underline;
+}
+
+.ai-result strong {
+  font-weight: 600;
+  color: #1f2328;
+}
+
+.ai-result em {
+  font-style: italic;
+  color: #1f2328;
+}
+
+.ai-result hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background: #d0d7de;
+  border: 0;
+}
+
+/* 流式输出指示器样式 */
+.streaming-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+  padding: 10px 15px;
+  background: rgba(255, 110, 180, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 110, 180, 0.2);
+}
+
+.typing-dots {
+  color: var(--primary-color);
+  font-weight: bold;
+  position: relative;
+}
+
+.typing-dots::after {
+  content: '';
+  animation: typing 1.5s infinite;
+}
+
+@keyframes typing {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* 状态指示器样式 */
+.streaming-status,
+.loading-status {
+  font-size: 0.9rem;
+  font-weight: normal;
+  opacity: 0.8;
+  margin-left: 10px;
+}
+
+.streaming-status {
+  color: #4CAF50;
+  animation: pulse 1.5s infinite;
+}
+
+.loading-status {
+  color: #FF9800;
 }
 
 @media (max-width: 600px) {
@@ -1611,6 +2575,176 @@ export default {
 
   .back-to-top-text {
     font-size: 0.6rem;
+  }
+
+  /* 移动端AI分析按钮适配 */
+  .header-content {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .ai-analysis-btn {
+    margin-left: 0;
+    width: 100%;
+    max-width: 200px;
+  }
+
+  /* 移动端AI弹窗适配 */
+  .ai-modal {
+    width: 95vw;
+    max-height: 95vh;
+    border-radius: 16px;
+  }
+
+  .ai-modal-header {
+    padding: 15px 20px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .ai-modal-header h3 {
+    font-size: 1.1rem;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .ai-modal-actions {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .download-btn,
+  .copy-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-width: 60px;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .ai-modal-content {
+    padding: 15px;
+    max-height: calc(95vh - 120px);
+  }
+
+  .ai-result {
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  /* 移动端触摸优化 */
+  .ai-modal-overlay {
+    padding: 10px;
+    align-items: flex-start;
+    padding-top: 5vh;
+  }
+
+  .ai-modal {
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 移动端按钮触摸优化 */
+  .download-btn,
+  .copy-btn,
+  .close-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .download-btn:active,
+  .copy-btn:active,
+  .close-btn:active {
+    transform: scale(0.95);
+  }
+
+  .ai-result h1 {
+    font-size: 1.6em;
+    padding-bottom: 0.3em;
+  }
+
+  .ai-result h2 {
+    font-size: 1.4em;
+    padding-bottom: 0.2em;
+  }
+
+  .ai-result h3 {
+    font-size: 1.2em;
+  }
+
+  .ai-result h4 {
+    font-size: 1.1em;
+  }
+
+  .ai-result p {
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin: 0.5em 0;
+  }
+
+  .ai-result ul, .ai-result ol {
+    padding: 10px 10px 10px 1.5em;
+    margin: 0.6em 0;
+  }
+
+  .ai-result li {
+    padding: 4px 8px;
+    margin: 0.3em 0;
+    font-size: 0.85em;
+    line-height: 1.5;
+  }
+
+  .ai-result code {
+    font-size: 0.8em;
+    padding: 2px 4px;
+    word-break: break-all;
+  }
+
+  .ai-result pre {
+    padding: 12px;
+    margin: 0.6em 0;
+    font-size: 0.8em;
+    overflow-x: auto;
+  }
+
+  .ai-result blockquote {
+    padding: 12px 15px;
+    margin: 0.6em 0;
+    font-size: 0.9em;
+  }
+
+  .ai-result table {
+    font-size: 0.75em;
+    margin: 0.6em 0;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .ai-result table th,
+  .ai-result table td {
+    padding: 6px 8px;
+    min-width: 80px;
+  }
+
+  .ai-result hr {
+    margin: 15px 0;
   }
 }
 </style>

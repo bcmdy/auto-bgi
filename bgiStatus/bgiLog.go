@@ -5,12 +5,9 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/go-vgo/robotgo"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"syscall"
@@ -36,43 +33,43 @@ func NewLogMonitor(logFile string, keywords []string, interval int) *LogMonitor 
 	}
 }
 
-func (m *LogMonitor) validateConfig() error {
-	if _, err := os.Stat(m.LogFile); err != nil {
-		return fmt.Errorf("日志文件不存在: %v", err)
-	}
-	if !(strings.HasPrefix(m.WebhookURL, "http://") || strings.HasPrefix(m.WebhookURL, "https://")) {
-		return fmt.Errorf("Webhook URL 格式不正确")
-	}
-	return nil
-}
+//func (m *LogMonitor) validateConfig() error {
+//	if _, err := os.Stat(m.LogFile); err != nil {
+//		return fmt.Errorf("日志文件不存在: %v", err)
+//	}
+//	if !(strings.HasPrefix(m.WebhookURL, "http://") || strings.HasPrefix(m.WebhookURL, "https://")) {
+//		return fmt.Errorf("Webhook URL 格式不正确")
+//	}
+//	return nil
+//}
 
-func (m *LogMonitor) sendAlert(content string, isTest bool) bool {
-	prefix := ""
-	if isTest {
-		prefix = "[TEST] "
-	}
-	payload := map[string]interface{}{
-		"msgtype": "text",
-		"text": map[string]interface{}{
-			"content":               prefix + content,
-			"mentioned_mobile_list": []string{"@all"},
-		},
-	}
-	data, _ := json.Marshal(payload)
-
-	resp, err := http.Post(m.WebhookURL, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		fmt.Println("[!] 告警发送失败:", err)
-		return false
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("[!] 企业微信返回状态码:", resp.StatusCode)
-		return false
-	}
-	return true
-}
+//func (m *LogMonitor) sendAlert(content string, isTest bool) bool {
+//	prefix := ""
+//	if isTest {
+//		prefix = "[TEST] "
+//	}
+//	payload := map[string]interface{}{
+//		"msgtype": "text",
+//		"text": map[string]interface{}{
+//			"content":               prefix + content,
+//			"mentioned_mobile_list": []string{"@all"},
+//		},
+//	}
+//	data, _ := json.Marshal(payload)
+//
+//	resp, err := http.Post(m.WebhookURL, "application/json", bytes.NewBuffer(data))
+//	if err != nil {
+//		fmt.Println("[!] 告警发送失败:", err)
+//		return false
+//	}
+//	defer resp.Body.Close()
+//
+//	if resp.StatusCode != http.StatusOK {
+//		fmt.Println("[!] 企业微信返回状态码:", resp.StatusCode)
+//		return false
+//	}
+//	return true
+//}
 
 func (m *LogMonitor) scanLog() ([]string, error) {
 	f, err := os.Open(m.LogFile)
@@ -101,10 +98,10 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 }
 
 func (m *LogMonitor) Monitor() {
-	if err := m.validateConfig(); err != nil {
-		fmt.Println("[!] 配置错误:", err)
-		return
-	}
+	//if err := m.validateConfig(); err != nil {
+	//	fmt.Println("[!] 配置错误:", err)
+	//	return
+	//}
 
 	if f, err := os.Open(m.LogFile); err == nil {
 		pos, _ := f.Seek(0, io.SeekEnd)
@@ -126,7 +123,8 @@ func (m *LogMonitor) Monitor() {
 			lines, err := m.scanLog()
 			if err != nil {
 				fmt.Println("[!] 读取日志错误:", err)
-				m.sendAlert(fmt.Sprintf("日志监控服务异常: %v", err), false)
+				//m.sendAlert(fmt.Sprintf("日志监控服务异常: %v", err), false)
+				SentText(fmt.Sprintf("日志监控服务异常: %v", err))
 				return
 			}
 
@@ -134,22 +132,27 @@ func (m *LogMonitor) Monitor() {
 				for _, kw := range m.Keywords {
 					if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
 						msg := fmt.Sprintf("⚠️ 日志告警\n关键词: %s\n内容: %s", kw, strings.TrimSpace(line))
-						m.sendAlert(msg, false)
+						//m.sendAlert(msg, false)
+						SentText(msg)
 						fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 					}
 				}
 				if strings.Contains(line, "一条龙和配置组任务结束") {
 					ArchiveConfig()
-					m.sendAlert("一条龙和配置组任务结束，所有配置组已归档", false)
+					//m.sendAlert("一条龙和配置组任务结束，所有配置组已归档", false)
+					SentText("一条龙和配置组任务结束，所有配置组已归档")
+					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {
-					m.sendAlert("RDP 客户端断开连接", false)
+					//m.sendAlert("RDP 客户端断开连接", false)
+					SentText("RDP 客户端断开连接")
 					autoLog.Sugar.Infof("RDP 客户端断开连接")
 					aaa()
 				}
 				if config.Cfg.ScreenRecord.IsRecord {
 					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 加载完成") {
-						m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+"开始录屏", false)
+						//m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+"开始录屏", false)
+						SentText("配置组 " + config.Cfg.ScreenRecord.ScriptGroupName + "开始录屏")
 						// 开始录屏
 						control.StartRecord()
 
@@ -158,7 +161,8 @@ func (m *LogMonitor) Monitor() {
 
 					}
 					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 执行结束") {
-						m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+" 结束录屏", false)
+						//m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+" 结束录屏", false)
+						SentText("配置组 " + config.Cfg.ScreenRecord.ScriptGroupName + " 结束录屏")
 						// 结束录屏
 						control.StopRecord()
 
@@ -173,15 +177,6 @@ func (m *LogMonitor) Monitor() {
 			fmt.Println("[i] 日志监控已退出:", m.LogFile)
 			return
 		}
-	}
-}
-
-func (m *LogMonitor) ManualTest() {
-	msg := fmt.Sprintf("测试告警\n时间: %s\n状态: 监控系统正常", time.Now().Format("2006-01-02 15:04:05"))
-	if m.sendAlert(msg, true) {
-		fmt.Println("[√] 测试消息发送成功")
-	} else {
-		fmt.Println("[×] 测试消息发送失败")
 	}
 }
 

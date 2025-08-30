@@ -16,14 +16,14 @@
     "默认配置"
   ],
   "BagStatistics": "晶核,大英雄的经验,水晶块,竹笋,螃蟹,劫波莲,兽肉,萃凝晶,紫晶块,星银矿石",
-  "post": ":8082",
+  "post": ":10086",
   "MySign": {
     "isMysSignIn": true,
     "url": "http://localhost:8888"
   },
   "backups": [],
   "cookie": "",
-  "basePath": "C:\\Users\\Administrator\\AppData\\Local\\JetBrains\\GoLand2024.1\\tmp\\GoLand",
+  "basePath": "C:\\Users\\Administrator\\AppData\\Local\\JetBrains\\GoLand2023.1\\tmp\\GoLand",
   "Control": {
     "IsCloseYuanShen": false,
     "SendWeChatImage": false
@@ -49,14 +49,18 @@
     "IsRecord": false,
     "ScriptGroupName": "订单"
   },
-  "BgiLog": "better-genshin-impact20250830.log",
+  "BgiLog": "better-genshin-impact20250804.log",
   "Notice": {
     "Type": "TG",
-    "Wechat": "http://localhost:8080",
+    "Wechat": "https://qyapi.weixin.qq.com/",
     "TGNotice": {
-      "TGToken": "8362412280:AAHwxQC4vtu5KY7MYpK44hExLI17Mi1FWyU",
-      "ChatID": 5202176051,
-      "Proxy": "http://192.168.3.3:7897"
+      "TGToken": "",
+      "ChatID": 0,
+      "Proxy": "http://127.0.0.1:7897"
     }
+  },
+  "AIConfig": {
+    "APIKey": "",
+    "Model": ""
   }
 }
