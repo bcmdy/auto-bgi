@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"auto-bgi/autoLog"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	httpClient "auto-bgi/internal/http"
-	"auto-bgi/internal/logger"
 	"auto-bgi/internal/mysConfig"
 )
 
@@ -304,7 +304,7 @@ func RandomSleep(min, max int) {
 
 // UpdateCookieToken 通过stoken刷新cookie_token
 func UpdateCookieToken() error {
-	logger.Info("CookieToken 失效，尝试刷新")
+	autoLog.Sugar.Infof("米游社-尝试刷新CookieToken")
 
 	// 检查stoken是否存在
 	if mysConfig.GlobalConfig.Account.Stoken == "" {
@@ -367,10 +367,12 @@ func UpdateCookieToken() error {
 	}
 
 	// 打印响应内容用于调试
-	logger.Info("UpdateCookieToken响应: %s", resp.String())
+
+	autoLog.Sugar.Infof("米游社-UpdateCookieToken响应: %s", resp.String())
 
 	if response.Retcode != 0 {
-		logger.Error("stoken 已失效，请重新抓取 cookie")
+
+		autoLog.Sugar.Errorf("米游社-stoken 已失效，请重新抓取 cookie")
 		return fmt.Errorf("stoken 已失效: %s", response.Message)
 	}
 
@@ -384,7 +386,8 @@ func UpdateCookieToken() error {
 		// 如果找到旧的cookie_token，替换它
 		newCookie := re.ReplaceAllString(oldCookie, fmt.Sprintf("cookie_token=%s", newCookieToken))
 		mysConfig.GlobalConfig.Account.Cookie = newCookie
-		logger.Info("CookieToken 刷新成功")
+
+		autoLog.Sugar.Infof("米游社-CookieToken 刷新成功")
 		return nil
 	} else {
 		// 如果没有找到旧的cookie_token，添加新的
@@ -393,7 +396,8 @@ func UpdateCookieToken() error {
 		} else {
 			mysConfig.GlobalConfig.Account.Cookie = "cookie_token=" + newCookieToken
 		}
-		logger.Info("CookieToken 添加成功")
+
+		autoLog.Sugar.Infof("米游社-CookieToken 添加成功")
 		return nil
 	}
 }

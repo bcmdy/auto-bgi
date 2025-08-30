@@ -1,8 +1,8 @@
 {
   "OneLong": {
-    "isStartTimeLong": false,
-    "OneLongHour": 9,
-    "OneLongMinute": 0
+    "isStartTimeLong": true,
+    "OneLongHour": 13,
+    "OneLongMinute": 55
   },
   "BetterGIAddress": "D:\\subject\\lua\\BetterGI",
   "webhookURL": "https://example.com/webhook",
@@ -47,7 +47,8 @@
     ]
   },
   "ScreenRecord": {
-    "IsRecord": true,
+    "IsRecord": false,
     "ScriptGroupName": "订单"
-  }
+  },
+  "BgiLog": "better-genshin-impact20250830.log"
 }

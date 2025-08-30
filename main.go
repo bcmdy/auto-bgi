@@ -41,8 +41,14 @@ func init() {
 	if err != nil {
 		autoLog.Sugar.Infof("获取本机IP失败: %v", err)
 	} else {
+		autoLog.Sugar.Infof("浏览器使用本机局域网IP")
 		for _, ip := range ips {
-			autoLog.Sugar.Infof("本机IP: %s%s", ip, config.Cfg.Post)
+			if strings.Contains(ip, "192.168") {
+				autoLog.Sugar.Infof("本机局域网IP: %s%s", ip, config.Cfg.Post)
+			} else {
+				autoLog.Sugar.Infof("本机其他IP: %s%s", ip, config.Cfg.Post)
+			}
+
 		}
 	}
 }
@@ -71,9 +77,10 @@ func loadImages() {
 				imageList = append(imageList, "/img/"+d.Name())
 			}
 		}
-		autoLog.Sugar.Infof("加载图片: %s", path)
+
 		return nil
 	})
+	autoLog.Sugar.Infof("加载图片: %d", len(imageList))
 }
 
 func main() {

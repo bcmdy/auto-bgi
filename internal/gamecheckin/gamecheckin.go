@@ -1,11 +1,11 @@
 package gamecheckin
 
 import (
+	"auto-bgi/autoLog"
 	"encoding/json"
 	"fmt"
 
 	"auto-bgi/internal/http"
-	"auto-bgi/internal/logger"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/internal/utils"
 )
@@ -179,11 +179,12 @@ func (g *GameCheckin) updateHeaders() {
 // Run 运行游戏签到
 func (g *GameCheckin) Run() error {
 	if !mysConfig.GlobalConfig.Games.CN.Enable {
-		logger.Info("国服游戏签到功能已禁用")
+
+		autoLog.Sugar.Infof("米游社-国服游戏签到功能已禁用")
 		return nil
 	}
 
-	logger.Info("开始游戏签到: %s", g.gameName)
+	autoLog.Sugar.Infof("米游社-开始游戏签到: %s", g.gameName)
 
 	// 获取账号列表
 	if err := g.getAccountList(); err != nil {
@@ -191,29 +192,31 @@ func (g *GameCheckin) Run() error {
 	}
 
 	if len(g.accountList) == 0 {
-		logger.Info("没有找到 %s 的账号", g.gameName)
+
+		autoLog.Sugar.Infof("米游社-%s没有找到账号", g.gameName)
 		return nil
 	}
 
 	// 获取签到奖励列表
 	if err := g.getCheckinRewards(); err != nil {
-		logger.Error("获取签到奖励列表失败: %v", err)
+
+		autoLog.Sugar.Errorf("米游社-%s获取签到奖励列表失败: %v", g.gameName, err)
 	}
 
 	// 为每个账号签到
 	for _, account := range g.accountList {
 		if err := g.checkinAccount(account); err != nil {
-			logger.Error("账号 %s 签到失败: %v", account.GameUID, err)
+			autoLog.Sugar.Errorf("米游社-%s账号 %s 签到失败: %v", g.gameName, account.GameUID, err)
 		}
 	}
 
-	logger.Info("游戏签到完成: %s", g.gameName)
+	autoLog.Sugar.Infof("米游社-%s游戏签到完成", g.gameName)
 	return nil
 }
 
 // getAccountList 获取账号列表
 func (g *GameCheckin) getAccountList() error {
-	logger.Info("正在获取 %s 账号列表", g.gameName)
+	autoLog.Sugar.Infof("米游社-正在获取 %s 账号列表", g.gameName)
 
 	url := fmt.Sprintf("https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz=%s", g.gameID)
 
@@ -223,12 +226,12 @@ func (g *GameCheckin) getAccountList() error {
 	}
 
 	// 打印响应内容用于调试
-	logger.Info("账号列表响应: %s", resp.String())
+	autoLog.Sugar.Infof("米游社-获取 %s 账号列表响应: %s", g.gameName, resp.String())
 
 	var accountResp AccountListResponse
 	if err := resp.JSON(&accountResp); err != nil {
-		logger.Error("JSON解析失败: %v", err)
-		logger.Error("响应内容: %s", resp.String())
+		autoLog.Sugar.Errorf("米游社-%s获取 %s 账号列表JSON解析失败: %v", g.gameName, g.gameName, err)
+		autoLog.Sugar.Errorf("米游社-%s获取 %s 账号列表响应内容: %s", g.gameName, g.gameName, resp.String())
 		return fmt.Errorf("JSON解析失败: %v", err)
 	}
 
@@ -237,14 +240,16 @@ func (g *GameCheckin) getAccountList() error {
 	}
 
 	g.accountList = accountResp.Data.List
-	logger.Info("找到 %d 个 %s 账号", len(g.accountList), g.gameName)
+
+	autoLog.Sugar.Infof("米游社-%s获取 %s 账号列表成功", g.gameName, g.gameName)
 
 	return nil
 }
 
 // getCheckinRewards 获取签到奖励列表
 func (g *GameCheckin) getCheckinRewards() error {
-	logger.Info("正在获取 %s 签到奖励列表", g.gameName)
+
+	autoLog.Sugar.Infof("米游社-正在获取 %s 签到奖励列表", g.gameName)
 
 	url := fmt.Sprintf("%s&act_id=%s", g.rewardsAPI, g.actID)
 
@@ -269,21 +274,25 @@ func (g *GameCheckin) getCheckinRewards() error {
 	}
 
 	g.checkinRewards = rewardsResp.Data.Awards
-	logger.Info("获取到 %d 个签到奖励", len(g.checkinRewards))
+
+	autoLog.Sugar.Infof("获取到 %d 个签到奖励", len(g.checkinRewards))
 
 	return nil
 }
 
 // checkinAccount 为单个账号签到
 func (g *GameCheckin) checkinAccount(account AccountInfo) error {
-	logger.Info("正在为账号 %s (%s) 签到", account.GameUID, account.Nickname)
+
+	autoLog.Sugar.Infof("米游社-正在为账号 %s (%s) 签到", account.GameUID, account.Nickname)
 
 	// 检查是否已签到 - 如果检查失败，直接尝试签到（与Python行为一致）
 	isSigned, err := g.isSign(account.Region, account.GameUID, false)
 	if err != nil {
-		logger.Info("签到状态检查失败，直接尝试签到: %v", err)
+
+		autoLog.Sugar.Infof("米游社-账号 %s 签到状态检查失败，直接尝试签到: %v", account.GameUID, err)
+
 	} else if isSigned {
-		logger.Info("账号 %s 今日已签到", account.GameUID)
+		autoLog.Sugar.Infof("米游社-账号 %s 今日已签到", account.GameUID)
 		return nil
 	}
 
@@ -291,7 +300,9 @@ func (g *GameCheckin) checkinAccount(account AccountInfo) error {
 	retries := mysConfig.GlobalConfig.Games.CN.Retries
 	for i := 1; i <= retries; i++ {
 		if i > 1 {
-			logger.Info("第 %d 次重试签到", i)
+
+			autoLog.Sugar.Infof("米游社-账号 %s 签到失败，准备重试: %v", account.GameUID, err)
+
 			utils.RandomSleep(5, 10)
 		}
 
@@ -299,11 +310,11 @@ func (g *GameCheckin) checkinAccount(account AccountInfo) error {
 			if i == retries {
 				return fmt.Errorf("签到失败: %v", err)
 			}
-			logger.Error("签到失败，准备重试: %v", err)
+			autoLog.Sugar.Infof("米游社-账号 %s 签到失败，准备重试: %v", account.GameUID, err)
 			continue
 		}
 
-		logger.Info("账号 %s 签到成功", account.GameUID)
+		autoLog.Sugar.Infof("米游社-账号 %s 签到成功", account.GameUID)
 		break
 	}
 
@@ -320,7 +331,7 @@ func (g *GameCheckin) isSign(region, uid string, update bool) (bool, error) {
 	}
 
 	// 打印响应内容用于调试
-	logger.Info("签到状态检查响应: %s", resp.String())
+	autoLog.Sugar.Infof("签到状态检查响应: %s", resp.String())
 
 	var isSignResp IsSignResponse
 	if err := resp.JSON(&isSignResp); err != nil {
@@ -330,13 +341,14 @@ func (g *GameCheckin) isSign(region, uid string, update bool) (bool, error) {
 	if isSignResp.Retcode != 0 {
 		// 如果失败且尚未尝试更新，则尝试刷新cookie_token
 		if !update && (isSignResp.Retcode == -100 || isSignResp.Retcode == -500001) {
-			logger.Info("检查签到状态失败，尝试刷新cookie_token")
+			autoLog.Sugar.Infof("米游社-账号 %s 检查签到状态失败，尝试刷新cookie_token", uid)
 			if err := utils.UpdateCookieToken(); err == nil {
 				// 刷新成功，重新设置headers并重试
 				g.updateHeaders()
 				return g.isSign(region, uid, true)
 			} else {
-				logger.Error("刷新cookie_token失败: %v", err)
+
+				return false, fmt.Errorf("刷新cookie_token失败: %v", err)
 			}
 		}
 
@@ -363,7 +375,7 @@ func (g *GameCheckin) sign(region, uid string) error {
 	jsonData, _ := json.Marshal(data)
 
 	// 打印发送的JSON数据用于调试
-	logger.Info("发送的JSON数据: %s", string(jsonData))
+	autoLog.Sugar.Infof("发送的JSON数据: %s", string(jsonData))
 
 	// Python游戏签到不重新生成DS，直接使用初始化时的DS
 	resp, err := g.client.PostJSON(url, string(jsonData))
@@ -372,7 +384,8 @@ func (g *GameCheckin) sign(region, uid string) error {
 	}
 
 	// 打印响应内容用于调试
-	logger.Info("签到请求响应: %s", resp.String())
+
+	autoLog.Sugar.Infof("米游社-账号 %s 签到请求响应: %s", uid, resp.String())
 
 	var signResp SignResponse
 	if err := resp.JSON(&signResp); err != nil {
@@ -388,11 +401,12 @@ func (g *GameCheckin) sign(region, uid string) error {
 
 // RunAllGames 运行所有游戏签到
 func RunAllGames() error {
-	logger.Info("开始游戏签到")
+
+	autoLog.Sugar.Infof("米游社-开始游戏签到")
 
 	// 检查国服游戏签到是否启用
 	if !mysConfig.GlobalConfig.Games.CN.Enable {
-		logger.Info("国服游戏签到功能已禁用")
+		autoLog.Sugar.Infof("米游社-游戏签到功能已禁用")
 		return nil
 	}
 
@@ -401,7 +415,8 @@ func RunAllGames() error {
 
 	// 检查原神是否启用签到
 	if !mysConfig.GlobalConfig.Games.CN.Genshin.Checkin {
-		logger.Info("原神签到已禁用")
+
+		autoLog.Sugar.Infof("米游社-原神签到已禁用")
 		return nil
 	}
 
@@ -415,9 +430,10 @@ func RunAllGames() error {
 	)
 
 	if err := gameCheckin.Run(); err != nil {
-		logger.Error("原神签到失败: %v", err)
+
+		autoLog.Sugar.Errorf("原神签到失败: %v", err)
 	}
 
-	logger.Info("游戏签到完成")
+	autoLog.Sugar.Infof("米游社-游戏签到完成")
 	return nil
 }

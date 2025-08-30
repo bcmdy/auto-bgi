@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"auto-bgi/internal/logger"
 )
 
 // Client HTTP客户端
@@ -62,7 +60,7 @@ func (c *Client) Get(url string) (*Response, error) {
 		req.Header.Set(key, value)
 	}
 
-	logger.Debug("发送GET请求: %s", url)
+	//logger.Debug("发送GET请求: %s", url)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("发送请求失败: %v", err)
@@ -70,7 +68,7 @@ func (c *Client) Get(url string) (*Response, error) {
 	defer resp.Body.Close()
 
 	var reader io.Reader = resp.Body
-	
+
 	// 检查是否是gzip压缩
 	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
 		gzipReader, err := gzip.NewReader(resp.Body)
@@ -120,7 +118,7 @@ func (c *Client) Post(url string, data interface{}) (*Response, error) {
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	}
 
-	logger.Debug("发送POST请求: %s", url)
+	//logger.Debug("发送POST请求: %s", url)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("发送请求失败: %v", err)
@@ -128,7 +126,7 @@ func (c *Client) Post(url string, data interface{}) (*Response, error) {
 	defer resp.Body.Close()
 
 	var reader io.Reader = resp.Body
-	
+
 	// 检查是否是gzip压缩
 	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
 		gzipReader, err := gzip.NewReader(resp.Body)
@@ -168,7 +166,7 @@ func (c *Client) PostJSON(url string, jsonData string) (*Response, error) {
 	// 设置Content-Type
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-	logger.Debug("发送POST JSON请求: %s", url)
+	//logger.Debug("发送POST JSON请求: %s", url)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("发送请求失败: %v", err)
@@ -176,7 +174,7 @@ func (c *Client) PostJSON(url string, jsonData string) (*Response, error) {
 	defer resp.Body.Close()
 
 	var reader io.Reader = resp.Body
-	
+
 	// 检查是否是gzip压缩
 	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
 		gzipReader, err := gzip.NewReader(resp.Body)
@@ -216,7 +214,7 @@ func (c *Client) PostJSONWithHeaders(url string, jsonData string, headers map[st
 	// 设置Content-Type
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-	logger.Debug("发送POST JSON请求: %s", url)
+	//logger.Debug("发送POST JSON请求: %s", url)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("发送请求失败: %v", err)
@@ -224,7 +222,7 @@ func (c *Client) PostJSONWithHeaders(url string, jsonData string, headers map[st
 	defer resp.Body.Close()
 
 	var reader io.Reader = resp.Body
-	
+
 	// 检查是否是gzip压缩
 	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
 		gzipReader, err := gzip.NewReader(resp.Body)
@@ -267,4 +265,4 @@ func (r *Response) String() string {
 // IsSuccess 检查响应是否成功
 func (r *Response) IsSuccess() bool {
 	return r.StatusCode >= 200 && r.StatusCode < 300
-} 
+}

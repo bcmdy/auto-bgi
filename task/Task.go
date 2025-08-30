@@ -6,7 +6,6 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/internal/gamecheckin"
-	"auto-bgi/internal/logger"
 	"auto-bgi/internal/mihoyobbs"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/internal/utils"
@@ -612,15 +611,16 @@ func MiYouSheSign() {
 	utils.InitRandom()
 
 	// 加载配置文件
-	logger.Info("正在加载配置文件: %s", configPath)
+	autoLog.Sugar.Infof("米游社-正在加载配置文件: %s", configPath)
 	if err := mysConfig.LoadConfig(configPath); err != nil {
-		logger.Error("加载配置文件失败: %v", err)
+
+		autoLog.Sugar.Errorf("米游社-加载配置文件失败: %v", err)
 		os.Exit(1)
 	}
 
 	// 检查Cookie是否配置
 	if mysConfig.GlobalConfig.Account.Cookie == "" {
-		logger.Error("Cookie未配置，请先在配置文件中设置Cookie")
+		autoLog.Sugar.Errorf("米游社-Cookie未配置，请先在配置文件中设置Cookie")
 		os.Exit(1)
 	}
 
@@ -628,27 +628,30 @@ func MiYouSheSign() {
 	if mysConfig.GlobalConfig.Device.ID == "" {
 		deviceID := utils.GetDeviceID(mysConfig.GlobalConfig.Account.Cookie)
 		mysConfig.GlobalConfig.Device.ID = deviceID
-		logger.Info("自动生成设备ID: %s", deviceID)
+		autoLog.Sugar.Infof("米游社-自动生成设备ID: %s", deviceID)
 	}
 
-	logger.Info("米游社签到工具启动")
+	autoLog.Sugar.Infof("米游社-签到工具启动")
 
 	// 运行米游社签到
 	if mysConfig.GlobalConfig.Mihoyobbs.Enable {
-		logger.Info("开始米游社签到任务")
+		autoLog.Sugar.Infof("米游社-开始签到任务")
 		mihoyobbsClient := mihoyobbs.NewMihoyobbs()
 		if err := mihoyobbsClient.Run(); err != nil {
-			logger.Error("米游社签到失败: %v", err)
+
+			autoLog.Sugar.Errorf("米游社-签到失败: %v", err)
 		}
 	}
 
 	// 运行游戏签到
 	if mysConfig.GlobalConfig.Games.CN.Enable {
-		logger.Info("开始游戏签到任务")
+
+		autoLog.Sugar.Infof("米游社-开始游戏签到任务")
 		if err := gamecheckin.RunAllGames(); err != nil {
-			logger.Error("游戏签到失败: %v", err)
+
+			autoLog.Sugar.Errorf("米游社-游戏签到失败: %v", err)
 		}
 	}
 
-	logger.Info("所有任务完成")
+	autoLog.Sugar.Infof("米游社-所有任务完成")
 }
