@@ -1,0 +1,140 @@
+name: 🔄 Auto-BGI Daily Sync & Build
+
+on:
+  schedule:
+    - cron: '0 15 * * *'   # 每天 UTC 15:00（北京时间 23:00）
+  workflow_dispatch:              # 手动触发
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  UPSTREAM_REPO: 'https://gitee.com/wangjian0327/auto-bgi.git'
+  UPSTREAM_BRANCH: 'ginVue'
+  LOCAL_BRANCH: 'main'
+
+jobs:
+  sync-build-release:
+    runs-on: windows-latest
+    steps:
+      # 1. 检出本仓库
+      - name: 🧾 Checkout self
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # 2. 配置 Git
+      - name: ⚙️ Configure Git
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      # 3. 检测上游是否有更新
+      - name: 🔍 Check upstream changes
+        id: upstream
+        shell: bash
+        run: |
+          git remote add upstream ${{ env.UPSTREAM_REPO }} || true
+          git fetch upstream ${{ env.UPSTREAM_BRANCH }} --quiet
+          UPSTREAM_HASH=$(git rev-parse upstream/${{ env.UPSTREAM_BRANCH }})
+          LOCAL_HASH=$(git rev-parse HEAD)
+          echo "upstream_hash=$UPSTREAM_HASH" >> $GITHUB_OUTPUT
+          echo "local_hash=$LOCAL_HASH"       >> $GITHUB_OUTPUT
+          echo "changed=$([ \"$UPSTREAM_HASH\" != \"$LOCAL_HASH\" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      # 4. 同步并强制推送（保留 workflow）
+      - name: ⬇️⬆️ Sync & force-push
+        if: steps.upstream.outputs.changed == 'true'
+        shell: bash
+        run: |
+          cp .github/workflows/build.yml /tmp/build.yml.bak || true
+          git reset --hard upstream/${{ env.UPSTREAM_BRANCH }}
+          mkdir -p .github/workflows
+          cp /tmp/build.yml.bak .github/workflows/build.yml
+          git add .github/workflows/build.yml
+          git -c user.name='github-actions[bot]' \
+              -c user.email='github-actions[bot]@users.noreply.github.com' \
+              commit -m "chore: restore workflow after sync" || true
+          git push --force-with-lease origin ${{ env.LOCAL_BRANCH }}
+
+      # 5. 安装 Node
+      - name: 🧰 Setup Node
+        if: |
+          steps.upstream.outputs.changed == 'true' ||
+          github.event_name == 'push' ||
+          github.event_name == 'pull_request' ||
+          github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 6. 安装 Go
+      - name: 🐹 Setup Go
+        if: |
+          steps.upstream.outputs.changed == 'true' ||
+          github.event_name == 'push' ||
+          github.event_name == 'pull_request' ||
+          github.event_name == 'workflow_dispatch'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+          cache: false
+
+      # 7. 前端 & 后端联合构建（确保目录正确）
+      - name: 🏗 Build frontend & backend
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          Write-Host "===== Build frontend ====="
+          Remove-Item -Recurse -Force web/dist -ErrorAction SilentlyContinue
+          cd web
+          npm ci --silent --no-audit --no-fund
+          npm run build
+          if (-not (Test-Path dist)) {
+              throw "❌ 前端构建失败，dist 目录不存在"
+          }
+          Get-ChildItem dist | Write-Host
+          cd ..
+
+          Write-Host "===== Build backend ====="
+          go mod tidy
+          go build -ldflags="-s -w" -o auto-bgi.exe
+          if (-not (Test-Path auto-bgi.exe)) {
+              throw "❌ Go 编译失败，auto-bgi.exe 未生成"
+          }
+          Get-ChildItem auto-bgi.exe | Write-Host
+
+      # 8. 上传产物
+      - name: 📤 Upload artifact
+        if: |
+          steps.upstream.outputs.changed == 'true' ||
+          github.event_name == 'push' ||
+          github.event_name == 'pull_request' ||
+          github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-${{ github.run_number }}
+          path: auto-bgi.exe
+          retention-days: 30
+
+      # 9. 发布 Nightly Release
+      - name: 🚀 Create Nightly Release
+        if: steps.upstream.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly-${{ steps.upstream.outputs.upstream_hash }}
+          name: Nightly Sync ${{ steps.upstream.outputs.upstream_hash }}
+          body: |
+            🗓 **Build Date**: ${{ github.event.repository.updated_at }}  
+            🔖 **Upstream Commit**: `${{ steps.upstream.outputs.upstream_hash }}`
+          files: auto-bgi.exe
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
