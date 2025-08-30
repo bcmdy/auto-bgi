@@ -198,7 +198,7 @@ func ChangeTaskEnabledList() error {
 		var days []int
 		for _, m := range weekRe.FindAllStringSubmatch(s, -1) {
 			for _, ch := range m[1] { // "137" → '1','3','7'
-				if d := int(ch - '0'); d >= 1 && d <= 7 {
+				if d := int(ch - '0'); d >= 0 && d <= 6 {
 					days = append(days, d)
 				}
 			}
