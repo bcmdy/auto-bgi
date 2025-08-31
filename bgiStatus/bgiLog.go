@@ -134,7 +134,8 @@ func (m *LogMonitor) Monitor() {
 						msg := fmt.Sprintf("⚠️ 日志告警\n关键词: %s\n内容: %s", kw, strings.TrimSpace(line))
 						//m.sendAlert(msg, false)
 						SentText(msg)
-						fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
+						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
+						autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 					}
 				}
 				if strings.Contains(line, "一条龙和配置组任务结束") {

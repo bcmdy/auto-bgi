@@ -214,6 +214,7 @@ func ChangeTaskEnabledList() error {
 
 	for _, s := range aa.Keys() {
 		// 先尝试用“周x”规则解析
+		autoLog.Sugar.Infof("配置组:%s", s)
 		numbers := extractWeekdays(s)
 		if len(numbers) == 0 {
 			// 没有“周x”字样 → 保持原值
@@ -254,7 +255,8 @@ func ChangeTaskEnabledList() error {
 		return fmt.Errorf("自定义配置写入文件失败")
 	}
 
-	bgiStatus.SentText(builder.String())
+	//将执行配置写入文件，直接覆盖
+	// 定义要写入的内容
 	content := []byte(oneLongLog.String())
 	file, err := os.OpenFile("OneLongTask.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -262,6 +264,9 @@ func ChangeTaskEnabledList() error {
 	}
 	defer file.Close()
 	file.Write(content)
+
+	//发送通知
+	bgiStatus.SentText(builder.String())
 
 	return nil
 }
