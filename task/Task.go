@@ -200,6 +200,7 @@ func ChangeTaskEnabledList() error {
 
 	for _, s := range aa.Keys() {
 
+		autoLog.Sugar.Infof("配置组:%s", s)
 		numbers := re.FindAllString(s, -1)
 		if numbers == nil {
 			get, _ := aa.Get(s)
@@ -250,8 +251,6 @@ func ChangeTaskEnabledList() error {
 
 	}
 
-	bgiStatus.SentText(builder.String())
-
 	//将执行配置写入文件，直接覆盖
 	// 定义要写入的内容
 	content := []byte(oneLongLog.String())
@@ -262,6 +261,9 @@ func ChangeTaskEnabledList() error {
 	}
 	defer file.Close()
 	file.Write(content)
+
+	//发送通知
+	bgiStatus.SentText(builder.String())
 
 	return nil
 

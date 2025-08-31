@@ -21,22 +21,22 @@ var GameRoles gameRolesRes
 
 func init() {
 
-	GetGenShinGameRolesAsync()
-
-	file, err := os.Open("GameInfo.json")
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	bytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return
-	}
-
-	if err := json.Unmarshal(bytes, &GameRoles); err != nil {
-		return
-	}
+	//GetGenShinGameRolesAsync()
+	//
+	//file, err := os.Open("GameInfo.json")
+	//if err != nil {
+	//	return
+	//}
+	//defer file.Close()
+	//
+	//bytes, err := ioutil.ReadAll(file)
+	//if err != nil {
+	//	return
+	//}
+	//
+	//if err := json.Unmarshal(bytes, &GameRoles); err != nil {
+	//	return
+	//}
 }
 
 type gameRolesRes struct {

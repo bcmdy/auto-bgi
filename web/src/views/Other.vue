@@ -94,6 +94,9 @@
                                 <button class="btn archive-btn-always" @click="archiveGroup(group)" title="归档此配置组">
                                     📥 归档
                                 </button>
+                                <button class="btn error-extract-btn" @click="extractErrors(group)" title="提取错误信息">
+                                    ⚠️ 错误提取
+                                </button>
                                 <!-- <button class="toggle-btn" @click="toggleGroupDetails(group.GroupName)">
                                   <span v-if="expandedGroups.includes(group.GroupName)" style="color: #ff6eb4;">📖 收起</span>
                                   <span v-else style="color: #ff6eb4;">📋 详情</span>
@@ -185,6 +188,63 @@
             <span class="back-to-top-text">顶部</span>
         </button>
 
+        <!-- 错误提取弹框 -->
+        <div v-if="showErrorModal" class="error-modal-overlay" @click="closeErrorModal">
+            <div class="error-modal" @click.stop>
+                <div class="error-modal-header">
+                    <h3 style="color: #ff0000;">⚠️ 错误信息提取</h3>
+                    <button class="modal-close-btn" @click="closeErrorModal">×</button>
+                </div>
+                <div class="error-modal-content">
+                    <div class="error-summary-info">
+                        <p><strong>配置组：</strong>{{ currentErrorGroup?.GroupName }}</p>
+                        <p><strong>文件：</strong>{{ selectedFile }}</p>
+                        <p><strong>错误总数：</strong>{{ extractedErrors.length }}</p>
+                    </div>
+                    
+                    <div v-if="extractedErrors.length > 0" class="error-table-container">
+                        <div class="error-table-header">
+                            <button class="copy-all-btn" @click="copyAllErrors">
+                                📋 复制全部（含汇总信息）
+                            </button>
+                        </div>
+                        <div class="error-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>序号</th>
+                                        <th>子任务名称</th>
+                                        <th>错误名称</th>
+                                        <th>坐标</th>
+                                        <th>次数</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(error, index) in extractedErrors" :key="index">
+                                        <td>{{ index + 1 }}</td>
+                                        <td>{{ error.taskName || '未知任务' }}</td>
+                                        <td>{{ error.errorName || '未知错误' }}</td>
+                                        <td>{{ error.coordinates || '无坐标' }}</td>
+                                        <td>{{ error.count || 1 }}</td>
+                                        <td>
+                                            <button class="copy-single-btn" @click="copySingleError(error, index)" title="复制此错误（含汇总信息）">
+                                                复制
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div v-else class="no-errors">
+                        <div class="no-errors-icon">✅</div>
+                        <p>该配置组暂无错误信息</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
     </div>
@@ -203,7 +263,10 @@ export default {
             loading: false,
             expandedGroups: [], // 记录展开的配置组
             bookmarkVisible: false, // 书签是否可见，默认折叠
-            currentActiveGroup: '' // 当前活跃的配置组
+            currentActiveGroup: '', // 当前活跃的配置组
+            showErrorModal: false, // 控制错误提取弹框的显示
+            currentErrorGroup: null, // 当前正在提取错误的配置组
+            extractedErrors: [] // 提取到的错误信息
         }
     },
     async mounted() {
@@ -408,6 +471,128 @@ export default {
                     el.style.display = 'none';
                 }
             });
+        },
+        // 提取错误信息
+        extractErrors(group) {
+            this.currentErrorGroup = group; // 设置当前正在提取错误的配置组
+            this.extractedErrors = []; // 清空之前提取的错误
+            
+            // 从配置组中提取错误信息
+            const errors = [];
+            
+            // 从子任务中提取错误
+            if (group.LogAnalysis2Json && group.LogAnalysis2Json.length > 0) {
+                group.LogAnalysis2Json.forEach(subTask => {
+                    if (subTask.Errors && Object.keys(subTask.Errors).length > 0) {
+                        Object.entries(subTask.Errors).forEach(([errorName, errorCount]) => {
+                            // 坐标提取逻辑 - 直接使用 ErrorsMark 的完整内容
+                            let coordinates = '无坐标';
+                            
+                            if (subTask.ErrorsMark && Object.keys(subTask.ErrorsMark).length > 0) {
+                                // 将 ErrorsMark 对象转换为字符串格式
+                                coordinates = Object.entries(subTask.ErrorsMark)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join(', ');
+                            }
+                            
+                            // 添加调试信息
+                            console.log('错误提取调试:', {
+                                taskName: subTask.JsonName,
+                                errorName: errorName,
+                                errorsMark: subTask.ErrorsMark,
+                                extractedCoordinates: coordinates
+                            });
+                            
+                            errors.push({
+                                taskName: subTask.JsonName,
+                                errorName: errorName,
+                                coordinates: coordinates,
+                                count: errorCount
+                            });
+                        });
+                    }
+                });
+            }
+            
+            // 从配置组级别的错误汇总中提取
+            if (group.ErrorSummary && Object.keys(group.ErrorSummary).length > 0) {
+                Object.entries(group.ErrorSummary).forEach(([errorName, errorCount]) => {
+                    // 检查是否已经添加过相同的错误
+                    const existingError = errors.find(err => err.errorName === errorName);
+                    if (!existingError) {
+                        errors.push({
+                            taskName: '配置组级别',
+                            errorName: errorName,
+                            coordinates: '无坐标',
+                            count: errorCount
+                        });
+                    }
+                });
+            }
+            
+            this.extractedErrors = errors;
+            this.showErrorModal = true; // 显示弹框
+            
+            if (errors.length > 0) {
+                this.$message?.success(`成功提取到 ${errors.length} 条错误信息！`);
+            } else {
+                this.$message?.info('该配置组暂无错误信息');
+            }
+        },
+        // 关闭错误提取弹框
+        closeErrorModal() {
+            this.showErrorModal = false;
+            this.currentErrorGroup = null;
+            this.extractedErrors = [];
+        },
+        // 复制全部错误信息
+        copyAllErrors() {
+            // 构建汇总信息
+            const summaryInfo = [
+                `配置组: ${this.currentErrorGroup?.GroupName || '未知配置组'}`,
+                `文件: ${this.selectedFile || '未知文件'}`,
+                `错误总数: ${this.extractedErrors.length}`,
+                `提取时间: ${new Date().toLocaleString()}`,
+                ''
+            ].join('\n');
+            
+            // 构建错误详情
+            const errorDetails = this.extractedErrors.map(err => {
+                return `子任务: ${err.taskName || '未知任务'}, 错误: ${err.errorName || '未知错误'}, 坐标: ${err.coordinates || '无坐标'}, 次数: ${err.count || 1}`;
+            }).join('\n');
+            
+            // 组合完整信息
+            const fullText = summaryInfo + errorDetails;
+            this.copyToClipboard(fullText);
+        },
+        // 复制单个错误信息
+        copySingleError(error, index) {
+            // 构建汇总信息
+            const summaryInfo = [
+                `配置组: ${this.currentErrorGroup?.GroupName || '未知配置组'}`,
+                `文件: ${this.selectedFile || '未知文件'}`,
+                `错误总数: ${this.extractedErrors.length}`,
+                `当前错误序号: ${index + 1}`,
+                `提取时间: ${new Date().toLocaleString()}`,
+                ''
+            ].join('\n');
+            
+            // 构建单个错误详情
+            const errorDetail = `子任务: ${error.taskName || '未知任务'}, 错误: ${error.errorName || '未知错误'}, 坐标: ${error.coordinates || '无坐标'}, 次数: ${error.count || 1}`;
+            
+            // 组合完整信息
+            const fullText = summaryInfo + errorDetail;
+            this.copyToClipboard(fullText);
+        },
+        // 复制到剪贴板
+        copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            this.$message?.success('复制成功！（包含配置组、文件、错误总数等汇总信息）');
         }
     }
 }
@@ -991,6 +1176,23 @@ export default {
     box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
 }
 
+.error-extract-btn {
+    background: linear-gradient(45deg, #f44336, #e53935);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    transition: all 0.3s ease;
+}
+
+.error-extract-btn:hover {
+    background: linear-gradient(45deg, #e53935, #d32f2f);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
+}
+
 .toggle-btn {
     background: linear-gradient(45deg, var(--primary-color), #ff9ecf);
     color: white;
@@ -1355,6 +1557,165 @@ export default {
 .back-to-top-text {
     font-size: 0.7rem;
     line-height: 1;
+    color: #000;
+}
+
+/* 错误提取弹框样式 */
+.error-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.error-modal {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.error-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(45deg, var(--primary-color), #ff9ecf);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    transform: scale(1.2);
+}
+
+.error-modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.error-summary-info {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #eee;
+}
+
+.error-table-container {
+    margin-top: 15px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.error-table-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 15px;
+    background: #eddddd;
+    border-bottom: 1px solid #eee;
+}
+
+.copy-all-btn {
+    background: linear-gradient(45deg, var(--primary-color), #ff9ecf);
+    color: rgb(10, 3, 3);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(12, 238, 84, 0.3);
+    transition: all 0.3s ease;
+    background: rgb(235, 133, 133);
+}
+
+.copy-all-btn:hover {
+    background: linear-gradient(45deg, #ed1e85, var(--primary-color));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 110, 180, 0.4);
+    background: rgb(229, 11, 11);
+
+}
+
+.error-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.error-table th,
+.error-table td {
+    padding: 10px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.error-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.error-table tr:last-child td {
+    border-bottom: none;
+}
+
+.copy-single-btn {
+    background: linear-gradient(45deg, #4caf50, #66bb6a);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+    transition: all 0.3s ease;
+}
+
+.copy-single-btn:hover {
+    background: linear-gradient(45deg, #66bb6a, #4caf50);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.no-errors {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+}
+
+.no-errors-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
 }
 
 @media (max-width: 600px) {
@@ -1428,9 +1789,11 @@ export default {
     }
 
     .archive-btn-always,
+    .error-extract-btn,
     .toggle-btn {
         width: 100%;
         justify-content: center;
+        margin-bottom: 5px;
     }
 
     .group-content {
@@ -1611,6 +1974,42 @@ export default {
 
     .back-to-top-text {
         font-size: 0.6rem;
+    }
+
+    /* 移动端错误提取弹框适配 */
+    .error-modal {
+        width: 95%;
+        max-width: none;
+        max-height: 90vh;
+        margin: 10px;
+    }
+
+    .error-modal-header {
+        padding: 10px 15px;
+        font-size: 1rem;
+    }
+
+    .error-modal-content {
+        padding: 15px;
+    }
+
+    .error-table {
+        font-size: 0.75rem;
+    }
+
+    .error-table th,
+    .error-table td {
+        padding: 6px 8px;
+    }
+
+    .copy-all-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+
+    .copy-single-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
     }
 }
 </style>
