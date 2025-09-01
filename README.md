@@ -32,7 +32,7 @@ IP地址在黑窗口里面可以看到
 
 ![image-20250809102431054](./assets/image-20250809102431054.png)
 
-配置文件main.json说明：
+## 配置文件main.json说明：
 
 - OneLong：一条龙定时配置
   - isStartTimeLong：true：开启、false：关闭
@@ -132,6 +132,14 @@ Notice：通知设置
 ## 归档记录
 
 可以在配置组运行情况里面，将每一个配置组进行归档，或者一条龙结束的时候，自动将今日所有的配置组运行情况进行归档，下次执行这个配置组就可以看见预计结束时间
+
+## 米游社签到功能
+
+![image-20250901133817494](./assets/image-20250901133817494.png)
+
+获取教程：
+
+https://hut.ao/zh/advanced/get-stoken-cookie-from-the-third-party.html
 
 # 结尾
 
