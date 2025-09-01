@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -21,8 +22,6 @@ type Config struct {
 	BagStatistics   string       `json:"BagStatistics" comment:"需要统计的物品"`
 	Post            string       `json:"post" comment:"post地址"`
 	MySign          MySign       `json:"MySign" comment:"米游社签到"`
-	Backups         []string     `json:"backups" comment:"需要的备份文件"`
-	Cookie          string       `json:"cookie"`
 	BasePath        string       `json:"basePath"`
 	Control         Control      `json:"Control" comment:"控制配置"`
 	LogKeywords     []string     `json:"LogKeywords" comment:"日志关键词"`
@@ -67,7 +66,7 @@ type oneLong struct {
 
 type MySign struct {
 	IsMySignIn bool   `json:"isMysSignIn" comment:"是否开启我的签到"`
-	Url        string `json:"url" comment:"我的签到url"`
+	Time       string `json:"Time" comment:"我的签到时间"`
 }
 
 var Cfg Config
@@ -147,6 +146,18 @@ func DefaultConfig() {
 	}
 	if Cfg.LogKeywords == nil {
 		Cfg.LogKeywords = []string{"未识别到突发任务", "OCR 识别失败", "此路线出现3次卡死", "重试一次路线或放弃此路线！", "检测到复苏界面", "存在角色被击败", "执行路径时出错", "传送点未激活或不存在"}
+	}
+	if Cfg.Notice.Type == "" {
+		Cfg.Notice.Type = "wechat"
+	}
+	if Cfg.MySign.Time == "" {
+		Cfg.MySign.Time = "0,20"
+	} else {
+		Cfg.MySign.Time = strings.TrimSpace(Cfg.MySign.Time)
+		timeList := strings.Split(Cfg.MySign.Time, ",")
+		if len(timeList) != 2 {
+			Cfg.MySign.Time = "0,20"
+		}
 	}
 
 }

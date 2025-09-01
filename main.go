@@ -473,7 +473,7 @@ func main() {
 	// 统计配置组执行时间 - 返回JSON
 	ginServer.GET("/api/other", func(context *gin.Context) {
 		var otherGroup sync.WaitGroup
-		otherGroup.Add(3)
+		otherGroup.Add(2)
 		fileName := context.Query("file")
 
 		var (
@@ -488,12 +488,12 @@ func main() {
 			defer otherGroup.Done()
 			GroupTime, _ = bgiStatus.GroupTime(fileName)
 		}()
-
-		//获取米游社签到日志
-		go func() {
-			defer otherGroup.Done()
-			signLog = bgiStatus.GetMysSignLog()
-		}()
+		//
+		////获取米游社签到日志
+		//go func() {
+		//	defer otherGroup.Done()
+		//	signLog = bgiStatus.GetMysSignLog()
+		//}()
 
 		//获取今天执行配置组
 		go func() {
@@ -759,6 +759,15 @@ func main() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功"})
+	})
+
+	//米游社手动签到
+	ginServer.POST("/api/mysSignIn", func(c *gin.Context) {
+
+		task.MiYouSheSign()
+
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "签到成功"})
+
 	})
 
 	//webhook

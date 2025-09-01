@@ -222,48 +222,6 @@
           </div>
         </a-card>
 
-        <!-- 需要备份的文件或文件夹路径 -->
-        <a-card title="需要备份的文件或者文件夹路径" class="config-card backup-paths">
-          <template #extra>
-            <div class="card-extra">
-              <span class="card-icon">💾</span>
-              <a-tooltip title="需要备份的文件或者文件夹路径，bgi目录下的文件夹路径">
-                <QuestionCircleOutlined class="help-icon-btn" />
-              </a-tooltip>
-            </div>
-          </template>
-
-          <div class="dynamic-list">
-            <div 
-              v-for="(backup, index) in formData.backups" 
-              :key="`backup-${index}`"
-              class="list-item"
-            >
-              <div class="item-content">
-                <span class="item-icon">📂</span>
-                <a-input 
-                  v-model:value="formData.backups[index]" 
-                  placeholder="文件夹名称"
-                  class="enhanced-input"
-                />
-              </div>
-              <a-button 
-                type="primary" 
-                danger 
-                @click="removeBackup(index)"
-                class="remove-btn"
-                :disabled="formData.backups.length <= 1"
-              >
-                <DeleteOutlined />
-              </a-button>
-            </div>
-
-            <a-button type="dashed" @click="addBackup" class="add-btn">
-              <PlusOutlined /> 添加文件或者文件夹
-            </a-button>
-          </div>
-        </a-card>
-
         <!-- 一条龙时间设置 -->
         <a-card title="一条龙时间设置" class="config-card time-settings">
           <template #extra>
@@ -344,7 +302,7 @@
           <template #extra>
             <div class="card-extra">
               <span class="card-icon">🎁</span>
-              <a-tooltip title="米游社签到设置，需要配合米游社签到脚本使用，没有就关闭">
+              <a-tooltip title="米游社签到设置，在根目录下mysConfig.yaml配置好米游社cookie和stoken，开启后会每天定时签到">
                 <QuestionCircleOutlined class="help-icon-btn" />
               </a-tooltip>
             </div>
@@ -360,12 +318,12 @@
               </a-checkbox>
             </a-form-item>
 
-            <a-form-item label="签到 URL" name="mysUrl" class="form-item-enhanced" v-show="formData.MySign.isMysSignIn">
+            <a-form-item label="签到时间" name="mysUrl" class="form-item-enhanced" v-show="formData.MySign.Time">
               <div class="input-wrapper">
                 <span class="input-icon">🔗</span>
                 <a-input 
-                  v-model:value="formData.MySign.url" 
-                  placeholder="http://localhost:8888"
+                  v-model:value="formData.MySign.Time" 
+                  placeholder="0,20"
                   class="enhanced-input"
                 />
               </div>
@@ -546,41 +504,7 @@
           </div>
         </a-card>
 
-        <!-- AI配置 -->
-        <a-card title="AI配置" class="config-card ai-config">
-          <template #extra>
-            <div class="card-extra">
-              <span class="card-icon">🤖</span>
-              <a-tooltip title="AI配置设置，用于AI相关功能">
-                <QuestionCircleOutlined class="help-icon-btn" />
-              </a-tooltip>
-            </div>
-          </template>
-
-          <div class="ai-content">
-            <a-form-item label="API Key" name="APIKey" class="form-item-enhanced">
-              <div class="input-wrapper">
-                <span class="input-icon">🔑</span>
-                <a-input 
-                  v-model:value="formData.AIConfig.APIKey" 
-                  placeholder="AI API Key"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
-
-            <a-form-item label="模型" name="Model" class="form-item-enhanced">
-              <div class="input-wrapper">
-                <span class="input-icon">🧠</span>
-                <a-input 
-                  v-model:value="formData.AIConfig.Model" 
-                  placeholder="AI模型名称"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
-          </div>
-        </a-card>
+ 
 
         <!-- 提交按钮 -->
         <div class="submit-section">
@@ -624,13 +548,11 @@ const getDayIcon = (index) => {
 // 表单数据
 const formData = reactive({
   BetterGIAddress: '',
-  cookie: '',
   content: '',
   post: '10086',
   ConfigNames: new Array(7).fill(''),
   bagKeywords: [''],
   LogKeywords: [''],
-  backups: [''],
   OneLong: {
     isStartTimeLong: false,
     OneLongHour: 13,
@@ -642,7 +564,7 @@ const formData = reactive({
   },
   MySign: {
     isMysSignIn: false,
-    url: ''
+    Time: ''
   },
   OneRemote: {
     IsMonitor: false,
@@ -663,10 +585,6 @@ const formData = reactive({
       ChatID: '',
       Proxy: ''
     }
-  },
-  AIConfig: {
-    APIKey: '',
-    Model: ''
   }
 })
 
@@ -704,15 +622,7 @@ const removeLogKeyword = (index) => {
   }
 }
 
-const addBackup = () => {
-  formData.backups.push('')
-}
 
-const removeBackup = (index) => {
-  if (formData.backups.length > 1) {
-    formData.backups.splice(index, 1)
-  }
-}
 
 const addOneRemoteKeyword = () => {
   formData.OneRemote.LogKeywords.push('')
@@ -734,7 +644,6 @@ const loadConfig = async () => {
 
     if (data) {
       formData.BetterGIAddress = data.BetterGIAddress || ''
-      formData.cookie = data.cookie || ''
       formData.content = data.content || ''
       formData.post = (data.post || '').replace(':', '')
       formData.basePath = data.basePath || ''
@@ -757,12 +666,6 @@ const loadConfig = async () => {
         formData.LogKeywords = ['']
       }
 
-      if (data.backups && Array.isArray(data.backups)) {
-        formData.backups = data.backups.filter(backup => backup)
-      }
-      if (formData.backups.length === 0) {
-        formData.backups = ['']
-      }
 
       if (data.OneLong) {
         Object.assign(formData.OneLong, data.OneLong)
@@ -787,10 +690,6 @@ const loadConfig = async () => {
       if (data.Notice) {
         Object.assign(formData.Notice, data.Notice)
       }
-
-      if (data.AIConfig) {
-        Object.assign(formData.AIConfig, data.AIConfig)
-      }
     }
   } catch (error) {
     message.error('加载配置失败: ' + error.message)
@@ -803,12 +702,10 @@ const handleSubmit = async () => {
   try {
     const payload = {
       BetterGIAddress: formData.BetterGIAddress,
-      cookie: formData.cookie,
       content: formData.content,
       ConfigNames: formData.ConfigNames,
       BagStatistics: formData.bagKeywords.filter(k => k.trim()).join(','),
       post: ':' + formData.post,
-      backups: formData.backups.filter(backup => backup.trim()),
       LogKeywords: formData.LogKeywords.filter(k => k.trim()).length > 0
         ? formData.LogKeywords.filter(k => k.trim())
         : [''],
@@ -819,8 +716,7 @@ const handleSubmit = async () => {
       ScreenRecord: formData.ScreenRecord,
       BgiLog: formData.BgiLog,
       basePath: formData.basePath,
-      Notice: formData.Notice,
-      AIConfig: formData.AIConfig
+      Notice: formData.Notice
     }
 
     await apiMethods.updateConfig(payload)

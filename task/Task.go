@@ -348,10 +348,15 @@ func OneLong() {
 }
 
 func MysSignIn() {
+
+	MySignTime := config.Cfg.MySign.Time
+	MySignTime = strings.TrimSpace(MySignTime)
+	timeList := strings.Split(MySignTime, ",")
+
 	cronTab := cron.New(cron.WithSeconds())
 
 	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", 20, 0)
+	spec := fmt.Sprintf("0 %d %d * * *", timeList[1], timeList[0])
 
 	// 定义定时器调用的任务函数
 	task := func() {

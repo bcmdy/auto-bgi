@@ -336,6 +336,29 @@ const sendImage = () => {
 
 }
 
+const mysSignIn = () => {
+  Modal.confirm({
+    title: '确认签到？',
+    content: '是否要米游社签到？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const response = await apiMethods.mysSignIn()
+        scanResult.value = response.message || '发送成功！'
+        Modal.info({
+          title: '发送结果',
+          content: scanResult.value,
+          okText: '关闭'
+        })
+      } catch (error) {
+        message.error('发送失败！')
+      }
+    }
+  })
+
+}
+
 
 // 自动化按钮配置
 const automationButtons = ref([
@@ -343,7 +366,8 @@ const automationButtons = ref([
   { text: '关闭BGI', action: handleCloseBgi },
   { text: '备份 user 文件', action: handleBackup },
   { text: '脚本更新列表', action: () => router.push('/jsNames') },
-  { text: '发送桌面截图', action: sendImage }
+  { text: '发送桌面截图', action: sendImage },
+  { text: '米游社手动签到', action: mysSignIn }
 ])
 
 
