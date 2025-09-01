@@ -141,6 +141,14 @@ Notice：通知设置
 
 https://hut.ao/zh/advanced/get-stoken-cookie-from-the-third-party.html
 
+## 命令
+
+| 命令                 | 说明       |
+| -------------------- | ---------- |
+| auto-bgi.exe oneLong | 一条龙启动 |
+
+
+
 # 结尾
 
 有任何问题或者想法，可以加我qq：485595674
