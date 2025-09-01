@@ -553,12 +553,12 @@ export default {
                 `文件: ${this.selectedFile || '未知文件'}`,
                 `错误总数: ${this.extractedErrors.length}`,
                 `提取时间: ${new Date().toLocaleString()}`,
-                ''
+                '======\n'
             ].join('\n');
             
             // 构建错误详情
             const errorDetails = this.extractedErrors.map(err => {
-                return `子任务: ${err.taskName || '未知任务'}, 错误: ${err.errorName || '未知错误'}, 坐标: ${err.coordinates || '无坐标'}, 次数: ${err.count || 1}`;
+                return `子任务: ${err.taskName || '未知任务'}, 错误: ${err.errorName || '未知错误'}, 坐标: ${err.coordinates || '无坐标'}, 次数: ${err.count || 1}\n======`;
             }).join('\n');
             
             // 组合完整信息
@@ -1571,7 +1571,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 1;
 }
 
 .error-modal {

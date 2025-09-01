@@ -807,92 +807,6 @@ func FindLogFiles1Remote(dirPath string) ([]string, error) {
 	return filenames, nil
 }
 
-func UpdateJsAndPathing() error {
-	autoLog.Sugar.Infof("开始更新脚本和地图仓库")
-	autoLog.Sugar.Infof("开始备份user文件夹")
-
-	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("20060102")+".zip", true)
-	if err4 != nil {
-		return fmt.Errorf("备份失败")
-	}
-
-	autoLog.Sugar.Info("备份成功")
-
-	url := "https://github.com/babalae/bettergi-scripts-list/archive/refs/heads/main.zip"
-	zipFile := "main.zip"
-	targetPrefix := "repo/"
-	outputDir := "repo"
-	// 下载 zip 文件
-	if err := downloadFile(zipFile, url); err != nil {
-		autoLog.Sugar.Info("下载失败")
-		return err
-	}
-
-	autoLog.Sugar.Info("下载完成")
-	// 解压指定目录
-	if err := unzipRepo(zipFile, outputDir, targetPrefix); err != nil {
-		autoLog.Sugar.Errorf("解压失败")
-		return err
-	}
-
-	autoLog.Sugar.Info("已提取 repo 文件夹")
-
-	_ = os.Remove(zipFile)
-
-	autoLog.Sugar.Info("已删除压缩包")
-	autoLog.Sugar.Info("开始备份指定文件")
-	for _, path := range config.Cfg.Backups {
-
-		file := fmt.Sprintf("%s\\User\\%s", config.Cfg.BetterGIAddress, path)
-
-		err := copy.Copy(file, "./backups/"+path)
-		if err != nil {
-
-			autoLog.Sugar.Error("备份文件失败", err)
-			return err
-		}
-		autoLog.Sugar.Info("已复制文件:", path)
-	}
-
-	autoLog.Sugar.Info("开始更新脚本文件")
-	err := copy.Copy("./repo/js", config.Cfg.BetterGIAddress+"\\User\\JsScript")
-	if err != nil {
-		return err
-	}
-
-	autoLog.Sugar.Info("已更新脚本文件")
-	autoLog.Sugar.Info("开始更新地图追踪文件")
-
-	err2 := os.RemoveAll(config.Cfg.BetterGIAddress + "\\User\\AutoPathing")
-	if err2 != nil {
-		return err2
-	}
-	err3 := copy.Copy("./repo/pathing", config.Cfg.BetterGIAddress+"\\User\\AutoPathing")
-	if err3 != nil {
-		return err3
-	}
-
-	autoLog.Sugar.Info("开始还原备份文件配置文件")
-	autoLog.Sugar.Info("开始还原备份文件配置文件")
-
-	for _, path := range config.Cfg.Backups {
-
-		file := fmt.Sprintf("%s\\User\\%s", config.Cfg.BetterGIAddress, path)
-
-		err := copy.Copy("./backups/"+path, file)
-		if err != nil {
-			return err
-		}
-
-		autoLog.Sugar.Info("已还原文件", file)
-	}
-
-	autoLog.Sugar.Info("还原备份文件配置文件成功")
-	os.RemoveAll("./repo")
-	autoLog.Sugar.Info("脚本和地图已经更新成功")
-	return nil
-}
-
 // 解压 zip 中 repo 文件夹的内容
 func unzipRepo(zipPath, outputDir, targetPrefix string) error {
 	r, err := zip.OpenReader(zipPath)
@@ -1033,14 +947,7 @@ func ZipDir(sourceDir, zipFilePath string, keepRoot bool) error {
 }
 
 func Backup() error {
-	for _, path := range config.Cfg.Backups {
 
-		file := fmt.Sprintf("%s\\User\\%s", config.Cfg.BetterGIAddress, path)
-
-		copy.Copy(file, "./backups/"+path)
-
-		autoLog.Sugar.Infof("已备份文件: %s\n", path)
-	}
 	autoLog.Sugar.Infof("开始备份user文件夹")
 	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
 	if err4 != nil {
@@ -1964,21 +1871,21 @@ func getJsNowVersion(basePath, jsName string) string {
 	return readVersion(filepath.Join(basePath, jsName, "manifest.json"))
 }
 
-func GetMysSignLog() string {
-
-	url := config.Cfg.MySign.Url
-	readLogURL := url + "/read-log"
-	resp, err := http.Get(readLogURL)
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return ""
-	}
-	return string(body)
-}
+//func GetMysSignLog() string {
+//
+//	url := config.Cfg.MySign.Url
+//	readLogURL := url + "/read-log"
+//	resp, err := http.Get(readLogURL)
+//	if err != nil {
+//		return ""
+//	}
+//	defer resp.Body.Close()
+//	body, err := io.ReadAll(resp.Body)
+//	if err != nil {
+//		return ""
+//	}
+//	return string(body)
+//}
 
 func readVersion(manifestPath string) string {
 	file, err := os.Open(manifestPath)

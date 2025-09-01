@@ -48,6 +48,9 @@ export const apiMethods = {
 
   // 发送桌面截图
   sendImage: () => api.post('/api/sendImage'),
+
+  // 米游社手动签到
+  mysSignIn: () => api.post('/api/mysSignIn'),
   
   // 系统操作
   startOneLong: () => api.post('/api/oneLong'),
