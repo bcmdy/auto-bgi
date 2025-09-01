@@ -8,6 +8,10 @@ go+vue
 
 # 安装教程
 
+一个本体：https://gitee.com/wangjian0327/auto-bgi/releases/tag/auto-bgi-%E6%9C%AC%E4%BD%93
+
+然后是exe文件：![image-20250901090304379](./assets/image-20250901090304379.png)
+
 ## 下载下来压缩包，解压，直接双击执行，浏览器访问：ip:8082。
 
 IP地址在黑窗口里面可以看到
@@ -27,6 +31,59 @@ IP地址在黑窗口里面可以看到
 先配置BGI安装路径，保存之后，重启程序，配置其他的
 
 ![image-20250809102431054](./assets/image-20250809102431054.png)
+
+配置文件main.json说明：
+
+- OneLong：一条龙定时配置
+  - isStartTimeLong：true：开启、false：关闭
+  - OneLongHour：一条龙定时启动小时：0-23
+  - OneLongMinute：一条龙定时启动小时：1-59
+- BetterGIAddress：bgi安装路径，到exe文件夹目录就行
+- content：bgi关闭发送的通知信息，随便填
+- ConfigNames：一条龙配置单，七个对应七天，从星期一开始
+- BagStatistics：背包统计脚本，需要关注的材料，逗号隔开
+- post：默认8082，可以填你喜欢的
+- MySign：米游社签到配置
+  - isMysSignIn：true：开启、false：关闭
+  - Time：签到时间前面是小时，后面是分钟：0,2
+
+Control：控制配置
+
+- IsCloseYuanShen: bgi关闭是否需要一起关闭原神加启动器【true：开启、false：关闭】
+- SendWeChatImage: 是否需要一个小时发送桌面截图【true：开启、false：关闭】
+
+LogKeywords：需要监控的关键字
+
+[
+  "未识别到突发任务",
+  "OCR 识别失败",
+  "此路线出现3次卡死",
+  "重试一次路线或放弃此路线！",
+  "检测到复苏界面",
+  "存在角色被击败",
+  "执行路径时出错",
+  "传送点未激活或不存在"
+]
+
+OneRemote：1Remote配置
+
+- IsMonitor：是否需要监控：【true：开启、false：关闭】
+- LogFilePath：1Remote日志路径
+- LogKeywords：需要监控的关键字
+
+ScreenRecord：录屏设置
+
+- IsRecord：true：开启、false：关闭
+- ScriptGroupName：需要录屏的配置组
+
+Notice：通知设置
+
+- Type：通知类型【TG，Wechat】
+- Wechat：企业微信机器人地址
+- TGNotice：TG配置配置
+  - TGToken：token
+  - ChatID：会话id
+  - Proxy：代理
 
 # 功能说明：
 

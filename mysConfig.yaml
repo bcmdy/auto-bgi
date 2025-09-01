@@ -1,0 +1,50 @@
+# 这里控制整个config文件是否启用
+account:
+  # 登入账号只需要修改cookie就行了
+  cookie: ""
+  stuid: ""
+  stoken: ""
+  mid: ""
+
+device:
+  name: "Xiaomi MI 6"
+  model: "Mi 6"
+  # 此处留空则脚本随机生成
+  id: ""
+  # 手动获取
+  fp: ""
+
+mihoyobbs:
+  # 控制bbs功能是否启用
+  enable: true
+  # 社区签到
+  checkin: true
+  # 签到的社区列表
+  checkin_list:
+    - 5
+    - 2
+  # 看帖
+  read: true
+  # 点赞帖子
+  like: true
+  # 取消点赞
+  cancel_like: true
+  # 分享帖子
+  share: true
+
+# 游戏签到
+games:
+  # 国服控制区域
+  cn:
+    # 控制是否启用国内签到
+    enable: true
+    # 配置签到用的ua
+    useragent: "Mozilla/5.0 (Linux; Android 12; Unspecified Device) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/103.0.5060.129 Mobile Safari/537.36"
+    # 重试次数
+    retries: 3
+    # 原神
+    genshin:
+      # 控制是否启用签到
+      checkin: true
+      # 这里是不签到的账号
+      black_list: []
