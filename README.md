@@ -37,9 +37,11 @@
 ## 安装教程
 
 ### 1. 下载程序
-访问 [Gitee Releases](https://gitee.com/wangjian0327/auto-bgi/releases/tag/auto-bgi-%E6%9C%AC%E4%BD%93)，下载最新版本的 **auto-bgi** 压缩包。
+访问 [Gitee Releases](https://gitee.com/wangjian0327/auto-bgi/releases)，
 
-下载完成后，解压即可。
+下载最新版本的 **auto-bgi** 本体和最新版的exe文件。
+
+下载完成后，解压即可本地，将exe文件放进目录。
 
 ---
 
