@@ -40,7 +40,15 @@
                 :disabled="savingIdx === idx"
                 @click="updateSingle(idx)"
               >
-                {{ savingIdx === idx ? '更新中...' : '更新' }}
+                {{ savingIdx === idx ? '新增或者更新中...' : '新增或者更新' }}
+              </button>
+              <!-- 新增清理按钮（每行） -->
+              <button
+                :disabled="cleaningIdx === idx"
+                @click="cleanSingle(idx)"
+                style="margin-left:8px;"
+              >
+                {{ cleaningIdx === idx ? '清理中...' : '清理' }}
               </button>
             </td>
           </tr>
@@ -76,21 +84,41 @@
               @click="updateSingle(idx)"
               class="mobile-btn"
             >
-              {{ savingIdx === idx ? '更新中...' : '更新' }}
+              {{ savingIdx === idx ? '新增或者更新中...' : '新增或者更新' }}
+            </button>
+            <!-- 新增清理按钮（移动端每卡片） -->
+            <button
+              :disabled="cleaningIdx === idx"
+              @click="cleanSingle(idx)"
+              class="mobile-btn"
+              style="margin-left:8px;"
+            >
+              {{ cleaningIdx === idx ? '清理中...' : '清理' }}
             </button>
           </div>
         </div>
       </div>
       <button type="button" @click="addPathing" style="margin-top:16px;">添加地图追踪</button>
       <!-- 新增保存·按钮 -->
-      <button
+      <!-- <button
         type="button"
         @click="saveAll"
         :disabled="savingAll"
         style="margin-left:16px;margin-top:16px;"
       >
         {{ savingAll ? '保存中...' : '保存·' }}
-      </button>
+      </button> -->
+
+      <!-- 刷新按钮 -->
+        <!-- <button
+        type="button"
+        @click="ListPathingUpdatePaths()"
+        :disabled="refresh"
+        style="margin-left:16px;margin-top:16px;"
+      >
+        {{ refresh ? '刷新中...' : '刷新' }}
+      </button> -->
+
     </div>
   </div>
 </template>
@@ -98,12 +126,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiMethods } from '@/utils/api'
-import { Cascader as ACascader } from "ant-design-vue"
+import { Cascader as ACascader,message, Modal } from "ant-design-vue"
+
 
 const pathingList = ref([])
 const loading = ref(true)
 const savingIdx = ref(-1)
 const savingAll = ref(false)
+const refresh = ref(false)
+const cleaningIdx = ref(-1)
 const configOptions = ref([])
 const pathOptions = ref([]) // 原始数据
 const cascaderOptions = ref([]) // 级联选择用数据
@@ -214,6 +245,25 @@ const updateSingle = async (idx) => {
   }
 }
 
+const ListPathingUpdatePaths = async () => {
+  Modal.confirm({
+    title: '确认刷新？',
+    content: '刷新将会重新读取配置？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await apiMethods.listPathingUpdatePaths()
+        message.success('刷新成功！')
+        // 刷新当前列表
+        await fetchPathing()
+      } catch (error) {
+        message.error('刷新失败！')
+      }
+    }
+  })
+}
+
 const saveAll = async () => {
   // 校验所有项
   for (const item of pathingList.value) {
@@ -248,6 +298,48 @@ const saveAll = async () => {
     alert('批量保存失败')
   } finally {
     savingAll.value = false
+  }
+}
+
+const cleanSingle = async (idx) => {
+  const item = pathingList.value[idx]
+  cleaningIdx.value = idx
+  try {
+    // folderName数组转字符串
+    const payload = {
+      ...item,
+      folderName: Array.isArray(item.folderName)
+        ? item.folderName.join('\\')
+        : item.folderName
+    }
+    const res = await fetch('/api/scriptGroup/cleanAllPathing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    let json
+    try {
+      json = await res.json()
+    } catch (err) {
+      // 如果不是标准json，尝试文本解析
+      const text = await res.text()
+      try {
+        json = JSON.parse(text)
+      } catch {
+        json = { status: 'error', msg: text }
+      }
+    }
+    console.log('清理返回:', json)
+    if (json.status === 'success') {
+      alert(json.message || '清理成功')
+      await fetchPathing()
+    } else {
+      alert(json.message || '清理失败')
+    }
+  } catch (e) {
+    alert('清理失败',e)
+  } finally {
+    cleaningIdx.value = -1
   }
 }
 

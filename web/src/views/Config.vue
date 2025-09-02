@@ -40,7 +40,7 @@
               </div>
             </a-form-item>
 
-            <a-form-item 
+            <!-- <a-form-item 
               label="基础路径" 
               name="basePath"
               class="form-item-enhanced"
@@ -57,7 +57,7 @@
                 <span class="help-icon">💡</span>
                 填写基础路径
               </div>
-            </a-form-item>
+            </a-form-item> -->
 
             <a-form-item 
               label="bgi关闭提示内容" 
@@ -459,7 +459,7 @@
             <a-form-item label="微信通知地址" name="WechatNotice" class="form-item-enhanced" v-show="formData.Notice.Type === 'Wechat'">
               <div class="input-wrapper">
                 <span class="input-icon">💬</span>
-                <a-input 
+                <a-input-password
                   v-model:value="formData.Notice.Wechat" 
                   placeholder="微信通知地址"
                   class="enhanced-input"
@@ -471,7 +471,7 @@
               <a-form-item label="Telegram Token" name="TGToken" class="form-item-enhanced">
                 <div class="input-wrapper">
                   <span class="input-icon">🤖</span>
-                  <a-input 
+                  <a-input-password
                     v-model:value="formData.Notice.TGNotice.TGToken" 
                     placeholder="Telegram Bot Token"
                     class="enhanced-input"
@@ -482,7 +482,7 @@
               <a-form-item label="Chat ID" name="ChatID" class="form-item-enhanced">
                 <div class="input-wrapper">
                   <span class="input-icon">💬</span>
-                  <a-input 
+                  <a-input-password 
                     v-model:value="formData.Notice.TGNotice.ChatID" 
                     placeholder="Telegram Chat ID"
                     class="enhanced-input"
@@ -493,7 +493,7 @@
               <a-form-item label="代理地址" name="Proxy" class="form-item-enhanced">
                 <div class="input-wrapper">
                   <span class="input-icon">🌐</span>
-                  <a-input 
+                  <a-input-password
                     v-model:value="formData.Notice.TGNotice.Proxy" 
                     placeholder="代理地址（可选）"
                     class="enhanced-input"

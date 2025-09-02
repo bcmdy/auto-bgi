@@ -3,12 +3,16 @@ package ScriptGroup
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/task"
 	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/otiai10/copy"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -137,7 +141,80 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 	} else {
 		autoLog.Sugar.Infof("%s更新成功", updatePath.Name)
 	}
+	s.ListPathingUpdatePaths()
 
 	return "更新地图追踪成功", nil
 
+}
+
+func (s *ScriptGroupConfig) CleanAllPathing(c *gin.Context) {
+	var updatePath config.UpdatePathing
+	if err := c.ShouldBindJSON(&updatePath); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+		return
+	}
+	scriptGroupConfig := s.RemoveProjectsByTypeAndFolder(updatePath.Name, updatePath.FolderName)
+	for i := range scriptGroupConfig.Projects {
+		scriptGroupConfig.Projects[i].Index = i + 1
+	}
+	//写入配置
+	filename := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup\\" + updatePath.Name + ".json"
+	data, err := json.MarshalIndent(scriptGroupConfig, "", "    ")
+	if err != nil {
+		autoLog.Sugar.Errorf("JSON 编码失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": err.Error()})
+		return
+	}
+	if err = os.WriteFile(filename, data, 0644); err != nil {
+		autoLog.Sugar.Errorf("%s写入文件失败: %v", updatePath.Name, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": err.Error()})
+		return
+	}
+	s.ListPathingUpdatePaths()
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": "清理成功"})
+
+}
+
+func (s *ScriptGroupConfig) ListPathingUpdatePaths() error {
+	groups, err := task.ListGroups()
+	if err != nil {
+		autoLog.Sugar.Errorf("读取配置组失败: %v", err)
+		return err
+	}
+
+	var UpdatePath []config.UpdatePathing
+
+	for _, group := range groups {
+		var UpdatePathing config.UpdatePathing
+		UpdatePathing.Name = group
+		scriptGroupConfig := s.ReadConfig(group)
+		projects := scriptGroupConfig.Projects
+		projectMap := make(map[string]string)
+		for i, project := range projects {
+			if project.Type == "Pathing" {
+				projectMap[project.FolderName] = strconv.Itoa(i + 1)
+			}
+		}
+		for FolderName, _ := range projectMap {
+			UpdatePathing.FolderName = FolderName
+			UpdatePath = append(UpdatePath, UpdatePathing)
+		}
+
+	}
+
+	err = s.SavePathing(UpdatePath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ScriptGroupConfig) UpdatePaths(context *gin.Context) {
+	err := s.ListPathingUpdatePaths()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": err.Error()})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"status": "success", "data": "ok"})
 }

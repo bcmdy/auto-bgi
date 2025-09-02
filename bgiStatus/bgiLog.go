@@ -144,7 +144,7 @@ func (m *LogMonitor) Monitor() {
 
 				for _, kw := range m.Keywords {
 					if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
-						msg := fmt.Sprintf("⚠️ 日志告警\n\n配置组: %s\n关键词: %s\n内容: %s", groupName, kw, strings.TrimSpace(line))
+						msg := fmt.Sprintf("⚠️ 日志告警\n\n配置组: %s\n脚本名称: %s\n关键词: %s\n内容: %s", groupName, JsonName, kw, strings.TrimSpace(line))
 						//m.sendAlert(msg, false)
 						SentText(msg)
 						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)

@@ -776,11 +776,14 @@ func main() {
 				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
 				return
 			}
+
 			c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
 		})
 
 		//查询地图追踪配置
 		scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
+
+			scriptGroupConfig.ListPathingUpdatePaths()
 
 			UpdatePathData := config.Cfg.UpdatePath
 
@@ -821,17 +824,53 @@ func main() {
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": listAllPathing})
 		})
 
+		//清理地图追踪文件
+		scriptGroup.POST("/cleanAllPathing", scriptGroupConfig.CleanAllPathing)
+
+		//读取配置组所有的地图追踪
+		scriptGroup.GET("/listPathingUpdatePaths", scriptGroupConfig.UpdatePaths)
+
+	}
+
+	// 定义 GitHub Push Webhook 的结构体
+	type GitHubWebhookPayload struct {
+		Ref        string `json:"ref"`
+		Repository struct {
+			FullName string `json:"full_name"`
+		} `json:"repository"`
+		Commits []struct {
+			ID        string `json:"id"`
+			Message   string `json:"message"`
+			Timestamp string `json:"timestamp"`
+			URL       string `json:"url"`
+			Author    struct {
+				Name  string `json:"name"`
+				Email string `json:"email"`
+			} `json:"author"`
+		} `json:"commits"`
 	}
 
 	//webhook
 	ginServer.POST("/webhook", func(c *gin.Context) {
-		var payload map[string]interface{}
+		var payload GitHubWebhookPayload
 		if err := c.ShouldBindJSON(&payload); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
 			return
 		}
 
-		fmt.Println("===============webhook", payload)
+		branch := strings.TrimPrefix(payload.Ref, "refs/heads/")
+		fmt.Println("分支:", branch)
+		fmt.Println("仓库:", payload.Repository.FullName)
+
+		for _, commit := range payload.Commits {
+			GITLOG := fmt.Sprintf("Git通知=====提交ID: %s\n消息: %s\n作者: %s\n时间: %s\nURL: %s\n",
+				commit.ID, commit.Message, commit.Author.Name, commit.Timestamp, commit.URL)
+			autoLog.Sugar.Infof(GITLOG)
+			// 发送通知
+			bgiStatus.SentText(GITLOG)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	//检查BGI状态

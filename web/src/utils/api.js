@@ -79,6 +79,8 @@ export const apiMethods = {
   getOther: () => api.get('/other'),
   getJsNames: () => api.get('/api/jsNames'),
   getListGroups: () => api.get('/api/scriptGroup/listGroups'),
+  // 读取配置组所有的地图追踪
+  listPathingUpdatePaths: () => api.get('/api/scriptGroup/listPathingUpdatePaths'),
   getAutoArtifactsPro: () => api.get('/api/getAutoArtifactsPro'),
   getAutoArtifactsPro2: () => api.get('/api/getAutoArtifactsPro2'),
   getHarvest: () => api.get('/harvest'),
