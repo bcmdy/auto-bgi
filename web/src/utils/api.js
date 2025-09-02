@@ -78,7 +78,7 @@ export const apiMethods = {
   // 其他功能
   getOther: () => api.get('/other'),
   getJsNames: () => api.get('/api/jsNames'),
-  getListGroups: () => api.get('/api/listGroups'),
+  getListGroups: () => api.get('/api/scriptGroup/listGroups'),
   getAutoArtifactsPro: () => api.get('/api/getAutoArtifactsPro'),
   getAutoArtifactsPro2: () => api.get('/api/getAutoArtifactsPro2'),
   getHarvest: () => api.get('/harvest'),
@@ -93,6 +93,8 @@ export const apiMethods = {
     const payload = Array.isArray(names) ? names : [names]
     return api.post('/api/startGroups', payload)
   }
+
+  
 }
 
 export default api

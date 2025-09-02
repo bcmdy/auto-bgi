@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -147,4 +148,69 @@ func ExtractLogTime2Safe(date string, line string) string {
 		return fmt.Sprintf("%s 23:59:59", date)
 	}
 	return t
+}
+
+// 查找 repo 目录下是否存在名为 targetFolder 的子文件夹
+func FindSubFolder(root string, targetFolder string) (string, error) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && entry.Name() == targetFolder {
+			return filepath.Join(root, entry.Name()), nil
+		}
+	}
+
+	return "", fmt.Errorf("未找到子文件夹: %s", targetFolder)
+}
+
+// FindJSONFiles 查找指定目录及其子目录中的所有JSON文件
+func FindJSONFiles(rootDir string) ([]string, error) {
+	var jsonFiles []string
+
+	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 跳过目录，只处理文件
+		if info.IsDir() {
+			return nil
+		}
+
+		// 检查文件扩展名是否为.json
+		if strings.EqualFold(filepath.Ext(path), ".json") {
+			jsonFiles = append(jsonFiles, path)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("遍历目录时出错: %v", err)
+	}
+
+	return jsonFiles, nil
+}
+
+// 查询指定目录下的文件夹
+func ListDirectories(dirPath string) ([]string, error) {
+	var directories []string
+
+	// 读取目录内容
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// 只选择目录
+	for _, entry := range entries {
+		if entry.IsDir() {
+			directories = append(directories, entry.Name())
+		}
+	}
+
+	return directories, nil
 }

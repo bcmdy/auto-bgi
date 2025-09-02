@@ -292,7 +292,7 @@ func OneLongTask() {
 	autoLog.Sugar.Info("开始批量更新脚本")
 	if err := bgiStatus.BatchUpdateScript(); err != "" {
 		autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
-		return
+
 	}
 
 	// 5. 修改配置

@@ -58,8 +58,10 @@ func BatchUpdateScript() string {
 	if err := GitPull(); err != nil {
 		autoLog.Sugar.Errorf("仓库更新失败，再次尝试一下:%s", err.Error())
 		if err := GitPull(); err != nil {
-			autoLog.Sugar.Errorf("仓库再次更新失败:%s", err.Error())
-			return "仓库再次更新失败"
+			autoLog.Sugar.Errorf("仓库第二次再次更新失败:%s", err.Error())
+			if err := GitPull(); err != nil {
+				autoLog.Sugar.Errorf("仓库第三次再次更新失败:%s", err.Error())
+			}
 		}
 	}
 

@@ -12,6 +12,7 @@ import LogAnalysis from './views/LogAnalysis.vue'
 import Archive from './views/Archive.vue'
 import Other from './views/Other.vue'
 import JsNames from './views/JsNames.vue'
+import Pathing from './views/Pathing.vue'
 import ListGroups from './views/ListGroups.vue'
 import AutoArtifactsPro from './views/AutoArtifactsPro.vue'
 import AutoArtifactsPro2 from './views/AutoArtifactsPro2.vue'
@@ -31,6 +32,7 @@ const routes = [
   { path: '/archive', component: Archive },
   { path: '/other', component: Other },
   { path: '/jsNames', component: JsNames },
+  {path: '/Pathing', component: Pathing}, // 懒加载
   { path: '/listGroups', component: ListGroups },
   { path: '/getAutoArtifactsPro', component: AutoArtifactsPro },
   { path: '/getAutoArtifactsPro2', component: AutoArtifactsPro2 },
@@ -50,4 +52,4 @@ const router = createRouter({
 const app = createApp(App)
 app.use(Antd)
 app.use(router)
-app.mount('#app') 
+app.mount('#app')

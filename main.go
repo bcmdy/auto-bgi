@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auto-bgi/ScriptGroup"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -351,19 +352,6 @@ func main() {
 		}
 
 		context.JSON(http.StatusOK, data)
-	})
-
-	//查询所有配置组
-	ginServer.GET("/api/listGroups", func(context *gin.Context) {
-		groups, err := task.ListGroups()
-		if err != nil {
-			return
-		}
-
-		autoLog.Sugar.Infof("查询所有配置组:%s", groups)
-
-		context.JSON(http.StatusOK, groups)
-
 	})
 
 	//启动配置组
@@ -769,6 +757,71 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "签到成功"})
 
 	})
+
+	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
+
+	//配置组api
+	scriptGroup := ginServer.Group("/api/scriptGroup")
+	{
+		//读取配置组配置
+		scriptGroup.POST("/UpdatePathing", func(c *gin.Context) {
+			var updatePath config.UpdatePathing
+			if err := c.ShouldBindJSON(&updatePath); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+
+			res, err := scriptGroupConfig.UpdatePathing(updatePath)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
+		})
+
+		//查询地图追踪配置
+		scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
+
+			UpdatePathData := config.Cfg.UpdatePath
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": UpdatePathData})
+		})
+
+		//保存配置
+		scriptGroup.POST("/savePathing", func(c *gin.Context) {
+			var updatePath []config.UpdatePathing
+			if err := c.ShouldBindJSON(&updatePath); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+			err := scriptGroupConfig.SavePathing(updatePath)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
+		})
+
+		//查询所有配置组
+		scriptGroup.GET("/listGroups", func(context *gin.Context) {
+			groups, err := task.ListGroups()
+			if err != nil {
+				return
+			}
+
+			context.JSON(http.StatusOK, groups)
+		})
+
+		//查询所有地图追踪文件
+		scriptGroup.GET("/listAllGroups", func(context *gin.Context) {
+			listAllPathing, err := scriptGroupConfig.ListAllPathing()
+			if err != nil {
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": listAllPathing})
+		})
+
+	}
 
 	//webhook
 	ginServer.POST("/webhook", func(c *gin.Context) {

@@ -15,20 +15,25 @@ import (
 )
 
 type Config struct {
-	OneLong         oneLong      `json:"OneLong" comment:"一条龙配置"`
-	BetterGIAddress string       `json:"BetterGIAddress" comment:"BetterGI地址"`
-	Content         string       `json:"content" comment:"通知内容"`
-	ConfigNames     []string     `json:"ConfigNames" comment:"一条龙配置名称"`
-	BagStatistics   string       `json:"BagStatistics" comment:"需要统计的物品"`
-	Post            string       `json:"post" comment:"post地址"`
-	MySign          MySign       `json:"MySign" comment:"米游社签到"`
-	BasePath        string       `json:"basePath"`
-	Control         Control      `json:"Control" comment:"控制配置"`
-	LogKeywords     []string     `json:"LogKeywords" comment:"日志关键词"`
-	OneRemote       OneRemote    `json:"OneRemote" comment:"1Remote配置"`
-	ScreenRecord    ScreenRecord `json:"ScreenRecord" comment:"录屏配置"`
-	BgiLog          string       `json:"BgiLog" comment:"bgi日志"`
-	Notice          Notice       `json:"Notice" comment:"通知配置"`
+	OneLong         oneLong         `json:"OneLong" comment:"一条龙配置"`
+	BetterGIAddress string          `json:"BetterGIAddress" comment:"BetterGI地址"`
+	Content         string          `json:"content" comment:"通知内容"`
+	ConfigNames     []string        `json:"ConfigNames" comment:"一条龙配置名称"`
+	BagStatistics   string          `json:"BagStatistics" comment:"需要统计的物品"`
+	Post            string          `json:"post" comment:"post地址"`
+	MySign          MySign          `json:"MySign" comment:"米游社签到"`
+	BasePath        string          `json:"basePath"`
+	Control         Control         `json:"Control" comment:"控制配置"`
+	LogKeywords     []string        `json:"LogKeywords" comment:"日志关键词"`
+	OneRemote       OneRemote       `json:"OneRemote" comment:"1Remote配置"`
+	ScreenRecord    ScreenRecord    `json:"ScreenRecord" comment:"录屏配置"`
+	BgiLog          string          `json:"BgiLog" comment:"bgi日志"`
+	Notice          Notice          `json:"Notice" comment:"通知配置"`
+	UpdatePath      []UpdatePathing `json:"UpdatePath" comment:"地图追踪更新配置"`
+}
+type UpdatePathing struct {
+	Name       string `json:"name" comment:"配置组"`
+	FolderName string `json:"folderName" comment:"地图追踪文件夹名称"`
 }
 type Notice struct {
 	Type     string   `json:"Type" comment:"通知类型"`
@@ -78,6 +83,25 @@ func init() {
 		//autoLog.Sugar.Fatalf("首次加载配置失败: %v", err)
 		fmt.Println("首次加载配置失败: %v", err)
 	}
+}
+
+// WriteConfig 重新写入main.json
+func WriteConfig() error {
+	// 序列化为JSON字符串，格式化输出
+	data, err := json.MarshalIndent(Cfg, "", "  ")
+	if err != nil {
+		fmt.Println("writeConfig序列化失败: %v", err)
+		return err
+	}
+
+	// 写入 main.json，路径可以自定义，这里示例写当前运行目录
+	filePath := filepath.Join(".", "main.json")
+	err = os.WriteFile(filePath, data, 0644)
+	if err != nil {
+		fmt.Println("writeConfig写文件失败: %v", err)
+		return err
+	}
+	return nil
 }
 
 // ReloadConfig 重新加载配置文件
@@ -158,6 +182,9 @@ func DefaultConfig() {
 		if len(timeList) != 2 {
 			Cfg.MySign.Time = "0,20"
 		}
+	}
+	if Cfg.UpdatePath == nil {
+		Cfg.UpdatePath = []UpdatePathing{}
 	}
 
 }

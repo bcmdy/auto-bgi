@@ -451,12 +451,12 @@
                    class="enhanced-select"
                  >
                    <a-select-option value="TG">TG</a-select-option>
-                   <a-select-option value="WeChat">Wechat</a-select-option>
+                   <a-select-option value="Wechat">Wechat</a-select-option>
                  </a-select>
                </div>
              </a-form-item>
 
-            <a-form-item label="微信通知地址" name="WechatNotice" class="form-item-enhanced" v-show="formData.Notice.Type === 'WeChat'">
+            <a-form-item label="微信通知地址" name="WechatNotice" class="form-item-enhanced" v-show="formData.Notice.Type === 'Wechat'">
               <div class="input-wrapper">
                 <span class="input-icon">💬</span>
                 <a-input 
