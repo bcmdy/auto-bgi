@@ -353,8 +353,11 @@ func MysSignIn() {
 
 	cronTab := cron.New(cron.WithSeconds())
 
+	one, _ := strconv.Atoi(timeList[1])
+	ling, _ := strconv.Atoi(timeList[0])
+
 	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", timeList[1], timeList[0])
+	spec := fmt.Sprintf("0 %d %d * * *", one, ling)
 
 	// 定义定时器调用的任务函数
 	task := func() {
@@ -623,7 +626,7 @@ func MiYouSheSign() {
 	// 检查Cookie是否配置
 	if mysConfig.GlobalConfig.Account.Cookie == "" {
 		autoLog.Sugar.Errorf("米游社-Cookie未配置，请先在配置文件中设置Cookie")
-		os.Exit(1)
+		return
 	}
 
 	// 生成设备ID（如果未配置）
