@@ -117,7 +117,8 @@ func (m *LogMonitor) Monitor() {
 
 	ticker := time.NewTicker(time.Duration(m.ScanInterval) * time.Second)
 	defer ticker.Stop()
-
+	groupName := ""
+	JsonName := ""
 	for {
 		select {
 		case <-ticker.C:
@@ -131,13 +132,14 @@ func (m *LogMonitor) Monitor() {
 
 			startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
 
-			groupName := ""
-
 			for _, line := range lines {
 
 				matches := startRegexp.FindStringSubmatch(line)
 				if matches != nil {
 					groupName = matches[1]
+				}
+				if strings.HasPrefix(line, "→ 开始执行地图追踪任务") {
+					JsonName = line
 				}
 
 				for _, kw := range m.Keywords {
