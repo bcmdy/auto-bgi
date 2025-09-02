@@ -3,7 +3,7 @@ import axios from 'axios'
 // 创建axios实例
 const api = axios.create({
   baseURL: '', // 使用相对路径，让Vite代理处理
-  timeout: 10000,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -78,7 +78,9 @@ export const apiMethods = {
   // 其他功能
   getOther: () => api.get('/other'),
   getJsNames: () => api.get('/api/jsNames'),
-  getListGroups: () => api.get('/api/listGroups'),
+  getListGroups: () => api.get('/api/scriptGroup/listGroups'),
+  // 读取配置组所有的地图追踪
+  listPathingUpdatePaths: () => api.get('/api/scriptGroup/listPathingUpdatePaths'),
   getAutoArtifactsPro: () => api.get('/api/getAutoArtifactsPro'),
   getAutoArtifactsPro2: () => api.get('/api/getAutoArtifactsPro2'),
   getHarvest: () => api.get('/harvest'),
@@ -93,6 +95,8 @@ export const apiMethods = {
     const payload = Array.isArray(names) ? names : [names]
     return api.post('/api/startGroups', payload)
   }
+
+  
 }
 
 export default api

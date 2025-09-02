@@ -1830,7 +1830,13 @@ type JsNamesInfoStruct struct {
 func JsNamesInfo() []JsNamesInfoStruct {
 
 	if err := GitPull(); err != nil {
-		fmt.Println("GitPull失败:", err)
+		autoLog.Sugar.Errorf("仓库更新失败，再次尝试一下:%s", err.Error())
+		if err := GitPull(); err != nil {
+			autoLog.Sugar.Errorf("仓库第二次再次更新失败:%s", err.Error())
+			if err := GitPull(); err != nil {
+				autoLog.Sugar.Errorf("仓库第三次再次更新失败:%s", err.Error())
+			}
+		}
 	}
 
 	// 获取本地所有订阅脚本目录

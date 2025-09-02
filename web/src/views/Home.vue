@@ -366,6 +366,7 @@ const automationButtons = ref([
   { text: '关闭BGI', action: handleCloseBgi },
   { text: '备份 user 文件', action: handleBackup },
   { text: '脚本更新列表', action: () => router.push('/jsNames') },
+  { text: '地图追踪', action: () => router.push('/Pathing') },
   { text: '发送桌面截图', action: sendImage },
   { text: '米游社手动签到', action: mysSignIn }
 ])

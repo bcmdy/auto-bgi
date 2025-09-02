@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auto-bgi/ScriptGroup"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -351,19 +352,6 @@ func main() {
 		}
 
 		context.JSON(http.StatusOK, data)
-	})
-
-	//查询所有配置组
-	ginServer.GET("/api/listGroups", func(context *gin.Context) {
-		groups, err := task.ListGroups()
-		if err != nil {
-			return
-		}
-
-		autoLog.Sugar.Infof("查询所有配置组:%s", groups)
-
-		context.JSON(http.StatusOK, groups)
-
 	})
 
 	//启动配置组
@@ -770,15 +758,119 @@ func main() {
 
 	})
 
+	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
+
+	//配置组api
+	scriptGroup := ginServer.Group("/api/scriptGroup")
+	{
+		//读取配置组配置
+		scriptGroup.POST("/UpdatePathing", func(c *gin.Context) {
+			var updatePath config.UpdatePathing
+			if err := c.ShouldBindJSON(&updatePath); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+
+			res, err := scriptGroupConfig.UpdatePathing(updatePath)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
+		})
+
+		//查询地图追踪配置
+		scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
+
+			scriptGroupConfig.ListPathingUpdatePaths()
+
+			UpdatePathData := config.Cfg.UpdatePath
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": UpdatePathData})
+		})
+
+		//保存配置
+		scriptGroup.POST("/savePathing", func(c *gin.Context) {
+			var updatePath []config.UpdatePathing
+			if err := c.ShouldBindJSON(&updatePath); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+			err := scriptGroupConfig.SavePathing(updatePath)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
+		})
+
+		//查询所有配置组
+		scriptGroup.GET("/listGroups", func(context *gin.Context) {
+			groups, err := task.ListGroups()
+			if err != nil {
+				return
+			}
+
+			context.JSON(http.StatusOK, groups)
+		})
+
+		//查询所有地图追踪文件
+		scriptGroup.GET("/listAllGroups", func(context *gin.Context) {
+			listAllPathing, err := scriptGroupConfig.ListAllPathing()
+			if err != nil {
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": listAllPathing})
+		})
+
+		//清理地图追踪文件
+		scriptGroup.POST("/cleanAllPathing", scriptGroupConfig.CleanAllPathing)
+
+		//读取配置组所有的地图追踪
+		scriptGroup.GET("/listPathingUpdatePaths", scriptGroupConfig.UpdatePaths)
+
+	}
+
+	// 定义 GitHub Push Webhook 的结构体
+	type GitHubWebhookPayload struct {
+		Ref        string `json:"ref"`
+		Repository struct {
+			FullName string `json:"full_name"`
+		} `json:"repository"`
+		Commits []struct {
+			ID        string `json:"id"`
+			Message   string `json:"message"`
+			Timestamp string `json:"timestamp"`
+			URL       string `json:"url"`
+			Author    struct {
+				Name  string `json:"name"`
+				Email string `json:"email"`
+			} `json:"author"`
+		} `json:"commits"`
+	}
+
 	//webhook
 	ginServer.POST("/webhook", func(c *gin.Context) {
-		var payload map[string]interface{}
+		var payload GitHubWebhookPayload
 		if err := c.ShouldBindJSON(&payload); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
 			return
 		}
 
-		fmt.Println("===============webhook", payload)
+		branch := strings.TrimPrefix(payload.Ref, "refs/heads/")
+		fmt.Println("分支:", branch)
+		fmt.Println("仓库:", payload.Repository.FullName)
+
+		for _, commit := range payload.Commits {
+			GITLOG := fmt.Sprintf("Git通知=====提交ID: %s\n消息: %s\n作者: %s\n时间: %s\nURL: %s\n",
+				commit.ID, commit.Message, commit.Author.Name, commit.Timestamp, commit.URL)
+			autoLog.Sugar.Infof(GITLOG)
+			// 发送通知
+			bgiStatus.SentText(GITLOG)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	//检查BGI状态
