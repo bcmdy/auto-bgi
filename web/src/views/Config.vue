@@ -418,12 +418,20 @@
             </a-checkbox>
           </a-form-item>
 
-          <a-form-item label="配置组名称" name="ScriptGroupName" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
+          <a-form-item label="开始录屏关键字" name="StartScreen" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
             <div class="input-wrapper">
               <span class="input-icon">🔍</span>
               <a-input
-                  v-model:value="formData.ScreenRecord.ScriptGroupName"
-                  placeholder="配置组名称"
+                  v-model:value="formData.ScreenRecord.StartScreen"
+                  placeholder="开始录屏关键字"
+                  class="enhanced-input"
+              />
+            </div>
+            <div class="input-wrapper">
+              <span class="input-icon">🔍</span>
+              <a-input
+                  v-model:value="formData.ScreenRecord.EndScreen"
+                  placeholder="结束录屏关键字"
                   class="enhanced-input"
               />
             </div>
@@ -573,7 +581,8 @@ const formData = reactive({
   },
   ScreenRecord: {
     IsRecord: false,
-    ScriptGroupName: ''
+    StartScreen: '',
+    EndScreen: '',
   },
   BgiLog: '',
   basePath: '',

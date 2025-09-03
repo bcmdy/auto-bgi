@@ -192,6 +192,8 @@ func ChangeTaskEnabledList() error {
 	re := regexp.MustCompile(`\d+`) // 匹配一个或多个连续数字
 	var builder strings.Builder
 
+	var oneLongGroup []string
+
 	builder.WriteString("今日执行一条龙：" + OneLongName + "\n")
 	builder.WriteString("今日执行配置组：")
 	builder.WriteString("\n")
@@ -212,6 +214,8 @@ func ChangeTaskEnabledList() error {
 				oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 				oneLongLog.WriteString("\n")
 
+				oneLongGroup = append(oneLongGroup, s)
+
 				continue
 			}
 			continue
@@ -226,18 +230,16 @@ func ChangeTaskEnabledList() error {
 
 			oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 			oneLongLog.WriteString("\n")
+
+			oneLongGroup = append(oneLongGroup, s)
 			continue
 		} else {
 			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
 			aa.Set(s, false)
-			//builder.WriteString(fmt.Sprintf("%s：%v", s, false))
-			//builder.WriteString("\n")
 			continue
 		}
 	}
 
-	//fmt.Println("修改后的 jsonData:", jsonData)
-	//// 5. 重新编码 JSON（保持缩进）
 	updatedData, err := json.MarshalIndent(jsonData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("JSON 编码失败")
@@ -248,7 +250,6 @@ func ChangeTaskEnabledList() error {
 
 		autoLog.Sugar.Errorf("写入文件失败: %v", err)
 		return fmt.Errorf("自定义配置写入文件失败")
-
 	}
 
 	//将执行配置写入文件，直接覆盖
@@ -264,6 +265,11 @@ func ChangeTaskEnabledList() error {
 
 	//发送通知
 	bgiStatus.SentText(builder.String())
+
+	//计算一条龙时间
+	go func() {
+		bgiStatus.GetTodayOneLongTime(oneLongGroup)
+	}()
 
 	return nil
 

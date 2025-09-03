@@ -48,8 +48,9 @@ type TGNotice struct {
 }
 
 type ScreenRecord struct {
-	IsRecord        bool   `json:"IsRecord" comment:"是否开启录屏"`
-	ScriptGroupName string `json:"ScriptGroupName" comment:"配置组名称"`
+	IsRecord    bool   `json:"IsRecord" comment:"是否开启录屏"`
+	StartScreen string `json:"StartScreen" comment:"开始录屏关键字"`
+	EndScreen   string `json:"EndScreen" comment:"结束录屏关键字"`
 }
 
 type OneRemote struct {

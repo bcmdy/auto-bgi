@@ -146,6 +146,8 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 	}
 	s.ListPathingUpdatePaths()
 
+	autoLog.Sugar.Infof("通知-%s地图追踪更新成功", updatePath.Name)
+
 	return "更新地图追踪成功", nil
 
 }

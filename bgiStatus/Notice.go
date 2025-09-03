@@ -180,7 +180,7 @@ func SentText(text string) {
 		return
 	}
 
-	autoLog.Sugar.Error("通知-文本未知通知类型")
+	autoLog.Sugar.Error("通知-文本未知通知类型:%s", config.Cfg.Notice.Type)
 }
 
 func SentImage(path string) error {
@@ -197,6 +197,7 @@ func SentImage(path string) error {
 		}
 		return fmt.Errorf("通知-微信图片发送失败:%v", err)
 	}
-	autoLog.Sugar.Error("通知-图片未知通知类型")
+	autoLog.Sugar.Error("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
+
 	return fmt.Errorf("通知-图片未知通知类型")
 }
