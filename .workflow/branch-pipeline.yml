@@ -23,6 +23,7 @@ stages:
           - npm config set registry https://registry.npmmirror.com
           - ''
           - '# 执行编译命令'
+          - cd web
           - npm install && npm run build
         artifacts:
           - name: BUILD_ARTIFACT
