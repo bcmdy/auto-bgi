@@ -45,18 +45,16 @@ stages:
         caches:
           - /go/pkg/mod
         strategy: {}
-  - name: stage-57b226ca
+  - name: stage-upload
     displayName: 上传制品
     strategy: naturally
     trigger: auto
-    executor: []
     steps:
       - step: publish@general_artifacts
         name: publish_general_artifacts
         displayName: 上传制品
-        dependArtifact: BUILD_ARTIFACT
+        dependArtifact: BACKEND_ARTIFACT
         artifactName: output
-        notify: []
         strategy:
           retry: '0'
   - name: stage-release
@@ -67,7 +65,7 @@ stages:
       - step: publish@release_artifacts
         name: publish_release_artifacts
         displayName: 发布
-        dependArtifact: output
+        dependArtifact: BACKEND_ARTIFACT
         version: 3.0.0.0
         autoIncrement: true
         strategy: {}
