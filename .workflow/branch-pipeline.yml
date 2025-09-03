@@ -8,62 +8,59 @@ triggers:
       precise:
         - ginVue
 stages:
-  - name: stage-a39108e6
+  - name: stage-frontend
     displayName: 前端构建
     strategy: naturally
     trigger: auto
-    executor: []
     steps:
       - step: build@nodejs
         name: build_nodejs
         displayName: Nodejs 构建
         nodeVersion: 18.16.0
         commands:
-          - '# 设置NPM源，提升安装速度'
           - npm config set registry https://registry.npmmirror.com
-          - ''
-          - '# 执行编译命令'
           - cd web
           - npm install && npm run build
-        artifacts:
-          - name: BUILD_ARTIFACT
-            path:
-              - ./dist
         caches:
           - ~/.npm
           - ~/.yarn
-        notify: []
-        strategy:
-          retry: '0'
-  - name: stage-eff188a8
+  - name: stage-backend
     displayName: 后端构建
     strategy: naturally
     trigger: auto
-    executor: []
     steps:
       - step: build@golang
         name: build_golang
         displayName: Golang 构建
         golangVersion: 1.23.11
         commands:
-          - '# 默认使用goproxy.cn'
           - export GOPROXY=https://goproxy.cn
-          - '# 输入你的构建命令'
-          - go build
+          - go build -o output/abgi ./...
         artifacts:
-          - name: BUILD_ARTIFACT
+          - name: BACKEND_ARTIFACT
             path:
               - ./output
         caches:
           - /go/pkg/mod
-        notify: []
-        strategy:
-          retry: '0'
-  - name: stage-8f1d95a5
-    displayName: 发布
+        strategy: {}
+  - name: stage-57b226ca
+    displayName: 上传制品
     strategy: naturally
     trigger: auto
     executor: []
+    steps:
+      - step: publish@general_artifacts
+        name: publish_general_artifacts
+        displayName: 上传制品
+        dependArtifact: BUILD_ARTIFACT
+        artifactName: output
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-release
+    displayName: 发布
+    strategy: naturally
+    trigger: auto
     steps:
       - step: publish@release_artifacts
         name: publish_release_artifacts
@@ -71,6 +68,4 @@ stages:
         dependArtifact: output
         version: 3.0.0.0
         autoIncrement: true
-        notify: []
-        strategy:
-          retry: '0'
+        strategy: {}
