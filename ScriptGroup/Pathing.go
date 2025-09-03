@@ -102,13 +102,16 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 
 	}
 	scriptGroupConfig := s.RemoveProjectsByTypeAndFolder(updatePath.Name, updatePath.FolderName)
+	index := 0
 
-	for i := range scriptGroupConfig.Projects {
-		scriptGroupConfig.Projects[i].Index = i + 1
+	//空配置组判断
+	if len(scriptGroupConfig.Projects) > 0 {
+		for i := range scriptGroupConfig.Projects {
+			scriptGroupConfig.Projects[i].Index = i + 1
+		}
+		project := scriptGroupConfig.Projects[len(scriptGroupConfig.Projects)-1]
+		index = project.Index + 1
 	}
-
-	project := scriptGroupConfig.Projects[len(scriptGroupConfig.Projects)-1]
-	index := project.Index + 1
 
 	var projects []Project
 
