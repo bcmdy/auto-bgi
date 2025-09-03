@@ -45,7 +45,7 @@ stages:
         displayName: Golang 构建
         golangVersion: 1.23.11
         commands:
-          - '- cp -r web/dist/* web/dist/'
+          - cp -r web/dist/* web/dist/
           - '# 默认使用goproxy.cn'
           - export GOPROXY=https://goproxy.cn
           - '# 输入你的构建命令'
