@@ -28,7 +28,7 @@ stages:
         artifacts:
           - name: BUILD_ARTIFACT
             path:
-              - ./output/web/dist
+              - ./dist
         caches:
           - ~/.npm
           - ~/.yarn
