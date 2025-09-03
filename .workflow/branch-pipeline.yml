@@ -36,7 +36,6 @@ stages:
         golangVersion: 1.23.11
         commands:
           - export GOPROXY=https://goproxy.cn
-          - cp -r ./bin ./output/bin
           - go build
         artifacts:
           - name: BACKEND_ARTIFACT
