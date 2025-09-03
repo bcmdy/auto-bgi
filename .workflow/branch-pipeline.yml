@@ -1,6 +1,6 @@
 version: '1.0'
 name: branch-pipeline
-displayName: abgi打包
+displayName: abgi
 triggers:
   trigger: auto
   pr:
@@ -8,54 +8,84 @@ triggers:
       precise:
         - ginVue
 stages:
-  - name: stage-build
-    displayName: 前后端打包
+  - name: build_go
+    displayName: 构建
     strategy: naturally
     trigger: auto
+    executor: []
     steps:
-      - step: build@golang
-        name: build_full
-        displayName: abgi
-        golangVersion: 1.23.11
+      - step: build@nodejs
+        name: build_nodejs
+        displayName: Nodejs 构建
+        nodeVersion: 14.16.0
         commands:
-          - npm config set registry https://registry.npmmirror.com
           - cd web
-          - npm install
-          - npm run build
-          - cd ..
-          - export GOPROXY=https://goproxy.cn
-          - go mod tidy
-          - go build
+          - '# 设置NPM源，提升安装速度'
+          - npm config set registry https://registry.npmmirror.com
+          - ''
+          - '# 执行编译命令'
+          - npm install && npm run build
         artifacts:
-          - name: BACKEND_ARTIFACT
+          - name: BUILD_ARTIFACT
             path:
-              - ./output
+              - ./dist
         caches:
           - ~/.npm
           - ~/.yarn
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-5ef6748e
+    displayName: vue
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: build@golang
+        name: build_golang
+        displayName: Golang 构建
+        golangVersion: 1.23.11
+        commands:
+          - '- cp -r ${BUILD_ARTIFACT}/* web/dist/'
+          - '# 默认使用goproxy.cn'
+          - export GOPROXY=https://goproxy.cn
+          - '# 输入你的构建命令'
+          - go build
+        artifacts:
+          - name: BUILD_GO
+            path:
+              - ./output
+        caches:
           - /go/pkg/mod
-        strategy: {}
-  - name: stage-upload
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-f9687013
     displayName: 上传制品
     strategy: naturally
     trigger: auto
+    executor: []
     steps:
       - step: publish@general_artifacts
         name: publish_general_artifacts
         displayName: 上传制品
-        dependArtifact: BACKEND_ARTIFACT
+        dependArtifact: BUILD_GO
         artifactName: output
+        notify: []
         strategy:
           retry: '0'
-  - name: stage-release
+  - name: stage-6cd370ee
     displayName: 发布
     strategy: naturally
     trigger: auto
+    executor: []
     steps:
       - step: publish@release_artifacts
         name: publish_release_artifacts
         displayName: 发布
-        dependArtifact: BACKEND_ARTIFACT
+        dependArtifact: output
         version: 3.0.0.0
         autoIncrement: true
-        strategy: {}
+        notify: []
+        strategy:
+          retry: '0'
