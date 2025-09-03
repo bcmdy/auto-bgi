@@ -8,20 +8,39 @@ triggers:
       precise:
         - ginVue
 stages:
-  - name: stage-build
-    displayName: 前后端打包
+  - name: stage-frontend
+    displayName: 前端构建
     strategy: naturally
     trigger: auto
     steps:
-      - step: build@golang
-        name: build_full
-        displayName: autobgi
-        golangVersion: 1.23.11
+      - step: build@nodejs
+        name: build_nodejs
+        displayName: Nodejs 构建
+        nodeVersion: 18.16.0
         commands:
           - npm config set registry https://registry.npmmirror.com
           - cd web
           - npm install && npm run build
-          - cd ..
+        artifacts:
+          - name: FRONTEND_ARTIFACT
+            path:
+              - ./web/dist
+        caches:
+          - ~/.npm
+          - ~/.yarn
+        strategy: {}
+  - name: stage-backend
+    displayName: 后端构建
+    strategy: naturally
+    trigger: auto
+    steps:
+      - step: build@golang
+        name: build_golang
+        displayName: Golang 构建
+        golangVersion: 1.23.11
+        commands:
+          - mkdir -p web
+          - cp -r FRONTEND_ARTIFACT/* web/dist/
           - export GOPROXY=https://goproxy.cn
           - go mod tidy
           - go build -o output/abgi ./...
@@ -30,8 +49,6 @@ stages:
             path:
               - ./output
         caches:
-          - ~/.npm
-          - ~/.yarn
           - /go/pkg/mod
         strategy: {}
   - name: stage-upload
