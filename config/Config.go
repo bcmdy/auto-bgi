@@ -35,7 +35,8 @@ type Config struct {
 type Account struct {
 	Uid              string `json:"Uid" comment:"账号UID"`
 	Name             string `json:"Name" comment:"账号名称"`
-	GouLangGroupName string `json:"GouLangGroupName" comment:"狗粮配置组名称"`
+	GouLangGroupName string `json:"GouLangGroupName" comment:"狗粮联机配置组名称"`
+	OnlineKeyword    string `json:"OnlineKeyword" comment:"联机上线关键词"`
 	SecretKey        string `json:"SecretKey" comment:"加密密钥"`
 	AccountKey       string `json:"AccountKey" comment:"密钥"`
 }

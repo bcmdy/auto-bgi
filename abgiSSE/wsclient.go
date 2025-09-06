@@ -117,7 +117,7 @@ func Status() string {
 func GetAllOnlineUser() interface{} {
 	decrypt, err2 := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 	if err2 != nil {
-		autoLog.Sugar.Error("解密失败:", err2)
+		autoLog.Sugar.Infof("密钥错误:%s", err2)
 		return 0
 	}
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/GetAllOnlineUser?", decrypt))

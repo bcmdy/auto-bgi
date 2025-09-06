@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"auto-bgi/Notice"
+	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -139,6 +140,21 @@ func (m *LogMonitor) Monitor() {
 						control.StopRecord()
 						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
 						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
+					}
+
+					if strings.Contains(line, config.Cfg.Account.OnlineKeyword) {
+						Notice.SentText("联机上线")
+						decrypt, err := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+						if err != nil {
+							autoLog.Sugar.Infof("密钥错误: %v", err)
+							Notice.SentText("密钥错误")
+						}
+						ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decrypt, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
+						if ConnectErr != nil {
+							autoLog.Sugar.Infof("上线失败: %v", err)
+							Notice.SentText("上线失败:" + ConnectErr.Error())
+						}
+						Notice.SentText("上线成功")
 					}
 
 				}

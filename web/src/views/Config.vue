@@ -536,7 +536,7 @@
               </div>
             </a-form-item>
 
-                <a-form-item label="Name" name="用户名" class="form-item-enhanced">
+                <a-form-item label="用户名" name="用户名" class="form-item-enhanced">
               <div class="input-wrapper">
                 <span class="input-icon">🥵</span>
                 <a-input-password
@@ -547,7 +547,7 @@
               </div>
             </a-form-item>
 
-            <a-form-item label="GouLangGroupName" name="狗粮联机配置组" class="form-item-enhanced">
+            <a-form-item label="狗粮联机配置组" name="狗粮联机配置组" class="form-item-enhanced">
               <div class="input-wrapper">
                 <span class="input-icon">🐶</span>
                 <a-input
@@ -558,8 +558,19 @@
               </div>
             </a-form-item>
 
+          <a-form-item label="狗粮上线联机关键字" name="狗粮上线联机关键字" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🐶</span>
+                <a-input
+                  v-model:value="formData.Account.OnlineKeyword" 
+                  placeholder="狗粮上线联机关键字"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
 
-          <a-form-item label="SecretKey" name="联机SecretKey" class="form-item-enhanced">
+
+          <a-form-item label="联机SecretKey" name="联机SecretKey" class="form-item-enhanced">
               <div class="input-wrapper">
                 <span class="input-icon">👀</span>
                 <a-input-password
@@ -570,7 +581,7 @@
               </div>
             </a-form-item>
 
-          <a-form-item label="AccountKey" name="联机Key" class="form-item-enhanced">
+          <a-form-item label="联机Key" name="联机Key" class="form-item-enhanced">
               <div class="input-wrapper">
                 <span class="input-icon">🔑</span>
                 <a-input-password
@@ -672,6 +683,7 @@ const formData = reactive({
     Uid: "",
     Name: "",
     GouLangGroupName: "",
+    OnlineKeyword: "",
     SecretKey: "",
     AccountKey: ""
   }
