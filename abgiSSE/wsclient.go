@@ -65,17 +65,19 @@ func (c *AbgiClient) listen() {
 		}
 
 		var info Information
-		fmt.Println(string(msg))
 		err = json.Unmarshal(msg, &info)
 		if err != nil {
 			log.Println("解析消息失败:", err)
 			continue
 		}
 
+		xiaoxi := ""
+
 		if info.Status == "1" {
 			autoLog.Sugar.Infof("联机启动")
 			for _, v := range info.AA {
 				autoLog.Sugar.Infof("玩家 %s 加入联机", v.Name)
+				xiaoxi += fmt.Sprintf("玩家 %s 加入联机\n", v.Name)
 			}
 			//转成map
 			var dd []map[string]interface{}
@@ -91,7 +93,7 @@ func (c *AbgiClient) listen() {
 		}
 
 		//fmt.Printf("收到消息: %s\n", msg)
-		Notice.SentText(string(msg))
+		Notice.SentText(xiaoxi)
 	}
 }
 

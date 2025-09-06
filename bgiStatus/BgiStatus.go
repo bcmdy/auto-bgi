@@ -674,7 +674,7 @@ type KeyValue struct {
 // 创建一个数组
 var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "运儿", "家",
 	"方巾", "枭羽", "怀钟", "药壶", "银莲", "怀表", "尾羽", "头带", "金杯", "之花", "之杯",
-	"沙漏", "绿花", "银冠", "鹰羽", "冒险", "游医的"}
+	"沙漏", "绿花", "银冠", "鹰羽", "冒险", "游医的", "教官", "战狂", "流放"}
 
 // analyseLog handles the /api/analyse GET request
 func LogAnalysis(fileName string) map[string]int {
@@ -693,7 +693,7 @@ func LogAnalysis(fileName string) map[string]int {
 			syw += count
 		} else if strings.Contains(item, "蟹") {
 			xie += count
-		} else if item == "调查" {
+		} else if item == "调查" || item == "周查" {
 			continue
 		} else {
 			data.Key = item
