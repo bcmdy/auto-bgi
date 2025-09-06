@@ -122,7 +122,7 @@ func GetAllOnlineUser() interface{} {
 	}
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/GetAllOnlineUser?", decrypt))
 	if err != nil {
-		autoLog.Sugar.Error("获取在线用户失败:", err)
+		autoLog.Sugar.Error("获取在线用户失败:")
 		return 0
 	}
 	defer resp.Body.Close()

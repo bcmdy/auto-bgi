@@ -146,13 +146,13 @@ func (m *LogMonitor) Monitor() {
 						Notice.SentText("联机上线")
 						decrypt, err := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 						if err != nil {
-							autoLog.Sugar.Infof("密钥错误: %v", err)
+							autoLog.Sugar.Infof("密钥错误")
 							Notice.SentText("密钥错误")
 						}
 						ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decrypt, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
 						if ConnectErr != nil {
-							autoLog.Sugar.Infof("上线失败: %v", err)
-							Notice.SentText("上线失败:" + ConnectErr.Error())
+							autoLog.Sugar.Infof("上线失败")
+							Notice.SentText("上线失败")
 						}
 						Notice.SentText("上线成功")
 					}

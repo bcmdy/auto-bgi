@@ -257,6 +257,10 @@ func main() {
 			jsProgress = "无"
 		}
 
+		if strings.Contains(line, "地图追踪") {
+			jsProgress = ""
+		}
+
 		data := make(map[string]interface{})
 		data["group"] = group + "[" + GetGroup + "]"
 		data["ExpectedToEnd"] = timestamp
