@@ -402,7 +402,7 @@ export default {
       }
     }
 
-    // 新增：将 gitLogs 扁平化为每个文件一行，带 TypeName
+    // 新增：将 gitLogs 扁平化为每个文件一行，带 TypeName，并支持分组筛选
     const flatGitLogs = computed(() => {
       if (!gitLogs.value || !Array.isArray(gitLogs.value)) return []
       const arr = []
@@ -415,6 +415,15 @@ export default {
             })
           }
         }
+      }
+      // 分组筛选
+      if (selectedGroup.value) {
+        return arr.filter(item => {
+          if (selectedGroup.value === 'pathing') return item.TypeName?.toLowerCase().includes('pathing')
+          if (selectedGroup.value === 'js') return item.TypeName?.toLowerCase().includes('js')
+          if (selectedGroup.value === 'combat') return item.TypeName?.toLowerCase().includes('combat')
+          return false
+        })
       }
       return arr
     })
