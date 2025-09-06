@@ -21,7 +21,7 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(data []map[string]interface{}) {
 		d.ID = item["ID"].(int64)
 		d.UID = item["UID"].(string)
 		d.Name = item["Name"].(string)
-		if item["UID"] == config.Cfg.Account.UID {
+		if item["UID"] == config.Cfg.Account.Uid {
 			yourIndex = int(d.ID)
 		}
 		aa = append(aa, d)

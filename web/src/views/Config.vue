@@ -450,7 +450,7 @@
           </template>
 
           <div class="notice-content">
-                         <a-form-item label="通知类型" name="NoticeType" class="form-item-enhanced">
+            <a-form-item label="通知类型" name="NoticeType" class="form-item-enhanced">
                <div class="input-wrapper">
                  <span class="input-icon">📢</span>
                  <a-select 
@@ -508,9 +508,82 @@
                   />
                 </div>
               </a-form-item>
+
+       
             </div>
           </div>
         </a-card>
+
+        <!-- //联机设置 -->
+        <a-card title="联机设置" class="config-card account-settings">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">🔗</span>
+              <a-tooltip title="联机设置，填写联机需要的参数">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+               <a-form-item label="UID" name="uid" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🆔</span>
+                <a-input-password
+                  v-model:value="formData.Account.Uid" 
+                  placeholder="uid"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+                <a-form-item label="Name" name="用户名" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🥵</span>
+                <a-input-password
+                  v-model:value="formData.Account.Name" 
+                  placeholder="旅游者的名字"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+            <a-form-item label="GouLangGroupName" name="狗粮联机配置组" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🐶</span>
+                <a-input
+                  v-model:value="formData.Account.GouLangGroupName" 
+                  placeholder="狗粮联机配置组"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+
+          <a-form-item label="SecretKey" name="联机SecretKey" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">👀</span>
+                <a-input-password
+                  v-model:value="formData.Account.SecretKey" 
+                  placeholder="联机SecretKey"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+          <a-form-item label="AccountKey" name="联机Key" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🔑</span>
+                <a-input-password
+                  v-model:value="formData.Account.AccountKey" 
+                  placeholder="联机Key"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+                
+          
+     </a-card>
+      
 
  
 
@@ -591,9 +664,16 @@ const formData = reactive({
     Wechat: '',
     TGNotice: {
       TGToken: '',
-      ChatID: '',
+      ChatID: 0,
       Proxy: ''
     }
+  },
+  Account: {
+    Uid: "",
+    Name: "",
+    GouLangGroupName: "",
+    SecretKey: "",
+    AccountKey: ""
   }
 })
 
@@ -699,6 +779,9 @@ const loadConfig = async () => {
       if (data.Notice) {
         Object.assign(formData.Notice, data.Notice)
       }
+       if (data.Account) {
+        Object.assign(formData.Account, data.Account)
+      }
     }
   } catch (error) {
     message.error('加载配置失败: ' + error.message)
@@ -725,8 +808,11 @@ const handleSubmit = async () => {
       ScreenRecord: formData.ScreenRecord,
       BgiLog: formData.BgiLog,
       basePath: formData.basePath,
-      Notice: formData.Notice
+      Notice: formData.Notice,
+      Account: formData.Account
     }
+
+    console.log('提交的配置:', payload)
 
     await apiMethods.updateConfig(payload)
     message.success('保存成功！')

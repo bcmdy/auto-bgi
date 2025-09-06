@@ -166,7 +166,7 @@ func main() {
 	{
 		//上线
 		abgiWs.POST("/connect", func(c *gin.Context) {
-			if config.Cfg.Account.UID == "" {
+			if config.Cfg.Account.Uid == "" {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "账号配置错误"})
 				return
 			}
@@ -179,13 +179,13 @@ func main() {
 				return
 			}
 			//解密
-			decryptedKey, err3 := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.Key)
+			decryptedKey, err3 := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 			if err3 != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
 				return
 			}
 
-			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decryptedKey, config.Cfg.Account.UID, config.Cfg.Account.Name), nil)
+			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decryptedKey, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
 			if err != nil {
 				autoLog.Sugar.Errorf("连接失败: %v", err)
 			}
@@ -633,7 +633,7 @@ func main() {
 		fmt.Println("配置保存成功:", newConfig)
 
 		//重新加载配置文件
-		_ = config.ReloadConfig()
+		//_ = config.ReloadConfig()
 		time.Sleep(1 * time.Second)
 
 		// 调用重启脚本

@@ -30,14 +30,14 @@ type Config struct {
 	BgiLog          string          `json:"BgiLog" comment:"bgi日志"`
 	Notice          Notice          `json:"Notice" comment:"通知配置"`
 	UpdatePath      []UpdatePathing `json:"UpdatePath" comment:"地图追踪更新配置"`
-	Account         Account         `json:"account" comment:"账号配置"`
+	Account         Account         `json:"Account" comment:"账号配置"`
 }
 type Account struct {
-	UID              string `json:"uid" comment:"账号UID"`
-	Name             string `json:"name" comment:"账号名称"`
+	Uid              string `json:"Uid" comment:"账号UID"`
+	Name             string `json:"Name" comment:"账号名称"`
 	GouLangGroupName string `json:"GouLangGroupName" comment:"狗粮配置组名称"`
-	SecretKey        string `json:"secretKey" comment:"加密密钥"`
-	Key              string `json:"key" comment:"密钥"`
+	SecretKey        string `json:"SecretKey" comment:"加密密钥"`
+	AccountKey       string `json:"AccountKey" comment:"密钥"`
 }
 type UpdatePathing struct {
 	Name       string `json:"name" comment:"配置组"`
@@ -87,6 +87,7 @@ var Cfg Config
 var Parser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 
 func init() {
+	fmt.Println("========================================")
 	err := ReloadConfig()
 	if err != nil {
 		//autoLog.Sugar.Fatalf("首次加载配置失败: %v", err)

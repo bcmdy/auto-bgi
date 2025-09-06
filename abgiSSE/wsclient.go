@@ -115,7 +115,7 @@ func Status() string {
 
 // 获取在线人数
 func GetAllOnlineUser() interface{} {
-	decrypt, err2 := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.Key)
+	decrypt, err2 := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 	if err2 != nil {
 		autoLog.Sugar.Error("解密失败:", err2)
 		return 0
