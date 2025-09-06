@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"auto-bgi/Notice"
 	"time"
 )
 
@@ -37,5 +38,5 @@ func GetTodayOneLongTime(oneLongGroup []string) {
 		}
 
 	}
-	SentText("一条龙预计结束时间:" + start.Format("2006-01-02 15:04:05"))
+	Notice.SentText("一条龙预计结束时间:" + start.Format("2006-01-02 15:04:05"))
 }

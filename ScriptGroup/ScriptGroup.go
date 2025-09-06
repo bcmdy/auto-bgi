@@ -3,6 +3,7 @@ package ScriptGroup
 import (
 	"auto-bgi/config"
 	"auto-bgi/tools"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -205,4 +206,22 @@ func (s *ScriptGroupConfig) SavePathing(path []config.UpdatePathing) error {
 	}
 	return nil
 
+}
+
+func (s *ScriptGroupConfig) SaveConfig(name string, readConfig ScriptGroupConfig) interface{} {
+	// 定义要保存的文件路径
+	filePath := filepath.Join(config.Cfg.BetterGIAddress, "User", "ScriptGroup", name+".json")
+
+	// 将结构体转换为 JSON 字符串
+	jsonData, err := json.MarshalIndent(readConfig, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// 写入文件
+	err = os.WriteFile(filePath, jsonData, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

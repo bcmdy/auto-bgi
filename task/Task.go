@@ -1,6 +1,7 @@
 package task
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -264,7 +265,7 @@ func ChangeTaskEnabledList() error {
 	file.Write(content)
 
 	//发送通知
-	bgiStatus.SentText(builder.String())
+	Notice.SentText(builder.String())
 
 	//计算一条龙时间
 	go func() {
@@ -501,35 +502,6 @@ func StartOneDragon(name string) {
 
 }
 
-// 定时更新代码
-func UpdateCode() {
-	cronTab := cron.New(cron.WithSeconds())
-
-	// 定时任务,cron表达式
-	//每1个小时执行一次
-	spec := fmt.Sprintf("0 0 */2 * * *")
-	//spec := fmt.Sprintf("0 %d %d * * *", Config.OneLongMinute, Config.OneLongHour)
-
-	// 定义定时器调用的任务函数
-	task := func() {
-		autoLog.Sugar.Infof("仓库更新 %v", time.Now().Format("2006-01-02 15:04:05"))
-
-		err := bgiStatus.GitPull()
-		if err != nil {
-			autoLog.Sugar.Error("更新失败:", err)
-		}
-
-		autoLog.Sugar.Infof("仓库更新启动完毕")
-	}
-
-	// 添加定时任务
-	cronTab.AddFunc(spec, task)
-	// 启动定时器
-	cronTab.Start()
-	// 阻塞主线程停止
-	select {}
-}
-
 const interval = 72 * time.Hour
 
 // 每周一备份users文件夹
@@ -598,7 +570,7 @@ func SendWeChatImageTask() {
 			return
 		}
 
-		bgiStatus.SentImage("jt.png")
+		Notice.SentImage("jt.png")
 
 	}
 

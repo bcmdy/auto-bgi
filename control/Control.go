@@ -2,7 +2,6 @@ package control
 
 import (
 	"auto-bgi/autoLog"
-	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"fmt"
 	"github.com/go-vgo/robotgo"
@@ -227,24 +226,13 @@ func StartRecord() {
 	if err != nil {
 		autoLog.Sugar.Errorf("开始录屏失败: %v", err)
 	}
-	err = ScreenShot()
-	if err != nil {
-		autoLog.Sugar.Errorf("截图失败: %v", err)
-	}
-	bgiStatus.SentImage("jt.png")
 
 }
 
 func StopRecord() {
 	//点击F12结束录屏
-	//点击F12开始录屏
 	err := robotgo.KeyTap("f12")
 	if err != nil {
 		autoLog.Sugar.Errorf("结束录屏失败: %v", err)
 	}
-	err = ScreenShot()
-	if err != nil {
-		autoLog.Sugar.Errorf("截图失败: %v", err)
-	}
-	bgiStatus.SentImage("jt.png")
 }

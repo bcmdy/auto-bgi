@@ -3,7 +3,6 @@ package ScriptGroup
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
-	"auto-bgi/task"
 	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
@@ -181,7 +180,7 @@ func (s *ScriptGroupConfig) CleanAllPathing(c *gin.Context) {
 }
 
 func (s *ScriptGroupConfig) ListPathingUpdatePaths() error {
-	groups, err := task.ListGroups()
+	groups, err := listGroups()
 	if err != nil {
 		autoLog.Sugar.Errorf("读取配置组失败: %v", err)
 		return err

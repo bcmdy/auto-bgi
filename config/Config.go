@@ -30,6 +30,14 @@ type Config struct {
 	BgiLog          string          `json:"BgiLog" comment:"bgi日志"`
 	Notice          Notice          `json:"Notice" comment:"通知配置"`
 	UpdatePath      []UpdatePathing `json:"UpdatePath" comment:"地图追踪更新配置"`
+	Account         Account         `json:"account" comment:"账号配置"`
+}
+type Account struct {
+	UID              string `json:"uid" comment:"账号UID"`
+	Name             string `json:"name" comment:"账号名称"`
+	GouLangGroupName string `json:"GouLangGroupName" comment:"狗粮配置组名称"`
+	SecretKey        string `json:"secretKey" comment:"加密密钥"`
+	Key              string `json:"key" comment:"密钥"`
 }
 type UpdatePathing struct {
 	Name       string `json:"name" comment:"配置组"`
@@ -111,6 +119,9 @@ func ReloadConfig() error {
 	file, err := os.Open("main.json")
 	if err != nil {
 		fmt.Println("ReloadConfig打开配置文件失败: %v", err)
+		//创建配置文件
+		Cfg = Config{}
+		WriteConfig()
 		return err
 	}
 	defer file.Close()

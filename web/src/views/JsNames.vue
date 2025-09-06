@@ -119,92 +119,114 @@
 
       <section class="panel">
         <h2>仓库提交记录</h2>
+        <!-- 分组筛选下拉框 -->
+        <div style="margin-bottom:16px;">
+          <label style="font-weight:bold;margin-right:8px;">分组筛选：</label>
+          <select v-model="selectedGroup" class="group-select">
+            <option value="">全部</option>
+            <option v-for="g in groupOptions" :key="g.value" :value="g.value">{{ g.label }}</option>
+          </select>
+        </div>
         <div id="gitLogContainer" class="table-container git-log-container">
-          <!-- 桌面端表格 -->
           <table id="gitLogTable" class="desktop-table">
             <thead>
               <tr>
-                <th>提交时间</th>
+                <th>分组</th>
+                <th>文件路径</th>
                 <th>作者</th>
-                <th>提交信息</th>
-                <th>相关文件</th>
+                <th>最后更新时间</th>
+                <th>标签</th>
+                <th>版本</th>
+                <th>描述</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody id="gitLogBody">
-              <tr v-if="gitLogs.length === 0">
-                <td colspan="4" style="text-align:center;">
+              <tr v-if="sortedGitLogs.length === 0">
+                <td colspan="8" style="text-align:center;">
                   {{ gitLogLoading ? '加载中...' : '暂无提交记录。' }}
                 </td>
               </tr>
-              <tr v-else v-for="log in gitLogs" :key="log.CommitTime + log.Author">
-                <td>{{ log.CommitTime }}</td>
-                <td>{{ log.Author }}</td>
-                <td v-html="log.Message.replace(/\n/g, '<br/>')"></td>
+              <tr v-else v-for="(item, idx) in sortedGitLogs" :key="item.TypeName + '-' + idx"
+                  :class="{ highlight: item.Tags && item.Tags.includes('更新') }">
+                <td>{{ item.TypeName }}</td>
+                <td>{{ item.FilePath }}</td>
+                <td>{{ item.Authors }}</td>
+                <td>{{ item.LastUpdated }}</td>
+                <td>{{ item.Tags }}</td>
+                <td>{{ item.Version }}</td>
                 <td>
-                  <ul v-if="log.Files && log.Files.length > 0" style="padding-left:10px;margin:0;font-size: 32px;">
-                    <li v-for="file in log.Files" :key="file" style="margin-left:15px;font-size: 16px;">
-                      🎉  {{ file }}
-                      <button 
-                        v-if="isRepoTriplePath(file)" 
-                        class="btn detail-btn desktop-detail-btn" 
-                        @click="openDetailFromFile(file)"
-                        :disabled="isLoadingDetail[getRepoKey(file)]"
-                      >
-                        {{ isLoadingDetail[getRepoKey(file)] ? '加载中...' : '查看详情' }}
-                      </button>
-                    </li>
-                  </ul>
-                  <ul v-else style="padding-left:10px;margin:0;">
-                    <li>无文件</li>
-                  </ul>
+                  <span v-if="item.Description && item.Description.length > 20">
+                    <span class="desc-multiline">{{ item.Description.slice(0, 20) }}</span>
+                    <br>
+                    <span class="desc-multiline">{{ item.Description.slice(20) }}</span>
+                  </span>
+                  <span v-else class="desc-multiline">{{ item.Description || '' }}</span>
+                </td>
+                <td>
+                  <button
+                    v-if="isRepoTriplePath(item.FilePath)"
+                    class="btn update-btn"
+                    style="min-width:60px"
+                    :disabled="isLoadingDetail[getRepoKey(item.FilePath)]"
+                    @click="openDetailFromFile(item.FilePath)"
+                  >
+                    {{ isLoadingDetail[getRepoKey(item.FilePath)] ? '加载中...' : '查看详情' }}
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
-
-          <!-- 移动端卡片列表 -->
+          <!-- 移动端卡片列表，样式与脚本信息一致 -->
           <div class="mobile-list">
-            <div v-if="gitLogs.length === 0" class="empty-mobile">
+            <div v-if="flatGitLogs.length === 0" class="empty-mobile">
               <div class="empty-content">
                 <span class="empty-icon">📭</span>
                 <span class="empty-text">{{ gitLogLoading ? '加载中...' : '暂无提交记录' }}</span>
                 <span class="empty-sparkle">✨</span>
               </div>
             </div>
-            <div v-else v-for="(log,index) in gitLogs" :key="log.CommitTime + log.Author" class="mobile-card">
+            <div v-else v-for="(item, idx) in flatGitLogs" :key="item.TypeName + '-' + idx"
+                 :class="{ highlight: item.Tags && item.Tags.includes('更新'), 'mobile-card': true }">
               <div class="card-header">
-                <h3 style="margin-bottom: 4px;">#{{index+1 }}</h3>
-                <div class="card-time">
-              
-                  <span class="time-icon">⏰</span>
-                  <span class="time-text">{{ log.CommitTime }}</span>
+                <div class="card-title">
+                  <span class="title-icon">📦</span>
+                  <span class="title-text">{{ item.TypeName }}</span>
                 </div>
-                <div class="card-author">
-                  <span class="author-icon">👤</span>
-                  <span class="author-text">{{ log.Author }}</span>
+                <div class="card-versions">
+                  <div class="version-item">
+                    <span class="version-label">作者:</span>
+                    <span class="version-value">{{ item.Authors }}</span>
+                  </div>
+                  <div class="version-item">
+                    <span class="version-label">更新时间:</span>
+                    <span class="version-value">{{ item.LastUpdated }}</span>
+                  </div>
+                </div>
+                <div class="card-status">
+                  <span class="status-icon">🏷️</span>
+                  <span class="status-text">{{ item.Tags }}</span>
                 </div>
               </div>
               <div class="card-message">
-                <span class="message-icon">💬</span>
-                <div class="message-text" v-html="log.Message.replace(/\n/g, '<br/>')"></div>
+                <span class="message-icon">📄</span>
+                <span class="message-text">{{ item.FilePath }}</span>
               </div>
               <div class="card-files">
-                <span class="files-icon">📁</span>
+                <span class="files-icon">🔢</span>
                 <div class="files-content">
-                  <ul v-if="log.Files && log.Files.length > 0">
-                    <li v-for="file in log.Files" :key="file">
-                      {{ file }}
-                      <button 
-                        v-if="isRepoTriplePath(file)" 
-                        class="btn detail-btn" 
-                        @click="openDetailFromFile(file)"
-                        :disabled="isLoadingDetail[getRepoKey(file)]"
-                      >
-                        {{ isLoadingDetail[getRepoKey(file)] ? '加载中...' : '查看详情' }}
-                      </button>
-                    </li>
-                  </ul>
-                  <span v-else class="no-files">无文件</span>
+                  <div>版本: {{ item.Version }}</div>
+                  <div>描述: {{ item.Description || '' }}</div>
+                  <button
+                    v-if="isRepoTriplePath(item.FilePath)"
+                    class="btn update-btn mobile-update-btn"
+                    style="margin-top:8px"
+                    :disabled="isLoadingDetail[getRepoKey(item.FilePath)]"
+                    @click="openDetailFromFile(item.FilePath)"
+                  >
+                    <span class="update-icon">{{ isLoadingDetail[getRepoKey(item.FilePath)] ? '⏳' : '🔍' }}</span>
+                    <span class="update-text">{{ isLoadingDetail[getRepoKey(item.FilePath)] ? '加载中...' : '查看详情' }}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -380,6 +402,50 @@ export default {
       }
     }
 
+    // 新增：将 gitLogs 扁平化为每个文件一行，带 TypeName
+    const flatGitLogs = computed(() => {
+      if (!gitLogs.value || !Array.isArray(gitLogs.value)) return []
+      const arr = []
+      for (const group of gitLogs.value) {
+        if (group && group.Repo && Array.isArray(group.Repo)) {
+          for (const file of group.Repo) {
+            arr.push({
+              TypeName: group.TypeName,
+              ...file
+            })
+          }
+        }
+      }
+      return arr
+    })
+
+    // 分组筛选相关
+    const groupOptions = [
+      { value: 'pathing', label: '地图追踪' },
+      { value: 'js', label: '脚本' },
+      { value: 'combat', label: '战斗策略' }
+    ]
+    const selectedGroup = ref('')
+
+    // 新增：按分组筛选并按最后更新时间排序（降序）
+    const sortedGitLogs = computed(() => {
+      let logs = flatGitLogs.value
+      if (selectedGroup.value) {
+        logs = logs.filter(item => {
+          // 支持TypeName为中英文或英文
+          if (selectedGroup.value === 'pathing') return item.TypeName?.toLowerCase().includes('pathing')
+          if (selectedGroup.value === 'js') return item.TypeName?.toLowerCase().includes('js')
+          if (selectedGroup.value === 'combat') return item.TypeName?.toLowerCase().includes('combat')
+          return false
+        })
+      }
+      return [...logs].sort((a, b) => {
+        const timeA = a.LastUpdated ? new Date(a.LastUpdated).getTime() : 0
+        const timeB = b.LastUpdated ? new Date(b.LastUpdated).getTime() : 0
+        return timeB - timeA
+      })
+    });
+
     const loadGitLog = async () => {
       try {
         gitLogLoading.value = true
@@ -423,7 +489,7 @@ export default {
       return true
     }
 
-    // 提取 repo/<group>/<name>/ 的两个段
+    // 提取 repo/<group>/<name> 的两个段
     const getRepoSegments = (filePath) => {
       const match = filePath.match(/^repo\/([^\/]+)\/([^\/]+)\//)
       if (!match) return { group: '', name: '' }
@@ -508,7 +574,11 @@ export default {
       getRepoKey,
       openDetailFromFile,
       closeDetailModal,
-            batchUpdate
+            batchUpdate,
+      flatGitLogs,
+      sortedGitLogs,
+      groupOptions,
+      selectedGroup
     }
   }
 }
@@ -1040,6 +1110,17 @@ td {
     transform: translateY(-5px) scale(1.02);
     background-color: #ff8e8e;
     box-shadow: 0 15px 40px rgba(255, 110, 180, 0.25);
+  }
+  
+  /* 禁用触摸设备上的hover效果，防止闪烁 */
+  @media (hover: none) {
+    .mobile-card:hover,
+    .mobile-card:hover::before {
+      /* 取消hover效果 */
+      background-color: inherit !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
   }
   
   .mobile-card.highlight {
@@ -1591,39 +1672,148 @@ td {
   font-style: italic;
 }
 
-/* 移动端模态框优化 */
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    max-height: 85%;
+/* 仓库提交记录表格与脚本信息表格尺寸一致，宽度自适应容器 */
+#gitLogTable,
+#pluginTable {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+  font-size: 1rem;
+}
+
+/* 保证表格容器可横向滚动但宽度跟随容器 */
+.table-container {
+  overflow-x: auto;
+}
+
+/* 响应式缩放：表格字体和padding随屏幕宽度变化 */
+@media (max-width: 1200px) {
+  #gitLogTable,
+  #pluginTable {
+    font-size: 0.95rem;
   }
-  
-  .modal-header {
-    padding: 15px 20px;
+  #gitLogTable th, #gitLogTable td,
+  #pluginTable th, #pluginTable td {
+    padding: 10px 8px;
   }
-  
-  .modal-header h3 {
-    font-size: 1.1rem;
+}
+@media (max-width: 900px) {
+  #gitLogTable,
+  #pluginTable {
+    font-size: 0.9rem;
   }
-  
-  .modal-body {
-    padding: 20px;
-    max-height: 70vh;
+  #gitLogTable th, #gitLogTable td,
+  #pluginTable th, #pluginTable td {
+    padding: 8px 6px;
   }
-  
-  .detail-content {
-    padding: 15px;
+}
+@media (max-width: 700px) {
+  #gitLogTable,
+  #pluginTable {
+    font-size: 0.85rem;
   }
-  
-  .detail-content pre {
+  #gitLogTable th, #gitLogTable td,
+  #pluginTable th, #pluginTable td {
+    padding: 6px 4px;
+  }
+}
+@media (max-width: 600px) {
+  #gitLogTable,
+  #pluginTable {
     font-size: 0.8rem;
   }
-  
-  .detail-btn {
-    font-size: 0.6rem;
-    padding: 3px 6px;
-    margin-left: 5px;
+  #gitLogTable th, #gitLogTable td,
+  #pluginTable th, #pluginTable td {
+    padding: 4px 2px;
   }
 }
 
+/* ============ 新增样式 ============ */
+
+/* 仓库提交记录表格描述列缩略 */
+#gitLogTable td {
+  position: relative;
+  overflow: hidden;
+}
+
+#gitLogTable td::after {
+  content: '...';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: rgba(255, 110, 180, 0.7);
+  display: none;
+}
+
+#gitLogTable td:hover::after {
+  display: block;
+}
+
+/* 移动端优化：仓库提交记录卡片 */
+.card-message {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.card-files {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 详情模态框内容区 */
+.modal-body {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* 加载状态样式 */
+.loading-content {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 110, 180, 0.2);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.desc-multiline {
+  display: block;
+  word-break: break-all;
+  white-space: pre-line;
+}
+
+.group-select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #ffb6d5;
+  font-size: 1rem;
+  color: #ff6eb4;
+  background: #fff6fb;
+  outline: none;
+  margin-left: 4px;
+}
+.group-select:focus {
+  border-color: #ff6eb4;
+  box-shadow: 0 0 0 2px #ffe0f0;
+}
 </style>
