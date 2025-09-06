@@ -1,6 +1,7 @@
 package task
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -208,9 +209,14 @@ func ChangeTaskEnabledList() error {
 	// ==============================================
 
 	var builder strings.Builder
-	var oneLongLog strings.Builder
+
+	var oneLongGroup []string
+
 	builder.WriteString("今日执行一条龙：" + OneLongName + "\n")
-	builder.WriteString("今日执行配置组：\n")
+	builder.WriteString("今日执行配置组：")
+	builder.WriteString("\n")
+
+	var oneLongLog strings.Builder
 
 	for _, s := range aa.Keys() {
 		// 先尝试用“周x”规则解析
@@ -219,11 +225,17 @@ func ChangeTaskEnabledList() error {
 		if len(numbers) == 0 {
 			// 没有“周x”字样 → 保持原值
 			get, _ := aa.Get(s)
+
 			if get == true {
 				builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 				builder.WriteString("\n")
+
 				oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 				oneLongLog.WriteString("\n")
+
+				oneLongGroup = append(oneLongGroup, s)
+
+				continue
 			}
 			continue
 		}
@@ -237,6 +249,8 @@ func ChangeTaskEnabledList() error {
 			builder.WriteString("\n")
 			oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
 			oneLongLog.WriteString("\n")
+
+			oneLongGroup = append(oneLongGroup, s)
 			continue
 		} else {
 			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
@@ -245,11 +259,12 @@ func ChangeTaskEnabledList() error {
 		}
 	}
 
-	// 写回文件
 	updatedData, err := json.MarshalIndent(jsonData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("JSON 编码失败")
 	}
+
+	// 6. 写回文件
 	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
 		autoLog.Sugar.Errorf("写入文件失败: %v", err)
 		return fmt.Errorf("自定义配置写入文件失败")
@@ -266,7 +281,12 @@ func ChangeTaskEnabledList() error {
 	file.Write(content)
 
 	//发送通知
-	bgiStatus.SentText(builder.String())
+	Notice.SentText(builder.String())
+
+	//计算一条龙时间
+	go func() {
+		bgiStatus.GetTodayOneLongTime(oneLongGroup)
+	}()
 
 	return nil
 }
@@ -497,35 +517,6 @@ func StartOneDragon(name string) {
 
 }
 
-// 定时更新代码
-func UpdateCode() {
-	cronTab := cron.New(cron.WithSeconds())
-
-	// 定时任务,cron表达式
-	//每1个小时执行一次
-	spec := fmt.Sprintf("0 0 */2 * * *")
-	//spec := fmt.Sprintf("0 %d %d * * *", Config.OneLongMinute, Config.OneLongHour)
-
-	// 定义定时器调用的任务函数
-	task := func() {
-		autoLog.Sugar.Infof("仓库更新 %v", time.Now().Format("2006-01-02 15:04:05"))
-
-		err := bgiStatus.GitPull()
-		if err != nil {
-			autoLog.Sugar.Error("更新失败:", err)
-		}
-
-		autoLog.Sugar.Infof("仓库更新启动完毕")
-	}
-
-	// 添加定时任务
-	cronTab.AddFunc(spec, task)
-	// 启动定时器
-	cronTab.Start()
-	// 阻塞主线程停止
-	select {}
-}
-
 const interval = 72 * time.Hour
 
 // 每周一备份users文件夹
@@ -594,7 +585,7 @@ func SendWeChatImageTask() {
 			return
 		}
 
-		bgiStatus.SentImage("jt.png")
+		Notice.SentImage("jt.png")
 
 	}
 

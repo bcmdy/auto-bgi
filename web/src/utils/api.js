@@ -94,8 +94,11 @@ export const apiMethods = {
   startGroups: (names) => {
     const payload = Array.isArray(names) ? names : [names]
     return api.post('/api/startGroups', payload)
-  }
+  },
 
+  // 狗粮联机上线
+  StartDogFoodOnline: () => api.post('/api/abgiSSE/connect'),
+  DogFooddisconnect: () => api.post('/api/abgiSSE/disconnect')
   
 }
 

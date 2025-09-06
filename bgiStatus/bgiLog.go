@@ -1,6 +1,8 @@
 package bgiStatus
 
 import (
+	"auto-bgi/Notice"
+	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -34,44 +36,6 @@ func NewLogMonitor(logFile string, keywords []string, interval int) *LogMonitor 
 	}
 }
 
-//func (m *LogMonitor) validateConfig() error {
-//	if _, err := os.Stat(m.LogFile); err != nil {
-//		return fmt.Errorf("日志文件不存在: %v", err)
-//	}
-//	if !(strings.HasPrefix(m.WebhookURL, "http://") || strings.HasPrefix(m.WebhookURL, "https://")) {
-//		return fmt.Errorf("Webhook URL 格式不正确")
-//	}
-//	return nil
-//}
-
-//func (m *LogMonitor) sendAlert(content string, isTest bool) bool {
-//	prefix := ""
-//	if isTest {
-//		prefix = "[TEST] "
-//	}
-//	payload := map[string]interface{}{
-//		"msgtype": "text",
-//		"text": map[string]interface{}{
-//			"content":               prefix + content,
-//			"mentioned_mobile_list": []string{"@all"},
-//		},
-//	}
-//	data, _ := json.Marshal(payload)
-//
-//	resp, err := http.Post(m.WebhookURL, "application/json", bytes.NewBuffer(data))
-//	if err != nil {
-//		fmt.Println("[!] 告警发送失败:", err)
-//		return false
-//	}
-//	defer resp.Body.Close()
-//
-//	if resp.StatusCode != http.StatusOK {
-//		fmt.Println("[!] 企业微信返回状态码:", resp.StatusCode)
-//		return false
-//	}
-//	return true
-//}
-
 func (m *LogMonitor) scanLog() ([]string, error) {
 	f, err := os.Open(m.LogFile)
 	if err != nil {
@@ -99,10 +63,6 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 }
 
 func (m *LogMonitor) Monitor() {
-	//if err := m.validateConfig(); err != nil {
-	//	fmt.Println("[!] 配置错误:", err)
-	//	return
-	//}
 
 	if f, err := os.Open(m.LogFile); err == nil {
 		pos, _ := f.Seek(0, io.SeekEnd)
@@ -125,8 +85,7 @@ func (m *LogMonitor) Monitor() {
 			lines, err := m.scanLog()
 			if err != nil {
 				fmt.Println("[!] 读取日志错误:", err)
-				//m.sendAlert(fmt.Sprintf("日志监控服务异常: %v", err), false)
-				SentText(fmt.Sprintf("日志监控服务异常: %v", err))
+				Notice.SentText(fmt.Sprintf("日志监控服务异常: %v", err))
 				return
 			}
 
@@ -142,48 +101,62 @@ func (m *LogMonitor) Monitor() {
 					JsonName = line
 				}
 
+				//关键字告警
 				for _, kw := range m.Keywords {
 					if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
 						msg := fmt.Sprintf("⚠️ 日志告警\n\n配置组: %s\n脚本名称: %s\n关键词: %s\n内容: %s", groupName, JsonName, kw, strings.TrimSpace(line))
 						//m.sendAlert(msg, false)
-						SentText(msg)
+						Notice.SentText(msg)
 						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 						autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 					}
 				}
 				if strings.Contains(line, "一条龙和配置组任务结束") {
 					ArchiveConfig()
-					//m.sendAlert("一条龙和配置组任务结束，所有配置组已归档", false)
-					SentText("一条龙和配置组任务结束，所有配置组已归档")
+					Notice.SentText("一条龙和配置组任务结束，所有配置组已归档")
 					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {
-					//m.sendAlert("RDP 客户端断开连接", false)
-					SentText("RDP 客户端断开连接")
+					Notice.SentText("RDP 客户端断开连接")
 					autoLog.Sugar.Infof("RDP 客户端断开连接")
 					aaa()
 				}
 				if config.Cfg.ScreenRecord.IsRecord {
-					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 加载完成") {
-						//m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+"开始录屏", false)
-						SentText("配置组 " + config.Cfg.ScreenRecord.ScriptGroupName + "开始录屏")
+
+					if strings.Contains(line, config.Cfg.ScreenRecord.StartScreen) {
+
+						Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.StartScreen + "开始录屏")
+						Notice.SendScreenshot()
 						// 开始录屏
 						control.StartRecord()
-
 						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
-						autoLog.Sugar.Infof("配置组 %s 加载完成，开始录屏", line)
-
+						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n开始录屏")
 					}
-					if strings.Contains(line, "配置组 \""+config.Cfg.ScreenRecord.ScriptGroupName+"\" 执行结束") {
-						//m.sendAlert("配置组 "+config.Cfg.ScreenRecord.ScriptGroupName+" 结束录屏", false)
-						SentText("配置组 " + config.Cfg.ScreenRecord.ScriptGroupName + " 结束录屏")
-						// 结束录屏
+					if strings.Contains(line, config.Cfg.ScreenRecord.EndScreen) {
+
+						Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.EndScreen + "结束录屏")
+						Notice.SendScreenshot()
+						// 开始录屏
 						control.StopRecord()
-
 						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
-						autoLog.Sugar.Infof("配置组 %s 执行结束，结束录屏", line)
-
+						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
 					}
+
+					if strings.Contains(line, config.Cfg.Account.OnlineKeyword) {
+						Notice.SentText("联机上线")
+						decrypt, err := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+						if err != nil {
+							autoLog.Sugar.Infof("密钥错误")
+							Notice.SentText("密钥错误")
+						}
+						ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decrypt, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
+						if ConnectErr != nil {
+							autoLog.Sugar.Infof("上线失败")
+							Notice.SentText("上线失败")
+						}
+						Notice.SentText("上线成功")
+					}
+
 				}
 			}
 

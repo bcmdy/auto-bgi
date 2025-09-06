@@ -30,6 +30,15 @@ type Config struct {
 	BgiLog          string          `json:"BgiLog" comment:"bgi日志"`
 	Notice          Notice          `json:"Notice" comment:"通知配置"`
 	UpdatePath      []UpdatePathing `json:"UpdatePath" comment:"地图追踪更新配置"`
+	Account         Account         `json:"Account" comment:"账号配置"`
+}
+type Account struct {
+	Uid              string `json:"Uid" comment:"账号UID"`
+	Name             string `json:"Name" comment:"账号名称"`
+	GouLangGroupName string `json:"GouLangGroupName" comment:"狗粮联机配置组名称"`
+	OnlineKeyword    string `json:"OnlineKeyword" comment:"联机上线关键词"`
+	SecretKey        string `json:"SecretKey" comment:"加密密钥"`
+	AccountKey       string `json:"AccountKey" comment:"密钥"`
 }
 type UpdatePathing struct {
 	Name       string `json:"name" comment:"配置组"`
@@ -48,8 +57,9 @@ type TGNotice struct {
 }
 
 type ScreenRecord struct {
-	IsRecord        bool   `json:"IsRecord" comment:"是否开启录屏"`
-	ScriptGroupName string `json:"ScriptGroupName" comment:"配置组名称"`
+	IsRecord    bool   `json:"IsRecord" comment:"是否开启录屏"`
+	StartScreen string `json:"StartScreen" comment:"开始录屏关键字"`
+	EndScreen   string `json:"EndScreen" comment:"结束录屏关键字"`
 }
 
 type OneRemote struct {
@@ -78,6 +88,7 @@ var Cfg Config
 var Parser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 
 func init() {
+	fmt.Println("========================================")
 	err := ReloadConfig()
 	if err != nil {
 		//autoLog.Sugar.Fatalf("首次加载配置失败: %v", err)
@@ -110,6 +121,9 @@ func ReloadConfig() error {
 	file, err := os.Open("main.json")
 	if err != nil {
 		fmt.Println("ReloadConfig打开配置文件失败: %v", err)
+		//创建配置文件
+		Cfg = Config{}
+		WriteConfig()
 		return err
 	}
 	defer file.Close()

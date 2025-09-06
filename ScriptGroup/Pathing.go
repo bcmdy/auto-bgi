@@ -3,7 +3,6 @@ package ScriptGroup
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
-	"auto-bgi/task"
 	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
@@ -102,13 +101,16 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 
 	}
 	scriptGroupConfig := s.RemoveProjectsByTypeAndFolder(updatePath.Name, updatePath.FolderName)
+	index := 0
 
-	for i := range scriptGroupConfig.Projects {
-		scriptGroupConfig.Projects[i].Index = i + 1
+	//空配置组判断
+	if len(scriptGroupConfig.Projects) > 0 {
+		for i := range scriptGroupConfig.Projects {
+			scriptGroupConfig.Projects[i].Index = i + 1
+		}
+		project := scriptGroupConfig.Projects[len(scriptGroupConfig.Projects)-1]
+		index = project.Index + 1
 	}
-
-	project := scriptGroupConfig.Projects[len(scriptGroupConfig.Projects)-1]
-	index := project.Index + 1
 
 	var projects []Project
 
@@ -143,6 +145,8 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 	}
 	s.ListPathingUpdatePaths()
 
+	autoLog.Sugar.Infof("通知-%s地图追踪更新成功", updatePath.Name)
+
 	return "更新地图追踪成功", nil
 
 }
@@ -176,7 +180,7 @@ func (s *ScriptGroupConfig) CleanAllPathing(c *gin.Context) {
 }
 
 func (s *ScriptGroupConfig) ListPathingUpdatePaths() error {
-	groups, err := task.ListGroups()
+	groups, err := listGroups()
 	if err != nil {
 		autoLog.Sugar.Errorf("读取配置组失败: %v", err)
 		return err

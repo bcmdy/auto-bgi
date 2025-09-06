@@ -2,6 +2,8 @@ package bgiStatus
 
 import (
 	"archive/zip"
+	"auto-bgi/Notice"
+	"auto-bgi/ScriptRepo"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -10,8 +12,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/otiai10/copy"
 	"github.com/robfig/cron/v3"
 	"io"
@@ -62,7 +64,7 @@ func CheckBetterGIStatus() {
 			}
 		} else {
 			if !notified {
-				SentText("BetterGI 已经关闭:" + config.Cfg.Content)
+				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
 				control.CloseYuanShen()
 				notified = true
 				okRun = true
@@ -672,7 +674,7 @@ type KeyValue struct {
 // 创建一个数组
 var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "运儿", "家",
 	"方巾", "枭羽", "怀钟", "药壶", "银莲", "怀表", "尾羽", "头带", "金杯", "之花", "之杯",
-	"沙漏", "绿花", "银冠", "鹰羽", "冒险", "游医的"}
+	"沙漏", "绿花", "银冠", "鹰羽", "冒险", "游医的", "教官", "战狂", "流放"}
 
 // analyseLog handles the /api/analyse GET request
 func LogAnalysis(fileName string) map[string]int {
@@ -691,7 +693,7 @@ func LogAnalysis(fileName string) map[string]int {
 			syw += count
 		} else if strings.Contains(item, "蟹") {
 			xie += count
-		} else if item == "调查" {
+		} else if item == "调查" || item == "周查" {
 			continue
 		} else {
 			data.Key = item
@@ -1157,120 +1159,126 @@ type GitLogStruct struct {
 }
 
 // 查询git日志
-func GitLog() []GitLogStruct {
+func GitLog(n int) ([]GitLogStruct, error) {
 	localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
 
 	// 打开仓库
-	repo, err := git.PlainOpen(localPath)
+	r, err := git.PlainOpen(localPath)
 	if err != nil {
-		autoLog.Sugar.Errorf("打开仓库失败: %v", err)
-		return nil
+		return nil, fmt.Errorf("打开仓库失败: %w", err)
 	}
 
-	// 获取 HEAD 引用
-	ref, err := repo.Head()
+	// 获取 HEAD
+	ref, err := r.Head()
 	if err != nil {
-		autoLog.Sugar.Errorf("获取 HEAD 失败: %v", err)
-		return nil
+		return nil, fmt.Errorf("获取 HEAD 失败: %w", err)
 	}
 
-	// 获取日志迭代器
-	commitIter, err := repo.Log(&git.LogOptions{From: ref.Hash()})
+	// 遍历日志
+	cIter, err := r.Log(&git.LogOptions{From: ref.Hash()})
 	if err != nil {
-		autoLog.Sugar.Errorf("获取日志失败: %v", err)
-		return nil
+		return nil, fmt.Errorf("获取日志失败: %w", err)
 	}
 
 	var logs []GitLogStruct
 	count := 0
+	err = cIter.ForEach(func(c *object.Commit) error {
+		var files []string
 
-	_ = commitIter.ForEach(func(c *object.Commit) error {
-		var gitLogStruct GitLogStruct
-		gitLogStruct.CommitTime = c.Author.When.Format("2006-01-02 15:04:05")
-		gitLogStruct.Author = c.Author.Name
-		gitLogStruct.Message = c.Message
-
-		var fileNames []string
+		// 获取父提交，比较差异
 		if c.NumParents() > 0 {
-			parent, _ := c.Parent(0)
-			patch, _ := parent.Patch(c)
-
-			for _, stat := range patch.Stats() {
-				fileNames = append(fileNames, stat.Name)
+			parent, err := c.Parents().Next()
+			if err == nil {
+				patch, err := parent.Patch(c)
+				if err == nil {
+					for _, stat := range patch.Stats() {
+						files = append(files, stat.Name)
+					}
+				}
 			}
 		} else {
-			// 初始提交，直接列出所有文件
+			// 初始提交：直接获取树对象所有文件
 			tree, _ := c.Tree()
 			_ = tree.Files().ForEach(func(f *object.File) error {
-				fileNames = append(fileNames, f.Name)
+				files = append(files, f.Name)
 				return nil
 			})
 		}
 
-		gitLogStruct.Files = fileNames
-		logs = append(logs, gitLogStruct)
+		logs = append(logs, GitLogStruct{
+			CommitTime: c.Author.When.Format("2006-01-02 15:04:05"),
+			Author:     c.Author.Name,
+			Message:    c.Message,
+			Files:      files,
+		})
 
 		count++
-		if count >= 10 {
-			return fmt.Errorf("done")
+		if count >= n {
+			return storer.ErrStop
 		}
 		return nil
 	})
 
-	// 按时间倒序
-	sort.Slice(logs, func(i, j int) bool {
-		ti, _ := time.Parse("2006-01-02 15:04:05", logs[i].CommitTime)
-		tj, _ := time.Parse("2006-01-02 15:04:05", logs[j].CommitTime)
-		return ti.After(tj)
-	})
+	if err != nil && err != storer.ErrStop {
+		return nil, fmt.Errorf("遍历提交日志失败: %w", err)
+	}
 
-	return logs
+	return logs, nil
 }
 
 // git拉取代码
-func GitPull() error {
+func GitPull() {
 
-	localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
-
-	// 尝试打开本地仓库
-	repo, err := git.PlainOpen(localPath)
-	if err == git.ErrRepositoryNotExists {
-		// 本地不存在，克隆
-		autoLog.Sugar.Info("仓库不存在，请先去bgi重置或者更新仓库")
-
-	} else if err == nil {
-		// 已存在，拉取最新
-		autoLog.Sugar.Info("仓库存在，拉取最新代码...")
-		w, err := repo.Worktree()
-		if err != nil {
-			return fmt.Errorf("获取工作区失败: %v", err)
+	_, _, err := ScriptRepo.UpdateCenterRepoByGit("https://gitcode.com/huiyadanli/bettergi-scripts-list.git")
+	if err != nil {
+		if strings.Contains(err.Error(), "worktree contains unstaged changes") {
+			autoLog.Sugar.Info("仓库没有更新")
+		} else {
+			autoLog.Sugar.Errorf("仓库更新失败:%s", err.Error())
 		}
-		// 强制还原本地更改
-		err = w.Reset(&git.ResetOptions{
-			Mode: git.HardReset,
-		})
-		if err != nil {
-			autoLog.Sugar.Errorf("重置工作区失败: %v", err)
-			return fmt.Errorf("重置工作区失败: %v", err)
-		}
-		autoLog.Sugar.Info("本地更改已清除，准备拉取")
-
-		// 拉取更新
-		err = w.Pull(&git.PullOptions{
-			RemoteName:    "origin",
-			ReferenceName: plumbing.NewBranchReferenceName("main"),
-			Force:         false,
-		})
-		if err != nil && err != git.NoErrAlreadyUpToDate {
-			autoLog.Sugar.Errorf("拉取失败: %v", err)
-
-			return fmt.Errorf("拉取失败: %v", err)
-		}
-		autoLog.Sugar.Info("拉取完成或已是最新")
-	} else {
-		return fmt.Errorf("打开仓库失败: %v", err)
 	}
-	return nil
+
+	//localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
+	//
+	//// 尝试打开本地仓库
+	//repo, err := git.PlainOpen(localPath)
+	//if err == git.ErrRepositoryNotExists {
+	//	// 本地不存在，克隆
+	//	autoLog.Sugar.Info("仓库不存在，请先去bgi重置或者更新仓库")
+	//
+	//} else if err == nil {
+	//	// 已存在，拉取最新
+	//	autoLog.Sugar.Info("仓库存在，拉取最新代码...")
+	//	w, err := repo.Worktree()
+	//	if err != nil {
+	//		return fmt.Errorf("获取工作区失败: %v", err)
+	//	}
+	//	// 强制还原本地更改
+	//	err = w.Reset(&git.ResetOptions{
+	//		Mode: git.HardReset,
+	//	})
+	//	if err != nil {
+	//		autoLog.Sugar.Errorf("重置工作区失败: %v", err)
+	//		return fmt.Errorf("重置工作区失败: %v", err)
+	//	}
+	//	autoLog.Sugar.Info("本地更改已清除，准备拉取")
+	//
+	//	// 拉取更新
+	//	err = w.Pull(&git.PullOptions{
+	//		RemoteName:    "origin",
+	//		ReferenceName: plumbing.NewBranchReferenceName("main"),
+	//		Force:         false,
+	//	})
+	//	if err != nil && err != git.NoErrAlreadyUpToDate {
+	//		autoLog.Sugar.Errorf("拉取失败: %v", err)
+	//
+	//		return fmt.Errorf("拉取失败: %v", err)
+	//	}
+	//	autoLog.Sugar.Info("拉取完成或已是最新")
+	//} else {
+	//	return fmt.Errorf("打开仓库失败: %v", err)
+	//}
+	//return nil
 }
 
 func UpdateJs(jsName string) (string, error) {
@@ -1584,7 +1592,7 @@ func ReadLog() {
 				continue
 			} else if i == 30 {
 				autoLog.Sugar.Info("bgi" + strconv.Itoa(i) + "秒没有动静")
-				SentText("bgi30秒没有动静")
+				Notice.SentText("bgi30秒没有动静")
 				i++
 			}
 		} else {
@@ -1829,15 +1837,8 @@ type JsNamesInfoStruct struct {
 
 func JsNamesInfo() []JsNamesInfoStruct {
 
-	if err := GitPull(); err != nil {
-		autoLog.Sugar.Errorf("仓库更新失败，再次尝试一下:%s", err.Error())
-		if err := GitPull(); err != nil {
-			autoLog.Sugar.Errorf("仓库第二次再次更新失败:%s", err.Error())
-			if err := GitPull(); err != nil {
-				autoLog.Sugar.Errorf("仓库第三次再次更新失败:%s", err.Error())
-			}
-		}
-	}
+	GitPull()
+	time.Sleep(1)
 
 	// 获取本地所有订阅脚本目录
 	scriptDir := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript")

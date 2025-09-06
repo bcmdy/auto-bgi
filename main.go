@@ -1,7 +1,10 @@
 package main
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/ScriptGroup"
+	"auto-bgi/ScriptRepo"
+	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -159,6 +162,43 @@ func main() {
 		}
 	})
 
+	abgiWs := ginServer.Group("/api/abgiSSE")
+	{
+		//上线
+		abgiWs.POST("/connect", func(c *gin.Context) {
+			if config.Cfg.Account.Uid == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "账号配置错误"})
+				return
+			}
+			if config.Cfg.Account.Name == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "账号配置错误"})
+				return
+			}
+			if config.Cfg.Account.SecretKey == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
+				return
+			}
+			//解密
+			decryptedKey, err3 := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+			if err3 != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
+				return
+			}
+
+			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decryptedKey, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
+			if err != nil {
+				autoLog.Sugar.Errorf("连接失败: %v", err)
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "连接成功"})
+		})
+
+		//下线
+		abgiWs.POST("/disconnect", func(c *gin.Context) {
+			abgiSSE.Close()
+		})
+
+	}
+
 	//日志查询
 	ginServer.GET("/api/index", func(c *gin.Context) {
 		// 生成日志文件名
@@ -184,6 +224,7 @@ func main() {
 		group := "未知"
 		GetGroup := "未知"
 		timestamp := "未知"
+		onlineUser := abgiSSE.GetAllOnlineUser()
 
 		line, err := bgiStatus.FindLastExecLine(filename)
 		if err != nil {
@@ -216,6 +257,10 @@ func main() {
 			jsProgress = "无"
 		}
 
+		if strings.Contains(line, "地图追踪") {
+			jsProgress = ""
+		}
+
 		data := make(map[string]interface{})
 		data["group"] = group + "[" + GetGroup + "]"
 		data["ExpectedToEnd"] = timestamp
@@ -223,6 +268,7 @@ func main() {
 		data["progress"] = progress
 		data["running"] = running
 		data["jsProgress"] = jsProgress
+		data["onlineUser"] = onlineUser
 
 		c.JSON(http.StatusOK, data)
 
@@ -294,7 +340,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
 			return
 		} else {
-			err2 := bgiStatus.SentImage("jt.png")
+			err2 := Notice.SentImage("jt.png")
 			if err2 != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err2})
 				return
@@ -452,7 +498,12 @@ func main() {
 
 	//获取仓库提交记录（最新的10条）
 	ginServer.GET("/api/gitLog", func(context *gin.Context) {
-		gitLog := bgiStatus.GitLog()
+		//gitLog, err := bgiStatus.GitLog(10)
+		//fmt.Println(err)
+		//context.JSON(http.StatusOK, gin.H{
+		//	"gitLog": gitLog,
+		//})
+		gitLog := ScriptRepo.Read()
 		context.JSON(http.StatusOK, gin.H{
 			"gitLog": gitLog,
 		})
@@ -867,7 +918,7 @@ func main() {
 				commit.ID, commit.Message, commit.Author.Name, commit.Timestamp, commit.URL)
 			autoLog.Sugar.Infof(GITLOG)
 			// 发送通知
-			bgiStatus.SentText(GITLOG)
+			Notice.SentText(GITLOG)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -910,6 +961,14 @@ func main() {
 
 	} else {
 		autoLog.Sugar.Infof("一条龙关闭状态")
+	}
+
+	//获取机器码
+	machineCode, err := tools.GetMachineCode()
+	if err != nil {
+		autoLog.Sugar.Error("获取机器码失败:", err)
+	} else {
+		autoLog.Sugar.Infof("机器码: %s", machineCode)
 	}
 
 	// 1. 静态资源挂载（直接让前端可以访问图片）

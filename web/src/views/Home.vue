@@ -24,6 +24,7 @@
         <p><span>🗺️</span> 地图追踪进度：<span>{{ statusData.progress }}</span></p>
         <p><span>🖥️</span> 软件运行状态：<span>{{ statusData.running }}</span></p>
         <p><span>✨</span><span>{{ statusData.jsProgress }}</span></p>
+        <p><span>🖥️</span> 待联机人员：<span>{{ statusData.onlineUser }}</span></p>
       </div>
 
       <!-- 数据分析按钮组 -->
@@ -359,6 +360,28 @@ const mysSignIn = () => {
 
 }
 
+const StartDogFoodOnline = () => {
+  Modal.confirm({
+    title: '确认上线吗？',
+    content: '狗粮联机上线？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const response = await apiMethods.StartDogFoodOnline()
+        scanResult.value = response.message || '上线成功！'
+        Modal.info({
+          title: '上线结果',
+          content: scanResult.value,
+          okText: '关闭'
+        })
+      } catch (error) {
+        message.error(error.response.data.message)
+      }
+    }
+  })
+}
+
 
 // 自动化按钮配置
 const automationButtons = ref([
@@ -368,7 +391,8 @@ const automationButtons = ref([
   { text: '脚本更新列表', action: () => router.push('/jsNames') },
   { text: '地图追踪', action: () => router.push('/Pathing') },
   { text: '发送桌面截图', action: sendImage },
-  { text: '米游社手动签到', action: mysSignIn }
+  { text: '米游社手动签到', action: mysSignIn },
+  {text: '狗粮联机上线', action: StartDogFoodOnline }
 ])
 
 

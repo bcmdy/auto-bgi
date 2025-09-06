@@ -1,0 +1,90 @@
+version: '1.0'
+name: branch-pipeline
+displayName: abgi
+triggers:
+  trigger: auto
+  pr:
+    branches:
+      precise:
+        - ginVue
+stages:
+  - name: build_go
+    displayName: 构建
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: build@nodejs
+        name: build_nodejs
+        displayName: Nodejs 构建
+        nodeVersion: 20.10.0
+        commands:
+          - cd web
+          - node -v
+          - '# 执行编译命令'
+          - npm install
+          - npm run build
+        artifacts:
+          - name: BUILD_ARTIFACT
+            path:
+              - ./web/dist
+        caches:
+          - ~/.npm
+          - ~/.yarn
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-5ef6748e
+    displayName: go
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: build@golang
+        name: build_golang
+        displayName: Golang 构建
+        golangVersion: 1.23.11
+        commands:
+          - cp -r web/dist/* web/dist/
+          - '# 默认使用goproxy.cn'
+          - export GOPROXY=https://goproxy.cn
+          - '# 输入你的构建命令'
+          - go build
+        artifacts:
+          - name: BUILD_GO
+            path:
+              - ./output
+        caches:
+          - /go/pkg/mod
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-f9687013
+    displayName: 上传制品
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: publish@general_artifacts
+        name: publish_general_artifacts
+        displayName: 上传制品
+        dependArtifact: BUILD_GO
+        artifactName: output
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-6cd370ee
+    displayName: 发布
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: publish@release_artifacts
+        name: publish_release_artifacts
+        displayName: 发布
+        dependArtifact: output
+        version: 3.0.0.0
+        autoIncrement: true
+        notify: []
+        strategy:
+          retry: '0'

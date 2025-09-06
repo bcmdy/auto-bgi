@@ -418,12 +418,20 @@
             </a-checkbox>
           </a-form-item>
 
-          <a-form-item label="配置组名称" name="ScriptGroupName" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
+          <a-form-item label="开始录屏关键字" name="StartScreen" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
             <div class="input-wrapper">
               <span class="input-icon">🔍</span>
               <a-input
-                  v-model:value="formData.ScreenRecord.ScriptGroupName"
-                  placeholder="配置组名称"
+                  v-model:value="formData.ScreenRecord.StartScreen"
+                  placeholder="开始录屏关键字"
+                  class="enhanced-input"
+              />
+            </div>
+            <div class="input-wrapper">
+              <span class="input-icon">🔍</span>
+              <a-input
+                  v-model:value="formData.ScreenRecord.EndScreen"
+                  placeholder="结束录屏关键字"
                   class="enhanced-input"
               />
             </div>
@@ -442,7 +450,7 @@
           </template>
 
           <div class="notice-content">
-                         <a-form-item label="通知类型" name="NoticeType" class="form-item-enhanced">
+            <a-form-item label="通知类型" name="NoticeType" class="form-item-enhanced">
                <div class="input-wrapper">
                  <span class="input-icon">📢</span>
                  <a-select 
@@ -500,9 +508,93 @@
                   />
                 </div>
               </a-form-item>
+
+       
             </div>
           </div>
         </a-card>
+
+        <!-- //联机设置 -->
+        <a-card title="联机设置" class="config-card account-settings">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">🔗</span>
+              <a-tooltip title="联机设置，填写联机需要的参数">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+               <a-form-item label="UID" name="uid" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🆔</span>
+                <a-input-password
+                  v-model:value="formData.Account.Uid" 
+                  placeholder="uid"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+                <a-form-item label="用户名" name="用户名" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🥵</span>
+                <a-input-password
+                  v-model:value="formData.Account.Name" 
+                  placeholder="旅游者的名字"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+            <a-form-item label="狗粮联机配置组" name="狗粮联机配置组" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🐶</span>
+                <a-input
+                  v-model:value="formData.Account.GouLangGroupName" 
+                  placeholder="狗粮联机配置组"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+          <a-form-item label="狗粮上线联机关键字" name="狗粮上线联机关键字" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🐶</span>
+                <a-input
+                  v-model:value="formData.Account.OnlineKeyword" 
+                  placeholder="狗粮上线联机关键字"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+
+          <a-form-item label="联机SecretKey" name="联机SecretKey" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">👀</span>
+                <a-input-password
+                  v-model:value="formData.Account.SecretKey" 
+                  placeholder="联机SecretKey"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+          <a-form-item label="联机Key" name="联机Key" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🔑</span>
+                <a-input-password
+                  v-model:value="formData.Account.AccountKey" 
+                  placeholder="联机Key"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+                
+          
+     </a-card>
+      
 
  
 
@@ -573,7 +665,8 @@ const formData = reactive({
   },
   ScreenRecord: {
     IsRecord: false,
-    ScriptGroupName: ''
+    StartScreen: '',
+    EndScreen: '',
   },
   BgiLog: '',
   basePath: '',
@@ -582,9 +675,17 @@ const formData = reactive({
     Wechat: '',
     TGNotice: {
       TGToken: '',
-      ChatID: '',
+      ChatID: 0,
       Proxy: ''
     }
+  },
+  Account: {
+    Uid: "",
+    Name: "",
+    GouLangGroupName: "",
+    OnlineKeyword: "",
+    SecretKey: "",
+    AccountKey: ""
   }
 })
 
@@ -690,6 +791,9 @@ const loadConfig = async () => {
       if (data.Notice) {
         Object.assign(formData.Notice, data.Notice)
       }
+       if (data.Account) {
+        Object.assign(formData.Account, data.Account)
+      }
     }
   } catch (error) {
     message.error('加载配置失败: ' + error.message)
@@ -716,8 +820,11 @@ const handleSubmit = async () => {
       ScreenRecord: formData.ScreenRecord,
       BgiLog: formData.BgiLog,
       basePath: formData.basePath,
-      Notice: formData.Notice
+      Notice: formData.Notice,
+      Account: formData.Account
     }
+
+    console.log('提交的配置:', payload)
 
     await apiMethods.updateConfig(payload)
     message.success('保存成功！')

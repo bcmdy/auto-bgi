@@ -1,8 +1,8 @@
 name: 🔄 Auto-BGI Daily Sync & Build
 
 on:
-  schedule:
-    - cron: '0 15 * * *'   # 每天 UTC 15:00（北京时间 23:00）
+  # schedule:
+  #   - cron: '0 11 * * *'   # 每天 UTC 11:00（北京时间 19:00）
   workflow_dispatch:              # 手动触发
   # push:
   #   branches: [ main ]
