@@ -96,8 +96,9 @@ export const apiMethods = {
     return api.post('/api/startGroups', payload)
   },
 
-  // 狗粮联机上线
+  // 狗粮联机
   StartOnline: (typeKey) => api.post('/api/abgiSSE/connect/'+typeKey),
+  offline:() => api.post('/api/abgiSSE/disconnect'),
   DogFooddisconnect: () => api.post('/api/abgiSSE/disconnect')
   
 }

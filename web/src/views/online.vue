@@ -5,7 +5,7 @@
     </div>
 
     <div class="main-content">
-      <!-- 操作卡片 + 刷新按钮 -->
+      <!-- 操作卡片 -->
       <div class="card">
         <div class="actions-grid">
           <button @click="StartOnline('dogFour')">🐶 狗粮四人联机</button>
@@ -13,9 +13,16 @@
         </div>
         <!-- 刷新按钮 -->
         <div class="refresh-wrap">
-          <button @click="fetchOnlineDetail">🔄 刷新详情</button>
+          <button @click="offline">🔄 刷新详情</button>
         </div>
-            <div class="refresh-wrap">
+
+        <!-- 下线 -->
+         <div class="refresh-wrap">
+          <button @click="offline ">下线</button>
+        </div>
+
+        <!--  -->
+        <div class="refresh-wrap">
           <button @click="goHome">返回主页</button>
         </div>
       </div>
@@ -74,6 +81,29 @@ async function fetchOnlineDetail() {
   } catch (e) {
     message.error('获取联机详情失败')
   }
+}
+
+const offline = (typeKey) => {
+  Modal.confirm({
+    title: '确认下线吗？',
+    content: '联机下线？',
+    okText: '确定',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        const response = await apiMethods.offline(typeKey)
+        Modal.destroyAll()
+        Modal.info({
+          title: '上线结果',
+          content: "下线成功",
+          okText: '关闭'
+        })
+        fetchOnlineDetail()
+      } catch (error) {
+        message.error(error)
+      }
+    }
+  })
 }
 
 
