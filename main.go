@@ -165,7 +165,7 @@ func main() {
 	abgiWs := ginServer.Group("/api/abgiSSE")
 	{
 		//上线
-		abgiWs.POST("/connect", func(c *gin.Context) {
+		abgiWs.POST("/connect/:typeKey", func(c *gin.Context) {
 			if config.Cfg.Account.Uid == "" {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "账号配置错误"})
 				return
@@ -184,12 +184,20 @@ func main() {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
 				return
 			}
+			abgiType := c.Param("typeKey")
+			if abgiType == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "上线类型错误"})
+				return
+			}
 
-			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s", decryptedKey, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
+			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
 			if err != nil {
 				autoLog.Sugar.Errorf("连接失败: %v", err)
+				c.String(http.StatusBadRequest, "连接失败")
+				return
+
 			}
-			c.JSON(http.StatusOK, gin.H{"message": "连接成功"})
+			c.String(http.StatusOK, "连接成功")
 		})
 
 		//下线
@@ -197,6 +205,11 @@ func main() {
 			abgiSSE.Close()
 		})
 
+		//获取在线人员
+		abgiWs.GET("/getOnlineUser", func(context *gin.Context) {
+			onlineUser := abgiSSE.GroupsStatusHandler()
+			context.JSON(http.StatusOK, onlineUser)
+		})
 	}
 
 	//日志查询
@@ -224,7 +237,6 @@ func main() {
 		group := "未知"
 		GetGroup := "未知"
 		timestamp := "未知"
-		onlineUser := abgiSSE.GetAllOnlineUser()
 
 		line, err := bgiStatus.FindLastExecLine(filename)
 		if err != nil {
@@ -257,10 +269,6 @@ func main() {
 			jsProgress = "无"
 		}
 
-		if strings.Contains(line, "地图追踪") {
-			jsProgress = ""
-		}
-
 		data := make(map[string]interface{})
 		data["group"] = group + "[" + GetGroup + "]"
 		data["ExpectedToEnd"] = timestamp
@@ -268,7 +276,6 @@ func main() {
 		data["progress"] = progress
 		data["running"] = running
 		data["jsProgress"] = jsProgress
-		data["onlineUser"] = onlineUser
 
 		c.JSON(http.StatusOK, data)
 
@@ -791,7 +798,7 @@ func main() {
 	})
 
 	//批量更新仓库
-	ginServer.GET("/api/batchUpdate", func(c *gin.Context) {
+	ginServer.POST("/api/batchUpdate", func(c *gin.Context) {
 		script := bgiStatus.BatchUpdateScript()
 		if script != "" {
 			c.JSON(http.StatusOK, gin.H{"status": "success", "message": script})

@@ -92,7 +92,7 @@ func (c *AbgiClient) listen() {
 			scriptGroupConfig.StartDogFoodOnline(dd)
 		}
 
-		//fmt.Printf("收到消息: %s\n", msg)
+		fmt.Printf("收到消息: %s\n", xiaoxi)
 		Notice.SentText(xiaoxi)
 	}
 }
@@ -116,13 +116,12 @@ func Status() string {
 }
 
 // 获取在线人数
-func GetAllOnlineUser() interface{} {
+func GroupsStatusHandler() interface{} {
 	decrypt, err2 := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 	if err2 != nil {
-		autoLog.Sugar.Infof("密钥错误:%s", err2)
 		return 0
 	}
-	resp, err := http.Get(fmt.Sprintf("http://%s/api/GetAllOnlineUser?", decrypt))
+	resp, err := http.Get(fmt.Sprintf("http://%s/api/GroupsStatusHandler?", decrypt))
 	if err != nil {
 		autoLog.Sugar.Error("获取在线用户失败:")
 		return 0
@@ -133,8 +132,13 @@ func GetAllOnlineUser() interface{} {
 		autoLog.Sugar.Error("读取响应失败:", err)
 		return 0
 	}
-	autoLog.Sugar.Infof("当前在线用户: %s", body)
-	return string(body)
+	var mapData []map[string]interface{}
+	err = json.Unmarshal(body, &mapData)
+	if err != nil {
+		autoLog.Sugar.Error("解析JSON失败:", err)
+		return 0
+	}
+	return mapData
 }
 
 // Close 关闭连接

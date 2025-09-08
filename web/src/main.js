@@ -22,7 +22,8 @@ import OneLong from './views/OneLong.vue'
 import Error from './views/Error.vue'
 import CalculateTaskEnabledList from './views/CalculateTaskEnabledList.vue'
 import BagStatistics from './views/BagStatistics.vue'
-
+import Gitlog from './views/Gitlog.vue'
+import Online from './views/online.vue' 
 // 路由配置
 const routes = [
   { path: '/', component: Home },
@@ -41,7 +42,9 @@ const routes = [
   { path: '/onelong', component: OneLong },
   { path: '/error', component: Error },
   { path: '/CalculateTaskEnabledList', component: CalculateTaskEnabledList },
-  { path: '/BagStatistics', component: BagStatistics }
+  { path: '/BagStatistics', component: BagStatistics },
+  { path: '/GitLog', component: Gitlog },
+  { path: '/Online', component: Online } // 修正 component 名称
 ]
 
 const router = createRouter({

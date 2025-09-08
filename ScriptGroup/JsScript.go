@@ -3,6 +3,7 @@ package ScriptGroup
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"fmt"
 )
 
 type dd struct {
@@ -34,14 +35,18 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(data []map[string]interface{}) {
 		if project.Type == "Javascript" && project.FolderName == "ArtifactsGroupPurchasing" {
 			object := project.JsScriptSettingsObject
 			object["yourIndex"] = yourIndex
-			object["p1UID"] = aa[0].UID
-			object["p1Name"] = aa[0].Name
-			object["p2UID"] = aa[1].UID
-			object["p2Name"] = aa[1].Name
-			object["p3UID"] = aa[2].UID
-			object["p3Name"] = aa[2].Name
-			object["p4UID"] = aa[3].UID
-			object["p4Name"] = aa[3].Name
+			for i, d := range aa {
+				object[fmt.Sprintf("p%dUID", i+1)] = d.UID
+				object[fmt.Sprintf("p%dName", i+1)] = d.Name
+			}
+			//object["p1UID"] = aa[0].UID
+			//object["p1Name"] = aa[0].Name
+			//object["p2UID"] = aa[1].UID
+			//object["p2Name"] = aa[1].Name
+			//object["p3UID"] = aa[2].UID
+			//object["p3Name"] = aa[2].Name
+			//object["p4UID"] = aa[3].UID
+			//object["p4Name"] = aa[3].Name
 			project.JsScriptSettingsObject = object
 		}
 	}

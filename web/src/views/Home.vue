@@ -24,7 +24,6 @@
         <p><span>🗺️</span> 地图追踪进度：<span>{{ statusData.progress }}</span></p>
         <p><span>🖥️</span> 软件运行状态：<span>{{ statusData.running }}</span></p>
         <p><span>✨</span><span>{{ statusData.jsProgress }}</span></p>
-        <p><span>🖥️</span> 待联机人员：<span>{{ statusData.onlineUser }}</span></p>
       </div>
 
       <!-- 数据分析按钮组 -->
@@ -99,6 +98,7 @@ const dataAnalysisButtons = ref([
 ])
 
 const bgiButtons = ref([
+    { text: '仓库提交记录', route: '/GitLog' },
   { text: '调度器', route: '/listGroups' },
   { text: '实时日志', route: '/log' },
   { text: 'autobgi配置文件', route: '/Config' },
@@ -360,27 +360,27 @@ const mysSignIn = () => {
 
 }
 
-const StartDogFoodOnline = () => {
-  Modal.confirm({
-    title: '确认上线吗？',
-    content: '狗粮联机上线？',
-    okText: '确定',
-    cancelText: '取消',
-    onOk: async () => {
-      try {
-        const response = await apiMethods.StartDogFoodOnline()
-        scanResult.value = response.message || '上线成功！'
-        Modal.info({
-          title: '上线结果',
-          content: scanResult.value,
-          okText: '关闭'
-        })
-      } catch (error) {
-        message.error(error.response.data.message)
-      }
-    }
-  })
-}
+// const StartDogFoodOnline = () => {
+//   Modal.confirm({
+//     title: '确认上线吗？',
+//     content: '狗粮联机上线？',
+//     okText: '确定',
+//     cancelText: '取消',
+//     onOk: async () => {
+//       try {
+//         const response = await apiMethods.StartDogFoodOnline()
+//         scanResult.value = response.message || '上线成功！'
+//         Modal.info({
+//           title: '上线结果',
+//           content: scanResult.value,
+//           okText: '关闭'
+//         })
+//       } catch (error) {
+//         message.error(error.response.data.message)
+//       }
+//     }
+//   })
+// }
 
 
 // 自动化按钮配置
@@ -392,7 +392,8 @@ const automationButtons = ref([
   { text: '地图追踪', action: () => router.push('/Pathing') },
   { text: '发送桌面截图', action: sendImage },
   { text: '米游社手动签到', action: mysSignIn },
-  {text: '狗粮联机上线', action: StartDogFoodOnline }
+   { text: '联机', action: () => router.push('/Online') }
+
 ])
 
 
@@ -409,7 +410,7 @@ onMounted(() => {
   
   // 获取状态并设置定时器
   refreshStatus()
-  statusInterval = setInterval(refreshStatus, 10000)
+  statusInterval = setInterval(refreshStatus, 300000)
 
   // 清理函数
   onUnmounted(() => {

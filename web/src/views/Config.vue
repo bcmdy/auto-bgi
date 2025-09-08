@@ -536,12 +536,12 @@
               </div>
             </a-form-item>
 
-                <a-form-item label="用户名" name="用户名" class="form-item-enhanced">
+                <a-form-item label="旅游者的名字" name="旅游者的名字" class="form-item-enhanced">
               <div class="input-wrapper">
                 <span class="input-icon">🥵</span>
                 <a-input-password
                   v-model:value="formData.Account.Name" 
-                  placeholder="旅游者的名字"
+                  placeholder="确保名字不是数字，不要有特殊符号"
                   class="enhanced-input"
                 />
               </div>

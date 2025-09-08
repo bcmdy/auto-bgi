@@ -1,6 +1,7 @@
 package ScriptRepo
 
 import (
+	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"encoding/json"
 	"fmt"
@@ -46,6 +47,16 @@ type Repo struct {
 }
 
 func Read() []Repos {
+
+	_, _, err := UpdateCenterRepoByGit("https://gitcode.com/huiyadanli/bettergi-scripts-list.git")
+	if err != nil {
+		if strings.Contains(err.Error(), "worktree contains unstaged changes") {
+			autoLog.Sugar.Info("仓库没有更新")
+		} else {
+			autoLog.Sugar.Errorf("仓库更新失败:%s", err.Error())
+		}
+	}
+
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo.json")
 
 	// 读取文件

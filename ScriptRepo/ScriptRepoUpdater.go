@@ -1,7 +1,6 @@
 package ScriptRepo
 
 import (
-	"auto-bgi/autoLog"
 	myConfig "auto-bgi/config"
 	"encoding/json"
 	"errors"
@@ -17,34 +16,31 @@ import (
 	"time"
 )
 
+// UpdateCenterRepoByGit 强制同步 main 分支并标记更新
 func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 	if repoUrl == "" {
 		return "", false, errors.New("仓库URL不能为空")
 	}
 
-	reposPath := myConfig.Cfg.BetterGIAddress + "\\Repos"
+	reposPath := filepath.Join(myConfig.Cfg.BetterGIAddress, "Repos")
 	repoPath := filepath.Join(reposPath, "bettergi-scripts-list-git")
 	updated := false
-
 	var oldRepoJsonContent []byte
 
-	// 包装整个逻辑
+	// 仓库不存在 -> 完整克隆
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		// 仓库不存在，执行克隆
-		log.Printf("浅克隆仓库: %s 到 %s", repoUrl, repoPath)
+		log.Printf("完整克隆仓库: %s 到 %s", repoUrl, repoPath)
 		_, err := git.PlainClone(repoPath, false, &git.CloneOptions{
-			URL:           repoUrl,
-			Depth:         1,
-			SingleBranch:  true,
-			ReferenceName: plumbing.NewBranchReferenceName("main"),
-			Progress:      os.Stdout,
+			URL:          repoUrl,
+			SingleBranch: true,
+			Progress:     os.Stdout,
 		})
 		if err != nil {
 			return "", false, fmt.Errorf("克隆仓库失败: %w", err)
 		}
 		updated = true
 	} else {
-		// 仓库已存在，检查 repo.json 备份
+		// 仓库存在，备份旧 repo.json
 		oldRepoJsonPath := ""
 		filepath.WalkDir(reposPath, func(path string, d fs.DirEntry, err error) error {
 			if err == nil && d.Name() == "repo.json" {
@@ -63,44 +59,49 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 			return "", false, fmt.Errorf("打开仓库失败: %w", err)
 		}
 
-		// 检查远程 URL
+		// 确保远程 URL 正确
 		remote, err := r.Remote("origin")
 		if err != nil {
 			return "", false, fmt.Errorf("获取远程失败: %w", err)
 		}
-
 		if remote.Config().URLs[0] != repoUrl {
 			log.Printf("更新远程URL: 从 %s 到 %s", remote.Config().URLs[0], repoUrl)
-			remoteCfg := &config.RemoteConfig{
+			_ = r.DeleteRemote("origin")
+			_, _ = r.CreateRemote(&config.RemoteConfig{
 				Name: "origin",
 				URLs: []string{repoUrl},
-			}
-			r.DeleteRemote("origin")
-			r.CreateRemote(remoteCfg)
+			})
 		}
 
-		// 拉取最新代码
-		worktree, err := r.Worktree()
-		if err != nil {
-			return "", false, fmt.Errorf("获取工作区失败: %w", err)
-		}
-
-		headRef, _ := r.Head()
-		oldCommit := headRef.Hash().String()
-
-		err = worktree.Pull(&git.PullOptions{
-			RemoteName:    "origin",
-			SingleBranch:  true,
-			ReferenceName: plumbing.NewBranchReferenceName("main"),
-			Progress:      os.Stdout,
+		// 强制 fetch 更新远程引用
+		err = r.Fetch(&git.FetchOptions{
+			RemoteName: "origin",
+			Progress:   os.Stdout,
+			Force:      true,
 		})
-
 		if err != nil && err != git.NoErrAlreadyUpToDate {
-			return "", false, fmt.Errorf("拉取更新失败: %w", err)
+			return "", false, fmt.Errorf("fetch 失败: %w", err)
 		}
 
-		newHeadRef, _ := r.Head()
-		updated = oldCommit != newHeadRef.Hash().String()
+		// 获取远程 main 分支
+		remoteBranch := plumbing.NewRemoteReferenceName("origin", "main")
+		remoteRef, err := r.Reference(remoteBranch, true)
+		if err != nil {
+			return "", false, fmt.Errorf("获取远程 main 分支引用失败: %w", err)
+		}
+
+		// 强制 reset --hard 到远程 main
+		worktree, _ := r.Worktree()
+		err = worktree.Reset(&git.ResetOptions{
+			Mode:   git.HardReset,
+			Commit: remoteRef.Hash(),
+		})
+		if err != nil {
+			return "", false, fmt.Errorf("强制 reset 到 main 失败: %w", err)
+		}
+
+		updated = true
+		log.Printf("同步到远程 main: %s", remoteRef.Hash().String())
 	}
 
 	// 如果有更新，处理 repo.json 差异
@@ -117,7 +118,6 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 		if newRepoJsonPath != "" {
 			newRepoJsonContent, _ := ioutil.ReadFile(newRepoJsonPath)
 
-			// 检查 repo_update.json
 			parentDir := filepath.Dir(repoPath)
 			repoUpdateJsonPath := filepath.Join(parentDir, "repo_update.json")
 			var updatedContent string
@@ -131,13 +131,14 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 
 			updatedRepoJsonPath := filepath.Join(parentDir, "repo_updated.json")
 			_ = ioutil.WriteFile(updatedRepoJsonPath, []byte(updatedContent), 0644)
-			autoLog.Sugar.Infof("repo.json更新内容:%s", updatedContent)
+			//autoLog.Sugar.Infof("repo.json更新内容:%s", updatedContent)
 		}
 	}
 
 	return repoPath, updated, nil
 }
 
+// addUpdateMarkersToNewRepo 比较旧 JSON 和新 JSON，标记 hasUpdate
 func addUpdateMarkersToNewRepo(oldContent, newContent string) string {
 	defer func() {
 		if r := recover(); r != nil {
@@ -179,7 +180,6 @@ func markNodeUpdates(newNode map[string]interface{}, oldNodes []interface{}) boo
 		return false
 	}
 
-	// 在老版节点中找同名节点
 	var oldNode map[string]interface{}
 	for _, n := range oldNodes {
 		if obj, ok := n.(map[string]interface{}); ok {
@@ -193,7 +193,6 @@ func markNodeUpdates(newNode map[string]interface{}, oldNodes []interface{}) boo
 	hasDirectUpdate := false
 	hasChildUpdate := false
 
-	// 检查本节点是否更新
 	if oldNode != nil {
 		oldTime := parseLastUpdated(oldNode["lastUpdated"])
 		newTime := parseLastUpdated(newNode["lastUpdated"])
@@ -206,7 +205,6 @@ func markNodeUpdates(newNode map[string]interface{}, oldNodes []interface{}) boo
 		hasDirectUpdate = true
 	}
 
-	// 递归处理 children
 	if children, ok := newNode["children"].([]interface{}); ok && len(children) > 0 {
 		var oldChildren []interface{}
 		if oldNode != nil {
@@ -220,8 +218,6 @@ func markNodeUpdates(newNode map[string]interface{}, oldNodes []interface{}) boo
 				childHasUpdate := markNodeUpdates(childObj, oldChildren)
 				if childHasUpdate {
 					hasChildUpdate = true
-
-					// 如果子节点是叶子节点并且父节点未标记更新，则标记
 					if _, exists := childObj["children"]; !exists && !hasDirectUpdate && childObj["hasUpdate"] != nil {
 						newNode["hasUpdate"] = true
 						hasDirectUpdate = true
@@ -234,15 +230,13 @@ func markNodeUpdates(newNode map[string]interface{}, oldNodes []interface{}) boo
 	return hasDirectUpdate || hasChildUpdate
 }
 
-// parseLastUpdated 解析时间戳，失败返回零值
+// parseLastUpdated 解析时间
 func parseLastUpdated(v interface{}) time.Time {
 	if s, ok := v.(string); ok && s != "" {
 		t, err := time.Parse(time.RFC3339, s)
 		if err == nil {
 			return t
 		}
-		// 如果不是标准格式，可以尝试其他格式
-		// 比如 2024-06-01 12:34:56
 		t2, err2 := time.Parse("2006-01-02 15:04:05", s)
 		if err2 == nil {
 			return t2
