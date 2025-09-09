@@ -208,7 +208,7 @@ export default {
       if (!name) return
       isUpdating[name] = true
       try {
-        await fetch(`/api/updatePlugin/${name}`, { method: 'POST' })
+        await fetch(`/api/updateJs/${name}`, { method: 'POST' })
         await loadPluginList()
       } finally {
         isUpdating[name] = false

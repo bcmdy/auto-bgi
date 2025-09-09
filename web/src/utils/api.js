@@ -97,7 +97,7 @@ export const apiMethods = {
   },
 
   // 狗粮联机
-  StartOnline: (typeKey) => api.post('/api/abgiSSE/connect/'+typeKey),
+  StartOnline: (typeKey,runDebug) => api.post('/api/abgiSSE/connect/'+typeKey+"?runDebug="+runDebug),
   offline:() => api.post('/api/abgiSSE/disconnect'),
   DogFooddisconnect: () => api.post('/api/abgiSSE/disconnect')
   

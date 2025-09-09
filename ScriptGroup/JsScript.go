@@ -13,7 +13,7 @@ type dd struct {
 }
 
 // 启动狗粮联机
-func (s *ScriptGroupConfig) StartDogFoodOnline(data []map[string]interface{}) {
+func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
 	// 解析 JSON 字符串
 	var aa []dd
 	yourIndex := 0
@@ -35,6 +35,8 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(data []map[string]interface{}) {
 		if project.Type == "Javascript" && project.FolderName == "ArtifactsGroupPurchasing" {
 			object := project.JsScriptSettingsObject
 			object["yourIndex"] = yourIndex
+			object["groupMode"] = "按照下列配置自动进入并运行"
+			object["runDebug"] = runDebug
 			for i, d := range aa {
 				object[fmt.Sprintf("p%dUID", i+1)] = d.UID
 				object[fmt.Sprintf("p%dName", i+1)] = d.Name

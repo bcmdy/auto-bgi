@@ -35,8 +35,18 @@ type aa struct {
 
 var abgiClient *AbgiClient
 
+// 是否是调试模式
+var RunDebug bool
+
 // Connect 连接 WebSocket 服务器
-func Connect(url string, headers http.Header) error {
+func Connect(url string, runDebug bool, headers http.Header) error {
+
+	//如果已经在线，就不能请求
+	if abgiClient != nil {
+		autoLog.Sugar.Error("已经在线，请勿重复上线")
+		return fmt.Errorf("已经在线，请勿重复上线")
+	}
+
 	dialer := websocket.DefaultDialer
 	conn, _, err := dialer.Dial(url, headers)
 	if err != nil {
@@ -48,6 +58,10 @@ func Connect(url string, headers http.Header) error {
 		URL:     url,
 		Headers: headers,
 	}
+
+	RunDebug = runDebug
+
+	autoLog.Sugar.Infof("是否是调试模式:%v", runDebug)
 
 	// 启动接收消息
 	go abgiClient.listen()
@@ -89,7 +103,7 @@ func (c *AbgiClient) listen() {
 				})
 			}
 
-			scriptGroupConfig.StartDogFoodOnline(dd)
+			scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)
 		}
 
 		fmt.Printf("收到消息: %s\n", xiaoxi)
@@ -115,6 +129,12 @@ func Status() string {
 	return "已连接到 " + abgiClient.URL
 }
 
+type OnlineUser struct {
+	GroupName string              `json:"group_name"`
+	Count     int64               `json:"count"`
+	Members   []map[string]string `json:"members"`
+}
+
 // 获取在线人数
 func GroupsStatusHandler() interface{} {
 	decrypt, err2 := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
@@ -132,7 +152,7 @@ func GroupsStatusHandler() interface{} {
 		autoLog.Sugar.Error("读取响应失败:", err)
 		return 0
 	}
-	var mapData []map[string]interface{}
+	var mapData []OnlineUser
 	err = json.Unmarshal(body, &mapData)
 	if err != nil {
 		autoLog.Sugar.Error("解析JSON失败:", err)
