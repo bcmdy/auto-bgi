@@ -189,11 +189,12 @@ func main() {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "上线类型错误"})
 				return
 			}
+			runDebug := c.Query("runDebug") == "true"
 
-			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), nil)
+			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
 			if err != nil {
 				autoLog.Sugar.Errorf("连接失败: %v", err)
-				c.String(http.StatusBadRequest, "连接失败")
+				c.String(http.StatusBadRequest, err.Error())
 				return
 
 			}
@@ -589,18 +590,19 @@ func main() {
 	})
 
 	//脚本Js更新
-	ginServer.POST("/api/updateJs", func(context *gin.Context) {
+	ginServer.POST("/api/updateJs/:name", func(context *gin.Context) {
+		name := context.Param("name")
 
-		var req struct {
-			Name string `json:"name"`
-		}
-		if err := context.ShouldBindJSON(&req); err != nil || req.Name == "" {
-			context.JSON(400, gin.H{"success": false, "message": "无效的请求参数"})
-			return
-		}
+		//var req struct {
+		//	Name string `json:"name"`
+		//}
+		//if err := context.ShouldBindJSON(&name); err != nil || req.Name == "" {
+		//	context.JSON(400, gin.H{"success": false, "message": "无效的请求参数"})
+		//	return
+		//}
 
-		autoLog.Sugar.Infof("更新插件:%s", req.Name)
-		_, err := bgiStatus.UpdateJs(req.Name)
+		autoLog.Sugar.Infof("更新插件:%s", name)
+		_, err := bgiStatus.UpdateJs(name)
 		if err != nil {
 			// 成功返回
 			context.JSON(400, gin.H{"err": err})
