@@ -930,7 +930,7 @@ func main() {
 
 	//开启每隔一小时发送截图
 	if config.Cfg.Control.SendWeChatImage {
-		autoLog.Sugar.Infof("开启每隔一小时发送截图")
+		autoLog.Sugar.Infof(",")
 		go task.SendWeChatImageTask()
 	} else {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
@@ -965,12 +965,12 @@ func main() {
 	}
 
 	//获取机器码
-	machineCode, err := tools.GetMachineCode()
-	if err != nil {
-		autoLog.Sugar.Error("获取机器码失败:", err)
-	} else {
-		autoLog.Sugar.Infof("机器码: %s", machineCode)
-	}
+	//machineCode, err := tools.GetMachineCode()
+	//if err != nil {
+	//	autoLog.Sugar.Error("获取机器码失败:", err)
+	//} else {
+	//	autoLog.Sugar.Infof("机器码: %s", machineCode)
+	//}
 
 	// 1. 静态资源挂载（直接让前端可以访问图片）
 	ginServer.Static("/img", "./img")
