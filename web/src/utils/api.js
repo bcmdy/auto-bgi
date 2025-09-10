@@ -65,7 +65,7 @@ export const apiMethods = {
   getOneLongAllName: () => api.get('/api/oneLongAllName'),
   
   // 日志相关
-  getLog: () => api.get('/log'),
+  getLog: () => api.get('/api/gitLog'),
   getLogFiles: () => api.get('/api/logFiles'),
   getLogAnalysis: (file) => api.get('/api/logAnalysis', { params: { file } }),
   

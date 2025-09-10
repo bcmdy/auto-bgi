@@ -164,6 +164,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useRouter } from 'vue-router'
+import { apiMethods } from '../utils/api'
 
 export default {
   name: 'JsNames',
@@ -318,10 +319,11 @@ export default {
     const loadGitLog = async () => {
       try {
         gitLogLoading.value = true
-        const response = await fetch('/api/gitLog')
-        const json = await response.json()
-        console.log('gitLog接口返回:', json) // 调试输出
-        gitLogs.value = json.gitLog || []
+        // const response = await fetch('/api/gitLog')
+        const response = await apiMethods.getLog()
+   
+        console.log('gitLog接口返回:', response) // 调试输出
+        gitLogs.value = response.gitLog || []
       } catch (error) {
         console.error('加载提交记录失败：', error)
         gitLogs.value = []
