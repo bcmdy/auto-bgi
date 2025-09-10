@@ -75,6 +75,9 @@ func (c *AbgiClient) listen() {
 		_, msg, err := c.Conn.ReadMessage()
 		if err != nil {
 			log.Println("WebSocket 连接断开:", err.Error())
+			// 关闭连接
+			c.Conn.Close()
+			abgiClient = nil
 			return
 		}
 
@@ -85,15 +88,10 @@ func (c *AbgiClient) listen() {
 			continue
 		}
 
-		xiaoxi := ""
-
 		if info.Status == "1" {
 			autoLog.Sugar.Infof("联机启动")
-			for _, v := range info.AA {
-				autoLog.Sugar.Infof("玩家 %s 加入联机", v.Name)
-				xiaoxi += fmt.Sprintf("玩家 %s 加入联机\n", v.Name)
-			}
 			//转成map
+			xiaoxi := ""
 			var dd []map[string]interface{}
 			for _, v := range info.AA {
 				dd = append(dd, map[string]interface{}{
@@ -101,13 +99,16 @@ func (c *AbgiClient) listen() {
 					"UID":  v.UID,
 					"Name": v.Name,
 				})
+				xiaoxi += fmt.Sprintf("序号%d -- %s\n", v.ID, v.Name)
 			}
 
 			scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)
+			fmt.Println(xiaoxi)
+			Notice.SentText(xiaoxi)
+		} else {
+			autoLog.Sugar.Infof("收到消息:%s", info.Msg)
 		}
 
-		fmt.Printf("收到消息: %s\n", xiaoxi)
-		Notice.SentText(xiaoxi)
 	}
 }
 

@@ -266,6 +266,16 @@
                   />
                 </a-form-item>
               </div>
+
+                    <a-form-item class="checkbox-item">
+              <a-checkbox v-model:checked="formData.OneLong.AutoUpdateJs" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon"></span>
+                  是否开启自动更新js
+                </span>
+              </a-checkbox>
+            </a-form-item>
+              
             </div>
           </div>
         </a-card>
@@ -648,7 +658,8 @@ const formData = reactive({
   OneLong: {
     isStartTimeLong: false,
     OneLongHour: 13,
-    OneLongMinute: 55
+    OneLongMinute: 55,
+    AutoUpdateJs:true
   },
   Control: {
     IsCloseYuanShen: false,

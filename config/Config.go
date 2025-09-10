@@ -77,6 +77,7 @@ type oneLong struct {
 	IsStartTimeLong bool `json:"isStartTimeLong" comment:"是否开启一条龙"`
 	OneLongHour     int  `json:"OneLongHour" comment:"一条龙小时"`
 	OneLongMinute   int  `json:"OneLongMinute" comment:"一条龙分钟"`
+	AutoUpdateJs    bool `json:"AutoUpdateJs" comment:"是否开启自动更新js"`
 }
 
 type MySign struct {
