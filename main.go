@@ -593,14 +593,6 @@ func main() {
 	ginServer.POST("/api/updateJs/:name", func(context *gin.Context) {
 		name := context.Param("name")
 
-		//var req struct {
-		//	Name string `json:"name"`
-		//}
-		//if err := context.ShouldBindJSON(&name); err != nil || req.Name == "" {
-		//	context.JSON(400, gin.H{"success": false, "message": "无效的请求参数"})
-		//	return
-		//}
-
 		autoLog.Sugar.Infof("更新插件:%s", name)
 		_, err := bgiStatus.UpdateJs(name)
 		if err != nil {

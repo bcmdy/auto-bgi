@@ -296,10 +296,14 @@ func OneLongTask() {
 	autoLog.Sugar.Info("软件已关闭")
 
 	// 4. 批量更新脚本
-	autoLog.Sugar.Info("开始批量更新脚本")
-	if err := bgiStatus.BatchUpdateScript(); err != "" {
-		autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
+	if config.Cfg.OneLong.AutoUpdateJs {
+		autoLog.Sugar.Info("开始批量更新脚本")
+		if err := bgiStatus.BatchUpdateScript(); err != "" {
+			autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
 
+		}
+	} else {
+		autoLog.Sugar.Info("自动更新js已关闭")
 	}
 
 	// 5. 修改配置
