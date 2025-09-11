@@ -19,13 +19,16 @@ import (
 
 func init() {
 
-	if err := InitTG(config.Cfg.Notice.TGNotice.TGToken, config.Cfg.Notice.TGNotice.Proxy); err != nil {
+	if config.Cfg.Notice.Type == "TG" {
+		if err := InitTG(config.Cfg.Notice.TGNotice.TGToken, config.Cfg.Notice.TGNotice.Proxy); err != nil {
 
-		sprintf := fmt.Sprintf("Telegram bot初始化失败: %v", err)
-		fmt.Println(sprintf)
-	} else {
-		fmt.Println("Telegram bot配置成功")
+			sprintf := fmt.Sprintf("Telegram bot初始化失败: %v", err)
+			fmt.Println(sprintf)
+		} else {
+			fmt.Println("Telegram bot配置成功")
+		}
 	}
+
 }
 
 // 向企业微信发送通知（文本）

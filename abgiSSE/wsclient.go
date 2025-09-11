@@ -25,6 +25,12 @@ type Information struct {
 	Status string
 	Msg    string
 	AA     []aa
+	Img    Img
+}
+
+type Img struct {
+	Base64Str string `json:"base64Str"`
+	Path      string `json:"path"` //保存路径
 }
 
 type aa struct {
@@ -105,6 +111,11 @@ func (c *AbgiClient) listen() {
 			scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)
 			fmt.Println(xiaoxi)
 			Notice.SentText(xiaoxi)
+		} else if info.Status == "2" {
+
+			//处理图片消息
+			HandleImg(info)
+
 		} else {
 			autoLog.Sugar.Infof("收到消息:%s", info.Msg)
 		}
