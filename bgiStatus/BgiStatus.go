@@ -38,6 +38,7 @@ func IsWechatRunning() bool {
 		autoLog.Sugar.Error("BetterGI.exe 是否在运行:", err)
 		return false
 	}
+
 	return strings.Contains(string(output), "BetterGI.exe")
 }
 
@@ -59,6 +60,7 @@ func CheckBetterGIStatus() {
 
 			if okRun {
 				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
+				BgiLogStatusInfo.Running = IsWechatRunning()
 				notified = false // 清除通知状态
 				okRun = false    // 清除通知状态
 			}

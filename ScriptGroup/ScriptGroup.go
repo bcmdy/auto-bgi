@@ -129,15 +129,6 @@ type Project struct {
 	AllowJsNotification    bool                   `json:"allowJsNotification"`
 }
 
-//type JsScriptSettings struct {
-//	Notice       bool   `json:"notice"`
-//	SmithyName   string `json:"smithyName"`
-//	ForgedOrNot  string `json:"forgedOrNot"`
-//	Ore          string `json:"ore"`
-//	SecondaryOre string `json:"secondaryOre"`
-//	TertiaryOre  string `json:"tertiaryOre"`
-//}
-
 func (s *ScriptGroupConfig) ListScriptGroup() []string {
 	entries, err := os.ReadDir(config.Cfg.BetterGIAddress + "\\User\\ScriptGroup")
 	if err != nil {

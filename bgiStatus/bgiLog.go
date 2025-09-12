@@ -77,8 +77,7 @@ func (m *LogMonitor) Monitor() {
 
 	ticker := time.NewTicker(time.Duration(m.ScanInterval) * time.Second)
 	defer ticker.Stop()
-	groupName := ""
-	JsonName := ""
+
 	for {
 		select {
 		case <-ticker.C:
@@ -89,31 +88,23 @@ func (m *LogMonitor) Monitor() {
 				return
 			}
 
-			startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
+			var lastLine string
 
 			for _, line := range lines {
-
-				matches := startRegexp.FindStringSubmatch(line)
-				if matches != nil {
-					groupName = matches[1]
-				}
-				if strings.HasPrefix(line, "→ 开始执行地图追踪任务") {
-					JsonName = line
-				}
-
 				//关键字告警
 				for _, kw := range m.Keywords {
 					if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
-						msg := fmt.Sprintf("⚠️ 日志告警\n\n配置组: %s\n脚本名称: %s\n关键词: %s\n内容: %s", groupName, JsonName, kw, strings.TrimSpace(line))
+						msg := fmt.Sprintf("⚠️ 日志告警\n\n配置组: %s\n脚本名称: %s\n关键词: %s\n内容: %s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine, kw, strings.TrimSpace(line))
 						//m.sendAlert(msg, false)
 						Notice.SentText(msg)
 						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 						autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 					}
 				}
+				//一条龙结束操作
 				if strings.Contains(line, "一条龙和配置组任务结束") {
 					ArchiveConfig()
-					Notice.SentText("一条龙和配置组任务结束，所有配置组已归档")
+					Notice.SentText("一条龙和配置组任务结束，所有配置组已归档@所有人")
 					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {
@@ -121,6 +112,8 @@ func (m *LogMonitor) Monitor() {
 					autoLog.Sugar.Infof("RDP 客户端断开连接")
 					aaa()
 				}
+
+				//录屏操作
 				if config.Cfg.ScreenRecord.IsRecord {
 
 					if strings.Contains(line, config.Cfg.ScreenRecord.StartScreen) {
@@ -142,6 +135,8 @@ func (m *LogMonitor) Monitor() {
 						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
 					}
 				}
+
+				//上线操作
 				if config.Cfg.Account.OnlineKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineKeyword) {
 
 					Notice.SentText("联机上线")
@@ -159,8 +154,54 @@ func (m *LogMonitor) Monitor() {
 					Notice.SentText("上线成功")
 				}
 
-			}
+				//首页相关
+				//配置组名称
+				if strings.Contains(line, "配置组") && strings.Contains(line, "开始执行") {
+					re := regexp.MustCompile(`"(.*?)"`)
+					matches := re.FindStringSubmatch(line)
+					if len(matches) > 1 {
+						BgiLogStatusInfo.Group = matches[1]
+						BgiLogTime(lastLine)
+						BgiLogStatusInfo.MapTrackingLine = ""
+						BgiLogStatusInfo.ScriptName = ""
+						BgiLogStatusInfo.JSProgress = ""
 
+						readConfig := Group.ReadConfig(BgiLogStatusInfo.Group)
+						Projects = readConfig.Projects
+						BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", 0, len(Projects))
+
+					} else {
+						BgiLogStatusInfo.Group = "未找到配置组"
+					}
+
+				}
+				if strings.HasPrefix(line, "→ 开始执行JS脚本: ") {
+					BgiLogStatusInfo.MapTrackingLine = line
+					index := GetProjectIndex(BgiLogStatusInfo.ScriptName)
+					BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
+				}
+
+				//当前运行路线
+				if strings.Contains(line, "开始执行地图追踪任务") {
+					re := regexp.MustCompile(`"(.*?)"`)
+					matches := re.FindStringSubmatch(line)
+					if len(matches) > 1 {
+						BgiLogStatusInfo.MapTrackingLine = matches[1]
+						index := GetProjectIndex(BgiLogStatusInfo.MapTrackingLine)
+						if index != 0 {
+							BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
+						}
+					} else {
+						BgiLogStatusInfo.MapTrackingLine = "未找到地图追踪路线"
+					}
+				}
+
+				//js进度
+				if strings.Contains(line, "当前进度：") || strings.Contains(line, "当前次数：") {
+					BgiLogStatusInfo.JSProgress = line
+				}
+				lastLine = line
+			}
 		case <-m.stopChan:
 			fmt.Println("[i] 日志监控已退出:", m.LogFile)
 			return

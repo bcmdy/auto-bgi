@@ -20,9 +20,10 @@
       <div class="status-card">
         <h2>执行配置组：🧩<span>{{ statusData.group }}</span></h2>
         <pre class="ExpectedToEnd">{{ statusData.ExpectedToEnd }}</pre>
-        <p><span>📜</span> 运行脚本：<span>{{ statusData.line }}</span></p>
-        <p><span>🗺️</span> 地图追踪进度：<span>{{ statusData.progress }}</span></p>
-        <p><span>🖥️</span> 软件运行状态：<span>{{ statusData.running }}</span></p>
+        <p><span>📜</span> 运行路线：<span>{{ statusData.line }}</span></p>
+        <p><span>📜</span> 运行脚本：<span>{{ statusData.scriptName }}</span></p>
+        <p><span>🗺️</span> 配置组进度：<span>{{ statusData.progress }}</span></p>
+        <p><span>🖥️</span> 软件状态：<span>{{ statusData.running }}</span></p>
         <p><span>✨</span><span>{{ statusData.jsProgress }}</span></p>
       </div>
 
@@ -77,7 +78,8 @@ const statusData = reactive({
   line: '加载中...',
   progress: '加载中...',
   running: '加载中...',
-  jsProgress: '加载中...'
+  jsProgress: '加载中...',
+  scriptName: '加载中...'
 })
 
 // 计算当前显示的图片
@@ -360,27 +362,7 @@ const mysSignIn = () => {
 
 }
 
-// const StartDogFoodOnline = () => {
-//   Modal.confirm({
-//     title: '确认上线吗？',
-//     content: '狗粮联机上线？',
-//     okText: '确定',
-//     cancelText: '取消',
-//     onOk: async () => {
-//       try {
-//         const response = await apiMethods.StartDogFoodOnline()
-//         scanResult.value = response.message || '上线成功！'
-//         Modal.info({
-//           title: '上线结果',
-//           content: scanResult.value,
-//           okText: '关闭'
-//         })
-//       } catch (error) {
-//         message.error(error.response.data.message)
-//       }
-//     }
-//   })
-// }
+
 
 
 // 自动化按钮配置

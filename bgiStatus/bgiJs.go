@@ -75,7 +75,7 @@ func BatchUpdateScript() string {
 				continue
 			}
 			autoLog.Sugar.Infof("更新脚本成功: %s", chineseName)
-			Notice.SentText(fmt.Sprintf("脚本 %s 已更新,版本号:%s", chineseName, newVersion))
+			Notice.SentText(fmt.Sprintf("脚本 %s 已更新,版本号:%s @所有人", chineseName, newVersion))
 		}
 
 	}

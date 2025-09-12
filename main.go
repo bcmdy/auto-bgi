@@ -35,6 +35,7 @@ import (
 
 //go:embed web/dist
 var embeddedFiles embed.FS
+var bin embed.FS
 
 func init() {
 	// 初始化日志
@@ -96,6 +97,11 @@ func main() {
 
 	// 创建嵌入的文件系统
 	distFS, err := fs.Sub(embeddedFiles, "web/dist")
+	if err != nil {
+		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
+	}
+
+	_, err = fs.Sub(bin, "bin")
 	if err != nil {
 		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
 	}
@@ -213,70 +219,88 @@ func main() {
 		})
 	}
 
+	////日志查询
+	//ginServer.GET("/api/index", func(c *gin.Context) {
+	//	// 生成日志文件名
+	//	date := time.Now().Format("20060102")
+	//
+	//	filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, date))
+	//
+	//	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
+	//	files, err := bgiStatus.FindLogFiles(filePath)
+	//	if len(files) == 0 {
+	//		autoLog.Sugar.Errorf("日志文件不存在")
+	//		c.JSON(http.StatusBadRequest, gin.H{"error": "日志文件不存在"})
+	//		return
+	//	}
+	//	if err == nil {
+	//		//获取最后一个文件
+	//		filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, files[0]))
+	//	}
+	//
+	//	autoLog.Sugar.Infof("日志文件名:%s", filename)
+	//
+	//	progress := "0/0"
+	//	group := "未知"
+	//	GetGroup := "未知"
+	//	timestamp := "未知"
+	//
+	//	line, err := bgiStatus.FindLastExecLine(filename)
+	//	if err != nil {
+	//		autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
+	//	} else {
+	//		group, timestamp, err = bgiStatus.FindLastGroup(filename)
+	//		if err != nil {
+	//			autoLog.Sugar.Errorf("配置组查不到: %v\n", err)
+	//		} else {
+	//			calculateTime, err := bgiStatus.CalculateTime(filename, group, timestamp)
+	//			if err != nil {
+	//				timestamp = "未知"
+	//			} else {
+	//				timestamp = calculateTime
+	//			}
+	//			jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", config.Cfg.BetterGIAddress, group+".json")
+	//			progress, err = bgiStatus.Progress(jsonStr, line)
+	//			if err != nil {
+	//				autoLog.Sugar.Errorf("%v\n", err)
+	//			}
+	//
+	//		}
+	//		GetGroup = bgiStatus.GetGroupP(group)
+	//	}
+	//
+	//	running := bgiStatus.IsWechatRunning()
+	//
+	//	jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)", "当前次数：(.*?)")
+	//	if err != nil {
+	//		jsProgress = "无"
+	//	}
+	//
+	//	data := make(map[string]interface{})
+	//	data["group"] = group + "[" + GetGroup + "]"
+	//	data["ExpectedToEnd"] = timestamp
+	//	data["line"] = line
+	//	data["progress"] = progress
+	//	data["running"] = running
+	//	data["jsProgress"] = jsProgress
+	//
+	//	c.JSON(http.StatusOK, data)
+	//
+	//})
+
 	//日志查询
 	ginServer.GET("/api/index", func(c *gin.Context) {
-		// 生成日志文件名
-		date := time.Now().Format("20060102")
 
-		filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, date))
-
-		filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
-		files, err := bgiStatus.FindLogFiles(filePath)
-		if len(files) == 0 {
-			autoLog.Sugar.Errorf("日志文件不存在")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "日志文件不存在"})
-			return
-		}
-		if err == nil {
-			//获取最后一个文件
-			filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, files[0]))
-		}
-
-		autoLog.Sugar.Infof("日志文件名:%s", filename)
-
-		progress := "0/0"
-		group := "未知"
-		GetGroup := "未知"
-		timestamp := "未知"
-
-		line, err := bgiStatus.FindLastExecLine(filename)
-		if err != nil {
-			autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
-		} else {
-			group, timestamp, err = bgiStatus.FindLastGroup(filename)
-			if err != nil {
-				autoLog.Sugar.Errorf("配置组查不到: %v\n", err)
-			} else {
-				calculateTime, err := bgiStatus.CalculateTime(filename, group, timestamp)
-				if err != nil {
-					timestamp = "未知"
-				} else {
-					timestamp = calculateTime
-				}
-				jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", config.Cfg.BetterGIAddress, group+".json")
-				progress, err = bgiStatus.Progress(jsonStr, line)
-				if err != nil {
-					autoLog.Sugar.Errorf("%v\n", err)
-				}
-
-			}
-			GetGroup = bgiStatus.GetGroupP(group)
-		}
-
-		running := bgiStatus.IsWechatRunning()
-
-		jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)", "当前次数：(.*?)")
-		if err != nil {
-			jsProgress = "无"
-		}
+		info := bgiStatus.BgiLogStatusInfo
 
 		data := make(map[string]interface{})
-		data["group"] = group + "[" + GetGroup + "]"
-		data["ExpectedToEnd"] = timestamp
-		data["line"] = line
-		data["progress"] = progress
-		data["running"] = running
-		data["jsProgress"] = jsProgress
+		data["group"] = info.Group
+		data["ExpectedToEnd"] = info.Timestamp
+		data["line"] = info.MapTrackingLine
+		data["scriptName"] = info.ScriptName
+		data["progress"] = info.ConfigurationGroupExecutionProgress
+		data["running"] = info.Running
+		data["jsProgress"] = info.JSProgress
 
 		c.JSON(http.StatusOK, data)
 
@@ -286,6 +310,7 @@ func main() {
 	ginServer.GET("/api/archiveList", func(c *gin.Context) {
 		// 调用函数获取数据
 		archive := bgiStatus.ListArchive()
+
 		c.JSON(http.StatusOK, archive)
 	})
 
@@ -564,6 +589,8 @@ func main() {
 			return
 		}
 		bgiStatus.Archive(req)
+
+		bgiStatus.InitBgiLogStatus()
 
 		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
 	})
@@ -972,6 +999,9 @@ func main() {
 	//	autoLog.Sugar.Infof("机器码: %s", machineCode)
 	//}
 
+	//初始化bgi日志信息
+	bgiStatus.InitBgiLogStatus()
+
 	// 1. 静态资源挂载（直接让前端可以访问图片）
 	ginServer.Static("/img", "./img")
 
@@ -1054,6 +1084,13 @@ func main() {
 		if os.Args[1] == "oneLong" {
 			task.OneLongTask()
 			autoLog.Sugar.Infof("一条龙启动")
+		} else if os.Args[1] == "updateJs" {
+			if err := bgiStatus.BatchUpdateScript(); err != "" {
+				autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
+			} else {
+				autoLog.Sugar.Infof("批量更新脚本成功")
+			}
+
 		}
 	}
 
