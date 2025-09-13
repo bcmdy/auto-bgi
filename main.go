@@ -35,7 +35,6 @@ import (
 
 //go:embed web/dist
 var embeddedFiles embed.FS
-var bin embed.FS
 
 func init() {
 	// 初始化日志
@@ -101,10 +100,24 @@ func main() {
 		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
 	}
 
-	_, err = fs.Sub(bin, "bin")
-	if err != nil {
-		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
-	}
+	// 配置CORS中间件 - 支持前后端分离
+	ginServer.Use(func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+		if origin == "" {
+			origin = "*"
+		}
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		c.Header("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	})
 
 	ginServer.SetTrustedProxies(nil)
 	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
