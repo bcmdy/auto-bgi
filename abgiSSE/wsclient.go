@@ -142,9 +142,14 @@ func Status() string {
 }
 
 type OnlineUser struct {
-	GroupName string              `json:"group_name"`
-	Count     int64               `json:"count"`
-	Members   []map[string]string `json:"members"`
+	GroupName string    `json:"group_name"`
+	Count     int64     `json:"count"`
+	Members   []Members `json:"members"`
+}
+
+type Members struct {
+	Name        string `json:"name"`
+	IsSimulated bool   `json:"is_simulated"`
 }
 
 // 获取在线人数

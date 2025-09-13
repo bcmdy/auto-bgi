@@ -47,7 +47,12 @@
               <span>
                 <span v-for="member in item.members" :key="member.name" class="member-name">
                   {{ member.name }}
+                 
+                    <span v-if="member.is_simulated">
+                        (小号)
+                    </span>
                 </span>
+              
               </span>
             </div>
             <div v-else class="status-row">

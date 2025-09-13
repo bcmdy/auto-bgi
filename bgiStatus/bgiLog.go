@@ -161,7 +161,9 @@ func (m *LogMonitor) Monitor() {
 					matches := re.FindStringSubmatch(line)
 					if len(matches) > 1 {
 						BgiLogStatusInfo.Group = matches[1]
-						BgiLogTime(lastLine)
+						//提取开始时间
+						BgiLogStatusInfo.Timestamp = BgiLogTime(lastLine)
+
 						BgiLogStatusInfo.MapTrackingLine = ""
 						BgiLogStatusInfo.ScriptName = ""
 						BgiLogStatusInfo.JSProgress = ""
