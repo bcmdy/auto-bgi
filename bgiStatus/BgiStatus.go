@@ -1860,9 +1860,14 @@ func JsNamesInfo() []JsNamesInfoStruct {
 		}
 
 		mark := "无更新"
-		if nowVersion != newVersion {
+		//版本比较
+		if tools.CompareVersion(nowVersion, newVersion) == -1 {
 			mark = "有更新"
 		}
+
+		//if nowVersion != newVersion {
+		//	mark = "有更新"
+		//}
 
 		jsNamesInfoStructs = append(jsNamesInfoStructs, JsNamesInfoStruct{
 			Name:        name,

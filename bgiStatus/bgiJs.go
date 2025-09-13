@@ -20,7 +20,7 @@ func ReadMd(filePath string) string {
 
 	if strings.Contains(filePath, "js/") {
 		path = split[0] + "/" + split[1]
-	} else if strings.Contains(filePath, "combat/") {
+	} else if strings.Contains(filePath, "combat/") || strings.Contains(filePath, "tcg/") {
 		filename := filepath.Clean(fmt.Sprintf("%s\\Repos\\bettergi-scripts-list-git\\repo\\%s", config.Cfg.BetterGIAddress, filePath))
 		// 读取文件内容
 		data, err := os.ReadFile(filename)

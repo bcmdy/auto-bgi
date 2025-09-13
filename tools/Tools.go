@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -231,4 +232,34 @@ func GetMachineCode() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no valid network interface found")
+}
+
+// CompareVersion 版本比较
+// 返回值：1：v1大于v2，-1：v1小于v2，0：相等
+func CompareVersion(v1, v2 string) int {
+	// 按 . 拆分
+	s1 := strings.Split(v1, ".")
+	s2 := strings.Split(v2, ".")
+
+	// 补齐长度
+	n := len(s1)
+	if len(s2) > n {
+		n = len(s2)
+	}
+
+	for i := 0; i < n; i++ {
+		var num1, num2 int
+		if i < len(s1) {
+			num1, _ = strconv.Atoi(s1[i])
+		}
+		if i < len(s2) {
+			num2, _ = strconv.Atoi(s2[i])
+		}
+		if num1 > num2 {
+			return 1 // v1 > v2
+		} else if num1 < num2 {
+			return -1 // v1 < v2
+		}
+	}
+	return 0 // 相等
 }

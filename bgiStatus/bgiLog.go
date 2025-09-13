@@ -178,7 +178,7 @@ func (m *LogMonitor) Monitor() {
 
 				}
 				if strings.HasPrefix(line, "→ 开始执行JS脚本: ") {
-					BgiLogStatusInfo.MapTrackingLine = line
+					BgiLogStatusInfo.ScriptName = line
 					index := GetProjectIndex(BgiLogStatusInfo.ScriptName)
 					BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
 				}

@@ -21,13 +21,22 @@
            
       <section class="panel">
         <h2>仓库提交记录</h2>
-        <!-- 分组筛选下拉框 -->
-        <div style="margin-bottom:16px;">
-          <label style="font-weight:bold;margin-right:8px;">分组筛选：</label>
-          <select v-model="selectedGroup" class="group-select">
-            <option value="">全部</option>
-            <option v-for="g in groupOptions" :key="g.value" :value="g.value">{{ g.label }}</option>
-          </select>
+        <!-- 分组筛选和作者筛选下拉框 -->
+        <div style="margin-bottom:16px; display: flex; gap: 16px; flex-wrap: wrap;">
+          <div>
+            <label style="font-weight:bold;margin-right:8px;">分组筛选：</label>
+            <select v-model="selectedGroup" class="group-select">
+              <option value="">全部</option>
+              <option v-for="g in groupOptions" :key="g.value" :value="g.value">{{ g.label }}</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:bold;margin-right:8px;">作者筛选：</label>
+            <select v-model="selectedAuthor" class="group-select">
+              <option value="">全部作者</option>
+              <option v-for="author in authorOptions" :key="author" :value="author">{{ author }}</option>
+            </select>
+          </div>
         </div>
         <div id="gitLogContainer" class="table-container git-log-container">
           <table id="gitLogTable" class="desktop-table">
@@ -81,14 +90,14 @@
           </table>
           <!-- 移动端卡片列表，样式与脚本信息一致 -->
           <div class="mobile-list">
-            <div v-if="flatGitLogs.length === 0" class="empty-mobile">
+            <div v-if="sortedGitLogs.length === 0" class="empty-mobile">
               <div class="empty-content">
                 <span class="empty-icon">📭</span>
                 <span class="empty-text">{{ gitLogLoading ? '加载中...' : '暂无提交记录' }}</span>
                 <span class="empty-sparkle">✨</span>
               </div>
             </div>
-            <div v-else v-for="(item, idx) in flatGitLogs" :key="item.TypeName + '-' + idx"
+            <div v-else v-for="(item, idx) in sortedGitLogs" :key="item.TypeName + '-' + idx"
                  :class="{ highlight: item.Tags && item.Tags.includes('更新'), 'mobile-card': true }">
               <div class="card-header">
                 <div class="card-title">
@@ -296,10 +305,35 @@ export default {
       { value: 'combat', label: '战斗策略' }
     ]
     const selectedGroup = ref('')
+    
+    // 作者筛选相关
+    const selectedAuthor = ref('')
+    
+    // 计算所有可用的作者列表
+    const authorOptions = computed(() => {
+      if (!gitLogs.value || !Array.isArray(gitLogs.value)) return []
+      const authorsSet = new Set()
+      for (const group of gitLogs.value) {
+        if (group && group.Repo && Array.isArray(group.Repo)) {
+          for (const file of group.Repo) {
+            if (file.Authors) {
+              // 处理可能的多个作者（用逗号分隔）
+              const authors = file.Authors.split(',').map(author => author.trim())
+              authors.forEach(author => {
+                if (author) authorsSet.add(author)
+              })
+            }
+          }
+        }
+      }
+      return Array.from(authorsSet).sort()
+    })
 
-    // 新增：按分组筛选并按最后更新时间排序（降序）
+    // 新增：按分组和作者筛选并按最后更新时间排序（降序）
     const sortedGitLogs = computed(() => {
       let logs = flatGitLogs.value
+      
+      // 分组筛选
       if (selectedGroup.value) {
         logs = logs.filter(item => {
           // 支持TypeName为中英文或英文
@@ -309,6 +343,18 @@ export default {
           return false
         })
       }
+      
+      // 作者筛选
+      if (selectedAuthor.value) {
+        logs = logs.filter(item => {
+          if (!item.Authors) return false
+          // 支持多个作者（用逗号分隔）
+          const authors = item.Authors.split(',').map(author => author.trim())
+          return authors.includes(selectedAuthor.value)
+        })
+      }
+      
+      // 按最后更新时间排序（降序）
       return [...logs].sort((a, b) => {
         const timeA = a.LastUpdated ? new Date(a.LastUpdated).getTime() : 0
         const timeB = b.LastUpdated ? new Date(b.LastUpdated).getTime() : 0
@@ -423,7 +469,10 @@ export default {
       flatGitLogs,
       sortedGitLogs,
       groupOptions,
-      selectedGroup
+      selectedGroup,
+      // 作者筛选相关
+      selectedAuthor,
+      authorOptions
     }
   }
 }
