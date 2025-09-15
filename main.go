@@ -582,12 +582,6 @@ func main() {
 			defer otherGroup.Done()
 			GroupTime, _ = bgiStatus.GroupTime(fileName)
 		}()
-		//
-		////获取米游社签到日志
-		//go func() {
-		//	defer otherGroup.Done()
-		//	signLog = bgiStatus.GetMysSignLog()
-		//}()
 
 		//获取今天执行配置组
 		go func() {

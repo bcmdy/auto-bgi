@@ -1674,10 +1674,10 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println("分析完毕")
+				autoLog.Sugar.Infof("分析完毕")
 				break
 			}
-			fmt.Println("读取文件出错:", err)
+			autoLog.Sugar.Errorf("配置组分析文件出错: %v", err)
 			break
 		}
 
@@ -1824,8 +1824,61 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 		lastLine = line
 	}
 
+	//合并相同配置组
+	merged := make(map[string]LogAnalysis2Struct)
+	//layout := "2006-01-02 15:04:05" // 时间格式
+	for _, analysis2Struct := range logAnalysis2Structs {
+		start := analysis2Struct.StartTime
+		end := analysis2Struct.EndTime
+		Consuming := analysis2Struct.Consuming
+		ConsumingSum, _ := time.ParseDuration(Consuming)
+		LogJson := analysis2Struct.LogAnalysis2Json
+		summary := analysis2Struct.ErrorSummary
+		income := analysis2Struct.SumIncome
+		if m, ok := merged[analysis2Struct.GroupName]; ok {
+
+			start = start + "/" + m.StartTime
+			m.StartTime = start
+			end = end + "/" + m.EndTime
+			m.EndTime = end
+
+			Consuming := Consuming + "+" + m.Consuming
+			mConsuming, _ := time.ParseDuration(m.Consuming)
+			ConsumingSum = ConsumingSum + mConsuming
+			m.Consuming = Consuming + "=" + ConsumingSum.String()
+
+			//子任务合并
+			oldLogJson := m.LogAnalysis2Json
+			LogJson = append(LogJson, oldLogJson...)
+			m.LogAnalysis2Json = LogJson
+
+			//错误合并
+			oldSummary := m.ErrorSummary
+			for k, v := range oldSummary {
+				summary[k] = v
+			}
+			m.ErrorSummary = summary
+
+			//收益合并
+			sumIncome := m.SumIncome
+			for k, v := range sumIncome {
+				income[k] = v
+			}
+			m.SumIncome = sumIncome
+
+			merged[analysis2Struct.GroupName] = m
+		} else {
+			merged[analysis2Struct.GroupName] = analysis2Struct
+		}
+	}
+	var newLog []LogAnalysis2Struct
+	for _, analysis2Struct := range merged {
+
+		newLog = append(newLog, analysis2Struct)
+	}
+
 	// 输出结构体内容
-	return logAnalysis2Structs
+	return newLog
 
 }
 
