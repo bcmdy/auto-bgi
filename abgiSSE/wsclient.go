@@ -99,6 +99,7 @@ func (c *AbgiClient) listen() {
 			//转成map
 			xiaoxi := ""
 			var dd []map[string]interface{}
+			var names []string
 			for _, v := range info.AA {
 				dd = append(dd, map[string]interface{}{
 					"ID":   v.ID,
@@ -106,6 +107,14 @@ func (c *AbgiClient) listen() {
 					"Name": v.Name,
 				})
 				xiaoxi += fmt.Sprintf("序号%d -- %s\n", v.ID, v.Name)
+				names = append(names, v.Name)
+			}
+			//生成图片
+			if len(names) > 0 {
+				//生成图片
+				for _, name := range names {
+					NameToImage(name)
+				}
 			}
 
 			scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)

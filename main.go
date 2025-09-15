@@ -36,6 +36,9 @@ import (
 //go:embed web/dist
 var embeddedFiles embed.FS
 
+//go:embed font
+var font embed.FS
+
 func init() {
 	// 初始化日志
 	autoLog.Init()
@@ -96,6 +99,12 @@ func main() {
 
 	// 创建嵌入的文件系统
 	distFS, err := fs.Sub(embeddedFiles, "web/dist")
+	if err != nil {
+		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
+	}
+
+	//字体
+	fontFS, err := fs.Sub(font, "font")
 	if err != nil {
 		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
 	}
@@ -1030,6 +1039,9 @@ func main() {
 
 	// 静态文件服务（放在所有API路由之后）
 	ginServer.StaticFS("/assets", http.FS(distFS))
+
+	//字体
+	ginServer.StaticFS("/font", http.FS(fontFS))
 
 	// Vue Router history 支持和静态文件服务
 	ginServer.NoRoute(func(c *gin.Context) {

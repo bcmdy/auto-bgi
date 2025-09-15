@@ -17,6 +17,7 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 	// 解析 JSON 字符串
 	var aa []dd
 	yourIndex := 0
+
 	for _, item := range data {
 		var d dd
 		d.ID = item["ID"].(int64)

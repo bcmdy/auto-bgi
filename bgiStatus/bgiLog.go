@@ -178,7 +178,13 @@ func (m *LogMonitor) Monitor() {
 
 				}
 				if strings.HasPrefix(line, "→ 开始执行JS脚本: ") {
-					BgiLogStatusInfo.ScriptName = line
+					re := regexp.MustCompile(`"(.*?)"`)
+					matches := re.FindStringSubmatch(line)
+					if len(matches) > 1 {
+						BgiLogStatusInfo.ScriptName = matches[1]
+					} else {
+						BgiLogStatusInfo.ScriptName = "未找到脚本名称"
+					}
 					index := GetProjectIndex(BgiLogStatusInfo.ScriptName)
 					BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
 				}
