@@ -70,9 +70,11 @@ func CheckBetterGIStatus() {
 				control.CloseYuanShen()
 				notified = true
 				okRun = true
+				BgiLogStatusInfo.Running = IsWechatRunning()
 			} else if !okInform {
 				autoLog.Sugar.Infof("BetterGI 已关闭，已通知过: %s", time.Now().Format("2006-01-02 15:04:05"))
 				okInform = true
+				BgiLogStatusInfo.Running = IsWechatRunning()
 			}
 		}
 
