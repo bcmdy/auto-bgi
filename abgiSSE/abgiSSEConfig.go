@@ -4,6 +4,7 @@ import (
 	"auto-bgi/config"
 	"crypto/aes"
 	"crypto/cipher"
+	"embed"
 	"encoding/base64"
 	"errors"
 	"golang.org/x/image/font"
@@ -16,6 +17,9 @@ import (
 	"log"
 	"os"
 )
+
+//go:embed abgiFont
+var abgiFont embed.FS
 
 // 解密
 func Decrypt(encryptedText, key string) (string, error) {
@@ -48,7 +52,7 @@ func Decrypt(encryptedText, key string) (string, error) {
 
 func NameToImage(name string) {
 	// 读取 TTF 字体文件
-	fontBytes, err := os.ReadFile("font/HYW.ttf")
+	fontBytes, err := abgiFont.ReadFile("abgiFont/HYW.ttf")
 	if err != nil {
 		log.Fatal(err)
 	}

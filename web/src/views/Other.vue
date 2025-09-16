@@ -842,9 +842,9 @@ export default {
   padding: 4px 8px;
   border-radius: 15px;
   cursor: pointer;
-  font-size: 0.8rem;
+  abgiFont-size: 0.8rem;
   transition: all 0.3s ease;
-  font-weight: bold;
+  abgiFont-weight: bold;
 }
 
 .bookmark-toggle:hover {

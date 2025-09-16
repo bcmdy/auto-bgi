@@ -1828,15 +1828,18 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 
 	//合并相同配置组
 	merged := make(map[string]LogAnalysis2Struct)
-	//layout := "2006-01-02 15:04:05" // 时间格式
 	for _, analysis2Struct := range logAnalysis2Structs {
 		start := analysis2Struct.StartTime
 		end := analysis2Struct.EndTime
 		Consuming := analysis2Struct.Consuming
-		ConsumingSum, _ := time.ParseDuration(Consuming)
+
 		LogJson := analysis2Struct.LogAnalysis2Json
 		summary := analysis2Struct.ErrorSummary
-		income := analysis2Struct.SumIncome
+		income := make(map[string]int)
+		if analysis2Struct.SumIncome != nil {
+			income = analysis2Struct.SumIncome
+		}
+
 		if m, ok := merged[analysis2Struct.GroupName]; ok {
 
 			start = start + "/" + m.StartTime
@@ -1845,9 +1848,8 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 			m.EndTime = end
 
 			Consuming := Consuming + "+" + m.Consuming
-			mConsuming, _ := time.ParseDuration(m.Consuming)
-			ConsumingSum = ConsumingSum + mConsuming
-			m.Consuming = Consuming + "=" + ConsumingSum.String()
+
+			m.Consuming = Consuming
 
 			//子任务合并
 			oldLogJson := m.LogAnalysis2Json
@@ -1862,7 +1864,11 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 			m.ErrorSummary = summary
 
 			//收益合并
-			sumIncome := m.SumIncome
+			sumIncome := make(map[string]int)
+			if m.SumIncome != nil {
+				sumIncome = m.SumIncome
+			}
+
 			for k, v := range sumIncome {
 				income[k] = v
 			}

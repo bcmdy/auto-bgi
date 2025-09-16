@@ -25,6 +25,7 @@
         <p><span>🗺️</span> 配置组进度：<span>{{ statusData.progress }}</span></p>
         <p><span>🖥️</span> 软件状态：<span>{{ statusData.running }}</span></p>
         <p><span>✨</span><span>{{ statusData.jsProgress }}</span></p>
+        <p><span class="indexSX" @click="indexSXBtn">刷新</span></p>
       </div>
 
       <!-- 数据分析按钮组 -->
@@ -339,6 +340,14 @@ const sendImage = () => {
 
 }
 
+//刷新
+const indexSXBtn = () => {
+  apiMethods.indexSX()
+  
+  refreshStatus()
+  message.success('刷新成功！')
+}
+
 const mysSignIn = () => {
   Modal.confirm({
     title: '确认签到？',
@@ -392,7 +401,7 @@ onMounted(() => {
   
   // 获取状态并设置定时器
   refreshStatus()
-  statusInterval = setInterval(refreshStatus, 300000)
+  statusInterval = setInterval(refreshStatus, 3000)
 
   // 清理函数
   onUnmounted(() => {
@@ -436,6 +445,13 @@ onMounted(() => {
   font-weight: bold;
 }
 
+.indexSX{
+  border: 3px solid #ff99cc;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 2px 8px;
+  user-select: none;
+}
 .ant-modal-confirm .ant-btn-primary {
   background: linear-gradient(145deg, #ff99cc, #ff66a3) !important;
   border: none !important;
@@ -464,6 +480,7 @@ onMounted(() => {
   0% { transform: scale(0.8); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
 
 /* ============ 基础样式 ============ */
 .home-container {

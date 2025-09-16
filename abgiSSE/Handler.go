@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"time"
 )
 
 func HandleImg(info Information) {
@@ -27,4 +28,32 @@ func HandleImg(info Information) {
 	} else {
 		autoLog.Sugar.Warnf("收到 status=2 消息，但 Img 字段为空")
 	}
+}
+
+// artifactsGroupPurchasing 联机启动
+func artifactsGroupPurchasing(info Information) {
+	//转成map
+	xiaoxi := ""
+	var dd []map[string]interface{}
+	var names []string
+	for _, v := range info.AA {
+		dd = append(dd, map[string]interface{}{
+			"ID":   v.ID,
+			"UID":  v.UID,
+			"Name": v.Name,
+		})
+		xiaoxi += fmt.Sprintf("序号%d -- %s\n", v.ID, v.Name)
+		names = append(names, v.Name)
+	}
+	//生成图片
+	if len(names) > 0 {
+		//生成图片
+		for _, name := range names {
+			NameToImage(name)
+		}
+	}
+	time.Sleep(500 * time.Millisecond)
+	scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)
+	fmt.Println(xiaoxi)
+	Notice.SentText(xiaoxi)
 }

@@ -1,7 +1,6 @@
 package abgiSSE
 
 import (
-	"auto-bgi/Notice"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -96,30 +95,7 @@ func (c *AbgiClient) listen() {
 
 		if info.Status == "1" {
 			autoLog.Sugar.Infof("联机启动")
-			//转成map
-			xiaoxi := ""
-			var dd []map[string]interface{}
-			var names []string
-			for _, v := range info.AA {
-				dd = append(dd, map[string]interface{}{
-					"ID":   v.ID,
-					"UID":  v.UID,
-					"Name": v.Name,
-				})
-				xiaoxi += fmt.Sprintf("序号%d -- %s\n", v.ID, v.Name)
-				names = append(names, v.Name)
-			}
-			//生成图片
-			if len(names) > 0 {
-				//生成图片
-				for _, name := range names {
-					NameToImage(name)
-				}
-			}
-
-			scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)
-			fmt.Println(xiaoxi)
-			Notice.SentText(xiaoxi)
+			artifactsGroupPurchasing(info)
 		} else if info.Status == "2" {
 
 			//处理图片消息
@@ -143,11 +119,11 @@ func Send(message string) error {
 }
 
 // Status 返回当前连接状态
-func Status() string {
+func Status() bool {
 	if abgiClient == nil {
-		return "未连接"
+		return false
 	}
-	return "已连接到 " + abgiClient.URL
+	return true
 }
 
 type OnlineUser struct {

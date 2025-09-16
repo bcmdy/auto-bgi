@@ -42,6 +42,7 @@ api.interceptors.response.use(
 export const apiMethods = {
   // 获取系统状态
   getStatus: () => api.get('/api/index'),
+  indexSX: () => api.get('/api/indexSX'),
   
   // 获取轮播图图片列表
   getImages: () => api.get('/api/images'),

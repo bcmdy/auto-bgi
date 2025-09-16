@@ -36,9 +36,6 @@ import (
 //go:embed web/dist
 var embeddedFiles embed.FS
 
-//go:embed font
-var font embed.FS
-
 func init() {
 	// 初始化日志
 	autoLog.Init()
@@ -99,12 +96,6 @@ func main() {
 
 	// 创建嵌入的文件系统
 	distFS, err := fs.Sub(embeddedFiles, "web/dist")
-	if err != nil {
-		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
-	}
-
-	//字体
-	fontFS, err := fs.Sub(font, "font")
 	if err != nil {
 		autoLog.Sugar.Fatalf("无法创建嵌入文件系统: %v", err)
 	}
@@ -241,75 +232,6 @@ func main() {
 		})
 	}
 
-	////日志查询
-	//ginServer.GET("/api/index", func(c *gin.Context) {
-	//	// 生成日志文件名
-	//	date := time.Now().Format("20060102")
-	//
-	//	filename := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, date))
-	//
-	//	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
-	//	files, err := bgiStatus.FindLogFiles(filePath)
-	//	if len(files) == 0 {
-	//		autoLog.Sugar.Errorf("日志文件不存在")
-	//		c.JSON(http.StatusBadRequest, gin.H{"error": "日志文件不存在"})
-	//		return
-	//	}
-	//	if err == nil {
-	//		//获取最后一个文件
-	//		filename = filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, files[0]))
-	//	}
-	//
-	//	autoLog.Sugar.Infof("日志文件名:%s", filename)
-	//
-	//	progress := "0/0"
-	//	group := "未知"
-	//	GetGroup := "未知"
-	//	timestamp := "未知"
-	//
-	//	line, err := bgiStatus.FindLastExecLine(filename)
-	//	if err != nil {
-	//		autoLog.Sugar.Errorf("findLastJSONLine-Error: %v\n", err)
-	//	} else {
-	//		group, timestamp, err = bgiStatus.FindLastGroup(filename)
-	//		if err != nil {
-	//			autoLog.Sugar.Errorf("配置组查不到: %v\n", err)
-	//		} else {
-	//			calculateTime, err := bgiStatus.CalculateTime(filename, group, timestamp)
-	//			if err != nil {
-	//				timestamp = "未知"
-	//			} else {
-	//				timestamp = calculateTime
-	//			}
-	//			jsonStr := fmt.Sprintf("%s\\User\\ScriptGroup\\%s", config.Cfg.BetterGIAddress, group+".json")
-	//			progress, err = bgiStatus.Progress(jsonStr, line)
-	//			if err != nil {
-	//				autoLog.Sugar.Errorf("%v\n", err)
-	//			}
-	//
-	//		}
-	//		GetGroup = bgiStatus.GetGroupP(group)
-	//	}
-	//
-	//	running := bgiStatus.IsWechatRunning()
-	//
-	//	jsProgress, err := bgiStatus.JsProgress(filename, "当前进度：(.*?)", "当前次数：(.*?)")
-	//	if err != nil {
-	//		jsProgress = "无"
-	//	}
-	//
-	//	data := make(map[string]interface{})
-	//	data["group"] = group + "[" + GetGroup + "]"
-	//	data["ExpectedToEnd"] = timestamp
-	//	data["line"] = line
-	//	data["progress"] = progress
-	//	data["running"] = running
-	//	data["jsProgress"] = jsProgress
-	//
-	//	c.JSON(http.StatusOK, data)
-	//
-	//})
-
 	//日志查询
 	ginServer.GET("/api/index", func(c *gin.Context) {
 
@@ -326,6 +248,12 @@ func main() {
 
 		c.JSON(http.StatusOK, data)
 
+	})
+
+	//首页刷新
+	ginServer.GET("/api/indexSX", func(c *gin.Context) {
+		bgiStatus.InitBgiLogStatus()
+		c.JSON(http.StatusOK, "刷新成功")
 	})
 
 	//查询归档列表查询
@@ -1033,9 +961,6 @@ func main() {
 
 	// 静态文件服务（放在所有API路由之后）
 	ginServer.StaticFS("/assets", http.FS(distFS))
-
-	//字体
-	ginServer.StaticFS("/font", http.FS(fontFS))
 
 	// Vue Router history 支持和静态文件服务
 	ginServer.NoRoute(func(c *gin.Context) {
