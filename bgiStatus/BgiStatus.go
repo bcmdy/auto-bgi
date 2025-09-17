@@ -1000,111 +1000,226 @@ func GetFileNameDate(filePath string) string {
 	return ""
 }
 
-func GroupTime(fileName string) ([]GroupMap, error) {
-	layoutFull := "2006-01-02 15:04:05"
+// 日志分析
+func GroupTime(fileName string) []LogAnalysis2Struct {
+	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
+	fullPath := filepath.Join(filePath, fileName)
+	date := GetFileNameDate(fileName)
 
-	today := time.Now().Format("2006-01-02")
-
-	//提取文件名字的数字
-	// 正则表达式匹配数字
-	re := regexp.MustCompile(`\d+`)
-	// 查找所有匹配项
-	matches := re.FindAllString(fileName, -1)
-	// 检查是否找到匹配项
-	if len(matches) > 0 {
-		//格式化转换
-		formatted := matches[0][:4] + "-" + matches[0][4:6] + "-" + matches[0][6:]
-
-		today = formatted
-	}
-
-	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
-
-	file, err := os.Open(filename)
+	file, err := os.Open(fullPath)
 	if err != nil {
-		return nil, err
+		fmt.Println("无法打开日志文件:", err)
+		return nil
 	}
 	defer file.Close()
 
-	timeRegexp := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2}\.\d{3})\]`)
+	reader := bufio.NewReader(file)
+
+	// 🔹正则提前编译（避免循环里重复编译）
 	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
 	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
 
-	type TempGroup struct {
-		GroupName string
-		StartTime time.Time
-		LineTime  string // 日志时间字符串
-	}
+	var logAnalysis2Structs []LogAnalysis2Struct
+	var currentStruct *LogAnalysis2Struct
+	var lastLine string
 
-	var results []GroupMap
-	var temp *TempGroup
-	scanner := bufio.NewScanner(file)
-	var prevLine string
-
-	var sunTime time.Duration
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if prevLine != "" {
-			// 开始记录
-			if startMatch := startRegexp.FindStringSubmatch(line); startMatch != nil {
-				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
-					t, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
-					temp = &TempGroup{
-						GroupName: startMatch[1],
-						StartTime: t,
-						LineTime:  timeMatch[1],
-					}
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				autoLog.Sugar.Infof("分析完毕")
+				// 🔹文件结束时检查是否有未结束的配置组
+				if currentStruct != nil {
+					logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)
 				}
+				break
 			}
+			autoLog.Sugar.Errorf("配置组分析文件出错: %v", err)
+			break
+		}
 
-			// 结束记录
-			if endMatch := endRegexp.FindStringSubmatch(line); endMatch != nil && temp != nil && endMatch[1] == temp.GroupName {
-				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
-					endTime, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
-					duration := endTime.Sub(temp.StartTime)
+		// 默认时间戳
+		timestampLine := lastLine
+		if tools.HasTimestamp(line) {
+			timestampLine = line
+		}
+		if timestampLine == "" {
+			// 防止开头无时间戳导致空值
+			timestampLine = date + " 00:00:00"
+		}
 
-					sunTime += duration
-
-					// 过滤收益
-					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
-					endStr := endTime.Format("2006-01-02 15:04:05")
-
-					// 组装
-					results = append(results, GroupMap{
-						Title: temp.GroupName,
-						Detail: GroupDetail{
-							StartTime:   startStr,
-							EndTime:     endStr,
-							ExecuteTime: duration.String(),
-						},
-					})
-
-					// 重置临时变量
-					temp = nil
-				}
+		// 配置组开始
+		if matches := startRegexp.FindStringSubmatch(line); len(matches) > 1 {
+			currentStruct = &LogAnalysis2Struct{
+				GroupName:    matches[1],
+				ErrorSummary: make(map[string]int),
+				SumIncome:    make(map[string]int),
+			}
+			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+				seg := ExecutionSegment{StartTime: t}
+				currentStruct.Segments = append(currentStruct.Segments, seg)
 			}
 		}
-		prevLine = line
+
+		// 配置组结束
+		if currentStruct != nil {
+			if matches := endRegexp.FindStringSubmatch(line); len(matches) > 1 && matches[1] == currentStruct.GroupName {
+				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+					segIdx := len(currentStruct.Segments) - 1
+					currentStruct.Segments[segIdx].EndTime = t
+					currentStruct.Segments[segIdx].Consuming =
+						tools.CalculateDuration(currentStruct.Segments[segIdx].StartTime, t)
+				}
+
+				// 🔹统计错误（按子任务聚合）
+				for _, subTask := range currentStruct.LogAnalysis2Json {
+					for errStr, count := range subTask.Errors {
+						currentStruct.ErrorSummary[errStr] += count
+					}
+				}
+
+				logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)
+				currentStruct = nil
+			}
+		}
+
+		lastLine = line
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	// 🔹合并同名配置组（分段执行支持）
+	merged := make(map[string]*LogAnalysis2Struct)
+	for _, s := range logAnalysis2Structs {
+		m, ok := merged[s.GroupName]
+		if !ok {
+			copyS := s
+			if copyS.ErrorSummary == nil {
+				copyS.ErrorSummary = make(map[string]int)
+			}
+			if copyS.SumIncome == nil {
+				copyS.SumIncome = make(map[string]int)
+			}
+			merged[s.GroupName] = &copyS
+			continue
+		}
+
+		// 🔹追加分段
+		m.Segments = append(m.Segments, s.Segments...)
+
 	}
 
-	// 计算总时长
-	results = append(results, GroupMap{
-		Title: "合计",
-		Detail: GroupDetail{
-			StartTime:   "00:00:00",
-			EndTime:     "00:00:00",
-			ExecuteTime: sunTime.String(),
-		},
-	})
+	result := make([]LogAnalysis2Struct, 0, len(merged))
+	for _, v := range merged {
+		result = append(result, *v)
+	}
 
-	return results, nil
+	return result
 }
+
+//func GroupTime(fileName string) ([]GroupMap, error) {
+//	layoutFull := "2006-01-02 15:04:05"
+//
+//	today := time.Now().Format("2006-01-02")
+//
+//	//提取文件名字的数字
+//	// 正则表达式匹配数字
+//	re := regexp.MustCompile(`\d+`)
+//	// 查找所有匹配项
+//	matches := re.FindAllString(fileName, -1)
+//	// 检查是否找到匹配项
+//	if len(matches) > 0 {
+//		//格式化转换
+//		formatted := matches[0][:4] + "-" + matches[0][4:6] + "-" + matches[0][6:]
+//
+//		today = formatted
+//	}
+//
+//	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
+//
+//	file, err := os.Open(filename)
+//	if err != nil {
+//		return nil, err
+//	}
+//	defer file.Close()
+//
+//	timeRegexp := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2}\.\d{3})\]`)
+//	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
+//	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
+//
+//	type TempGroup struct {
+//		GroupName string
+//		StartTime time.Time
+//		LineTime  string // 日志时间字符串
+//	}
+//
+//	var results []GroupMap
+//	var temp *TempGroup
+//	scanner := bufio.NewScanner(file)
+//	var prevLine string
+//
+//	var sunTime time.Duration
+//
+//	for scanner.Scan() {
+//		line := scanner.Text()
+//
+//		if prevLine != "" {
+//			// 开始记录
+//			if startMatch := startRegexp.FindStringSubmatch(line); startMatch != nil {
+//				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
+//					t, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
+//					temp = &TempGroup{
+//						GroupName: startMatch[1],
+//						StartTime: t,
+//						LineTime:  timeMatch[1],
+//					}
+//				}
+//			}
+//
+//			// 结束记录
+//			if endMatch := endRegexp.FindStringSubmatch(line); endMatch != nil && temp != nil && endMatch[1] == temp.GroupName {
+//				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
+//					endTime, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
+//					duration := endTime.Sub(temp.StartTime)
+//
+//					sunTime += duration
+//
+//					// 过滤收益
+//					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
+//					endStr := endTime.Format("2006-01-02 15:04:05")
+//
+//					// 组装
+//					results = append(results, GroupMap{
+//						Title: temp.GroupName,
+//						Detail: GroupDetail{
+//							StartTime:   startStr,
+//							EndTime:     endStr,
+//							ExecuteTime: duration.String(),
+//						},
+//					})
+//
+//					// 重置临时变量
+//					temp = nil
+//				}
+//			}
+//		}
+//		prevLine = line
+//	}
+//
+//	if err := scanner.Err(); err != nil {
+//		return nil, err
+//	}
+//
+//	// 计算总时长
+//	results = append(results, GroupMap{
+//		Title: "合计",
+//		Detail: GroupDetail{
+//			StartTime:   "00:00:00",
+//			EndTime:     "00:00:00",
+//			ExecuteTime: sunTime.String(),
+//		},
+//	})
+//
+//	return results, nil
+//}
 
 // 判断配置文件是否正确
 func CheckConfig() (bool, error) {
@@ -1383,12 +1498,23 @@ func findSubFolder(root string, targetFolder string) (string, error) {
 	return "", fmt.Errorf("未找到子文件夹: %s", targetFolder)
 }
 
-func Archive(data map[string]interface{}) string {
-	title, ok1 := data["Title"].(string)
-	executeTime, ok2 := data["ExecuteTime"].(string)
+func Archive(data LogAnalysis2Struct) string {
+	title := data.GroupName
+	//合并时间
+	executeTime, _ := time.ParseDuration("0s")
+	for _, segment := range data.Segments {
+		if segment.Consuming != "" {
+			duration, err := time.ParseDuration(segment.Consuming)
+			if err != nil {
+				autoLog.Sugar.Errorf("解析时间失败: %v", err)
+				continue
+			}
+			executeTime += duration
 
-	if !ok1 || !ok2 {
-		fmt.Println("归档数据字段缺失或格式错误")
+		}
+	}
+	if title == "" || executeTime.String() == "" {
+		autoLog.Sugar.Errorf("归档数据字段缺失或格式错误: %s, %s", title, executeTime.String())
 		return "归档数据字段缺失或格式错误"
 	}
 
@@ -1439,7 +1565,7 @@ func Archive(data map[string]interface{}) string {
 	}
 	defer insertStmt.Close()
 
-	_, err = insertStmt.Exec(title, executeTime)
+	_, err = insertStmt.Exec(title, executeTime.String())
 	if err != nil {
 		autoLog.Sugar.Errorf("写入数据库失败: %v", err)
 		return "写入数据库失败"
@@ -1628,21 +1754,228 @@ func isErrorLine(line string) (matched string, ok bool) {
 	return "", false
 }
 
+//type LogAnalysis2Struct struct {
+//	GroupName        string
+//	StartTime        string
+//	EndTime          string
+//	Consuming        string
+//	LogAnalysis2Json []LogAnalysis2Json
+//	ErrorSummary     map[string]int // 🔸每组内的所有错误统计
+//	SumIncome        map[string]int // 🔸每组内的所有收入统计
+//}
+//
+//type LogAnalysis2Json struct {
+//	JsonName   string
+//	StartTime  string
+//	EndTime    string
+//	Income     map[string]int // ⬅️ 收入项及其数量
+//	Errors     map[string]int // 错误项及其数量
+//	ErrorsMark map[string]int
+//	Consuming  string
+//}
+//
+//// 日志分析
+//func LogAnalysis2(fileName string) []LogAnalysis2Struct {
+//	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
+//	fullPath := filepath.Join(filePath, fileName)
+//	//从文件名字从提取日期
+//	date := GetFileNameDate(fileName)
+//
+//	file, err := os.Open(fullPath)
+//	if err != nil {
+//		fmt.Println("无法打开日志文件:", err)
+//		return []LogAnalysis2Struct{}
+//	}
+//	defer file.Close()
+//
+//	reader := bufio.NewReader(file)
+//
+//	var logAnalysis2Structs []LogAnalysis2Struct
+//	var currentStruct *LogAnalysis2Struct
+//	var lastLine string
+//	var xy string
+//
+//	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
+//	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
+//
+//	for {
+//		line, err := reader.ReadString('\n')
+//		if err != nil {
+//			if err == io.EOF {
+//				autoLog.Sugar.Infof("分析完毕")
+//				break
+//			}
+//			autoLog.Sugar.Errorf("配置组分析文件出错: %v", err)
+//			break
+//		}
+//
+//		timestampLine := lastLine
+//		if tools.HasTimestamp(line) {
+//			timestampLine = line
+//		}
+//
+//		// 配置组开始
+//		if startRegexp.MatchString(line) {
+//			matches := startRegexp.FindStringSubmatch(line)
+//			if len(matches) > 1 {
+//				currentStruct = &LogAnalysis2Struct{
+//					GroupName: matches[1],
+//				}
+//				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+//					currentStruct.StartTime = t
+//				} else {
+//					fmt.Println("提取开始时间失败:", err)
+//				}
+//			}
+//		}
+//
+//		// 配置组结束
+//		if currentStruct != nil && endRegexp.MatchString(line) {
+//			matches := endRegexp.FindStringSubmatch(line)
+//			if len(matches) > 1 && matches[1] == currentStruct.GroupName {
+//				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+//					currentStruct.EndTime = t
+//				} else {
+//					fmt.Println("提取结束时间失败:", err)
+//				}
+//
+//				// 计算执行时间（可选）
+//				currentStruct.Consuming = tools.CalculateDuration(currentStruct.StartTime, currentStruct.EndTime)
+//
+//				// 🔸合并错误统计
+//				currentStruct.ErrorSummary = make(map[string]int)
+//				for _, subTask := range currentStruct.LogAnalysis2Json {
+//					for errStr, count := range subTask.Errors {
+//						currentStruct.ErrorSummary[errStr] += count
+//					}
+//				}
+//
+//				logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)
+//				currentStruct = nil
+//			}
+//		}
+//
+//		// 地图追踪任务开始
+//		if currentStruct != nil && strings.HasPrefix(line, "→ 开始执行地图追踪任务") {
+//			subTask := LogAnalysis2Json{
+//				JsonName: line,
+//			}
+//			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+//				subTask.StartTime = t
+//			}
+//			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
+//		}
+//
+//		// 地图追踪结束
+//		if currentStruct != nil && strings.HasPrefix(line, "→ 脚本执行结束") {
+//			n := len(currentStruct.LogAnalysis2Json)
+//			if n > 0 {
+//				current := &currentStruct.LogAnalysis2Json[n-1]
+//				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+//					current.EndTime = t
+//					// ✅ 计算任务耗时
+//					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
+//				}
+//			}
+//		}
+//
+//		//JS脚本开始
+//		if currentStruct != nil && strings.HasPrefix(line, "→ 开始执行JS脚本") {
+//			subTask := LogAnalysis2Json{
+//				JsonName: line,
+//			}
+//			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+//				subTask.StartTime = t
+//			}
+//			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
+//		}
+//
+//		// JS脚本任务
+//		if currentStruct != nil && strings.HasPrefix(line, "→ 脚本执行结束") {
+//			n := len(currentStruct.LogAnalysis2Json)
+//			if n > 0 {
+//				current := &currentStruct.LogAnalysis2Json[n-1]
+//				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+//					current.EndTime = t
+//					// ✅ 计算任务耗时
+//					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
+//				}
+//			}
+//		}
+//
+//		//收入情况
+//		pickupRegexp := regexp.MustCompile(`交互或拾取："(.*?)"`)
+//
+//		if currentStruct != nil && pickupRegexp.MatchString(line) {
+//			matches := pickupRegexp.FindStringSubmatch(line)
+//			if len(matches) > 1 {
+//				item := matches[1]
+//				n := len(currentStruct.LogAnalysis2Json)
+//				if n > 0 {
+//					current := &currentStruct.LogAnalysis2Json[n-1]
+//					if current.Income == nil {
+//						current.Income = make(map[string]int)
+//					}
+//					// 初始化收入统计
+//					if currentStruct.SumIncome == nil {
+//						currentStruct.SumIncome = make(map[string]int)
+//					}
+//					current.Income[item]++
+//					currentStruct.SumIncome[item]++
+//				}
+//			}
+//		}
+//
+//		//错误记录
+//		if currentStruct != nil {
+//			if matched, ok := isErrorLine(line); ok {
+//				n := len(currentStruct.LogAnalysis2Json)
+//				if n > 0 {
+//					current := &currentStruct.LogAnalysis2Json[n-1]
+//					if current.Errors == nil {
+//						current.Errors = make(map[string]int)
+//					}
+//					if current.ErrorsMark == nil {
+//						current.ErrorsMark = make(map[string]int)
+//					}
+//					current.Errors[matched]++
+//					current.ErrorsMark[xy]++
+//				}
+//			}
+//		}
+//
+//		//坐标记录
+//		if strings.Contains(line, "粗略接近途经点，位置") {
+//			xy = line
+//		}
+//
+//		lastLine = line
+//	}
+//
+//	return logAnalysis2Structs
+//
+//}
+
+// 🔹执行分段
+type ExecutionSegment struct {
+	StartTime string
+	EndTime   string
+	Consuming string
+}
+
 type LogAnalysis2Struct struct {
 	GroupName        string
-	StartTime        string
-	EndTime          string
-	Consuming        string
+	Segments         []ExecutionSegment // 每段执行的开始/结束/耗时
 	LogAnalysis2Json []LogAnalysis2Json
-	ErrorSummary     map[string]int // 🔸每组内的所有错误统计
-	SumIncome        map[string]int // 🔸每组内的所有收入统计
+	ErrorSummary     map[string]int // 所有分段合并的错误统计
+	SumIncome        map[string]int // 所有分段合并的收入统计
 }
 
 type LogAnalysis2Json struct {
 	JsonName   string
 	StartTime  string
 	EndTime    string
-	Income     map[string]int // ⬅️ 收入项及其数量
+	Income     map[string]int // 收入项及其数量
 	Errors     map[string]int // 错误项及其数量
 	ErrorsMark map[string]int
 	Consuming  string
@@ -1652,72 +1985,76 @@ type LogAnalysis2Json struct {
 func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
 	fullPath := filepath.Join(filePath, fileName)
-	//从文件名字从提取日期
 	date := GetFileNameDate(fileName)
 
 	file, err := os.Open(fullPath)
 	if err != nil {
 		fmt.Println("无法打开日志文件:", err)
-		return []LogAnalysis2Struct{}
+		return nil
 	}
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
+
+	// 🔹正则提前编译（避免循环里重复编译）
+	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
+	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
+	pickupRegexp := regexp.MustCompile(`交互或拾取："(.*?)"`)
 
 	var logAnalysis2Structs []LogAnalysis2Struct
 	var currentStruct *LogAnalysis2Struct
 	var lastLine string
 	var xy string
 
-	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
-	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
-
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				autoLog.Sugar.Infof("分析完毕")
+				// 🔹文件结束时检查是否有未结束的配置组
+				if currentStruct != nil {
+					logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)
+				}
 				break
 			}
 			autoLog.Sugar.Errorf("配置组分析文件出错: %v", err)
 			break
 		}
 
+		// 默认时间戳
 		timestampLine := lastLine
 		if tools.HasTimestamp(line) {
 			timestampLine = line
 		}
+		if timestampLine == "" {
+			// 防止开头无时间戳导致空值
+			timestampLine = date + " 00:00:00"
+		}
 
 		// 配置组开始
-		if startRegexp.MatchString(line) {
-			matches := startRegexp.FindStringSubmatch(line)
-			if len(matches) > 1 {
-				currentStruct = &LogAnalysis2Struct{
-					GroupName: matches[1],
-				}
-				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
-					currentStruct.StartTime = t
-				} else {
-					fmt.Println("提取开始时间失败:", err)
-				}
+		if matches := startRegexp.FindStringSubmatch(line); len(matches) > 1 {
+			currentStruct = &LogAnalysis2Struct{
+				GroupName:    matches[1],
+				ErrorSummary: make(map[string]int),
+				SumIncome:    make(map[string]int),
+			}
+			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
+				seg := ExecutionSegment{StartTime: t}
+				currentStruct.Segments = append(currentStruct.Segments, seg)
 			}
 		}
 
 		// 配置组结束
-		if currentStruct != nil && endRegexp.MatchString(line) {
-			matches := endRegexp.FindStringSubmatch(line)
-			if len(matches) > 1 && matches[1] == currentStruct.GroupName {
+		if currentStruct != nil {
+			if matches := endRegexp.FindStringSubmatch(line); len(matches) > 1 && matches[1] == currentStruct.GroupName {
 				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
-					currentStruct.EndTime = t
-				} else {
-					fmt.Println("提取结束时间失败:", err)
+					segIdx := len(currentStruct.Segments) - 1
+					currentStruct.Segments[segIdx].EndTime = t
+					currentStruct.Segments[segIdx].Consuming =
+						tools.CalculateDuration(currentStruct.Segments[segIdx].StartTime, t)
 				}
 
-				// 计算执行时间（可选）
-				currentStruct.Consuming = tools.CalculateDuration(currentStruct.StartTime, currentStruct.EndTime)
-
-				// 🔸合并错误统计
-				currentStruct.ErrorSummary = make(map[string]int)
+				// 🔹统计错误（按子任务聚合）
 				for _, subTask := range currentStruct.LogAnalysis2Json {
 					for errStr, count := range subTask.Errors {
 						currentStruct.ErrorSummary[errStr] += count
@@ -1731,55 +2068,35 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 
 		// 地图追踪任务开始
 		if currentStruct != nil && strings.HasPrefix(line, "→ 开始执行地图追踪任务") {
-			subTask := LogAnalysis2Json{
-				JsonName: line,
-			}
+			subTask := LogAnalysis2Json{JsonName: line}
 			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 				subTask.StartTime = t
 			}
 			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
 		}
 
-		// 地图追踪结束
+		// 脚本执行结束（地图追踪/JS 脚本共用）
 		if currentStruct != nil && strings.HasPrefix(line, "→ 脚本执行结束") {
 			n := len(currentStruct.LogAnalysis2Json)
 			if n > 0 {
 				current := &currentStruct.LogAnalysis2Json[n-1]
 				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 					current.EndTime = t
-					// ✅ 计算任务耗时
 					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
 				}
 			}
 		}
 
-		//JS脚本开始
+		// JS脚本开始
 		if currentStruct != nil && strings.HasPrefix(line, "→ 开始执行JS脚本") {
-			subTask := LogAnalysis2Json{
-				JsonName: line,
-			}
+			subTask := LogAnalysis2Json{JsonName: line}
 			if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
 				subTask.StartTime = t
 			}
 			currentStruct.LogAnalysis2Json = append(currentStruct.LogAnalysis2Json, subTask)
 		}
 
-		// JS脚本任务
-		if currentStruct != nil && strings.HasPrefix(line, "→ 脚本执行结束") {
-			n := len(currentStruct.LogAnalysis2Json)
-			if n > 0 {
-				current := &currentStruct.LogAnalysis2Json[n-1]
-				if t, err := tools.ExtractLogTime2(date, timestampLine); err == nil {
-					current.EndTime = t
-					// ✅ 计算任务耗时
-					current.Consuming = tools.CalculateDuration(current.StartTime, current.EndTime)
-				}
-			}
-		}
-
-		//收入情况
-		pickupRegexp := regexp.MustCompile(`交互或拾取："(.*?)"`)
-
+		// 收入情况
 		if currentStruct != nil && pickupRegexp.MatchString(line) {
 			matches := pickupRegexp.FindStringSubmatch(line)
 			if len(matches) > 1 {
@@ -1790,17 +2107,13 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 					if current.Income == nil {
 						current.Income = make(map[string]int)
 					}
-					// 初始化收入统计
-					if currentStruct.SumIncome == nil {
-						currentStruct.SumIncome = make(map[string]int)
-					}
 					current.Income[item]++
 					currentStruct.SumIncome[item]++
 				}
 			}
 		}
 
-		//错误记录
+		// 错误记录
 		if currentStruct != nil {
 			if matched, ok := isErrorLine(line); ok {
 				n := len(currentStruct.LogAnalysis2Json)
@@ -1813,12 +2126,14 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 						current.ErrorsMark = make(map[string]int)
 					}
 					current.Errors[matched]++
-					current.ErrorsMark[xy]++
+					if xy != "" {
+						current.ErrorsMark[xy]++
+					}
 				}
 			}
 		}
 
-		//坐标记录
+		// 坐标记录
 		if strings.Contains(line, "粗略接近途经点，位置") {
 			xy = line
 		}
@@ -1826,68 +2141,45 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 		lastLine = line
 	}
 
-	//合并相同配置组
-	merged := make(map[string]LogAnalysis2Struct)
-	for _, analysis2Struct := range logAnalysis2Structs {
-		start := analysis2Struct.StartTime
-		end := analysis2Struct.EndTime
-		Consuming := analysis2Struct.Consuming
-
-		LogJson := analysis2Struct.LogAnalysis2Json
-		summary := analysis2Struct.ErrorSummary
-		income := make(map[string]int)
-		if analysis2Struct.SumIncome != nil {
-			income = analysis2Struct.SumIncome
+	// 🔹合并同名配置组（分段执行支持）
+	merged := make(map[string]*LogAnalysis2Struct)
+	for _, s := range logAnalysis2Structs {
+		m, ok := merged[s.GroupName]
+		if !ok {
+			copyS := s
+			if copyS.ErrorSummary == nil {
+				copyS.ErrorSummary = make(map[string]int)
+			}
+			if copyS.SumIncome == nil {
+				copyS.SumIncome = make(map[string]int)
+			}
+			merged[s.GroupName] = &copyS
+			continue
 		}
 
-		if m, ok := merged[analysis2Struct.GroupName]; ok {
+		// 🔹追加分段
+		m.Segments = append(m.Segments, s.Segments...)
 
-			start = start + "/" + m.StartTime
-			m.StartTime = start
-			end = end + "/" + m.EndTime
-			m.EndTime = end
+		// 🔹合并子任务
+		m.LogAnalysis2Json = append(m.LogAnalysis2Json, s.LogAnalysis2Json...)
 
-			Consuming := Consuming + "+" + m.Consuming
+		// 🔹合并错误统计
+		for k, v := range s.ErrorSummary {
+			m.ErrorSummary[k] += v
+		}
 
-			m.Consuming = Consuming
-
-			//子任务合并
-			oldLogJson := m.LogAnalysis2Json
-			LogJson = append(LogJson, oldLogJson...)
-			m.LogAnalysis2Json = LogJson
-
-			//错误合并
-			oldSummary := m.ErrorSummary
-			for k, v := range oldSummary {
-				summary[k] = v
-			}
-			m.ErrorSummary = summary
-
-			//收益合并
-			sumIncome := make(map[string]int)
-			if m.SumIncome != nil {
-				sumIncome = m.SumIncome
-			}
-
-			for k, v := range sumIncome {
-				income[k] = v
-			}
-			m.SumIncome = sumIncome
-
-			merged[analysis2Struct.GroupName] = m
-		} else {
-			merged[analysis2Struct.GroupName] = analysis2Struct
+		// 🔹合并收入统计
+		for k, v := range s.SumIncome {
+			m.SumIncome[k] += v
 		}
 	}
-	var newLog []LogAnalysis2Struct
-	for _, analysis2Struct := range merged {
 
-		newLog = append(newLog, analysis2Struct)
+	result := make([]LogAnalysis2Struct, 0, len(merged))
+	for _, v := range merged {
+		result = append(result, *v)
 	}
 
-	// 输出结构体内容
-	return newLog
-
+	return result
 }
 
 type JsNamesInfoStruct struct {
@@ -2064,17 +2356,12 @@ func ArchiveConfig() {
 	date := time.Now().Format("20060102")
 	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
 	//获取今日所有配置组
-	groupTime, _ := GroupTime(filename)
+	groupTime := GroupTime(filename)
 	for _, groupMap := range groupTime {
 
-		configMap := map[string]interface{}{
-			"Title":       groupMap.Title,
-			"ExecuteTime": groupMap.Detail.ExecuteTime,
-		}
+		Archive(groupMap)
 
-		Archive(configMap)
-
-		autoLog.Sugar.Infof("归档配置组 %s", groupMap.Title)
+		autoLog.Sugar.Infof("归档配置组 %s", groupMap.GroupName)
 
 	}
 

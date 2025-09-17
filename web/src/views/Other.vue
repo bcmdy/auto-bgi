@@ -82,12 +82,17 @@
                                 <div class="group-icon">🔧</div>
                                 <div class="group-main-info">
                                     <h3 class="group-name">{{ group.GroupName }}</h3>
+                        
+                                <div v-for="(seg,index) in group.Segments" :key="index">
+                                 
                                     <div class="group-time-info">
-                                        <span class="time-badge start">{{ group.StartTime }}</span>
+                                        <span class="time-badge start">{{ seg.StartTime }}</span>
                                         <span class="duration-arrow">→</span>
-                                        <span class="time-badge end">{{ group.EndTime }}</span>
-                                        <span class="duration-badge">{{ group.Consuming }}</span>
+                                        <span class="time-badge end">{{ seg.EndTime }}</span>
+                                        <span class="duration-badge">{{ seg.Consuming }}</span>
                                     </div>
+                                    </div>
+                               
                                 </div>
                             </div>
                             <div class="group-actions">
@@ -321,9 +326,7 @@ export default {
             try {
                 const archiveItem = {
                     Title: group.GroupName,
-                    ExecuteTime: group.Consuming,
-                    StartTime: group.StartTime,
-                    EndTime: group.EndTime
+                    Segments: group.Segments
                 }
 
                 const response = await api.post('/api/archive', archiveItem)
@@ -1109,6 +1112,7 @@ export default {
 }
 
 .group-time-info {
+    margin-top: 3px;
     display: flex;
     align-items: center;
     gap: 8px;

@@ -499,7 +499,7 @@ func main() {
 		fileName := context.Query("file")
 
 		var (
-			GroupTime  []bgiStatus.GroupMap
+			GroupTime  []bgiStatus.LogAnalysis2Struct
 			signLog    string
 			groupPInfo string
 			//gitLog     []bgiStatus.GitLogStruct
@@ -508,7 +508,7 @@ func main() {
 		//获取配置组执行时长
 		go func() {
 			defer otherGroup.Done()
-			GroupTime, _ = bgiStatus.GroupTime(fileName)
+			GroupTime = bgiStatus.GroupTime(fileName)
 		}()
 
 		//获取今天执行配置组
@@ -527,7 +527,7 @@ func main() {
 	})
 
 	ginServer.POST("/api/archive", func(c *gin.Context) {
-		var req map[string]interface{}
+		var req bgiStatus.LogAnalysis2Struct
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(400, gin.H{"error": "参数解析失败: " + err.Error()})
 			return
@@ -538,6 +538,8 @@ func main() {
 
 		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
 	})
+
+	bgiStatus.ArchiveConfig()
 
 	//日志分析
 	ginServer.GET("/api/LogAnalysis2Page", func(context *gin.Context) {
