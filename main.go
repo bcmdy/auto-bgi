@@ -545,9 +545,7 @@ func main() {
 
 		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
 	})
-
-	bgiStatus.ArchiveConfig()
-
+	
 	//日志分析
 	ginServer.GET("/api/LogAnalysis2Page", func(context *gin.Context) {
 		fileName := context.Query("file")
