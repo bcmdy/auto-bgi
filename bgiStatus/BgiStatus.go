@@ -2298,6 +2298,11 @@ func LogM() {
 			fmt.Printf("检测到新日志文件: %s\n", newLogFile)
 			currentLogFile = newLogFile
 
+			go func() {
+				config.Cfg.BgiLog = newLogFile
+				InitBgiLogStatus()
+			}()
+
 			if monitor != nil {
 				monitor.Stop()
 			}

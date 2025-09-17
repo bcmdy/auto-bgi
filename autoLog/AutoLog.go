@@ -28,6 +28,9 @@ func Init() {
 		rotatelogs.WithMaxAge(15*24*time.Hour),                        // 保留15天
 		rotatelogs.WithRotationTime(24*time.Hour),                     // 每24小时切割一次
 		rotatelogs.WithClock(rotatelogs.Local),                        // ✅ 使用本地时间
+		rotatelogs.WithHandler(rotatelogs.HandlerFunc(func(e rotatelogs.Event) {
+			println("日志切割了，新文件:", e.Type())
+		})),
 	)
 	if err != nil {
 		panic(err)

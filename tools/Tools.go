@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -262,4 +263,13 @@ func CompareVersion(v1, v2 string) int {
 		}
 	}
 	return 0 // 相等
+}
+
+// 打开指定网页
+func OpenBrowser(url string) error {
+	var cmd *exec.Cmd
+
+	cmd = exec.Command("cmd", "/c", "start", url)
+
+	return cmd.Start()
 }

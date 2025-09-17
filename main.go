@@ -49,6 +49,13 @@ func init() {
 		for _, ip := range ips {
 			if strings.Contains(ip, "192.168") {
 				autoLog.Sugar.Infof("本机局域网IP: %s%s", ip, config.Cfg.Post)
+				if config.Cfg.Control.StartOpenBrowser {
+					// 打开浏览器
+					if err := tools.OpenBrowser("http://" + ip + config.Cfg.Post); err != nil {
+						autoLog.Sugar.Errorf("打开浏览器失败: %v", err)
+					}
+				}
+
 			} else {
 				autoLog.Sugar.Infof("本机其他IP: %s%s", ip, config.Cfg.Post)
 			}
