@@ -323,9 +323,10 @@ export default {
 
         // 归档配置组
         async archiveGroup(group) {
+    
             try {
                 const archiveItem = {
-                    Title: group.GroupName,
+                    GroupName: group.GroupName,
                     Segments: group.Segments
                 }
 

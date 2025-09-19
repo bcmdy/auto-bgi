@@ -17,6 +17,7 @@ import (
 type Config struct {
 	OneLong         oneLong         `json:"OneLong" comment:"一条龙配置"`
 	BetterGIAddress string          `json:"BetterGIAddress" comment:"BetterGI地址"`
+	RepoUrl         string          `json:"RepoUrl" comment:"仓库地址"`
 	Content         string          `json:"content" comment:"通知内容"`
 	ConfigNames     []string        `json:"ConfigNames" comment:"一条龙配置名称"`
 	BagStatistics   string          `json:"BagStatistics" comment:"需要统计的物品"`

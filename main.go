@@ -545,7 +545,7 @@ func main() {
 
 		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
 	})
-	
+
 	//日志分析
 	ginServer.GET("/api/LogAnalysis2Page", func(context *gin.Context) {
 		fileName := context.Query("file")
@@ -1042,6 +1042,34 @@ func main() {
 				autoLog.Sugar.Infof("批量更新脚本成功")
 			}
 
+		} else if os.Args[1] == "online" {
+			//上线
+
+			if config.Cfg.Account.Uid == "" {
+				fmt.Println("账号配置错误")
+				return
+			}
+			if config.Cfg.Account.Name == "" {
+				fmt.Println("账号名称配置错误")
+				return
+			}
+			if config.Cfg.Account.SecretKey == "" {
+				fmt.Println("密钥配置错误")
+				return
+			}
+			//解密
+			decryptedKey, err3 := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+			if err3 != nil {
+				fmt.Println("密钥错误")
+				return
+			}
+
+			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, "all", config.Cfg.Account.Uid, config.Cfg.Account.Name), true, nil)
+			if err != nil {
+				fmt.Printf("连接失败: %v\n", err)
+				return
+
+			}
 		}
 	}
 

@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -34,9 +33,9 @@ func InitBgiLogStatus() {
 		autoLog.Sugar.Infof("bgi日志名称为空")
 		return
 	}
-	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log", logName)
+	//filePath := filepath.Join(config.Cfg.BetterGIAddress, "log", logName)
 
-	file, err := os.Open(filePath)
+	file, err := os.Open(logName)
 	if err != nil {
 		autoLog.Sugar.Errorf("打开bgi日志文件失败: %v", err)
 		return

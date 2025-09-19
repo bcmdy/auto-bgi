@@ -8,13 +8,21 @@ import (
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"io/fs"
-	"io/ioutil"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 )
+
+var proxyOptions = transport.ProxyOptions{}
+
+func init() {
+	if myConfig.Cfg.Notice.Type == "TG" {
+		proxyOptions.URL = myConfig.Cfg.Notice.TGNotice.Proxy
+	}
+
+}
 
 // UpdateCenterRepoByGit 强制同步 main 分支并标记更新
 func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
@@ -25,7 +33,6 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 	reposPath := filepath.Join(myConfig.Cfg.BetterGIAddress, "Repos")
 	repoPath := filepath.Join(reposPath, "bettergi-scripts-list-git")
 	updated := false
-	var oldRepoJsonContent []byte
 
 	// 仓库不存在 -> 完整克隆
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
@@ -34,24 +41,13 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 			URL:          repoUrl,
 			SingleBranch: true,
 			Progress:     os.Stdout,
+			ProxyOptions: proxyOptions,
 		})
 		if err != nil {
 			return "", false, fmt.Errorf("克隆仓库失败: %w", err)
 		}
 		updated = true
 	} else {
-		// 仓库存在，备份旧 repo.json
-		oldRepoJsonPath := ""
-		filepath.WalkDir(reposPath, func(path string, d fs.DirEntry, err error) error {
-			if err == nil && d.Name() == "repo.json" {
-				oldRepoJsonPath = path
-				return fs.SkipAll
-			}
-			return nil
-		})
-		if oldRepoJsonPath != "" {
-			oldRepoJsonContent, _ = ioutil.ReadFile(oldRepoJsonPath)
-		}
 
 		// 打开仓库
 		r, err := git.PlainOpen(repoPath)
@@ -75,9 +71,10 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 
 		// 强制 fetch 更新远程引用
 		err = r.Fetch(&git.FetchOptions{
-			RemoteName: "origin",
-			Progress:   os.Stdout,
-			Force:      true,
+			RemoteName:   "origin",
+			Progress:     os.Stdout,
+			Force:        true,
+			ProxyOptions: proxyOptions,
 		})
 		if err != nil && err != git.NoErrAlreadyUpToDate {
 			return "", false, fmt.Errorf("fetch 失败: %w", err)
@@ -102,37 +99,6 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 
 		updated = true
 		log.Printf("同步到远程 main: %s", remoteRef.Hash().String())
-	}
-
-	// 如果有更新，处理 repo.json 差异
-	if updated {
-		newRepoJsonPath := ""
-		filepath.WalkDir(reposPath, func(path string, d fs.DirEntry, err error) error {
-			if err == nil && d.Name() == "repo.json" {
-				newRepoJsonPath = path
-				return fs.SkipAll
-			}
-			return nil
-		})
-
-		if newRepoJsonPath != "" {
-			newRepoJsonContent, _ := ioutil.ReadFile(newRepoJsonPath)
-
-			parentDir := filepath.Dir(repoPath)
-			repoUpdateJsonPath := filepath.Join(parentDir, "repo_update.json")
-			var updatedContent string
-
-			if _, err := os.Stat(repoUpdateJsonPath); err == nil {
-				repoUpdateContent, _ := ioutil.ReadFile(repoUpdateJsonPath)
-				updatedContent = addUpdateMarkersToNewRepo(string(repoUpdateContent), string(newRepoJsonContent))
-			} else {
-				updatedContent = addUpdateMarkersToNewRepo(string(oldRepoJsonContent), string(newRepoJsonContent))
-			}
-
-			updatedRepoJsonPath := filepath.Join(parentDir, "repo_updated.json")
-			_ = ioutil.WriteFile(updatedRepoJsonPath, []byte(updatedContent), 0644)
-			//autoLog.Sugar.Infof("repo.json更新内容:%s", updatedContent)
-		}
 	}
 
 	return repoPath, updated, nil

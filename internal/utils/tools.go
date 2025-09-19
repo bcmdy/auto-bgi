@@ -401,3 +401,68 @@ func UpdateCookieToken() error {
 		return nil
 	}
 }
+
+// 定义请求体结构体
+type RequestBody struct {
+	RoleID string `json:"role_id"`
+	Server string `json:"server"`
+}
+
+// 获取体力
+func Aaa() error {
+
+	// 使用自定义HTTP客户端
+	httpClient := httpClient.NewClient()
+
+	// 设置请求头
+	headers := map[string]string{
+		"DS":                GetDS(false), // 使用非web版本的DS
+		"x-rpc-app_version": MihoyobbsVersion,
+		"User-Agent":        "okhttp/4.9.3",
+		"x-rpc-client_type": MihoyobbsClientType,
+		"Referer":           "https://webstatic.mihoyo.com",
+		"Origin":            "https://webstatic.mihoyo.com",
+		"x-rpc-device_id":   mysConfig.GlobalConfig.Device.ID,
+		"Content-Type":      "application/json; charset=UTF-8",
+		"Accept-Encoding":   "gzip, deflate",
+		"Cookie":            "ltuid=165421629;ltoken=v2_mRePq1MDGOFtRe1OSHGw7vKUbcxJ7oLEMkJhRymXSaZK1U6hVmIwPQmIldnvLufTKEPQHQwQskdQMStCZsD31_jzv72E3C4OWtIC00PTGPGKTfEbxrBC3uQ=.CAE=;stuid=165421629;mid=0o3x3blmnx_mhy;stoken=v2_K6gSi0fbjEPm_x0WZT-5wuDRUpUWG-QhH_YJMRjxp3EY73PqquDSmVy6KkXq6flt1hUmh05iTRiMTt2zui5fE9bReXgLw1S5GZe87FtlWAhQbA59-kA0QRk=.CAE=;device_id=fe36cc7c-0c90-39d2-b24a-d9b9d1a431fa;device_fp=38d80f6c0d5de",
+	}
+
+	httpClient.SetHeaders(headers)
+
+	// 构建请求
+	url := "https://api-takumi.mihoyo.com/game_record/app/genshin/api/dailyNote?role_id=103740894&server=cn_gf01"
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		autoLog.Sugar.Errorf("米游社-获取体力失败: %v", err)
+		return fmt.Errorf("发送请求失败: %v", err)
+	}
+
+	// 解析响应
+	var response struct {
+		Retcode int    `json:"retcode"`
+		Message string `json:"message"`
+		Data    struct {
+			CookieToken string `json:"cookie_token"`
+		} `json:"data"`
+	}
+
+	if err := resp.JSON(&response); err != nil {
+
+		return fmt.Errorf("解析响应失败: %v", err)
+	}
+
+	fmt.Println(response)
+
+	// 打印响应内容用于调试
+
+	autoLog.Sugar.Infof("米游社-获取体力失败: %s", resp.String())
+
+	if response.Retcode != 0 {
+		autoLog.Sugar.Errorf("米游社-stoken 已失效，请重新抓取 cookie")
+		return fmt.Errorf("stoken 已失效: %s", response.Message)
+	}
+	fmt.Println("========aaaaasdads==============", resp.String())
+
+	return nil
+}

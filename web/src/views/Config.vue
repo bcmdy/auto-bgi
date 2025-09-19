@@ -690,6 +690,7 @@ const formData = reactive({
       Proxy: ''
     }
   },
+  RepoUrl:"",
   Account: {
     Uid: "",
     Name: "",
@@ -760,6 +761,7 @@ const loadConfig = async () => {
       formData.post = (data.post || '').replace(':', '')
       formData.basePath = data.basePath || ''
       formData.BgiLog = data.BgiLog || ''
+      formData.RepoUrl = data.RepoUrl || ''
       
       formData.ConfigNames = data.ConfigNames || new Array(7).fill('')
       
@@ -805,6 +807,7 @@ const loadConfig = async () => {
        if (data.Account) {
         Object.assign(formData.Account, data.Account)
       }
+  
     }
   } catch (error) {
     message.error('加载配置失败: ' + error.message)
@@ -832,7 +835,9 @@ const handleSubmit = async () => {
       BgiLog: formData.BgiLog,
       basePath: formData.basePath,
       Notice: formData.Notice,
-      Account: formData.Account
+      Account: formData.Account,
+      RepoUrl: formData.RepoUrl
+
     }
 
     console.log('提交的配置:', payload)

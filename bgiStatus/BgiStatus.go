@@ -1347,8 +1347,13 @@ func GitLog(n int) ([]GitLogStruct, error) {
 
 // git拉取代码
 func GitPull() {
-
-	_, _, err := ScriptRepo.UpdateCenterRepoByGit("https://gitcode.com/huiyadanli/bettergi-scripts-list.git")
+	// 从配置文件中获取仓库URL
+	repoUrl := config.Cfg.RepoUrl
+	if repoUrl == "" {
+		repoUrl = "https://gitcode.com/huiyadanli/bettergi-scripts-list.git"
+	}
+	//_, _, err := ScriptRepo.UpdateCenterRepoByGit("https://github.com/babalae/bettergi-scripts-list.git")
+	_, _, err := ScriptRepo.UpdateCenterRepoByGit(repoUrl)
 	if err != nil {
 		if strings.Contains(err.Error(), "worktree contains unstaged changes") {
 			autoLog.Sugar.Info("仓库没有更新")
@@ -2179,6 +2184,21 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 		result = append(result, *v)
 	}
 
+	var sumLog LogAnalysis2Struct
+	sumLog.GroupName = "合计"
+	//总耗时
+	sumSeg, _ := time.ParseDuration("0s")
+	var seg ExecutionSegment
+	// 🔹累加总耗时
+	for _, s := range result {
+		for _, seg := range s.Segments {
+			dur, _ := time.ParseDuration(seg.Consuming)
+			sumSeg += dur
+		}
+	}
+	seg.Consuming = sumSeg.String()
+	sumLog.Segments = append(sumLog.Segments, seg)
+	result = append(result, sumLog)
 	return result
 }
 
