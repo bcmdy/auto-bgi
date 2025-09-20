@@ -425,7 +425,7 @@ func Aaa() error {
 		"x-rpc-device_id":   mysConfig.GlobalConfig.Device.ID,
 		"Content-Type":      "application/json; charset=UTF-8",
 		"Accept-Encoding":   "gzip, deflate",
-		"Cookie":            "ltuid=165421629;ltoken=v2_mRePq1MDGOFtRe1OSHGw7vKUbcxJ7oLEMkJhRymXSaZK1U6hVmIwPQmIldnvLufTKEPQHQwQskdQMStCZsD31_jzv72E3C4OWtIC00PTGPGKTfEbxrBC3uQ=.CAE=;stuid=165421629;mid=0o3x3blmnx_mhy;stoken=v2_K6gSi0fbjEPm_x0WZT-5wuDRUpUWG-QhH_YJMRjxp3EY73PqquDSmVy6KkXq6flt1hUmh05iTRiMTt2zui5fE9bReXgLw1S5GZe87FtlWAhQbA59-kA0QRk=.CAE=;device_id=fe36cc7c-0c90-39d2-b24a-d9b9d1a431fa;device_fp=38d80f6c0d5de",
+		"Cookie":            "",
 	}
 
 	httpClient.SetHeaders(headers)

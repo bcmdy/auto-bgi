@@ -1358,7 +1358,7 @@ func GitPull() {
 		if strings.Contains(err.Error(), "worktree contains unstaged changes") {
 			autoLog.Sugar.Info("仓库没有更新")
 		} else {
-			autoLog.Sugar.Errorf("仓库更新失败:%s", err.Error())
+			autoLog.Sugar.Errorf("仓库更新失败,请去bgi重置仓库:%s", err.Error())
 		}
 	}
 
