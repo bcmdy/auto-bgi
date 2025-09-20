@@ -1,8 +1,6 @@
 package tools
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -217,22 +215,6 @@ func ListDirectories(dirPath string) ([]string, error) {
 	}
 
 	return directories, nil
-}
-
-// 获取机器码
-func GetMachineCode() (string, error) {
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		return "", err
-	}
-
-	for _, inter := range interfaces {
-		if inter.Flags&net.FlagUp != 0 && len(inter.HardwareAddr) != 0 {
-			hash := md5.Sum([]byte(inter.HardwareAddr.String()))
-			return hex.EncodeToString(hash[:]), nil
-		}
-	}
-	return "", fmt.Errorf("no valid network interface found")
 }
 
 // CompareVersion 版本比较

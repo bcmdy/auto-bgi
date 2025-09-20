@@ -49,6 +49,15 @@ type Notice struct {
 	Type     string   `json:"Type" comment:"通知类型"`
 	Wechat   string   `json:"Wechat" comment:"企业微信webhook地址"`
 	TGNotice TGNotice `json:"TGNotice" comment:"TG通知配置"`
+	OneBot   OneBot   `json:"OneBot" comment:"OneBot配置"`
+}
+
+// OneBot 封装配置
+type OneBot struct {
+	APIBase  string // OneBot API 地址，例如 http://127.0.0.1:5700
+	Token    string // 可选 Token，用于鉴权
+	QQNum    int    `json:"QQNum"`    // QQ 号
+	GroupNum int    `json:"groupNum"` // 群号
 }
 
 type TGNotice struct {

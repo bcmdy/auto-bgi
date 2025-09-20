@@ -21,38 +21,57 @@ func init() {
 
 }
 
+var oneBot OneBotClient
+
 func SentText(text string) {
-	if config.Cfg.Notice.Type == "TG" {
+
+	switch config.Cfg.Notice.Type {
+	case "TG":
 		err := sendTGNotification(text)
 		if err != nil {
 			autoLog.Sugar.Error("通知-TG文本发送失败:", err)
 		}
 		return
-	} else if config.Cfg.Notice.Type == "Wechat" {
+	case "Wechat":
 		sendWeChatNotification(text)
 		return
+	case "oneBot":
+		err := oneBot.SendPrivateText(text)
+		if err != nil {
+			autoLog.Sugar.Error("通知-OneBot文本发送失败:", err)
+		}
+	default:
+		autoLog.Sugar.Errorf("通知-文本未知通知类型:%s", config.Cfg.Notice.Type)
+		return
 	}
-
-	autoLog.Sugar.Error("通知-文本未知通知类型:%s", config.Cfg.Notice.Type)
 }
 
 func SentImage(path string) error {
-	if config.Cfg.Notice.Type == "TG" {
-		err := sendTGImage(path)
+
+	var err error
+	switch config.Cfg.Notice.Type {
+	case "TG":
+		err = sendTGImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-TG图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-TG图片发送失败:%v", err)
-	} else if config.Cfg.Notice.Type == "Wechat" {
-		err := sendWeChatImage(path)
+	case "Wechat":
+		err = sendWeChatImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-微信图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-微信图片发送失败:%v", err)
+	case "oneBot":
+		err = oneBot.SendPrivateWithImage(path)
+		if err != nil {
+			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
+		}
+		return fmt.Errorf("通知-OneBot图片发送失败:%v", err)
+	default:
+		autoLog.Sugar.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
+		return fmt.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
 	}
-	autoLog.Sugar.Error("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
-
-	return fmt.Errorf("通知-图片未知通知类型")
 }
 
 // 电脑截图
@@ -62,20 +81,28 @@ func SendScreenshot() error {
 	if err != nil {
 		return fmt.Errorf("通知-图片发送失败:%v", err)
 	}
-	if config.Cfg.Notice.Type == "TG" {
-		err := sendTGImage("jt.png")
+	switch config.Cfg.Notice.Type {
+	case "TG":
+		err = sendTGImage("jt.png")
 		if err != nil {
 			autoLog.Sugar.Error("通知-TG图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-TG图片发送失败:%v", err)
-	} else if config.Cfg.Notice.Type == "Wechat" {
-		err := sendWeChatImage("jt.png")
+	case "Wechat":
+		err = sendWeChatImage("jt.png")
 		if err != nil {
 			autoLog.Sugar.Error("通知-微信图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-微信图片发送失败:%v", err)
+	case "oneBot":
+		err = oneBot.SendPrivateWithImage("jt.png")
+		if err != nil {
+			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
+		}
+		return fmt.Errorf("通知-OneBot图片发送失败:%v", err)
+	default:
+		autoLog.Sugar.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
+		return fmt.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
 	}
-	autoLog.Sugar.Error("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
 
-	return fmt.Errorf("通知-图片未知通知类型")
 }

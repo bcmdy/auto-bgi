@@ -470,6 +470,7 @@
                  >
                    <a-select-option value="TG">TG</a-select-option>
                    <a-select-option value="Wechat">Wechat</a-select-option>
+                    <a-select-option value="oneBot">OneBot</a-select-option>
                  </a-select>
                </div>
              </a-form-item>
@@ -518,9 +519,48 @@
                   />
                 </div>
               </a-form-item>
-
-       
             </div>
+
+            <!-- 机器人 -->
+                    <div v-show="formData.Notice.Type === 'oneBot'" class="tg-settings">
+              <a-form-item label="OneBot API 地址，例如:http://127.0.0.1:5700 " name="APIBase" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">🤖</span>
+                  <a-input-password
+                    v-model:value="formData.Notice.OneBot.APIBase" 
+                    placeholder="http://127.0.0.1:5700"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+
+              <a-form-item label="Token" name="Token" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">💬</span>
+                  <a-input-password 
+                    v-model:value="formData.Notice.OneBot.Token" 
+                    placeholder="可选 Token，用于鉴权"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+
+              <a-form-item label="你的QQ号" name="QQNum" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">💬</span>
+                  <a-input-number
+                    type=number
+                    v-model:value="formData.Notice.OneBot.QQNum" 
+                    placeholder="你的QQ号"
+                    class="enhanced-input"
+                    style="width: 100%;flex-direction: column;display: flex;"
+                  />
+                </div>
+              </a-form-item>
+
+            </div>
+
+            
           </div>
         </a-card>
 
@@ -688,6 +728,12 @@ const formData = reactive({
       TGToken: '',
       ChatID: 0,
       Proxy: ''
+    },
+     OneBot: {
+      APIBase: "",
+      Token: "",
+      QQNum: 0,
+      groupNum: 0
     }
   },
   RepoUrl:"",
