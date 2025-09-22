@@ -1,6 +1,7 @@
 package gamecheckin
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"encoding/json"
 	"fmt"
@@ -315,6 +316,7 @@ func (g *GameCheckin) checkinAccount(account AccountInfo) error {
 		}
 
 		autoLog.Sugar.Infof("米游社-账号 %s 签到成功", account.GameUID)
+		Notice.SentText(fmt.Sprintf("米游社-账号 %s 签到成功", account.GameUID))
 		break
 	}
 
