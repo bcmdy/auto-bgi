@@ -1,6 +1,7 @@
 package ScriptGroup
 
 import (
+	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"fmt"
@@ -12,8 +13,20 @@ type dd struct {
 	Name string
 }
 
+var dogFood = ArtifactsBulkSupply.DogFood{}
+
 // 启动狗粮联机
 func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
+
+	//查询今天狗粮批发是什么线路
+	dogFoodLine := dogFood.DogFoodIsAOrB()
+	if dogFoodLine == "" {
+		autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
+		runDebug = true
+	} else if dogFoodLine == "B" {
+		runDebug = true
+	}
+
 	// 解析 JSON 字符串
 	var aa []dd
 	yourIndex := 0
@@ -38,13 +51,17 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 			object["yourIndex"] = yourIndex
 			object["groupMode"] = "按照下列配置自动进入并运行"
 			object["runDebug"] = runDebug
+
+			runningOrder := ""
 			for i, d := range aa {
 				object[fmt.Sprintf("p%dUID", i+1)] = d.UID
 				object[fmt.Sprintf("p%dName", i+1)] = d.Name
+				runningOrder += fmt.Sprintf("%d", i+1)
 			}
+			object["runningOrder"] = runningOrder
 			//object["p1UID"] = aa[0].UID
 			//object["p1Name"] = aa[0].Name
-			//object["p2UID"] = aa[1].UID
+			//object["p2UID"] = aa[1].UID0
 			//object["p2Name"] = aa[1].Name
 			//object["p3UID"] = aa[2].UID
 			//object["p3Name"] = aa[2].Name
