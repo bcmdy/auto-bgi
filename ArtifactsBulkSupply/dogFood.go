@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// DogFood 狗粮批发js相关代码
 type DogFood struct {
 }
 

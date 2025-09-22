@@ -899,7 +899,6 @@ func main() {
 			// 发送通知
 			Notice.SentText(GITLOG)
 		}
-
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
@@ -941,14 +940,6 @@ func main() {
 	} else {
 		autoLog.Sugar.Infof("一条龙关闭状态")
 	}
-
-	//获取机器码
-	//machineCode, err := tools.GetMachineCode()
-	//if err != nil {
-	//	autoLog.Sugar.Error("获取机器码失败:", err)
-	//} else {
-	//	autoLog.Sugar.Infof("机器码: %s", machineCode)
-	//}
 
 	//初始化bgi日志信息
 	bgiStatus.InitBgiLogStatus()
