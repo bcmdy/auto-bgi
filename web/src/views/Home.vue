@@ -56,18 +56,34 @@
 
   </div>
 
-
-    <a-modal
-    v-model:open="visible"
+  <!-- 一条龙选择模态框 -->
+  <a-modal
+    v-model:open="oneLongModal.visible"
     title="选择启动的一条龙"
-    @ok="handleOk"
+    :confirm-loading="oneLongModal.loading"
+    @ok="handleOneLongOk"
+    @cancel="handleOneLongCancel"
+    ok-text="启动"
+    cancel-text="取消"
   >
-    <a-select v-model:value="selected" style="width: 200px" placeholder="请选择一条龙">
-      <a-select-option value="A">一条龙 A</a-select-option>
-      <a-select-option value="B">一条龙 B</a-select-option>
-      <a-select-option value="C">一条龙 C</a-select-option>
-    </a-select>
+    <div style="padding: 20px 0;">
+      <a-select
+        v-model:value="oneLongModal.selectedValue"
+        placeholder="请选择一条龙"
+        style="width: 100%"
+        :loading="oneLongModal.loading"
+      >
+        <a-select-option
+          v-for="item in oneLongModal.options"
+          :key="item"
+          :value="item"
+        >
+          {{ item }}
+        </a-select-option>
+      </a-select>
+    </div>
   </a-modal>
+
 </template>
 
 <script setup>
@@ -285,36 +301,62 @@ const startHeaderCarousel = () => {
   }
 }
 
-// 按钮事件处理
-const handleOneLong = () => {
-  const selected = ref('A')
+// 一条龙选择相关的响应式数据
+const oneLongModal = reactive({
+  visible: false,
+  loading: false,
+  options: [],
+  selectedValue: ''
+})
 
-  Modal.confirm({
-    title: '选择启动的一条龙',
-    content: h(Radio.Group,
-      {
-        value: selected.value,
-        onChange: () => { selected.value = e.target.value },
-      },
-      () => [
-        h(Radio, { value: 'A' }, () => '一条龙 A'),
-        h(Radio, { value: 'B' }, () => '一条龙 B'),
-        h(Radio, { value: 'C' }, () => '一条龙 C'),
-      ]
-    ),
-    onOk: async () => {
-      if (!selected.value) {
-        message.warning('请选择一条龙')
-        return Promise.reject()
-      }
-      try {
-        await apiMethods.startOneLong({ group: selected.value })
-        message.success(`已启动【${selected.value}】！`)
-      } catch (e) {
-        message.error('启动失败！')
+// 按钮事件处理
+const handleOneLong = async () => {
+  try {
+    oneLongModal.loading = true
+    // 先获取一条龙列表
+    const response = await apiMethods.getOneLongAllName()
+    const oneLongList = response.data || []
+    
+    if (oneLongList.length === 0) {
+      message.warning('没有可用的一条龙配置')
+      return
     }
-    },
-  })
+
+    oneLongModal.options = oneLongList
+    oneLongModal.selectedValue = ''
+    oneLongModal.visible = true
+  } catch (error) {
+    console.error('获取一条龙列表失败:', error)
+    message.error('获取一条龙列表失败！')
+  } finally {
+    oneLongModal.loading = false
+  }
+}
+
+// 处理一条龙启动确认
+const handleOneLongOk = async () => {
+  if (!oneLongModal.selectedValue) {
+    message.warning('请选择一条龙')
+    return
+  }
+  
+  try {
+    oneLongModal.loading = true
+    await apiMethods.startOneLong(oneLongModal.selectedValue)
+    message.success(`已启动【${oneLongModal.selectedValue}】！`)
+    oneLongModal.visible = false
+    oneLongModal.selectedValue = ''
+  } catch (e) {
+    message.error('启动失败！')
+  } finally {
+    oneLongModal.loading = false
+  }
+}
+
+// 取消一条龙选择
+const handleOneLongCancel = () => {
+  oneLongModal.visible = false
+  oneLongModal.selectedValue = ''
 }
 
 
