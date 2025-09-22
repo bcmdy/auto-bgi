@@ -55,13 +55,26 @@
     </div>
 
   </div>
+
+
+    <a-modal
+    v-model:open="visible"
+    title="选择启动的一条龙"
+    @ok="handleOk"
+  >
+    <a-select v-model:value="selected" style="width: 200px" placeholder="请选择一条龙">
+      <a-select-option value="A">一条龙 A</a-select-option>
+      <a-select-option value="B">一条龙 B</a-select-option>
+      <a-select-option value="C">一条龙 C</a-select-option>
+    </a-select>
+  </a-modal>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue'
-import { message, Modal } from 'ant-design-vue'
+import { ref, reactive, onMounted, onUnmounted, computed, watch,h } from 'vue'
+import { message, Modal ,Select} from 'ant-design-vue'
 import { useRouter } from 'vue-router'
-import api, { apiMethods } from '@/utils/api'
+import  { apiMethods } from '@/utils/api'
 
 const router = useRouter()
 
@@ -274,21 +287,38 @@ const startHeaderCarousel = () => {
 
 // 按钮事件处理
 const handleOneLong = () => {
+  const selected = ref('A')
+
   Modal.confirm({
-    title: '确认启动？',
-    content: '是否要执行【一条龙启动】操作？',
-    okText: '确定',
-    cancelText: '取消',
+    title: '选择启动的一条龙',
+    content: h(Radio.Group,
+      {
+        value: selected.value,
+        onChange: () => { selected.value = e.target.value },
+      },
+      () => [
+        h(Radio, { value: 'A' }, () => '一条龙 A'),
+        h(Radio, { value: 'B' }, () => '一条龙 B'),
+        h(Radio, { value: 'C' }, () => '一条龙 C'),
+      ]
+    ),
     onOk: async () => {
-      try {
-        await apiMethods.startOneLong()
-        message.success('启动成功！')
-      } catch (error) {
-        message.error('启动失败！')
+      if (!selected.value) {
+        message.warning('请选择一条龙')
+        return Promise.reject()
       }
+      try {
+        await apiMethods.startOneLong({ group: selected.value })
+        message.success(`已启动【${selected.value}】！`)
+      } catch (e) {
+        message.error('启动失败！')
     }
+    },
   })
 }
+
+
+
 
 const handleCloseBgi = () => {
   Modal.confirm({

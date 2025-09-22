@@ -1,0 +1,52 @@
+package OneLong
+
+import (
+	"auto-bgi/autoLog"
+	"auto-bgi/config"
+	"auto-bgi/control"
+	"auto-bgi/task"
+	"os"
+	"strings"
+)
+
+type OneLong struct {
+}
+
+// StartOneLong 启动指定一条龙
+func (o *OneLong) StartOneLong(longName string) {
+
+	// 3. 关闭软件（同步，后续任务依赖此步骤）
+	control.CloseSoftware()
+
+	autoLog.Sugar.Infof("启动一条龙: %s", longName)
+
+	// 5. 修改配置
+	if err := o.changeTaskEnabledList(longName); err != nil {
+		autoLog.Sugar.Errorf("修改配置失败: %v", err)
+		return
+	}
+	autoLog.Sugar.Info("修改配置成功")
+
+	task.StartOneDragon(longName)
+
+	autoLog.Sugar.Info("一条龙启动完毕")
+
+}
+
+// OneLongAllName 读取所有一条龙配置
+func (o *OneLong) OneLongAllName() []string {
+	entries, err := os.ReadDir(config.Cfg.BetterGIAddress + "\\User\\OneDragon")
+	if err != nil {
+		return []string{}
+	}
+	var oneLongInfo []string
+	for _, entry := range entries {
+
+		//去除后缀：.json
+		name := strings.ReplaceAll(entry.Name(), ".json", "")
+
+		oneLongInfo = append(oneLongInfo, name)
+
+	}
+	return oneLongInfo
+}

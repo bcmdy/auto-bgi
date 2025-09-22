@@ -279,12 +279,6 @@ func ChangeTaskEnabledList() error {
 func OneLongTask() {
 	autoLog.Sugar.Info("开始执行一条龙任务")
 
-	//// 1. 并行执行日志监控
-	//go func() {
-	//	autoLog.Sugar.Info("启动日志监控")
-	//	bgiStatus.LogM()
-	//}()
-
 	// 2. 并行执行用户目录备份
 	go func() {
 		autoLog.Sugar.Info("开始备份 User 目录")

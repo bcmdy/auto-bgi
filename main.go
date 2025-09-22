@@ -2,6 +2,7 @@ package main
 
 import (
 	"auto-bgi/Notice"
+	"auto-bgi/OneLong"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/abgiSSE"
@@ -301,7 +302,7 @@ func main() {
 	})
 
 	//一条龙
-	ginServer.POST("/api/oneLong", func(context *gin.Context) {
+	ginServer.POST("/api/OneLong", func(context *gin.Context) {
 
 		task.OneLongTask()
 
@@ -636,6 +637,29 @@ func main() {
 		oneLongInfo := config.OneLongAllName()
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
 	})
+
+	var OneLongService OneLong.OneLong
+	oneLongController := ginServer.Group("/api/oneLong")
+	{
+		//启动一条龙
+		oneLongController.POST("/startOneLong", func(c *gin.Context) {
+			name := c.Query("name")
+			if name == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
+				return
+			}
+
+			OneLongService.StartOneLong(name)
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
+		})
+
+		//读取所有一条龙配置
+		oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
+			oneLongInfo := OneLongService.OneLongAllName()
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
+		})
+	}
 
 	//查询所有天赋书
 	ginServer.GET("/api/talentBooks", func(context *gin.Context) {
@@ -1023,7 +1047,7 @@ func main() {
 	})
 
 	if len(os.Args) > 1 {
-		if os.Args[1] == "oneLong" {
+		if os.Args[1] == "OneLong" {
 			task.OneLongTask()
 			autoLog.Sugar.Infof("一条龙启动")
 		} else if os.Args[1] == "updateJs" {
