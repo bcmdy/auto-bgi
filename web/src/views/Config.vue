@@ -597,7 +597,16 @@
               </div>
             </a-form-item>
 
-            <a-form-item label="狗粮联机配置组" name="狗粮联机配置组" class="form-item-enhanced">
+            <a-form-item class="checkbox-item" style="margin: 20px;margin-top: 20px;padding: 10px;border: 3px solid #ff5599;border-radius: 10px;">
+              <a-checkbox v-model:checked="formData.Account.IsMultiUser" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon"></span>
+                  批发是否是多账号
+                </span>
+              </a-checkbox>
+            </a-form-item>
+
+            <a-form-item label="狗粮联机配置组" name="狗粮联机配置组" class="form-item-enhanced" >
               <div class="input-wrapper">
                 <span class="input-icon">🐶</span>
                 <a-input
@@ -740,6 +749,7 @@ const formData = reactive({
   Account: {
     Uid: "",
     Name: "",
+    IsMultiUser: false,
     GouLangGroupName: "",
     OnlineKeyword: "",
     SecretKey: "",

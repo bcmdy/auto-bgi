@@ -323,7 +323,7 @@ const handleOneLong = async () => {
     }
 
     oneLongModal.options = oneLongList
-    oneLongModal.selectedValue = ''
+    oneLongModal.selectedValue = oneLongList[0]
     oneLongModal.visible = true
   } catch (error) {
     console.error('获取一条龙列表失败:', error)

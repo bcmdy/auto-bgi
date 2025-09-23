@@ -63,7 +63,7 @@ export const apiMethods = {
   // 配置相关
   getConfig: () => api.get('/api/config'),
   updateConfig: (data) => api.post('/api/saveConfig', data),
-  getOneLongAllName: () => api.get('/api/oneLongAllName'),
+  getOneLongAllName: () => api.get('/api/oneLong/oneLongAllName'),
   
   // 日志相关
   getLog: () => api.get('/api/gitLog'),

@@ -6,7 +6,6 @@ import (
 	"github.com/iancoleman/orderedmap"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type OneLongConfigStruct struct {
@@ -63,24 +62,6 @@ func OneLongConfig(name string) OneLongConfigStruct {
 	}
 
 	return oneLongConfigStruct
-}
-
-// 读取所有一条龙配置
-func OneLongAllName() []string {
-	entries, err := os.ReadDir(Cfg.BetterGIAddress + "\\User\\OneDragon")
-	if err != nil {
-		return []string{}
-	}
-	var oneLongInfo []string
-	for _, entry := range entries {
-
-		//去除后缀：.json
-		name := strings.ReplaceAll(entry.Name(), ".json", "")
-
-		oneLongInfo = append(oneLongInfo, name)
-
-	}
-	return oneLongInfo
 }
 
 // 保存一条龙配置（保持 TaskEnabledList 顺序）
