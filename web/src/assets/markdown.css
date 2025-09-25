@@ -212,6 +212,7 @@ table {
     padding: 0;
     word-break: initial;
 }
+    
 table tr {
     border: 1px solid #dfe2e5;
     margin: 0;
@@ -223,13 +224,13 @@ thead {
 }
 table th {
     font-weight: bold;
-    border: 1px solid #dfe2e5;
+    border: 3px solid #ff69b4;
     border-bottom: 0;
     margin: 0;
     padding: 6px 13px;
 }
 table td {
-    border: 1px solid #dfe2e5;
+    border: 3px solid #ff69b4;
     margin: 0;
     padding: 6px 13px;
 }
