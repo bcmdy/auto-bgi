@@ -174,6 +174,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useRouter } from 'vue-router'
 import { apiMethods } from '../utils/api'
+import '../assets/markdown.css'
 
 export default {
   name: 'JsNames',
@@ -191,12 +192,6 @@ export default {
     const jsDetailContent = ref('')
     const jsDetailHtml = ref('')
     const isLoadingDetail = reactive({})
-
-    // 配置 GitHub Flavored Markdown 渲染
-    marked.setOptions({
-      gfm: true,
-      breaks: true
-    })
 
     const renderMarkdownToHtml = (markdownText) => {
       try {
