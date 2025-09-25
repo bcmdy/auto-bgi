@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type ScriptGroupConfig struct {
@@ -215,4 +216,16 @@ func (s *ScriptGroupConfig) SaveConfig(name string, readConfig ScriptGroupConfig
 		return err
 	}
 	return nil
+}
+
+// 判断配置组今天是否执行
+func (s *ScriptGroupConfig) IsExecute(scriptGroupName string) string {
+
+	readConfig := s.ReadConfig(scriptGroupName)
+	taskCycleConfig := readConfig.Config.PathingConfig.TaskCycleConfig
+	if !taskCycleConfig.Enable {
+		return "✅ 今天要执行"
+	} else {
+		return IsTodayExecute(time.Now(), taskCycleConfig.BoundaryTime, taskCycleConfig.Cycle, 1, taskCycleConfig.Index)
+	}
 }

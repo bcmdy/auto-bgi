@@ -2,9 +2,12 @@ package ScriptGroup
 
 import (
 	"auto-bgi/ArtifactsBulkSupply"
+	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"fmt"
+	"github.com/tidwall/sjson"
+	"os"
 )
 
 type dd struct {
@@ -14,6 +17,77 @@ type dd struct {
 }
 
 var dogFood = ArtifactsBulkSupply.DogFood{}
+
+//// 启动狗粮联机
+//func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
+//
+//	//查询今天狗粮批发是什么线路
+//	dogFoodLine := dogFood.DogFoodIsAOrB()
+//	if dogFoodLine == "" {
+//		autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
+//		runDebug = true
+//	} else if dogFoodLine == "B" {
+//		runDebug = true
+//	}
+//
+//	// 解析 JSON 字符串
+//	var aa []dd
+//	yourIndex := 0
+//
+//	for _, item := range data {
+//		var d dd
+//		d.ID = item["ID"].(int64)
+//		d.UID = item["UID"].(string)
+//		d.Name = item["Name"].(string)
+//		if item["UID"] == config.Cfg.Account.Uid {
+//			yourIndex = int(d.ID)
+//		}
+//		aa = append(aa, d)
+//	}
+//
+//	//修改狗粮配置
+//	readConfig := s.ReadConfig(config.Cfg.Account.GouLangGroupName)
+//	projects := readConfig.Projects
+//	for _, project := range projects {
+//		if project.Type == "Javascript" && project.FolderName == "ArtifactsGroupPurchasing" {
+//			object := project.JsScriptSettingsObject
+//			object["yourIndex"] = yourIndex
+//			object["groupMode"] = "按照下列配置自动进入并运行"
+//			object["runDebug"] = runDebug
+//
+//			runningOrder := ""
+//			for i, d := range aa {
+//				object[fmt.Sprintf("p%dUID", i+1)] = d.UID
+//				object[fmt.Sprintf("p%dName", i+1)] = d.Name
+//				runningOrder += fmt.Sprintf("%d", i+1)
+//			}
+//			object["runningOrder"] = runningOrder
+//			//object["p1UID"] = aa[0].UID
+//			//object["p1Name"] = aa[0].Name
+//			//object["p2UID"] = aa[1].UID0
+//			//object["p2Name"] = aa[1].Name
+//			//object["p3UID"] = aa[2].UID
+//			//object["p3Name"] = aa[2].Name
+//			//object["p4UID"] = aa[3].UID
+//			//object["p4Name"] = aa[3].Name
+//			project.JsScriptSettingsObject = object
+//		}
+//	}
+//
+//	//保存配置
+//	err := s.SaveConfig(config.Cfg.Account.GouLangGroupName, readConfig)
+//	if err != nil {
+//		autoLog.Sugar.Errorf("保存配置失败: %v", err)
+//		return
+//	}
+//
+//	//启动配置组
+//	err = startGroups([]string{config.Cfg.Account.GouLangGroupName})
+//	if err != nil {
+//		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
+//		return
+//	}
+//}
 
 // 启动狗粮联机
 func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
@@ -42,45 +116,83 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 		aa = append(aa, d)
 	}
 
-	//修改狗粮配置
-	readConfig := s.ReadConfig(config.Cfg.Account.GouLangGroupName)
-	projects := readConfig.Projects
-	for _, project := range projects {
-		if project.Type == "Javascript" && project.FolderName == "ArtifactsGroupPurchasing" {
-			object := project.JsScriptSettingsObject
-			object["yourIndex"] = yourIndex
-			object["groupMode"] = "按照下列配置自动进入并运行"
-			object["runDebug"] = runDebug
+	filename := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup\\" + config.Cfg.Account.GouLangGroupName + ".json"
+	// 读取 狗粮联机JSON
+	GouLangGroupData, err := os.ReadFile(filename)
+	if err != nil {
+		autoLog.Sugar.Errorf("读取 狗粮联机配置组[%s]失败:%d", config.Cfg.Account.GouLangGroupName, err)
+	}
 
-			runningOrder := ""
-			for i, d := range aa {
-				object[fmt.Sprintf("p%dUID", i+1)] = d.UID
-				object[fmt.Sprintf("p%dName", i+1)] = d.Name
-				runningOrder += fmt.Sprintf("%d", i+1)
+	tmp := s.ReadConfig(config.Cfg.Account.GouLangGroupName)
+
+	newData := GouLangGroupData
+	for i, proj := range tmp.Projects {
+		if proj.FolderName == "ArtifactsGroupPurchasing" {
+			// ✅ 修改指定项目下的 jsScriptSettingsObject
+			path := fmt.Sprintf("projects.%d.jsScriptSettingsObject", i)
+
+			//修改runningOrder
+			newRunningOrder := fmt.Sprintf("%s.runningOrder", path)
+			newData, err = sjson.SetBytes(newData, newRunningOrder, "1234")
+			if err != nil {
+
+				autoLog.Sugar.Errorf("修改runningOrder失败:%d", err)
 			}
-			object["runningOrder"] = runningOrder
-			//object["p1UID"] = aa[0].UID
-			//object["p1Name"] = aa[0].Name
-			//object["p2UID"] = aa[1].UID0
-			//object["p2Name"] = aa[1].Name
-			//object["p3UID"] = aa[2].UID
-			//object["p3Name"] = aa[2].Name
-			//object["p4UID"] = aa[3].UID
-			//object["p4Name"] = aa[3].Name
-			project.JsScriptSettingsObject = object
+
+			//修改groupMode
+			newGroupMode := fmt.Sprintf("%s.groupMode", path)
+			newData, err = sjson.SetBytes(newData, newGroupMode, "按照下列配置自动进入并运行")
+			if err != nil {
+
+				autoLog.Sugar.Errorf("修改groupMode失败:%d", err)
+
+			}
+
+			//修改yourIndex
+			newYourIndex := fmt.Sprintf("%s.yourIndex", path)
+			newData, err = sjson.SetBytes(newData, newYourIndex, yourIndex)
+			if err != nil {
+				autoLog.Sugar.Errorf("修改yourIndex失败:%d", err)
+			}
+			Notice.SentText(fmt.Sprintf("是否是调机模式：%v", runDebug))
+
+			//修改allowJsNotification
+			newAllowJsNotification := fmt.Sprintf("%s.allowJsNotification", path)
+			newData, err = sjson.SetBytes(newData, newAllowJsNotification, runDebug)
+			if err != nil {
+
+				autoLog.Sugar.Errorf("修改allowJsNotification失败:%d", err)
+			}
+
+			for i2, a := range aa {
+				//修改uid
+				newUid := fmt.Sprintf("%s.p%dUID", path, i2+1)
+				newData, err = sjson.SetBytes(newData, newUid, a.UID)
+				if err != nil {
+
+					autoLog.Sugar.Errorf("修改修改uid失败:%d", err)
+				}
+				//修改name
+				newName := fmt.Sprintf("%s.p%dName", path, i2+1)
+				newData, err = sjson.SetBytes(newData, newName, a.Name)
+				if err != nil {
+
+					autoLog.Sugar.Errorf("修改name失败:%d", err)
+				}
+			}
+
 		}
 	}
 
-	//保存配置
-	err := s.SaveConfig(config.Cfg.Account.GouLangGroupName, readConfig)
-	if err != nil {
-		autoLog.Sugar.Errorf("保存配置失败: %v", err)
-		return
+	// 写回文件
+	if err := os.WriteFile(filename, newData, 0644); err != nil {
+
+		autoLog.Sugar.Errorf("写入 狗粮联机配置组[%s]失败:%d", config.Cfg.Account.GouLangGroupName, err)
 	}
 
 	//启动配置组
-	err = startGroups([]string{config.Cfg.Account.GouLangGroupName})
-	if err != nil {
+	err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
+	if err2 != nil {
 		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
 		return
 	}

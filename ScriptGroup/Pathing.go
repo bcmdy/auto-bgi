@@ -213,12 +213,19 @@ func (s *ScriptGroupConfig) ListPathingUpdatePaths() error {
 	return nil
 }
 
+// UpdatePaths 更新脚本组配置的路径信息
+// 该函数处理HTTP请求，更新路径配置并返回相应的结果
+// @param context *gin.Context - Gin框架的上下文对象，用于处理HTTP请求和响应
 func (s *ScriptGroupConfig) UpdatePaths(context *gin.Context) {
+	// 调用ListPathingUpdatePaths方法更新路径配置
+	// 如果更新过程中出现错误，则返回错误信息
 	err := s.ListPathingUpdatePaths()
 	if err != nil {
+		// 返回500状态码和错误信息
 		context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": err.Error()})
 		return
 	}
 
+	// 返回200状态码和成功信息
 	context.JSON(http.StatusOK, gin.H{"status": "success", "data": "ok"})
 }

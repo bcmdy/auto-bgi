@@ -20,6 +20,7 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/iancoleman/orderedmap"
 	"io"
 	"io/fs"
 	"log"
@@ -246,7 +247,7 @@ func main() {
 		info := bgiStatus.BgiLogStatusInfo
 
 		data := make(map[string]interface{})
-		data["group"] = info.Group
+		data["group"] = info.Group + " [" + info.GroupProgress + "]"
 		data["ExpectedToEnd"] = info.Timestamp
 		data["line"] = info.MapTrackingLine
 		data["scriptName"] = info.ScriptName
@@ -299,14 +300,6 @@ func main() {
 		}
 
 		c.String(http.StatusOK, "删除成功")
-	})
-
-	//一条龙
-	ginServer.POST("/api/OneLong", func(context *gin.Context) {
-
-		task.OneLongTask()
-
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "一条龙启动成功"})
 	})
 
 	ginServer.POST("/api/closeBgi", func(context *gin.Context) {
@@ -632,12 +625,6 @@ func main() {
 
 	})
 
-	//读取所有一条龙配置
-	ginServer.GET("/api/oneLongAllName", func(context *gin.Context) {
-		oneLongInfo := config.OneLongAllName()
-		context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
-	})
-
 	var OneLongService OneLong.OneLong
 	oneLongController := ginServer.Group("/api/oneLong")
 	{
@@ -654,10 +641,51 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
 		})
 
+		// 获取一条龙配置
+		oneLongController.GET("/config", func(c *gin.Context) {
+			name := c.Query("name")
+			if name == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
+				return
+			}
+
+			cfg := config.OneLongConfig(name)
+			c.JSON(http.StatusOK, cfg)
+		})
+
 		//读取所有一条龙配置
 		oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
 			oneLongInfo := OneLongService.OneLongAllName()
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
+		})
+
+		//保存一条龙配置
+		oneLongController.POST("/saveConfig", func(c *gin.Context) {
+			var newConfig orderedmap.OrderedMap
+			var OneLongConfigStruct config.OneLongConfigStruct
+
+			if err := c.ShouldBindJSON(&newConfig); err != nil {
+
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+			//获取一条龙名字
+			longName, _ := newConfig.Get("Name")
+
+			isChaBaoBgi := OneLongService.IsChaBaoBgi(longName.(string))
+			if isChaBaoBgi == "公版" {
+				// 保存配置
+				err := config.SaveOneLongConfig(OneLongConfigStruct)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"message": "保存失败", "error": err.Error()})
+					return
+				}
+			} else if isChaBaoBgi == "茶包s老师版本" {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "茶包s老师版本无法保存", "error": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
 		})
 	}
 
@@ -704,37 +732,6 @@ func main() {
 			"status": "success",
 			"data":   results,
 		})
-	})
-
-	// 获取一条龙配置
-	ginServer.GET("/api/onelong/config", func(c *gin.Context) {
-		name := c.Query("name")
-		if name == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
-			return
-		}
-
-		cfg := config.OneLongConfig(name)
-		c.JSON(http.StatusOK, cfg)
-	})
-
-	//保存一条龙配置
-	ginServer.POST("/api/onelong/saveConfig", func(c *gin.Context) {
-		var newConfig config.OneLongConfigStruct
-
-		if err := c.ShouldBindJSON(&newConfig); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-			return
-		}
-
-		// 保存配置
-		err := config.SaveOneLongConfig(newConfig)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "保存失败", "error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
 	})
 
 	//武器材料
@@ -931,7 +928,7 @@ func main() {
 
 	//开启每隔一小时发送截图
 	if config.Cfg.Control.SendWeChatImage {
-		autoLog.Sugar.Infof(",")
+		autoLog.Sugar.Infof("开启每隔一小时发送截图")
 		go task.SendWeChatImageTask()
 	} else {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
@@ -958,7 +955,7 @@ func main() {
 
 	//一条龙
 	if config.Cfg.OneLong.IsStartTimeLong {
-		go task.OneLong()
+		go OneLongService.StartOneLongTask()
 		autoLog.Sugar.Infof("一条龙开启状态")
 
 	} else {
@@ -1048,7 +1045,8 @@ func main() {
 
 	if len(os.Args) > 1 {
 		if os.Args[1] == "OneLong" {
-			task.OneLongTask()
+
+			OneLongService.OneLongTask()
 			autoLog.Sugar.Infof("一条龙启动")
 		} else if os.Args[1] == "updateJs" {
 			if err := bgiStatus.BatchUpdateScript(); err != "" {

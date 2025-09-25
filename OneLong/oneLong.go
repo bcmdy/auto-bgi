@@ -5,12 +5,19 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/task"
+	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"unicode"
 )
 
 type OneLong struct {
 }
+
+var oneDragon OneDragon
+var chaBaoBgiConfig ChaBaoBgiConfig
 
 // StartOneLong 启动指定一条龙
 func (o *OneLong) StartOneLong(longName string) {
@@ -19,13 +26,6 @@ func (o *OneLong) StartOneLong(longName string) {
 	control.CloseSoftware()
 
 	autoLog.Sugar.Infof("启动一条龙: %s", longName)
-
-	// 5. 修改配置
-	if err := o.changeTaskEnabledList(longName); err != nil {
-		autoLog.Sugar.Errorf("修改配置失败: %v", err)
-		return
-	}
-	autoLog.Sugar.Info("修改配置成功")
 
 	task.StartOneDragon(longName)
 
@@ -49,4 +49,53 @@ func (o *OneLong) OneLongAllName() []string {
 
 	}
 	return oneLongInfo
+}
+
+// 判断是否是公版还是茶包s
+func (o *OneLong) IsChaBaoBgi(longName string) string {
+	typ, err := DetectJsonType(longName)
+	if err != nil {
+		autoLog.Sugar.Errorf("检测 JSON 类型失败: %v", err)
+		return ""
+	}
+	return typ
+}
+
+// 判断任务列表是数字键还是中文名键
+func IsNumberKeyTaskList(taskList map[string]interface{}) bool {
+	for key := range taskList {
+		// 如果 key 的第一个字符是数字，就说明是数字型配置
+		if unicode.IsDigit(rune(key[0])) {
+			return true
+		}
+		break // 只检查第一个就够了
+	}
+	return false
+}
+
+// 判断 JSON 文件类型
+func DetectJsonType(longName string) (string, error) {
+
+	filename := filepath.Join(config.Cfg.BetterGIAddress, "User", "OneDragon", longName+".json")
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return "", fmt.Errorf("读取文件失败: %w", err)
+	}
+
+	// 解析为 map
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return "", fmt.Errorf("解析 JSON 失败: %w", err)
+	}
+
+	taskRaw, ok := raw["TaskEnabledList"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("JSON 格式不合法，没有 TaskEnabledList")
+	}
+
+	if IsNumberKeyTaskList(taskRaw) {
+		return "茶包s老师版本", nil
+	}
+	return "公版", nil
 }

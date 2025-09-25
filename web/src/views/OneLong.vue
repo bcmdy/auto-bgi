@@ -133,7 +133,8 @@
           :key="taskName" 
           class="task-item"
         >
-          <span class="task-name">{{ taskName }}</span>
+          <!-- <span class="task-name">{{ taskName }}</span> -->
+           <span class="task-name">{{ taskName }}</span>
           <label class="switch">
             <input 
               type="checkbox" 
@@ -317,7 +318,7 @@ export default {
       
       try {
         const cfg = await apiRequest(
-          `/api/onelong/config?name=${encodeURIComponent(selectedConfig.value)}`
+          `/api/oneLong/config?name=${encodeURIComponent(selectedConfig.value)}`
         )
         
         // 重置并更新当前配置
@@ -362,7 +363,7 @@ export default {
       }
 
       try {
-        const result = await apiRequest('/api/onelong/saveConfig', {
+        const result = await apiRequest('/api/oneLong/saveConfig', {
           method: 'POST',
           body: JSON.stringify(payload)
         })
@@ -380,7 +381,7 @@ export default {
      */
     const loadConfigList = async () => {
       try {
-        const data = await apiRequest('/api/oneLongAllName')
+        const data = await apiRequest('/api/oneLong/oneLongAllName')
         configList.value = data.data || []
         
         // 自动选择第一个配置

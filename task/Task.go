@@ -3,25 +3,21 @@ package task
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
-	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/internal/gamecheckin"
 	"auto-bgi/internal/mihoyobbs"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/internal/utils"
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/iancoleman/orderedmap"
 	"github.com/robfig/cron/v3"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -145,209 +141,6 @@ func CalculateTaskEnabledList() ([]TaskCycleConfig, error) {
 	}
 
 	return TaskCycleConfigs, nil
-}
-
-// 修改TaskEnabledList
-func ChangeTaskEnabledList() error {
-
-	now := time.Now()
-	weekdayNum := int(now.Weekday())
-
-	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
-
-	OneLongName := config.GetTodayOneLongName()
-
-	//自定义配置路径
-	filename := config.Cfg.BetterGIAddress + "\\User\\OneDragon\\" + OneLongName + ".json"
-
-	// 1. 读取 JSON 文件
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		autoLog.Sugar.Errorf("一条龙读取文件失败%s: %v", OneLongName, err)
-		return err
-	}
-
-	//2. 解析为 orderedData
-	jsonData := orderedmap.New()
-	if err := json.Unmarshal(data, &jsonData); err != nil {
-
-		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
-		return err
-	}
-	_, b2 := jsonData.Get("SelectedPeriodList")
-	if !b2 {
-		autoLog.Sugar.Errorf("SelectedPeriodList 字段不存在")
-	} else {
-		autoLog.Sugar.Infof("SelectedPeriodList 字段存在")
-		ReadChaBaoBgiConfig(filename)
-		return nil
-	}
-
-	TaskEnabled, b := jsonData.Get("TaskEnabledList")
-	if !b {
-		autoLog.Sugar.Errorf("TaskEnabledList 字段不存在")
-		return fmt.Errorf("TaskEnabledList 字段不存在")
-	}
-
-	aa := TaskEnabled.(orderedmap.OrderedMap)
-	re := regexp.MustCompile(`\d+`) // 匹配一个或多个连续数字
-	var builder strings.Builder
-
-	var oneLongGroup []string
-
-	builder.WriteString("今日执行一条龙：" + OneLongName + "\n")
-	builder.WriteString("今日执行配置组：")
-	builder.WriteString("\n")
-
-	var oneLongLog strings.Builder
-
-	for _, s := range aa.Keys() {
-
-		autoLog.Sugar.Infof("配置组:%s", s)
-		numbers := re.FindAllString(s, -1)
-		if numbers == nil {
-			get, _ := aa.Get(s)
-
-			if get == true {
-				builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
-				builder.WriteString("\n")
-
-				oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
-				oneLongLog.WriteString("\n")
-
-				oneLongGroup = append(oneLongGroup, s)
-
-				continue
-			}
-			continue
-		}
-		autoLog.Sugar.Infof("匹配的数字:%v", numbers)
-		if contains(numbers, weekdayNum) {
-			autoLog.Sugar.Infof("配置组:[" + s + "]已到执行时间")
-			aa.Set(s, true)
-			//builder.WriteString(fmt.Sprintf("%s：%v", s, true))
-			builder.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
-			builder.WriteString("\n")
-
-			oneLongLog.WriteString(fmt.Sprintf("%s：%s", s, "执行"))
-			oneLongLog.WriteString("\n")
-
-			oneLongGroup = append(oneLongGroup, s)
-			continue
-		} else {
-			autoLog.Sugar.Infof("配置组:[" + s + "]还未到执行时间")
-			aa.Set(s, false)
-			continue
-		}
-	}
-
-	updatedData, err := json.MarshalIndent(jsonData, "", "  ")
-	if err != nil {
-		return fmt.Errorf("JSON 编码失败")
-	}
-
-	// 6. 写回文件
-	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
-
-		autoLog.Sugar.Errorf("写入文件失败: %v", err)
-		return fmt.Errorf("自定义配置写入文件失败")
-	}
-
-	//将执行配置写入文件，直接覆盖
-	// 定义要写入的内容
-	content := []byte(oneLongLog.String())
-	// 打开文件，如果文件不存在则创建
-	file, err := os.OpenFile("OneLongTask.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("打开文件失败: %v", err)
-	}
-	defer file.Close()
-	file.Write(content)
-
-	//发送通知
-	Notice.SentText(builder.String())
-
-	//计算一条龙时间
-	go func() {
-		bgiStatus.GetTodayOneLongTime(oneLongGroup)
-	}()
-
-	return nil
-
-}
-
-func OneLongTask() {
-	autoLog.Sugar.Info("开始执行一条龙任务")
-
-	// 2. 并行执行用户目录备份
-	go func() {
-		autoLog.Sugar.Info("开始备份 User 目录")
-		BackupUsers()
-	}()
-
-	// 3. 关闭软件（同步，后续任务依赖此步骤）
-	control.CloseSoftware()
-	autoLog.Sugar.Info("软件已关闭")
-
-	// 4. 批量更新脚本
-	if config.Cfg.OneLong.AutoUpdateJs {
-		autoLog.Sugar.Info("开始批量更新脚本")
-		if err := bgiStatus.BatchUpdateScript(); err != "" {
-			autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
-
-		}
-	} else {
-		autoLog.Sugar.Info("自动更新js已关闭")
-	}
-
-	// 5. 修改配置
-	if err := ChangeTaskEnabledList(); err != nil {
-		autoLog.Sugar.Errorf("修改配置失败: %v", err)
-		return
-	}
-	autoLog.Sugar.Info("修改配置成功")
-
-	// 6. 启动今日一条龙
-	longName := config.GetTodayOneLongName()
-	autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
-
-	StartOneDragon(longName)
-
-	autoLog.Sugar.Info("一条龙任务执行完成")
-}
-
-func OneLong() {
-
-	cronTab := cron.New(cron.WithSeconds())
-
-	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", config.Cfg.OneLong.OneLongMinute, config.Cfg.OneLong.OneLongHour)
-
-	// 定义定时器调用的任务函数
-	task := func() {
-
-		autoLog.Sugar.Infof("一条龙服务启动 %v", time.Now().Format("2006-01-02 15:04:05"))
-
-		OneLongTask()
-
-		time.Sleep(1000 * time.Millisecond)
-
-		schedule, err := config.Parser.Parse(spec)
-		if err != nil {
-			autoLog.Sugar.Error("解析失败:", err)
-			return
-		}
-
-		autoLog.Sugar.Infof("一条龙服务启动完毕 %v", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
-	}
-
-	// 添加定时任务
-	cronTab.AddFunc(spec, task)
-	// 启动定时器
-	cronTab.Start()
-	// 阻塞主线程停止
-	select {}
-
 }
 
 func MysSignIn() {
@@ -500,54 +293,6 @@ func StartOneDragon(name string) {
 
 }
 
-const interval = 72 * time.Hour
-
-// 每周一备份users文件夹
-func BackupUsers() {
-
-	var lastBackupStr string
-	err := config.DB.QueryRow(`SELECT autobgi_value FROM autoBgi_config WHERE autobgi_key = 'BackupUserTime'`).Scan(&lastBackupStr)
-	if err != nil && err != sql.ErrNoRows {
-		autoLog.Sugar.Errorf("查询 BackupUserTime 失败: %v", err)
-		return
-	}
-	// 解析上次时间
-	var lastBackup time.Time
-	if lastBackupStr != "" {
-		parsed, per := time.ParseInLocation("2006-01-02 15:04:05", lastBackupStr, time.Local)
-		if per == nil {
-			lastBackup = parsed
-		} else {
-			autoLog.Sugar.Warnf("时间解析失败(%v)，使用默认时间", per)
-			lastBackup = time.Now().Add(-interval)
-		}
-	}
-
-	now := time.Now()
-
-	if now.Sub(lastBackup) >= interval {
-		autoLog.Sugar.Info("🟢 满足条件，开始备份 users 文件夹...")
-		autoLog.Sugar.Infof("开始备份user文件夹")
-		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
-		if err4 != nil {
-			autoLog.Sugar.Errorf("备份失败: %v")
-			return
-		}
-
-		autoLog.Sugar.Info("备份成功")
-
-		// 更新数据库记录
-		_, err = config.DB.Exec(`UPDATE autoBgi_config SET autobgi_value = ? WHERE autobgi_key = 'BackupUserTime'`, time.Now().Format("2006-01-02 15:04:05"))
-		if err != nil {
-			autoLog.Sugar.Errorf("更新 BackupUserTime 失败: %v", err)
-		} else {
-			autoLog.Sugar.Info("✅ 备份完成，时间已更新")
-		}
-	} else {
-		autoLog.Sugar.Infof("⏳ 未满足条件（上次：%v，下次至少需等待：%.0f小时）", lastBackup, (interval - now.Sub(lastBackup)).Hours())
-	}
-}
-
 // 每隔1个小时发送截图
 func SendWeChatImageTask() {
 
@@ -555,7 +300,7 @@ func SendWeChatImageTask() {
 
 	// 定时任务,cron表达式
 	//每1个小时执行一次
-	spec := fmt.Sprintf("0 */59 * * * *")
+	spec := fmt.Sprintf("0 0 * * * *")
 
 	// 定义定时器调用的任务函数
 	task := func() {

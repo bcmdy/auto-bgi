@@ -139,19 +139,22 @@ func (m *LogMonitor) Monitor() {
 				//上线操作
 				if config.Cfg.Account.OnlineKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineKeyword) {
 
-					Notice.SentText("联机上线")
 					decrypt, err := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 					if err != nil {
 						autoLog.Sugar.Infof("密钥错误")
-						//Notice.SentText("密钥错误")
 						return
 					}
 					ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/dogFour/%s/%s", decrypt, config.Cfg.Account.Uid, config.Cfg.Account.Name), false, nil)
 					if ConnectErr != nil {
 						autoLog.Sugar.Infof("上线失败")
-						Notice.SentText("上线失败")
+
 					}
-					Notice.SentText("上线成功")
+					autoLog.Sugar.Infof("上线成功")
+				}
+
+				//联机狗粮
+				if strings.Contains(line, "所有队友已就绪") {
+					Notice.SendScreenshot()
 				}
 
 				//首页相关
@@ -175,8 +178,14 @@ func (m *LogMonitor) Monitor() {
 					} else {
 						BgiLogStatusInfo.Group = "未找到配置组"
 					}
-
 				}
+
+				//查找配置组任务执行
+				if strings.Contains(line, "配置组任务执行: ") {
+					gp := strings.ReplaceAll(line, "配置组任务执行: ", "")
+					BgiLogStatusInfo.GroupProgress = gp
+				}
+
 				if strings.HasPrefix(line, "→ 开始执行JS脚本: ") {
 					re := regexp.MustCompile(`"(.*?)"`)
 					matches := re.FindStringSubmatch(line)

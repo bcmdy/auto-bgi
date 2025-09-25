@@ -19,6 +19,7 @@ type bgiLogStatus struct {
 	ConfigurationGroupExecutionProgress string // 配置组执行进度
 	JSProgress                          string // js进度
 	Running                             bool   // 是否运行中
+	GroupProgress                       string //一条龙进度
 }
 
 var BgiLogStatusInfo bgiLogStatus
@@ -65,6 +66,12 @@ func InitBgiLogStatus() {
 			} else {
 				BgiLogStatusInfo.Group = "未找到配置组"
 			}
+		}
+
+		//查找配置组任务执行
+		if strings.Contains(line, "配置组任务执行: ") {
+			gp := strings.ReplaceAll(line, "配置组任务执行: ", "")
+			BgiLogStatusInfo.GroupProgress = gp
 		}
 
 		//当前运行脚本
