@@ -26,7 +26,7 @@ func ReadMd(filePath string) string {
 		data, err := os.ReadFile(filename)
 		if err != nil {
 			autoLog.Sugar.Errorf("ReadMd读取文件失败: %v", err)
-			return "作者没有写说明文档"
+			return "*该作者没有写说明文档，无脑直接用就完事了*"
 		}
 		return string(data)
 	} else {
@@ -41,7 +41,7 @@ func ReadMd(filePath string) string {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		autoLog.Sugar.Errorf("ReadMd读取文件失败: %v", err)
-		return "作者没有写说明文档"
+		return "*该作者没有写说明文档，无脑直接用就完事了*"
 	}
 
 	return string(data)

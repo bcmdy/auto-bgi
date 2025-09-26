@@ -18,77 +18,6 @@ type dd struct {
 
 var dogFood = ArtifactsBulkSupply.DogFood{}
 
-//// 启动狗粮联机
-//func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
-//
-//	//查询今天狗粮批发是什么线路
-//	dogFoodLine := dogFood.DogFoodIsAOrB()
-//	if dogFoodLine == "" {
-//		autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
-//		runDebug = true
-//	} else if dogFoodLine == "B" {
-//		runDebug = true
-//	}
-//
-//	// 解析 JSON 字符串
-//	var aa []dd
-//	yourIndex := 0
-//
-//	for _, item := range data {
-//		var d dd
-//		d.ID = item["ID"].(int64)
-//		d.UID = item["UID"].(string)
-//		d.Name = item["Name"].(string)
-//		if item["UID"] == config.Cfg.Account.Uid {
-//			yourIndex = int(d.ID)
-//		}
-//		aa = append(aa, d)
-//	}
-//
-//	//修改狗粮配置
-//	readConfig := s.ReadConfig(config.Cfg.Account.GouLangGroupName)
-//	projects := readConfig.Projects
-//	for _, project := range projects {
-//		if project.Type == "Javascript" && project.FolderName == "ArtifactsGroupPurchasing" {
-//			object := project.JsScriptSettingsObject
-//			object["yourIndex"] = yourIndex
-//			object["groupMode"] = "按照下列配置自动进入并运行"
-//			object["runDebug"] = runDebug
-//
-//			runningOrder := ""
-//			for i, d := range aa {
-//				object[fmt.Sprintf("p%dUID", i+1)] = d.UID
-//				object[fmt.Sprintf("p%dName", i+1)] = d.Name
-//				runningOrder += fmt.Sprintf("%d", i+1)
-//			}
-//			object["runningOrder"] = runningOrder
-//			//object["p1UID"] = aa[0].UID
-//			//object["p1Name"] = aa[0].Name
-//			//object["p2UID"] = aa[1].UID0
-//			//object["p2Name"] = aa[1].Name
-//			//object["p3UID"] = aa[2].UID
-//			//object["p3Name"] = aa[2].Name
-//			//object["p4UID"] = aa[3].UID
-//			//object["p4Name"] = aa[3].Name
-//			project.JsScriptSettingsObject = object
-//		}
-//	}
-//
-//	//保存配置
-//	err := s.SaveConfig(config.Cfg.Account.GouLangGroupName, readConfig)
-//	if err != nil {
-//		autoLog.Sugar.Errorf("保存配置失败: %v", err)
-//		return
-//	}
-//
-//	//启动配置组
-//	err = startGroups([]string{config.Cfg.Account.GouLangGroupName})
-//	if err != nil {
-//		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
-//		return
-//	}
-//}
-
 // 启动狗粮联机
 func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
 
@@ -156,12 +85,13 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 			}
 			Notice.SentText(fmt.Sprintf("是否是调机模式：%v", runDebug))
 
-			//修改allowJsNotification
-			newAllowJsNotification := fmt.Sprintf("%s.allowJsNotification", path)
-			newData, err = sjson.SetBytes(newData, newAllowJsNotification, runDebug)
+			//修改RunDebug
+			newRunDebug := fmt.Sprintf("%s.runDebug", path)
+			newData, err = sjson.SetBytes(newData, newRunDebug, runDebug)
+
 			if err != nil {
 
-				autoLog.Sugar.Errorf("修改allowJsNotification失败:%d", err)
+				autoLog.Sugar.Errorf("修改runDebug失败:%d", err)
 			}
 
 			for i2, a := range aa {
