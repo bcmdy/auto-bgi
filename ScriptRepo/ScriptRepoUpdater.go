@@ -39,7 +39,7 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 		log.Printf("完整克隆仓库: %s 到 %s", repoUrl, repoPath)
 		_, err := git.PlainClone(repoPath, false, &git.CloneOptions{
 			URL:          repoUrl,
-			SingleBranch: true,
+			SingleBranch: false, // 拉所有分支，避免缺分支
 			Progress:     os.Stdout,
 			ProxyOptions: proxyOptions,
 		})
@@ -48,7 +48,6 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 		}
 		updated = true
 	} else {
-
 		// 打开仓库
 		r, err := git.PlainOpen(repoPath)
 		if err != nil {
@@ -80,25 +79,31 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 			return "", false, fmt.Errorf("fetch 失败: %w", err)
 		}
 
-		// 获取远程 main 分支
+		// 优先尝试 main，不存在就用 release
+		var remoteRef *plumbing.Reference
 		remoteBranch := plumbing.NewRemoteReferenceName("origin", "main")
-		remoteRef, err := r.Reference(remoteBranch, true)
+		remoteRef, err = r.Reference(remoteBranch, true)
 		if err != nil {
-			return "", false, fmt.Errorf("获取远程 main 分支引用失败: %w", err)
+			log.Printf("未找到 main 分支，尝试使用 release 分支")
+			remoteBranch = plumbing.NewRemoteReferenceName("origin", "release")
+			remoteRef, err = r.Reference(remoteBranch, true)
+			if err != nil {
+				return "", false, fmt.Errorf("获取远程 main/release 分支引用失败: %w", err)
+			}
 		}
 
-		// 强制 reset --hard 到远程 main
+		// 强制 reset --hard 到目标分支
 		worktree, _ := r.Worktree()
 		err = worktree.Reset(&git.ResetOptions{
 			Mode:   git.HardReset,
 			Commit: remoteRef.Hash(),
 		})
 		if err != nil {
-			return "", false, fmt.Errorf("强制 reset 到 main 失败: %w", err)
+			return "", false, fmt.Errorf("强制 reset 到 %s 失败: %w", remoteBranch.Short(), err)
 		}
 
 		updated = true
-		log.Printf("同步到远程 main: %s", remoteRef.Hash().String())
+		log.Printf("同步到远程 %s: %s", remoteBranch.Short(), remoteRef.Hash().String())
 	}
 
 	return repoPath, updated, nil
