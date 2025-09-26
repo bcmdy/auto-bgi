@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
 	"auto-bgi/ScriptGroup"
@@ -881,6 +882,16 @@ func main() {
 		//读取配置组所有的地图追踪
 		scriptGroup.GET("/listPathingUpdatePaths", scriptGroupConfig.UpdatePaths)
 
+	}
+
+	var CDAwareAutoGatherService CDAwareAutoGather.UidInfo
+	//CD-Aware-AutoGather - 带CD管理的自动采集
+	CDAwareAutoGatherController := ginServer.Group("/CD-Aware-AutoGather")
+	{
+		CDAwareAutoGatherController.GET("/ReadInfo", func(context *gin.Context) {
+			readInfo := CDAwareAutoGatherService.ReadInfo()
+			context.JSON(http.StatusOK, readInfo)
+		})
 	}
 
 	// 定义 GitHub Push Webhook 的结构体
