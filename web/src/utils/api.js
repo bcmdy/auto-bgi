@@ -90,6 +90,7 @@ export const apiMethods = {
   getError: () => api.get('/error'),
   getCalculateTaskEnabledList: () => api.get('/CalculateTaskEnabledList'),
   getBagStatistics: () => api.get('/api/BagStatistics'),
+  getCDAwareAutoGather: (status = '3') => api.get('/api/CD-Aware-AutoGather/ReadInfo', { params: { status } }),
   
   // 启动配置组
   startGroups: (names) => {

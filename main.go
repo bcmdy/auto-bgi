@@ -886,10 +886,12 @@ func main() {
 
 	var CDAwareAutoGatherService CDAwareAutoGather.UidInfo
 	//CD-Aware-AutoGather - 带CD管理的自动采集
-	CDAwareAutoGatherController := ginServer.Group("/CD-Aware-AutoGather")
+	CDAwareAutoGatherController := ginServer.Group("/api/CD-Aware-AutoGather")
 	{
 		CDAwareAutoGatherController.GET("/ReadInfo", func(context *gin.Context) {
-			readInfo := CDAwareAutoGatherService.ReadInfo()
+			//状态
+			status := context.Query("status")
+			readInfo := CDAwareAutoGatherService.ReadInfo(status)
 			context.JSON(http.StatusOK, readInfo)
 		})
 	}

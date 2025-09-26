@@ -126,7 +126,8 @@ const dataAnalysisButtons = ref([
   { text: '背包统计', route: '/BagStatistics' },
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
   { text: '归档查询', route: '/archive' },
-  { text: '配置组运行情况', route: '/other' }
+  { text: '配置组运行情况', route: '/other' },
+  { text: 'CD管理自动采集', route: '/CDAwareAutoGather' }
 ])
 
 const bgiButtons = ref([

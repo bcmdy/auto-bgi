@@ -23,7 +23,8 @@ import Error from './views/Error.vue'
 import CalculateTaskEnabledList from './views/CalculateTaskEnabledList.vue'
 import BagStatistics from './views/BagStatistics.vue'
 import Gitlog from './views/Gitlog.vue'
-import Online from './views/online.vue' 
+import Online from './views/online.vue'
+import CDAwareAutoGather from './views/CDAwareAutoGather.vue' 
 // 路由配置
 const routes = [
   { path: '/', component: Home },
@@ -44,7 +45,8 @@ const routes = [
   { path: '/CalculateTaskEnabledList', component: CalculateTaskEnabledList },
   { path: '/BagStatistics', component: BagStatistics },
   { path: '/GitLog', component: Gitlog },
-  { path: '/Online', component: Online } // 修正 component 名称
+  { path: '/Online', component: Online }, // 修正 component 名称
+  { path: '/CDAwareAutoGather', component: CDAwareAutoGather }
 ]
 
 const router = createRouter({

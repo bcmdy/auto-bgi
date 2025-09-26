@@ -29,7 +29,7 @@ type Detail struct {
 // ReadInfo 读取采集cd数据
 // ReadInfo 函数用于读取并整理记录信息
 // 返回一个包含所有记录的 UidInfo 切片
-func (u *UidInfo) ReadInfo() []UidInfo {
+func (u *UidInfo) ReadInfo(status string) []UidInfo {
 	// 构建基础目录路径，指向记录文件所在目录
 	baseDir := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "CD-Aware-AutoGather", "record")
 	var allRecords []UidInfo
@@ -58,7 +58,7 @@ func (u *UidInfo) ReadInfo() []UidInfo {
 				return err
 			}
 			if !info.IsDir() && strings.HasSuffix(info.Name(), ".txt") {
-				record := readAndFormatTxt(path, info.Name())
+				record := readAndFormatTxt(path, info.Name(), status)
 				if record != nil {
 					uidInfo.CDAwareAutoGather = append(uidInfo.CDAwareAutoGather, *record)
 				}
@@ -77,12 +77,10 @@ func (u *UidInfo) ReadInfo() []UidInfo {
 	return allRecords
 }
 
-func readAndFormatTxt(filePath string, txtName string) *CDAwareAutoGather {
+func readAndFormatTxt(filePath string, txtName, status string) *CDAwareAutoGather {
 	file, err := os.Open(filePath)
 	if err != nil {
-
 		autoLog.Sugar.Errorf("打开文件失败:%s", err)
-
 		return nil
 	}
 	defer file.Close()
@@ -104,20 +102,25 @@ func readAndFormatTxt(filePath string, txtName string) *CDAwareAutoGather {
 
 		t, err := time.Parse(time.RFC3339, timeStr)
 		if err != nil {
-
 			autoLog.Sugar.Errorf("解析时间失败:%v", err)
 			continue
 		}
 
-		cda.Detail = append(cda.Detail, Detail{
+		detail := Detail{
 			FileName:  filename,
 			CDTime:    t.Format("2006-01-02 15:04:05"),
 			CDExpired: t.Before(time.Now()),
-		})
+		}
+
+		// 根据 status 筛选
+		if (status == "1" && detail.CDExpired) ||
+			(status == "2" && !detail.CDExpired) ||
+			(status == "3") {
+			cda.Detail = append(cda.Detail, detail)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
-
 		autoLog.Sugar.Errorf("读取文件出错:%v", err)
 	}
 
