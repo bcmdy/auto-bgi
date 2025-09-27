@@ -91,6 +91,8 @@ export const apiMethods = {
   getCalculateTaskEnabledList: () => api.get('/CalculateTaskEnabledList'),
   getBagStatistics: () => api.get('/api/BagStatistics'),
   getCDAwareAutoGather: (status = '3') => api.get('/api/CD-Aware-AutoGather/ReadInfo', { params: { status } }),
+  // 更新是否加入背包统计
+  CDAllMaterial : () => api.post('/api/CD-Aware-AutoGather/CDAllMaterial'),
   
   // 启动配置组
   startGroups: (names) => {

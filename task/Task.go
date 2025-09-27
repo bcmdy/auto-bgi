@@ -313,7 +313,7 @@ func SendWeChatImageTask() {
 			return
 		}
 
-		Notice.SentImage("jt.png")
+		Notice.SentImage("jt.jpg")
 
 	}
 

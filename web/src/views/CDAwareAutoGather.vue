@@ -22,6 +22,7 @@
           {{ loading ? '加载中...' : '刷新数据' }}
         </button>
       </div>
+      <button @click="CDAllMaterial" class="refresh-btn">是否加入背包统计</button>
     </div>
 
     <!-- 加载状态 -->
@@ -257,6 +258,17 @@ const getOriginalGatherIndex = (originalGathers, filteredGather) => {
 const refreshData = () => {
   fetchData()
 }
+
+// 是否加入背包统计
+const CDAllMaterial = async () => {
+  try {
+    await apiMethods.CDAllMaterial()
+    fetchData()
+  } catch (err) {
+    console.error('CDAllMaterial失败:', err)
+  }
+}
+
 
 // 组件挂载
 onMounted(() => {

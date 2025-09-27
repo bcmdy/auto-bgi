@@ -255,3 +255,16 @@ func OpenBrowser(url string) error {
 
 	return cmd.Start()
 }
+
+// 字符串数组怎么去重
+func UniqueStrings(arr []string) []string {
+	seen := make(map[string]struct{})
+	result := []string{}
+	for _, v := range arr {
+		if _, ok := seen[v]; !ok {
+			seen[v] = struct{}{}
+			result = append(result, v)
+		}
+	}
+	return result
+}

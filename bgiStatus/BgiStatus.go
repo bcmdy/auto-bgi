@@ -42,6 +42,19 @@ func IsWechatRunning() bool {
 	return strings.Contains(string(output), "BetterGI.exe")
 }
 
+// 检查 YuanShen.exe 是否在运行
+func IsYuanShenRunning() bool {
+	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq YuanShen.exe")
+	output, err := cmd.Output()
+	if err != nil {
+
+		autoLog.Sugar.Error("YuanShen.exe 是否在运行:", err)
+		return false
+	}
+
+	return strings.Contains(string(output), "YuanShen.exe")
+}
+
 var notified = false
 var okInform = false
 var okRun = true

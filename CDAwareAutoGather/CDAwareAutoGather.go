@@ -1,6 +1,7 @@
 package CDAwareAutoGather
 
 import (
+	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"bufio"
@@ -125,4 +126,45 @@ func readAndFormatTxt(filePath string, txtName, status string) *CDAwareAutoGathe
 	}
 
 	return &cda
+}
+
+// 提取出所有CD采集的材料，加入背包统计
+func (u *UidInfo) CDAllMaterial() []string {
+
+	material := make(map[string]int)
+
+	materialConstant := abgiConstant.Material
+
+	readInfo := u.ReadInfo("3")
+	for _, info := range readInfo {
+		for _, gather := range info.CDAwareAutoGather {
+			//获取材料名称
+			for _, s := range materialConstant {
+				if strings.Contains(gather.TextName, s) {
+					material[s] = 1
+				}
+			}
+		}
+	}
+
+	statistics := strings.Split(config.Cfg.BagStatistics, ",")
+	for _, s := range statistics {
+		material[s] = 1
+	}
+	var res []string
+	for k, _ := range material {
+
+		autoLog.Sugar.Infof("获取到材料：%s", k)
+
+		res = append(res, k)
+	}
+
+	//加入到背包统计
+	config.Cfg.BagStatistics = strings.Join(res, ",")
+	err := config.WriteConfig()
+	if err != nil {
+		autoLog.Sugar.Errorf("背包统计加入失败:%s", err)
+	}
+
+	return res
 }

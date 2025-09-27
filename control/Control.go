@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"github.com/go-vgo/robotgo"
 	"github.com/pterm/pterm"
-	"github.com/vcaesar/imgo"
+	"image/jpeg"
 	"net/http"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -104,22 +105,24 @@ func MouseClick(x, y int, key string, DoubleClick bool) {
 
 // 截图
 func ScreenShot() error {
-	// 获取当前屏幕大小
 	screenWidth, screenHeight := robotgo.GetScreenSize()
-
-	// 创建一个与屏幕大小相同的图像
 	imgScreen := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
 	if imgScreen == nil {
 		return fmt.Errorf("截图失败: 无法获取屏幕图像")
 	}
-	defer robotgo.FreeBitmap(imgScreen) // 确保释放资源
+	defer robotgo.FreeBitmap(imgScreen)
 
 	img := robotgo.ToImage(imgScreen)
-	imgo.Save("jt.png", img)
 
-	time.Sleep(500 * time.Millisecond)
+	file, err := os.Create("jt.jpg")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
-	return nil
+	// 这里的 Quality 可以调节（1-100），一般 70 就够了
+	opt := &jpeg.Options{Quality: 70}
+	return jpeg.Encode(file, img, opt)
 }
 
 func findWindow(className, windowName *uint16) (hwnd uintptr, err error) {

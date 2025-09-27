@@ -104,5 +104,17 @@ func sendWeChatImage(path string) error {
 	}
 	defer resp.Body.Close()
 
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("微信通知：http error: %s", resp.Status)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return fmt.Errorf("微信通知：unmarshal response error: %v, body=%s", err, string(respBody))
+	}
+	if code, ok := result["errcode"].(float64); ok && code != 0 {
+		return fmt.Errorf("微信通知：wechat error: %v, errmsg: %v", result["errcode"], result["errmsg"])
+	}
+
 	return nil
 }

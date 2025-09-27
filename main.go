@@ -325,7 +325,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
 			return
 		} else {
-			err2 := Notice.SentImage("jt.png")
+			err2 := Notice.SentImage("jt.jpg")
 			if err2 != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err2})
 				return
@@ -893,6 +893,10 @@ func main() {
 			status := context.Query("status")
 			readInfo := CDAwareAutoGatherService.ReadInfo(status)
 			context.JSON(http.StatusOK, readInfo)
+		})
+		CDAwareAutoGatherController.POST("/CDAllMaterial", func(context *gin.Context) {
+			material := CDAwareAutoGatherService.CDAllMaterial()
+			context.JSON(http.StatusOK, material)
 		})
 	}
 

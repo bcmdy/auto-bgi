@@ -62,6 +62,8 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 	return newLines, nil
 }
 
+var YuanShenNum int
+
 func (m *LogMonitor) Monitor() {
 
 	if f, err := os.Open(m.LogFile); err == nil {
@@ -214,9 +216,22 @@ func (m *LogMonitor) Monitor() {
 				}
 
 				//js进度
-				if strings.Contains(line, "当前进度：") || strings.Contains(line, "当前次数：") {
+				if strings.Contains(line, "当前进度：") || strings.Contains(line, "当前次数：") || strings.Contains(line, ": 开始执行") {
 					BgiLogStatusInfo.JSProgress = line
 				}
+
+				//原神闪退检测
+				if strings.Contains(line, "当前获取焦点的窗口不是原神，尝试恢复窗口") {
+					YuanShenNum++
+					if YuanShenNum >= 50 {
+						YuanShenNum = 0
+						Notice.SentText("当前获取焦点的窗口不是原神，尝试恢复窗口超过50次")
+						autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口超过50次")
+
+					}
+					autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口%d次", YuanShenNum)
+				}
+
 				lastLine = line
 			}
 		case <-m.stopChan:
