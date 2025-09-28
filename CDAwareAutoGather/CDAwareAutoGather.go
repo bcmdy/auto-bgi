@@ -1,10 +1,14 @@
 package CDAwareAutoGather
 
 import (
+	"auto-bgi/ScriptGroup"
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"bufio"
+	"encoding/json"
+	"fmt"
+	"github.com/tidwall/sjson"
 	"os"
 	"path/filepath"
 	"strings"
@@ -167,4 +171,92 @@ func (u *UidInfo) CDAllMaterial() []string {
 	}
 
 	return res
+}
+
+type settings struct {
+	Name string
+}
+
+// 读取CDAwareAutoGather所有的路线
+func (u *UidInfo) ReadAllRoute(CDAwareAutoGatherGroup string) map[string]interface{} {
+
+	//查询配置组的勾选路线
+	CDAwareAutoGatherGroupFilename := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup\\" + CDAwareAutoGatherGroup + ".json"
+	// 读取 狗粮联机JSON
+	CDGroupData, err := os.ReadFile(CDAwareAutoGatherGroupFilename)
+	if err != nil {
+		autoLog.Sugar.Errorf("CD管理的自动采集[%s]失败:%d", CDAwareAutoGatherGroup, err)
+	}
+	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
+	err = json.Unmarshal(CDGroupData, &scriptGroupConfig)
+	if err != nil {
+		autoLog.Sugar.Errorf("CDAwareAutoGatherGroup配置组失败失败:%d", err)
+	}
+	JsScriptSettingsObject := make(map[string]interface{})
+	for _, project := range scriptGroupConfig.Projects {
+		if project.FolderName == "CD-Aware-AutoGather" {
+			JsScriptSettingsObject = project.JsScriptSettingsObject
+		}
+
+	}
+
+	//查询配置文件settings
+	filename := config.Cfg.BetterGIAddress + "\\User\\JsScript\\CD-Aware-AutoGather\\settings.json"
+	// 读取 狗粮联机JSON
+	RouteData, err := os.ReadFile(filename)
+	if err != nil {
+		autoLog.Sugar.Errorf("读取CDAwareAutoGather所有的路线[CD-Aware-AutoGather]失败:%d", err)
+	}
+	var settings []settings
+	err = json.Unmarshal(RouteData, &settings)
+	if err != nil {
+		autoLog.Sugar.Errorf("读取CDAwareAutoGather所有的路线[CD-Aware-AutoGather]失败:%d", err)
+	}
+
+	cdAwareAutoGatherRoute := make(map[string]interface{})
+	for _, setting := range settings {
+		if strings.HasPrefix(setting.Name, "OPT_") {
+			if JsScriptSettingsObject[setting.Name] != nil {
+				cdAwareAutoGatherRoute[setting.Name] = JsScriptSettingsObject[setting.Name]
+			} else {
+				cdAwareAutoGatherRoute[setting.Name] = true
+			}
+
+		}
+	}
+
+	u.WriteAllRoute(CDAwareAutoGatherGroup, cdAwareAutoGatherRoute)
+
+	return cdAwareAutoGatherRoute
+
+}
+
+// 覆盖采集路线
+func (u *UidInfo) WriteAllRoute(CDAwareAutoGatherGroup string, cdAwareAutoGatherRoutes map[string]interface{}) {
+	//查询配置组的勾选路线
+	CDAwareAutoGatherGroupFilename := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup\\" + CDAwareAutoGatherGroup + ".json"
+	// 读取 狗粮联机JSON
+	CDGroupData, err := os.ReadFile(CDAwareAutoGatherGroupFilename)
+	if err != nil {
+		autoLog.Sugar.Errorf("CD管理的自动采集[%s]失败:%d", CDAwareAutoGatherGroup, err)
+	}
+	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
+	err = json.Unmarshal(CDGroupData, &scriptGroupConfig)
+	if err != nil {
+		autoLog.Sugar.Errorf("CDAwareAutoGatherGroup配置组失败失败:%d", err)
+	}
+	newData := CDGroupData
+	for i, project := range scriptGroupConfig.Projects {
+		if project.FolderName == "CD-Aware-AutoGather" {
+			jsScriptSettingsObject := fmt.Sprintf("projects.%d.jsScriptSettingsObject", i)
+			newData, err = sjson.SetBytes(newData, jsScriptSettingsObject, cdAwareAutoGatherRoutes)
+			break
+		}
+	}
+
+	// 写回文件
+	if err := os.WriteFile(CDAwareAutoGatherGroupFilename, newData, 0644); err != nil {
+
+		autoLog.Sugar.Errorf("写入 狗粮联机配置组[%s]失败:%d", config.Cfg.Account.GouLangGroupName, err)
+	}
 }
