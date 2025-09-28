@@ -55,49 +55,79 @@ func IsYuanShenRunning() bool {
 	return strings.Contains(string(output), "YuanShen.exe")
 }
 
-var notified = false
-var okInform = false
-var okRun = true
+//var notified = false
+//var okInform = false
+//var okRun = true
+//
+//func CheckBetterGIStatus() {
+//
+//	cronTab := cron.New(cron.WithSeconds())
+//
+//	// 定时任务,cron表达式
+//	spec := "*/30 * * * * *"
+//
+//	task := func() {
+//
+//		// 检查进程
+//		if IsWechatRunning() {
+//
+//			if okRun {
+//				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
+//				BgiLogStatusInfo.Running = IsWechatRunning()
+//				notified = false // 清除通知状态
+//				okRun = false    // 清除通知状态
+//			}
+//		} else {
+//			if !notified {
+//				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
+//				control.CloseYuanShen()
+//				notified = true
+//				okRun = true
+//				BgiLogStatusInfo.Running = IsWechatRunning()
+//			} else if !okInform {
+//				autoLog.Sugar.Infof("BetterGI 已关闭，已通知过: %s", time.Now().Format("2006-01-02 15:04:05"))
+//				okInform = true
+//				BgiLogStatusInfo.Running = IsWechatRunning()
+//			}
+//		}
+//
+//	}
+//
+//	// 添加定时任务
+//	cronTab.AddFunc(spec, task)
+//	// 启动定时器
+//	cronTab.Start()
+//	// 阻塞主线程停止
+//	select {}
+//}
+
+var lastRunning = true
 
 func CheckBetterGIStatus() {
-
 	cronTab := cron.New(cron.WithSeconds())
-
-	// 定时任务,cron表达式
-	spec := "*/30 * * * * *"
+	spec := "*/50 * * * * *"
 
 	task := func() {
-
-		// 检查进程
-		if IsWechatRunning() {
-
-			if okRun {
+		running := IsWechatRunning()
+		if running != lastRunning {
+			if running {
 				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
-				BgiLogStatusInfo.Running = IsWechatRunning()
-				notified = false // 清除通知状态
-				okRun = false    // 清除通知状态
-			}
-		} else {
-			if !notified {
+			} else {
 				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
 				control.CloseYuanShen()
-				notified = true
-				okRun = true
-				BgiLogStatusInfo.Running = IsWechatRunning()
-			} else if !okInform {
-				autoLog.Sugar.Infof("BetterGI 已关闭，已通知过: %s", time.Now().Format("2006-01-02 15:04:05"))
-				okInform = true
-				BgiLogStatusInfo.Running = IsWechatRunning()
+				autoLog.Sugar.Infof("BetterGI 已关闭: %s", time.Now().Format("2006-01-02 15:04:05"))
 			}
+			lastRunning = running
 		}
-
+		BgiLogStatusInfo.Running = running
 	}
 
-	// 添加定时任务
-	cronTab.AddFunc(spec, task)
-	// 启动定时器
+	if _, err := cronTab.AddFunc(spec, task); err != nil {
+		autoLog.Sugar.Errorf("添加定时任务失败: %v", err)
+		return
+	}
+
 	cronTab.Start()
-	// 阻塞主线程停止
 	select {}
 }
 
