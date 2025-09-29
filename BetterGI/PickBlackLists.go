@@ -10,7 +10,7 @@ import (
 
 // PickBlackLists 黑名单
 type PickBlackLists struct {
-	BlackLists string `json:"BlackLists" comment:"黑名单"`
+	BlackLists []string `json:"BlackLists" comment:"黑名单"`
 }
 
 var manifestPath = filepath.Join(config.Cfg.BetterGIAddress, "User", "pick_black_lists.txt")
@@ -25,7 +25,7 @@ func (P *PickBlackLists) ReadPickBlackLists() (PickBlackLists, error) {
 			return PickBlackLists{}, err
 		}
 		defer file.Close()
-		return PickBlackLists{BlackLists: ""}, nil
+		return PickBlackLists{BlackLists: []string{}}, nil
 	}
 
 	// 读取文件内容
@@ -34,7 +34,9 @@ func (P *PickBlackLists) ReadPickBlackLists() (PickBlackLists, error) {
 		return PickBlackLists{}, err
 	}
 
-	PickBlackLists := PickBlackLists{BlackLists: string(data)}
+	split := strings.Split(string(data), "\r\n")
+
+	PickBlackLists := PickBlackLists{BlackLists: split}
 
 	return PickBlackLists, nil
 }
@@ -48,15 +50,14 @@ func (P *PickBlackLists) AddPickBlackLists(blackList []string) error {
 
 	// 原有黑名单
 	blackString := BlackData.BlackLists
-	split := strings.Split(blackString, "\r\n")
 
 	// 合并新旧黑名单
-	split = append(split, blackList...)
+	blackString = append(blackString, blackList...)
 
 	// 去重
 	unique := make(map[string]struct{})
 	var dedup []string
-	for _, item := range split {
+	for _, item := range blackString {
 		item = strings.TrimSpace(item)
 		if item == "" {
 			continue
@@ -88,10 +89,9 @@ func (P *PickBlackLists) DeletePickBlackLists(blackName string) error {
 	}
 
 	blackString := BlackData.BlackLists
-	split := strings.Split(blackString, "\r\n")
 
 	var newList []string
-	for _, item := range split {
+	for _, item := range blackString {
 		item = strings.TrimSpace(item)
 		if item == "" {
 			continue

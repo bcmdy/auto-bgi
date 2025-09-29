@@ -355,7 +355,8 @@ func CheckBag() map[string]int {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		autoLog.Sugar.Errorf("没有相关JS:背包材料统计")
+		return nil
 	}
 	defer file.Close()
 
@@ -377,6 +378,12 @@ func CheckBag() map[string]int {
 				if qtyStr == "?" {
 					continue
 				}
+				//判断是否已经有了
+				isNil := allItems[name]
+				if isNil != 0 {
+					continue
+				}
+
 				qty, _ := strconv.Atoi(qtyStr)
 				allItems[name] = qty
 			}

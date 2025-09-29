@@ -103,7 +103,12 @@ export const apiMethods = {
   // 狗粮联机
   StartOnline: (typeKey,runDebug) => api.post('/api/abgiSSE/connect/'+typeKey+"?runDebug="+runDebug),
   offline:() => api.post('/api/abgiSSE/disconnect'),
-  DogFooddisconnect: () => api.post('/api/abgiSSE/disconnect')
+  DogFooddisconnect: () => api.post('/api/abgiSSE/disconnect'),
+  
+  // 黑名单相关
+  getBlackList: () => api.get('/api/betterGi/blackList'),
+  addBlackList: (blackList) => api.post('/api/betterGi/addBlackList', blackList),
+  deleteBlackList: (blackName) => api.post('/api/betterGi/deleteBlackList', blackName)
   
 }
 

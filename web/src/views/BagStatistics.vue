@@ -85,6 +85,11 @@
               <span class="btn-text">超过8000材料</span>
               <span class="btn-wave">〜</span>
             </button>
+         <button class="filter-btn ore-btn" @click="openBlackListModal" style="margin-left: 10px; background: linear-gradient(135deg, #ff6b6b, #ee5a52);">
+              <span class="btn-icon">🚫</span>
+              <span class="btn-text">黑名单管理</span>
+              <span class="btn-wave">〜</span>
+            </button>
             
     </div>
     </div>
@@ -174,10 +179,44 @@
          <div class="modal-body">
         
             <ul>
-              <li v-for="(value, key) in checkBagData" :key="key" style="text-align: center;">
-                {{ key }}：{{ value }}
+              <li v-for="(value, key) in checkBagData" :key="key" style="text-align: center; margin-bottom: 10px; padding: 8px; background: rgba(255, 255, 255, 0.5); border-radius: 10px;border: 1px solid #ccc;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                  <span>{{ key }}：{{ value }}</span>
+                  <span v-if="value > 8000 && blackList.includes(key)" class="blacklist-badge">
+                    🚫 已在黑名单
+                  </span>
+                  <button v-if="value > 8000 && !blackList.includes(key)" class="add-blacklist-btn" @click="addToBlackList(key)">
+                    加入黑名单
+                  </button>
+                </div>
               </li>
             </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 黑名单管理模态框 -->
+    <div v-if="showBlackListModal" class="modal-overlay">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>黑名单管理</h3>
+          <button class="modal-close-btn" @click="closeBlackListModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="blacklist-container">
+            <div class="blacklist-list">
+              <h4>当前黑名单：</h4>
+              <div v-if="blackList.length === 0" class="empty-state">
+                暂无黑名单材料
+              </div>
+              <div v-else>
+                <div v-for="item in blackList" :key="item" class="blacklist-item">
+                  <span class="material-name">{{ item }}</span>
+                  <button class="remove-btn" @click="removeFromBlackList(item)">移除</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -195,11 +234,13 @@ export default {
       title: '背包统计',
       items: [],
       selectedMaterials: [],
-      allOre: ["萃凝晶", "水晶块", "星银矿石", "紫晶块", "白铁块", "铁块", "魔晶块", "石珀"],
+      allOre: ["萃凝晶", "水晶块", "星银矿石", "紫晶块", "白铁块", "铁块", "魔晶块", "石珀","虹滴晶"],
       isLoading: true,
       filterCollapsed: true, // 新增：筛选区折叠状态
       showDetailModal:false,
-      checkBagData:{}
+      checkBagData:{},
+      showBlackListModal: false,
+      blackList: []
 
     }
   },
@@ -327,6 +368,7 @@ export default {
   },
   async mounted() {
     await this.loadData();
+    await this.loadBlackList();
   },
   
   methods: {
@@ -361,6 +403,56 @@ export default {
     closeDetailModal(){
         this.showDetailModal=false
     },
+
+    // 黑名单相关方法
+    async loadBlackList() {
+      try {
+        const response = await apiMethods.getBlackList();
+        this.blackList = response.data.BlackLists || [];
+      } catch (error) {
+        console.error('加载黑名单失败:', error);
+      }
+    },
+
+    async addToBlackList(materialName) {
+      if (this.blackList.includes(materialName)) {
+        alert('该材料已在黑名单中');
+        return;
+      }
+      
+      try {
+        await apiMethods.addBlackList([materialName]);
+        this.blackList.push(materialName);
+        alert('已添加到黑名单');
+      } catch (error) {
+        console.error('添加黑名单失败:', error);
+        alert('添加黑名单失败: ' + (error.message || error));
+      }
+    },
+
+    async removeFromBlackList(materialName) {
+      if (!confirm(`确定要从黑名单中移除 ${materialName} 吗？`)) {
+        return;
+      }
+      
+      try {
+        await apiMethods.deleteBlackList(materialName);
+        this.blackList = this.blackList.filter(item => item !== materialName);
+        alert('已从黑名单中移除');
+      } catch (error) {
+        console.error('移除黑名单失败:', error);
+        alert('移除黑名单失败: ' + (error.message || error));
+      }
+    },
+
+    openBlackListModal() {
+      this.showBlackListModal = true;
+    },
+
+    closeBlackListModal() {
+      this.showBlackListModal = false;
+    },
+
 
     // 删除背包数据
     async deleteBag() {
@@ -625,6 +717,109 @@ h1 {
   padding: 25px;
   max-height: 60vh;
   overflow-y: auto;
+}
+
+/* 黑名单相关样式 */
+.add-blacklist-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.add-blacklist-btn:hover {
+  background: linear-gradient(135deg, #ee5a52, #ff6b6b);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+}
+
+.blacklist-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.blacklist-list h4 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 4px rgba(255, 133, 194, 0.3);
+}
+
+.blacklist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 246, 251, 0.8));
+  border: 2px solid rgba(255, 133, 194, 0.3);
+  border-radius: 15px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 133, 194, 0.2);
+}
+
+.blacklist-item:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 246, 251, 0.9));
+  border-color: rgba(255, 133, 194, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 133, 194, 0.3);
+}
+
+.material-name {
+  font-weight: bold;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.remove-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
+}
+
+.remove-btn:hover {
+  background: linear-gradient(135deg, #ee5a52, #ff6b6b);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(255, 107, 107, 0.4);
+}
+
+.empty-state {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+  border: 2px dashed rgba(255, 133, 194, 0.3);
+}
+
+.blacklist-badge {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 
