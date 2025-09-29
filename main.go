@@ -914,6 +914,39 @@ func main() {
 			}
 			c.JSON(http.StatusOK, gin.H{"status": "success", "data": lists})
 		})
+		//添加黑名单
+		bgiController.POST("/addBlackList", func(c *gin.Context) {
+			var blackList []string
+			if err := c.ShouldBindJSON(&blackList); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+
+			err := pickBlackListsService.AddPickBlackLists(blackList)
+			if err != nil {
+				autoLog.Sugar.Infof("添加黑名单失败:%s", err.Error())
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "添加成功"})
+
+		})
+
+		//删除某一个黑名单
+		bgiController.POST("/deleteBlackList", func(c *gin.Context) {
+			var blackName string
+			if err := c.ShouldBindJSON(&blackName); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+			err := pickBlackListsService.DeletePickBlackLists(blackName)
+			if err != nil {
+				autoLog.Sugar.Infof("删除黑名单失败:%s", err.Error())
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+
+		})
 
 	}
 
