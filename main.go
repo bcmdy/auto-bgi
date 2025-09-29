@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
@@ -898,6 +899,22 @@ func main() {
 			material := CDAwareAutoGatherService.CDAllMaterial()
 			context.JSON(http.StatusOK, material)
 		})
+	}
+
+	//BetterGI
+	var pickBlackListsService BetterGI.PickBlackLists
+	bgiController := ginServer.Group("/api/betterGi")
+	{
+		//读取黑名单
+		bgiController.GET("/blackList", func(c *gin.Context) {
+			lists, err2 := pickBlackListsService.ReadPickBlackLists()
+			if err2 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": lists})
+		})
+
 	}
 
 	// 定义 GitHub Push Webhook 的结构体

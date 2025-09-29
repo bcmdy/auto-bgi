@@ -373,7 +373,7 @@
                 </div>
                 <div class="help-text">
                   <span class="help-icon">💡</span>
-                  填写 OneRemote 的日志文件夹路径，到 .logs 目录下，例如 C:\Users\Administrator\Desktop\1Remote-1.2.0-net9-x64\.logs
+                  填写 1Remote 的日志文件夹路径，到 .logs 目录下，例如 C:\Users\Administrator\Desktop\1Remote-1.2.0-net9-x64\.logs
                 </div>
               </a-form-item>
               <div class="dynamic-list">

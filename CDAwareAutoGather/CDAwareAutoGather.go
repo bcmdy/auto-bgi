@@ -257,6 +257,6 @@ func (u *UidInfo) WriteAllRoute(CDAwareAutoGatherGroup string, cdAwareAutoGather
 	// 写回文件
 	if err := os.WriteFile(CDAwareAutoGatherGroupFilename, newData, 0644); err != nil {
 
-		autoLog.Sugar.Errorf("写入 狗粮联机配置组[%s]失败:%d", config.Cfg.Account.GouLangGroupName, err)
+		autoLog.Sugar.Errorf("写入 CD管理的自动采集[%s]失败:%d", CDAwareAutoGatherGroupFilename, err)
 	}
 }
