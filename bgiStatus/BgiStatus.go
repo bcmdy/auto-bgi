@@ -2046,6 +2046,21 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 	seg.Consuming = sumSeg.String()
 	sumLog.Segments = append(sumLog.Segments, seg)
 	result = append(result, sumLog)
+
+	// 🔹按配置组最早开始时间排序
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].GroupName == "合计" {
+			return false
+		}
+		if result[j].GroupName == "合计" {
+			return true
+		}
+		if len(result[i].Segments) == 0 || len(result[j].Segments) == 0 {
+			return result[i].GroupName < result[j].GroupName
+		}
+		return result[i].Segments[0].StartTime < result[j].Segments[0].StartTime
+	})
+
 	return result
 }
 

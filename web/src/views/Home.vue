@@ -421,6 +421,18 @@ const indexSXBtn = () => {
   message.success('刷新成功！')
 }
 
+//更新updateABgi
+const updateABgi = async () => {
+  const response = await apiMethods.updateABgi()
+  console.log("===============",response)
+  if(response.code!=200){
+      message.success('更新成功！请重启软件！')
+    return
+  }
+ message.error('更新失败！请稍后再试！')
+
+}
+
 const mysSignIn = () => {
   Modal.confirm({
     title: '确认签到？',

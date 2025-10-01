@@ -8,6 +8,7 @@ import (
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/abgiSSE"
+	"auto-bgi/abgiUpdate"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -79,6 +80,8 @@ var upgrader = websocket.Upgrader{
 var imageList []string
 var imageListOnce sync.Once
 
+var Version = "未知"
+
 func loadImages() {
 	imageDir := "./img"
 	filepath.WalkDir(imageDir, func(path string, d fs.DirEntry, err error) error {
@@ -132,6 +135,21 @@ func main() {
 
 	ginServer.SetTrustedProxies(nil)
 	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
+
+	var ABgi abgiUpdate.ABgi
+	//Version, _ = ABgi.GetVersion()
+
+	ginServer.POST("/api/updateABgi", func(context *gin.Context) {
+		err := ABgi.Update()
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"message": "更新失败"})
+			return
+		}
+		context.JSON(http.StatusOK, gin.H{"message": "更新成功"})
+		time.Sleep(3)
+		os.Exit(0)
+
+	})
 
 	//查询今日所有日志文件
 	ginServer.GET("/api/logFiles", func(c *gin.Context) {
@@ -256,6 +274,8 @@ func main() {
 		data["progress"] = info.ConfigurationGroupExecutionProgress
 		data["running"] = info.Running
 		data["jsProgress"] = info.JSProgress
+		//data["version"] = Version
+		//data["isUpdate"] = Version != ABgi.GetCurrentVersion()
 
 		c.JSON(http.StatusOK, data)
 
@@ -505,7 +525,6 @@ func main() {
 			GroupTime  []bgiStatus.LogAnalysis2Struct
 			signLog    string
 			groupPInfo string
-			//gitLog     []bgiStatus.GitLogStruct
 		)
 
 		//获取配置组执行时长
@@ -1150,6 +1169,14 @@ func main() {
 				return
 
 			}
+		} else if os.Args[1] == "updateABgi" {
+
+			err := ABgi.Update()
+			if err != nil {
+				autoLog.Sugar.Errorf("更新ABGI失败: %v", err)
+			}
+			os.Exit(1)
+
 		}
 	}
 

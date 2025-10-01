@@ -43,6 +43,7 @@ export const apiMethods = {
   // 获取系统状态
   getStatus: () => api.get('/api/index'),
   indexSX: () => api.get('/api/indexSX'),
+  updateABgi: () => api.post('/api/updateABgi'),
   
   // 获取轮播图图片列表
   getImages: () => api.get('/api/images'),
