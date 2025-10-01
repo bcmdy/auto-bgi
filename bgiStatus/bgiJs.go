@@ -68,7 +68,8 @@ func BatchUpdateScript() string {
 		if err != nil {
 			continue
 		}
-		if nowVersion != newVersion {
+
+		if tools.CompareVersion(nowVersion, newVersion) == -1 {
 			if name == "CD-Aware-AutoGather" {
 				autoLog.Sugar.Infof("脚本更新：带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
 				Notice.SentText("带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
