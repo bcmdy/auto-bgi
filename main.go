@@ -29,7 +29,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -341,7 +340,7 @@ func main() {
 	//发送截图
 	ginServer.POST("/api/sendImage", func(c *gin.Context) {
 
-		err := control.ScreenShot()
+		err := control.ScreenShot("jt.jpg")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
 			return
@@ -630,17 +629,17 @@ func main() {
 
 		fmt.Println("配置保存成功:", newConfig)
 
-		//重新加载配置文件
-		_ = config.ReloadConfig()
-		time.Sleep(1 * time.Second)
-
-		// 调用重启脚本
-		cmd := exec.Command("cmd", "/c", "restart.bat")
-		err2 := cmd.Start()
-		if err2 != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err2.Error()})
-			return
-		}
+		////重新加载配置文件
+		//_ = config.ReloadConfig()
+		//time.Sleep(1 * time.Second)
+		//
+		//// 调用重启脚本
+		//cmd := exec.Command("cmd", "/c", "restart.bat")
+		//err2 := cmd.Start()
+		//if err2 != nil {
+		//	c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err2.Error()})
+		//	return
+		//}
 
 		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "重启命令已执行"})
 
@@ -1062,6 +1061,17 @@ func main() {
 		c.Header("Expires", time.Now().AddDate(0, 0, 3).Format(http.TimeFormat))
 		c.JSON(200, gin.H{"images": imageList})
 
+	})
+
+	ginServer.GET("/api/aBgiJt", func(c *gin.Context) {
+		//截图
+		err := control.ScreenShot("./img/abgi/jt.jpg")
+		if err != nil {
+			c.JSON(400, "截图失败")
+		}
+		time.Sleep(2)
+
+		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})
 
 	// 静态文件服务（放在所有API路由之后）

@@ -34,14 +34,15 @@ type Config struct {
 	Account         Account         `json:"Account" comment:"账号配置"`
 }
 type Account struct {
-	Uid              string `json:"Uid" comment:"账号UID"`
-	Name             string `json:"Name" comment:"账号名称"`
-	IsMultiUser      bool   `json:"IsMultiUser" comment:"是否是多用户"`
-	GouLangGroupName string `json:"GouLangGroupName" comment:"狗粮联机配置组名称"`
-	OnlineKeyword    string `json:"OnlineKeyword" comment:"联机上线关键词"`
-
-	SecretKey  string `json:"SecretKey" comment:"加密密钥"`
-	AccountKey string `json:"AccountKey" comment:"密钥"`
+	Uid                string `json:"Uid" comment:"账号UID"`
+	Name               string `json:"Name" comment:"账号名称"`
+	IsMultiUser        bool   `json:"IsMultiUser" comment:"是否是多用户"`
+	GouLangGroupName   string `json:"GouLangGroupName" comment:"狗粮联机配置组名称"`
+	OnlineKeyword      string `json:"OnlineKeyword" comment:"联机上线关键词"`
+	OnlineAfterKeyword string `json:"OnlineAfterKeyword" comment:"联机之后关键词"`
+	OnlineAfterOneLong string `json:"OnlineAfterOneLong" comment:"联机之后一条龙"`
+	SecretKey          string `json:"SecretKey" comment:"加密密钥"`
+	AccountKey         string `json:"AccountKey" comment:"密钥"`
 }
 type UpdatePathing struct {
 	Name       string `json:"name" comment:"配置组"`

@@ -6,6 +6,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/task"
 	"bufio"
 	"fmt"
 	"github.com/go-vgo/robotgo"
@@ -105,8 +106,29 @@ func (m *LogMonitor) Monitor() {
 				}
 				//一条龙结束操作
 				if strings.Contains(line, "一条龙和配置组任务结束") {
-					ArchiveConfig()
-					Notice.SentText("一条龙和配置组任务结束，所有配置组已归档@所有人")
+					archiveConfig := ArchiveConfig()
+					data := "一条龙和配置组任务结束，所有配置组已归档@所有人\n"
+					sumExecuteTime, _ := time.ParseDuration("0s")
+					for _, groupMap := range archiveConfig {
+
+						executeTime, _ := time.ParseDuration("0s")
+						for _, segment := range groupMap.Segments {
+							if segment.Consuming != "" {
+								duration, err := time.ParseDuration(segment.Consuming)
+								if err != nil {
+									autoLog.Sugar.Errorf("解析时间失败: %v", err)
+									continue
+								}
+								executeTime += duration
+
+							}
+							sumExecuteTime += executeTime
+						}
+						data += fmt.Sprintf("【%s--%s】\n", groupMap.GroupName, executeTime)
+						data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
+					}
+					//Notice.SentText("一条龙和配置组任务结束，所有配置组已归档@所有人")
+					Notice.SentText(data)
 					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {
@@ -136,6 +158,17 @@ func (m *LogMonitor) Monitor() {
 						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
 						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
 					}
+				}
+
+				//关键字触发执行一条龙
+				if config.Cfg.Account.OnlineAfterKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineAfterKeyword) {
+					Notice.SentText("关键词触发执行一条龙")
+					if config.Cfg.Account.OnlineAfterOneLong == "" {
+						Notice.SentText("关键词触发执行一条龙，但是没有配置OnlineAfterOneLong")
+					} else {
+						task.StartOneDragon("联机之后")
+					}
+
 				}
 
 				//上线操作

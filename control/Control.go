@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"time"
 	"unsafe"
@@ -112,7 +113,7 @@ func MouseClick(x, y int, key string, DoubleClick bool) {
 }
 
 // 截图
-func ScreenShot() error {
+func ScreenShot(imgName string) error {
 	screenWidth, screenHeight := robotgo.GetScreenSize()
 	imgScreen := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
 	if imgScreen == nil {
@@ -122,7 +123,13 @@ func ScreenShot() error {
 
 	img := robotgo.ToImage(imgScreen)
 
-	file, err := os.Create("jt.jpg")
+	// 🔹确保目录存在
+	dir := filepath.Dir(imgName)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("创建目录失败: %v", err)
+	}
+
+	file, err := os.Create(imgName)
 	if err != nil {
 		return err
 	}

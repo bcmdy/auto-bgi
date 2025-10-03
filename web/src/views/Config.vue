@@ -629,6 +629,28 @@
             </a-form-item>
 
 
+            <a-form-item label="联机之后关键词" name="联机之后关键词" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🔑</span>
+                <a-input
+                  v-model:value="formData.Account.OnlineAfterKeyword" 
+                  placeholder="联机之后关键词"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
+            <a-form-item label="联机之后一条龙" name="联机之后一条龙" class="form-item-enhanced">
+              <div class="input-wrapper">
+                <span class="input-icon">🔑</span>
+                <a-input
+                  v-model:value="formData.Account.OnlineAfterOneLong" 
+                  placeholder="联机之后一条龙"
+                  class="enhanced-input"
+                />
+              </div>
+            </a-form-item>
+
           <a-form-item label="联机SecretKey" name="联机SecretKey" class="form-item-enhanced">
               <div class="input-wrapper">
                 <span class="input-icon">👀</span>
@@ -650,6 +672,8 @@
                 />
               </div>
             </a-form-item>
+
+
                 
           
      </a-card>
@@ -753,7 +777,9 @@ const formData = reactive({
     GouLangGroupName: "",
     OnlineKeyword: "",
     SecretKey: "",
-    AccountKey: ""
+    AccountKey: "",
+    OnlineAfterKeyword:"",
+    OnlineAfterOneLong:""
   }
 })
 

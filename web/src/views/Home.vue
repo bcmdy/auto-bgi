@@ -84,6 +84,40 @@
     </div>
   </a-modal>
 
+  <!-- 查看桌面图片模态框 -->
+  <a-modal
+    v-model:open="screenshotModal.visible"
+    title="桌面图片"
+    :footer="null"
+    :width="isMobile ? '96vw' : '90vw'"
+    centered
+  >
+    <div ref="screenshotContainer" style="text-align: center; overflow: auto; max-height: 80vh;">
+      <img
+        ref="screenshotImage"
+        :src="screenshotModal.url"
+        alt="desktop-screenshot"
+        @load="onScreenshotLoad"
+        :style="{
+          maxWidth: isZoomed ? 'none' : '100%',
+          maxHeight: isZoomed ? 'none' : '80vh',
+          transform: isZoomed ? `scale(${zoomScale})` : 'none',
+          transformOrigin: 'top left',
+          display: 'inline-block'
+        }"
+      />
+    </div>
+
+    <div class="screenshot-toolbar">
+      <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="refreshScreenshot">刷新</a-button>
+      <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="zoomOut" :disabled="!isZoomed && zoomScale <= 1">缩小</a-button>
+      <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="zoomIn">放大</a-button>
+      <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="fitImage">适应</a-button>
+      <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="resetZoom">1:1</a-button>
+      <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" type="primary" @click="closeScreenshot">关闭</a-button>
+    </div>
+  </a-modal>
+
 </template>
 
 <script setup>
@@ -93,6 +127,63 @@ import { useRouter } from 'vue-router'
 import  { apiMethods } from '@/utils/api'
 
 const router = useRouter()
+
+// 简易移动端检测与监听
+const isMobile = ref(window.innerWidth <= 576)
+const handleResizeForMobile = () => {
+  isMobile.value = window.innerWidth <= 576
+}
+window.addEventListener('resize', handleResizeForMobile)
+
+// 查看桌面图片 - 状态
+const screenshotModal = reactive({
+  visible: false,
+  url: ''
+})
+
+const screenshotContainer = ref(null)
+const screenshotImage = ref(null)
+const isZoomed = ref(false)
+const zoomScale = ref(1)
+
+const refreshScreenshot = () => {
+  const ts = Date.now()
+  screenshotModal.url = `/api/aBgiJt?t=${ts}`
+}
+
+const openScreenshot = () => {
+  refreshScreenshot()
+  screenshotModal.visible = true
+}
+
+const closeScreenshot = () => {
+  screenshotModal.visible = false
+}
+
+const onScreenshotLoad = () => {
+  fitImage()
+}
+
+const zoomIn = () => {
+  isZoomed.value = true
+  zoomScale.value = Math.min(zoomScale.value + 0.2, 6)
+}
+
+const zoomOut = () => {
+  if (!isZoomed.value) return
+  zoomScale.value = Math.max(zoomScale.value - 0.2, 0.2)
+}
+
+const resetZoom = () => {
+  isZoomed.value = true
+  zoomScale.value = 1
+}
+
+const fitImage = () => {
+  // Reset first
+  isZoomed.value = false
+  zoomScale.value = 1
+}
 
 
 // 响应式数据
@@ -467,6 +558,7 @@ const automationButtons = ref([
   { text: '脚本更新列表', action: () => router.push('/jsNames') },
   { text: '地图追踪', action: () => router.push('/Pathing') },
   { text: '发送桌面截图', action: sendImage },
+  { text: '查看桌面图片', action: openScreenshot },
   { text: '米游社手动签到', action: mysSignIn },
    { text: '联机', action: () => router.push('/Online') }
 
@@ -516,6 +608,36 @@ onMounted(() => {
   border: 2px dashed #ffaad5;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(255, 174, 209, 0.5);
+}
+
+/* 工具栏响应式布局 */
+.screenshot-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+/* Desktop: keep buttons inline, auto width */
+.screenshot-toolbar :deep(.ant-btn) {
+  flex: 0 0 auto;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 36px;
+}
+
+@media (max-width: 576px) {
+  .screenshot-toolbar {
+    justify-content: stretch;
+  }
+  .screenshot-toolbar :deep(.ant-btn) {
+    flex: 1 1 calc(50% - 8px);
+    min-height: 32px;
+  }
 }
 
 .ant-modal-confirm .ant-modal-confirm-title {

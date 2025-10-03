@@ -307,7 +307,7 @@ func SendWeChatImageTask() {
 
 		autoLog.Sugar.Infof("图片发送 %v", time.Now().Format("2006-01-02 15:04:05"))
 
-		err := control.ScreenShot()
+		err := control.ScreenShot("jt.jpg")
 		if err != nil {
 			autoLog.Sugar.Error("图片发送失败:", err)
 			return
@@ -341,7 +341,7 @@ func MiYouSheSign() {
 	if err := mysConfig.LoadConfig(configPath); err != nil {
 
 		autoLog.Sugar.Errorf("米游社-加载配置文件失败: %v", err)
-		os.Exit(1)
+		return
 	}
 
 	// 检查Cookie是否配置

@@ -133,7 +133,7 @@ func SentImage(path string) error {
 // 电脑截图
 func SendScreenshot() error {
 
-	err := control.ScreenShot()
+	err := control.ScreenShot("jt.jpg")
 	if err != nil {
 		return fmt.Errorf("通知-图片发送失败:%v", err)
 	}
