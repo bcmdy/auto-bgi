@@ -122,8 +122,9 @@ func (m *LogMonitor) Monitor() {
 								executeTime += duration
 
 							}
-							sumExecuteTime += executeTime
+
 						}
+						sumExecuteTime += executeTime
 						data += fmt.Sprintf("【%s--%s】\n", groupMap.GroupName, executeTime)
 					}
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
