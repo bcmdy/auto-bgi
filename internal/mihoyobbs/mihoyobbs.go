@@ -1,6 +1,7 @@
 package mihoyobbs
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/internal/http"
 	"auto-bgi/internal/mysConfig"
@@ -137,7 +138,7 @@ func (m *Mihoyobbs) Run() error {
 
 	// 获取任务列表
 	if err := m.getTasksList(); err != nil {
-		autoLog.Sugar.Error("米游社-获取任务列表失败: %v", err)
+		autoLog.Sugar.Errorf("米游社-获取任务列表失败: %v", err)
 	}
 
 	// 社区签到
@@ -150,17 +151,18 @@ func (m *Mihoyobbs) Run() error {
 
 	utils.RandomSleep(1, 3)
 
-	// 看帖任务
+	//看帖任务
+
 	autoLog.Sugar.Info("米游社-看帖任务")
 	if mysConfig.GlobalConfig.Mihoyobbs.Read && !m.taskDo.Read {
 		if err := m.readPosts(); err != nil {
-			autoLog.Sugar.Error("米游社-看帖任务失败: %v", err)
+			autoLog.Sugar.Errorf("米游社-看帖任务失败: %v", err)
 		}
 	}
 
 	utils.RandomSleep(1, 3)
 
-	// 点赞任务
+	//点赞任务
 	autoLog.Sugar.Info("米游社-点赞任务")
 	if mysConfig.GlobalConfig.Mihoyobbs.Like && !m.taskDo.Like {
 		if err := m.likePosts(); err != nil {
@@ -189,7 +191,7 @@ func (m *Mihoyobbs) getTasksList() error {
 
 // getTasksListWithRetry 获取任务列表（带重试）
 func (m *Mihoyobbs) getTasksListWithRetry(update bool) error {
-	autoLog.Sugar.Info("米游社-获取任务列表")
+	//autoLog.Sugar.Info("米游社-获取任务列表")
 
 	// 使用专门的task header，与Python版本保持一致
 	taskHeader := map[string]string{
@@ -200,7 +202,7 @@ func (m *Mihoyobbs) getTasksListWithRetry(update bool) error {
 		"Accept-Encoding":  "gzip, deflate",
 		"Accept-Language":  "zh-CN,en-US;q=0.8",
 		"X-Requested-With": "com.mihoyo.hyperion",
-		"Cookie":           utils.TidyCookie(mysConfig.GlobalConfig.Account.Cookie),
+		"Cookie":           mysConfig.GlobalConfig.Account.Cookie,
 	}
 
 	// 临时设置task header
@@ -213,9 +215,18 @@ func (m *Mihoyobbs) getTasksListWithRetry(update bool) error {
 	if err != nil {
 		return err
 	}
+	var aPIResponse APIResponse
+	if err := resp.JSON(&aPIResponse); err != nil {
+		return fmt.Errorf("JSON解析失败: %v", err)
+	}
+	if aPIResponse.Retcode == -100 {
+		autoLog.Sugar.Error(aPIResponse.Message)
+		Notice.SentText(aPIResponse.Message)
+		return err
+	}
 
 	// 打印响应内容用于调试
-	autoLog.Sugar.Info("米游社-获取任务列表响应: %s", resp.String())
+	//autoLog.Sugar.Info("米游社-获取任务列表响应: %s", resp.String())
 
 	var taskResp TaskListResponse
 	if err := resp.JSON(&taskResp); err != nil {
@@ -254,7 +265,7 @@ func (m *Mihoyobbs) getTasksListWithRetry(update bool) error {
 		}
 	}
 
-	autoLog.Sugar.Info("米游社-签到任务状态: 签到=%v, 看帖=%v, 点赞=%v, 分享=%v",
+	autoLog.Sugar.Infof("米游社-签到任务状态: 签到=%v, 看帖=%v, 点赞=%v, 分享=%v",
 		m.taskDo.Sign, m.taskDo.Read, m.taskDo.Like, m.taskDo.Share)
 
 	return nil
@@ -265,10 +276,21 @@ func (m *Mihoyobbs) checkin() error {
 	for _, bbs := range m.bbsList {
 		autoLog.Sugar.Info("米游社-签到任务")
 
-		// 与Python版本保持一致，使用深拷贝headers
-		header := make(map[string]string)
-		for k, v := range m.client.GetHeaders() {
-			header[k] = v
+		//// 与Python版本保持一致，使用深拷贝headers
+		//header := make(map[string]string)
+		//for k, v := range m.client.GetHeaders() {
+		//	header[k] = v
+		//}
+
+		header := map[string]string{
+			"Accept":           "application/json, text/plain, */*",
+			"Origin":           "https://webstatic.mihoyo.com",
+			"User-Agent":       "Mozilla/5.0 (Linux; Android 12; Unspecified Device) AppleWebKit/537.36 (KHTML, like Gecko) " + fmt.Sprintf("Version/4.0 Chrome/103.0.5060.129 Mobile Safari/537.36 miHoYoBBS/%s", utils.MihoyobbsVersion),
+			"Referer":          "https://webstatic.mihoyo.com",
+			"Accept-Encoding":  "gzip, deflate",
+			"Accept-Language":  "zh-CN,en-US;q=0.8",
+			"X-Requested-With": "com.mihoyo.hyperion",
+			"Cookie":           mysConfig.GlobalConfig.Account.Cookie,
 		}
 
 		// 重试机制，与Python版本保持一致
@@ -284,8 +306,8 @@ func (m *Mihoyobbs) checkin() error {
 			postData = strings.ReplaceAll(postData, " ", "") // 去除空格，与Python保持一致
 			ds := utils.GetDS2("", postData)
 
-			autoLog.Sugar.Info("米游社-签到任务请求数据: %s", postData)
-			autoLog.Sugar.Info("米游社-签到任务生成的DS: %s", ds)
+			autoLog.Sugar.Infof("米游社-签到任务请求数据: %s", postData)
+			autoLog.Sugar.Infof("米游社-签到任务生成的DS: %s", ds)
 
 			// 设置新的DS
 			header["DS"] = ds
@@ -293,7 +315,7 @@ func (m *Mihoyobbs) checkin() error {
 			// 使用JSON字符串发送请求，与Python版本保持一致
 			resp, err := m.client.PostJSONWithHeaders(url, postData, header)
 			if err != nil {
-				autoLog.Sugar.Error("米游社-签到任务签到请求失败: %v", err)
+				autoLog.Sugar.Errorf("米游社-签到任务签到请求失败: %v", err)
 				continue
 			}
 
@@ -349,11 +371,12 @@ func (m *Mihoyobbs) readPosts() error {
 
 	readCount := 0
 	for _, post := range posts {
+
 		if readCount >= m.taskDo.ReadNum {
 			break
 		}
 
-		autoLog.Sugar.Info("米游社-看帖任务正在看帖: %s", post.Subject)
+		autoLog.Sugar.Infof("米游社-看帖任务正在看帖: %s", post.Subject)
 
 		url := "https://bbs-api.miyoushe.com/post/api/getPostFull"
 		fullURL := fmt.Sprintf("%s?post_id=%s", url, post.PostID)
@@ -371,10 +394,10 @@ func (m *Mihoyobbs) readPosts() error {
 		}
 
 		if apiResp.Retcode == 0 {
-			autoLog.Sugar.Info("米游社-看帖任务看帖成功: %s", post.Subject)
+			autoLog.Sugar.Infof("米游社-看帖任务看帖成功: %s", post.Subject)
 			readCount++
 		} else {
-			autoLog.Sugar.Error("米游社-看帖任务看帖失败: %s, 错误码: %d", post.Subject, apiResp.Retcode)
+			autoLog.Sugar.Errorf("米游社-看帖任务看帖失败: %s, 错误码: %d", post.Subject, apiResp.Retcode)
 		}
 
 		utils.RandomSleep(2, 5)
@@ -394,7 +417,7 @@ func (m *Mihoyobbs) likePosts() error {
 	}
 
 	likeCount := 0
-	for _, post := range posts {
+	for i, post := range posts {
 		if likeCount >= m.taskDo.LikeNum {
 			break
 		}
@@ -409,21 +432,21 @@ func (m *Mihoyobbs) likePosts() error {
 
 		resp, err := m.client.Post(url, data)
 		if err != nil {
-			autoLog.Sugar.Error("米游社-点赞任务点赞请求失败: %v", err)
+			autoLog.Sugar.Errorf("米游社-点赞任务点赞请求失败: %v", err)
 			continue
 		}
 
 		var apiResp APIResponse
 		if err := resp.JSON(&apiResp); err != nil {
-			autoLog.Sugar.Error("米游社-点赞任务解析点赞响应失败: %v", err)
+			autoLog.Sugar.Errorf("米游社-点赞任务解析点赞响应失败: %v", err)
 			continue
 		}
 
 		if apiResp.Retcode == 0 {
-			autoLog.Sugar.Info("米游社-点赞任务点赞成功: %s", post.Subject)
+			autoLog.Sugar.Infof("米游社-点赞任务点赞成功%v: %s", i, post.Subject)
 			likeCount++
 		} else {
-			autoLog.Sugar.Error("米游社-点赞任务点赞失败: %s, 错误码: %d", post.Subject, apiResp.Retcode)
+			autoLog.Sugar.Errorf("米游社-点赞任务点赞失败: %s, 错误码: %d", post.Subject, apiResp.Retcode)
 		}
 
 		utils.RandomSleep(2, 5)
@@ -483,7 +506,7 @@ func (m *Mihoyobbs) getPostsList() ([]PostInfo, error) {
 		return nil, err
 	}
 
-	autoLog.Sugar.Debug("米游社-分享任务获取帖子列表响应: %s", resp.String())
+	//autoLog.Sugar.Debug("米游社-分享任务获取帖子列表响应: %s", resp.String())
 
 	var apiResp struct {
 		Retcode int    `json:"retcode"`
@@ -520,6 +543,6 @@ func (m *Mihoyobbs) getPostsList() ([]PostInfo, error) {
 		})
 	}
 
-	autoLog.Sugar.Info("米游社-分享任务获取帖子列表成功, 帖子数量: %d", len(posts))
+	autoLog.Sugar.Infof("米游社-分享任务获取帖子列表成功, 帖子数量: %d", len(posts))
 	return posts, nil
 }

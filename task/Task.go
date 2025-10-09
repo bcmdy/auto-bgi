@@ -5,7 +5,6 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
-	"auto-bgi/internal/gamecheckin"
 	"auto-bgi/internal/mihoyobbs"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/internal/utils"
@@ -330,7 +329,7 @@ func SendWeChatImageTask() {
 func MiYouSheSign() {
 	// 解析命令行参数
 	var configPath string
-	flag.StringVar(&configPath, "mysConfig", "mysConfig.yaml", "配置文件路径")
+	flag.StringVar(&configPath, "mysCfg", "mysConfig.yaml", "配置文件路径")
 	flag.Parse()
 
 	// 初始化随机数种子
@@ -354,10 +353,10 @@ func MiYouSheSign() {
 	if mysConfig.GlobalConfig.Device.ID == "" {
 		deviceID := utils.GetDeviceID(mysConfig.GlobalConfig.Account.Cookie)
 		mysConfig.GlobalConfig.Device.ID = deviceID
-		autoLog.Sugar.Infof("米游社-自动生成设备ID: %s", deviceID)
+		//autoLog.Sugar.Infof("米游社-自动生成设备ID: %s", deviceID)
 	}
 
-	autoLog.Sugar.Infof("米游社-签到工具启动")
+	//autoLog.Sugar.Infof("米游社-签到工具启动")
 
 	// 运行米游社签到
 	if mysConfig.GlobalConfig.Mihoyobbs.Enable {
@@ -369,15 +368,15 @@ func MiYouSheSign() {
 		}
 	}
 
-	// 运行游戏签到
-	if mysConfig.GlobalConfig.Games.CN.Enable {
-
-		autoLog.Sugar.Infof("米游社-开始游戏签到任务")
-		if err := gamecheckin.RunAllGames(); err != nil {
-
-			autoLog.Sugar.Errorf("米游社-游戏签到失败: %v", err)
-		}
-	}
+	//// 运行游戏签到
+	//if mysConfig.GlobalConfig.Games.CN.Enable {
+	//
+	//	autoLog.Sugar.Infof("米游社-开始游戏签到任务")
+	//	if err := gamecheckin.RunAllGames(); err != nil {
+	//
+	//		autoLog.Sugar.Errorf("米游社-游戏签到失败: %v", err)
+	//	}
+	//}
 
 	autoLog.Sugar.Infof("米游社-所有任务完成")
 }

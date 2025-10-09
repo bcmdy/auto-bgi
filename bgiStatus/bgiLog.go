@@ -97,7 +97,7 @@ func (m *LogMonitor) Monitor() {
 				//关键字告警
 				for _, kw := range m.Keywords {
 					if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
-						msg := fmt.Sprintf("⚠️ 日志告警\n\n配置组: %s\n脚本名称: %s\n关键词: %s\n内容: %s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine, kw, strings.TrimSpace(line))
+						msg := fmt.Sprintf("⚠️通知：💗%s💗\n配置组：%s\n路线：%s", strings.TrimSpace(line), BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine)
 						//m.sendAlert(msg, false)
 						Notice.SentText(msg)
 						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
@@ -124,8 +124,8 @@ func (m *LogMonitor) Monitor() {
 							}
 
 						}
-						sumExecuteTime += executeTime
 						data += fmt.Sprintf("【%s--%s】\n", groupMap.GroupName, executeTime)
+						sumExecuteTime += executeTime
 					}
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
 					//Notice.SentText("一条龙和配置组任务结束，所有配置组已归档@所有人")
@@ -163,11 +163,11 @@ func (m *LogMonitor) Monitor() {
 
 				//关键字触发执行一条龙
 				if config.Cfg.Account.OnlineAfterKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineAfterKeyword) {
-					Notice.SentText("关键词触发执行一条龙")
+					Notice.SentText("关键词触发执行一条龙:" + config.Cfg.Account.OnlineAfterKeyword)
 					if config.Cfg.Account.OnlineAfterOneLong == "" {
 						Notice.SentText("关键词触发执行一条龙，但是没有配置OnlineAfterOneLong")
 					} else {
-						task.StartOneDragon("联机之后")
+						task.StartOneDragon(config.Cfg.Account.OnlineAfterOneLong)
 					}
 
 				}
