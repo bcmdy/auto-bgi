@@ -5,6 +5,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/internal/gamecheckin"
 	"auto-bgi/internal/mihoyobbs"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/internal/utils"
@@ -368,15 +369,15 @@ func MiYouSheSign() {
 		}
 	}
 
-	//// 运行游戏签到
-	//if mysConfig.GlobalConfig.Games.CN.Enable {
-	//
-	//	autoLog.Sugar.Infof("米游社-开始游戏签到任务")
-	//	if err := gamecheckin.RunAllGames(); err != nil {
-	//
-	//		autoLog.Sugar.Errorf("米游社-游戏签到失败: %v", err)
-	//	}
-	//}
+	// 运行游戏签到
+	if mysConfig.GlobalConfig.Games.CN.Enable {
+
+		autoLog.Sugar.Infof("米游社-开始游戏签到任务")
+		if err := gamecheckin.RunAllGames(); err != nil {
+
+			autoLog.Sugar.Errorf("米游社-游戏签到失败: %v", err)
+		}
+	}
 
 	autoLog.Sugar.Infof("米游社-所有任务完成")
 }

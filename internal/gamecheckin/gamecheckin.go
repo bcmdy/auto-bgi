@@ -111,7 +111,7 @@ func NewGameCheckin(gameID, gameMid, gameName, actID, playerName string) *GameCh
 	headers := map[string]string{
 		"DS":                utils.GetDS(true),
 		"Referer":           "https://act.mihoyo.com/",
-		"Cookie":            utils.TidyCookie(mysConfig.GlobalConfig.Account.Cookie), // 游戏签到使用普通cookie
+		"Cookie":            mysConfig.GlobalConfig.Account.Cookie, // 游戏签到使用普通cookie
 		"x-rpc-device_id":   mysConfig.GlobalConfig.Device.ID,
 		"User-Agent":        "Mozilla/5.0 (Linux; Android 12; Unspecified Device) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/103.0.5060.129 Mobile Safari/537.36 miHoYoBBS/" + utils.MihoyobbsVersion,
 		"Accept":            "application/json, text/plain, */*",

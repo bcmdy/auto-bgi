@@ -290,7 +290,7 @@ func (m *Mihoyobbs) checkin() error {
 			"Accept-Encoding":  "gzip, deflate",
 			"Accept-Language":  "zh-CN,en-US;q=0.8",
 			"X-Requested-With": "com.mihoyo.hyperion",
-			"Cookie":           mysConfig.GlobalConfig.Account.Cookie,
+			"Cookie":           mysConfig.GlobalConfig.Account.Stoken,
 		}
 
 		// 重试机制，与Python版本保持一致
@@ -369,6 +369,8 @@ func (m *Mihoyobbs) readPosts() error {
 		return err
 	}
 
+	fmt.Println("=======111", posts)
+
 	readCount := 0
 	for _, post := range posts {
 
@@ -417,12 +419,12 @@ func (m *Mihoyobbs) likePosts() error {
 	}
 
 	likeCount := 0
-	for i, post := range posts {
+	for i, post := range posts[:8] {
 		if likeCount >= m.taskDo.LikeNum {
 			break
 		}
 
-		autoLog.Sugar.Info("米游社-点赞任务正在点赞: %s", post.Subject)
+		autoLog.Sugar.Infof("米游社-点赞任务正在点赞%v: %s", i, post.Subject)
 
 		url := "https://bbs-api.miyoushe.com/apihub/sapi/upvotePost"
 		data := map[string]interface{}{
@@ -438,6 +440,7 @@ func (m *Mihoyobbs) likePosts() error {
 
 		var apiResp APIResponse
 		if err := resp.JSON(&apiResp); err != nil {
+			fmt.Println("================", apiResp)
 			autoLog.Sugar.Errorf("米游社-点赞任务解析点赞响应失败: %v", err)
 			continue
 		}
@@ -446,6 +449,7 @@ func (m *Mihoyobbs) likePosts() error {
 			autoLog.Sugar.Infof("米游社-点赞任务点赞成功%v: %s", i, post.Subject)
 			likeCount++
 		} else {
+			autoLog.Sugar.Errorf("米游社-点赞任务点赞失败: %s", apiResp.Message)
 			autoLog.Sugar.Errorf("米游社-点赞任务点赞失败: %s, 错误码: %d", post.Subject, apiResp.Retcode)
 		}
 

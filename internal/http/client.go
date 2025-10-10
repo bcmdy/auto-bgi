@@ -1,6 +1,7 @@
 package http
 
 import (
+	"auto-bgi/internal/mysConfig"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
@@ -112,6 +113,8 @@ func (c *Client) Post(url string, data interface{}) (*Response, error) {
 	for key, value := range c.headers {
 		req.Header.Set(key, value)
 	}
+
+	req.Header.Set("Cookie", mysConfig.GlobalConfig.Account.Stoken)
 
 	// 如果有JSON数据，设置Content-Type
 	if data != nil {

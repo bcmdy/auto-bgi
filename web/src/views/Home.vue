@@ -490,7 +490,7 @@ const sendImage = () => {
     onOk: async () => {
       try {
         const response = await apiMethods.sendImage()
-        scanResult.value = response.message || '发送成功！'
+        scanResult.value = response.data || '发送成功！'
         Modal.info({
           title: '发送结果',
           content: scanResult.value,

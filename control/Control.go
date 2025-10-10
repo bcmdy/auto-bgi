@@ -27,9 +27,7 @@ var (
 
 // 打开软件
 func OpenSoftware(programPath string) {
-	// 检查当前操作系统
 
-	// Windows 使用 "start" 命令
 	cmd := exec.Command("cmd", "/C", "start", "", programPath)
 	err := cmd.Start()
 	if err != nil {
@@ -302,4 +300,18 @@ func CancelTaskHotkey() {
 		autoLog.Sugar.Infof("取消任务快捷键: %s", value.String())
 		pressKey(value.String())
 	}
+}
+
+// 读取原神exe文件路径
+func ReadGenShinExe() string {
+	configPath := config.Cfg.BetterGIAddress + "\\User\\Config.json"
+
+	configData, _ := os.ReadFile(configPath)
+
+	value := gjson.Get(string(configData), "genshinStartConfig.installPath")
+
+	autoLog.Sugar.Infof("原神exe文件路径: %s", value.String())
+
+	return value.String()
+
 }

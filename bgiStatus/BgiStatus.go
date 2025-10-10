@@ -29,9 +29,9 @@ import (
 	"time"
 )
 
-// 检查 BetterGI.exe 是否在运行
-func IsWechatRunning() bool {
-	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq BetterGI.exe")
+// 检查 程序 是否在运行
+func IsWechatRunning(name string) bool {
+	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq "+name)
 	output, err := cmd.Output()
 	if err != nil {
 
@@ -43,17 +43,17 @@ func IsWechatRunning() bool {
 }
 
 // 检查 YuanShen.exe 是否在运行
-func IsYuanShenRunning() bool {
-	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq YuanShen.exe")
-	output, err := cmd.Output()
-	if err != nil {
-
-		autoLog.Sugar.Error("YuanShen.exe 是否在运行:", err)
-		return false
-	}
-
-	return strings.Contains(string(output), "YuanShen.exe")
-}
+//func IsYuanShenRunning() bool {
+//	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq YuanShen.exe")
+//	output, err := cmd.Output()
+//	if err != nil {
+//
+//		autoLog.Sugar.Error("YuanShen.exe 是否在运行:", err)
+//		return false
+//	}
+//
+//	return strings.Contains(string(output), "YuanShen.exe")
+//}
 
 //var notified = false
 //var okInform = false
@@ -108,7 +108,7 @@ func CheckBetterGIStatus() {
 	spec := "*/50 * * * * *"
 
 	task := func() {
-		running := IsWechatRunning()
+		running := IsWechatRunning("BetterGI.exe")
 		if running != lastRunning {
 			if running {
 				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))

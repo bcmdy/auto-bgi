@@ -604,6 +604,7 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": cfg})
 	})
 
+	//abgi配置保存
 	ginServer.POST("/api/saveConfig", func(c *gin.Context) {
 		var newConfig config.Config
 
@@ -629,9 +630,9 @@ func main() {
 
 		fmt.Println("配置保存成功:", newConfig)
 
-		////重新加载配置文件
-		//_ = config.ReloadConfig()
-		//time.Sleep(1 * time.Second)
+		//重新加载配置文件
+		_ = config.ReloadConfig()
+		time.Sleep(1 * time.Second)
 		//
 		//// 调用重启脚本
 		//cmd := exec.Command("cmd", "/c", "restart.bat")
