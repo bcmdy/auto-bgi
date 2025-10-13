@@ -10,7 +10,6 @@ import (
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/internal/utils"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"io/fs"
@@ -328,21 +327,21 @@ func SendWeChatImageTask() {
 
 // 米游社签到
 func MiYouSheSign() {
-	// 解析命令行参数
-	var configPath string
-	flag.StringVar(&configPath, "mysCfg", "mysConfig.yaml", "配置文件路径")
-	flag.Parse()
-
-	// 初始化随机数种子
+	//// 解析命令行参数
+	//var configPath string
+	//flag.StringVar(&configPath, "mysCfg", "mysConfig.yaml", "配置文件路径")
+	//flag.Parse()
+	//
+	//// 初始化随机数种子
 	utils.InitRandom()
-
-	// 加载配置文件
-	autoLog.Sugar.Infof("米游社-正在加载配置文件: %s", configPath)
-	if err := mysConfig.LoadConfig(configPath); err != nil {
-
-		autoLog.Sugar.Errorf("米游社-加载配置文件失败: %v", err)
-		return
-	}
+	//
+	//// 加载配置文件
+	//autoLog.Sugar.Infof("米游社-正在加载配置文件: %s", configPath)
+	//if err := mysConfig.LoadConfig(configPath); err != nil {
+	//
+	//	autoLog.Sugar.Errorf("米游社-加载配置文件失败: %v", err)
+	//	return
+	//}
 
 	// 检查Cookie是否配置
 	if mysConfig.GlobalConfig.Account.Cookie == "" {

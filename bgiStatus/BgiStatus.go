@@ -245,6 +245,7 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 
 	autoLog.Sugar.Infof("今日收获统计")
 	re := regexp.MustCompile(`^交互或拾取："([^"]*)"`)
+	re2 := regexp.MustCompile(`^找到目标文本: ([^"]*)`)
 
 	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
 
@@ -260,11 +261,26 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := re.FindAllStringSubmatch(line, -1)
-		for _, match := range matches {
-			if len(match) > 1 {
-				item := match[1]
-				harvestStats[item]++
+
+		// 第一种匹配（交互或拾取）
+		if matches := re.FindAllStringSubmatch(line, -1); matches != nil {
+			for _, match := range matches {
+				if len(match) > 1 {
+					item := match[1]
+					harvestStats[item]++
+				}
+			}
+			continue // 匹配到后可跳过第二种，以免重复
+
+		}
+
+		// 第二种匹配（找到目标文本）
+		if matches2 := re2.FindAllStringSubmatch(line, -1); matches2 != nil {
+			for _, match := range matches2 {
+				if len(match) > 1 {
+					item := match[1]
+					harvestStats[item]++
+				}
 			}
 		}
 	}
@@ -1568,7 +1584,7 @@ func Archive(data LogAnalysis2Struct) string {
 
 		}
 	}
-	if title == "" || executeTime.String() == "" {
+	if title == "" || executeTime.String() == "" || executeTime.String() == "0s" {
 		autoLog.Sugar.Errorf("归档数据字段缺失或格式错误: %s, %s", title, executeTime.String())
 		return "归档数据字段缺失或格式错误"
 	}

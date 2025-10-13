@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/Notice"
@@ -160,6 +161,17 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"files": files})
 	})
 
+	ginServer.GET("/api/logInfo", func(c *gin.Context) {
+
+		filePath := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, time.Now().Format("20060102"))) // 本地日志路径
+		logInfo, err := bgiStatus.GetLogInfo(filePath)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "读取日志失败")
+		}
+
+		c.String(http.StatusOK, logInfo)
+	})
+
 	// WebSocket 处理器
 	ginServer.GET("/ws/:name", func(c *gin.Context) {
 		logName := c.Param("name")
@@ -209,6 +221,7 @@ func main() {
 		}
 	})
 
+	var dogFood = ArtifactsBulkSupply.DogFood{}
 	abgiWs := ginServer.Group("/api/abgiSSE")
 	{
 		//上线
@@ -231,16 +244,36 @@ func main() {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
 				return
 			}
-			abgiType := c.Param("typeKey")
-			if abgiType == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "上线类型错误"})
-				return
-			}
+			//abgiType := c.Param("typeKey")
+			//if abgiType == "" {
+			//	c.JSON(http.StatusBadRequest, gin.H{"message": "上线类型错误"})
+			//	return
+			//}
+
+			//if runDebug {
+			//	abgiType = "debug"
+			//}
+
 			runDebug := c.Query("runDebug") == "true"
+			abgiType := "noDebug"
+			//查询今天狗粮批发是什么线路
+			dogFoodLine := dogFood.DogFoodIsAOrB()
+			if dogFoodLine == "" {
+				autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
+				runDebug = true
+				abgiType = "debug"
+			} else if dogFoodLine == "B" {
+				runDebug = true
+				abgiType = "debug"
+			} else if runDebug {
+				abgiType = "debug"
+			}
+
+			autoLog.Sugar.Infof("当前狗粮批发线路为：%s，是否调试：%t，上线类型：%s", dogFoodLine, runDebug, abgiType)
 
 			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
 			if err != nil {
-				autoLog.Sugar.Errorf("连接失败: %v", err)
+				autoLog.Sugar.Errorf("连接失败")
 				c.String(http.StatusBadRequest, err.Error())
 				return
 
@@ -1174,7 +1207,7 @@ func main() {
 				return
 			}
 
-			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, "all", config.Cfg.Account.Uid, config.Cfg.Account.Name), true, nil)
+			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, "debug", config.Cfg.Account.Uid, config.Cfg.Account.Name), true, nil)
 			if err != nil {
 				fmt.Printf("连接失败: %v\n", err)
 				return

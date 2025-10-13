@@ -33,9 +33,10 @@ type Img struct {
 }
 
 type aa struct {
-	ID   int64
-	UID  string
-	Name string
+	ID       int64
+	UID      string
+	Name     string
+	AbgiType string `json:"abgiType"`
 }
 
 var abgiClient *AbgiClient
@@ -66,8 +67,6 @@ func Connect(url string, runDebug bool, headers http.Header) error {
 
 	RunDebug = runDebug
 
-	autoLog.Sugar.Infof("是否是调试模式:%v", runDebug)
-
 	// 启动接收消息
 	go abgiClient.listen()
 	return nil
@@ -79,13 +78,12 @@ func (c *AbgiClient) listen() {
 	for {
 		_, msg, err := c.Conn.ReadMessage()
 		if err != nil {
-			log.Println("WebSocket 连接断开:", err.Error())
+			log.Println("WebSocket 连接断开:")
 			// 关闭连接
 			c.Conn.Close()
 			abgiClient = nil
 			return
 		}
-
 		var info Information
 		err = json.Unmarshal(msg, &info)
 		if err != nil {

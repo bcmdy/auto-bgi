@@ -1,7 +1,6 @@
 package ScriptGroup
 
 import (
-	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -16,25 +15,25 @@ type dd struct {
 	Name string
 }
 
-var dogFood = ArtifactsBulkSupply.DogFood{}
+//var dogFood = ArtifactsBulkSupply.DogFood{}
 
 // 启动狗粮联机
 func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
 
-	//查询今天狗粮批发是什么线路
-	dogFoodLine := dogFood.DogFoodIsAOrB()
-	if dogFoodLine == "" {
-		autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
-		runDebug = true
-	} else if dogFoodLine == "B" {
-		runDebug = true
-	}
+	////查询今天狗粮批发是什么线路
+	//dogFoodLine := dogFood.DogFoodIsAOrB()
+	//if dogFoodLine == "" {
+	//	autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
+	//	runDebug = true
+	//} else if dogFoodLine == "B" {
+	//	runDebug = true
+	//}
 
 	// 解析 JSON 字符串
 	var aa []dd
 	yourIndex := 0
-
-	for _, item := range data {
+	RunningOrder := ""
+	for i, item := range data {
 		var d dd
 		d.ID = item["ID"].(int64)
 		d.UID = item["UID"].(string)
@@ -42,6 +41,10 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 		if item["UID"] == config.Cfg.Account.Uid {
 			yourIndex = int(d.ID)
 		}
+		if item["AbgiType"] == "正常跑" {
+			RunningOrder += fmt.Sprintf("%d", i+1)
+		}
+
 		aa = append(aa, d)
 	}
 
@@ -62,7 +65,7 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 
 			//修改runningOrder
 			newRunningOrder := fmt.Sprintf("%s.runningOrder", path)
-			newData, err = sjson.SetBytes(newData, newRunningOrder, "1234")
+			newData, err = sjson.SetBytes(newData, newRunningOrder, RunningOrder)
 			if err != nil {
 
 				autoLog.Sugar.Errorf("修改runningOrder失败:%d", err)

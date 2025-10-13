@@ -38,11 +38,12 @@ func artifactsGroupPurchasing(info Information) {
 	var names []string
 	for _, v := range info.AA {
 		dd = append(dd, map[string]interface{}{
-			"ID":   v.ID,
-			"UID":  v.UID,
-			"Name": v.Name,
+			"ID":       v.ID,
+			"UID":      v.UID,
+			"Name":     v.Name,
+			"AbgiType": v.AbgiType,
 		})
-		xiaoxi += fmt.Sprintf("序号%d -- %s\n", v.ID, v.Name)
+		xiaoxi += fmt.Sprintf("序号%d -- %s -- %s\n", v.ID, v.Name, v.AbgiType)
 		names = append(names, v.Name)
 	}
 	//生成图片

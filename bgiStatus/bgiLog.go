@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/Notice"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
@@ -64,6 +65,8 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 }
 
 var YuanShenNum int
+
+var dogFood = ArtifactsBulkSupply.DogFood{}
 
 func (m *LogMonitor) Monitor() {
 
@@ -180,7 +183,25 @@ func (m *LogMonitor) Monitor() {
 						autoLog.Sugar.Infof("密钥错误")
 						return
 					}
-					ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/dogFour/%s/%s", decrypt, config.Cfg.Account.Uid, config.Cfg.Account.Name), false, nil)
+
+					runDebug := false
+					abgiType := "noDebug"
+					//查询今天狗粮批发是什么线路
+					dogFoodLine := dogFood.DogFoodIsAOrB()
+					if dogFoodLine == "" {
+						autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
+						runDebug = true
+						abgiType = "debug"
+					} else if dogFoodLine == "B" {
+						runDebug = true
+						abgiType = "debug"
+					} else if runDebug {
+						abgiType = "debug"
+					}
+
+					autoLog.Sugar.Infof("当前狗粮批发线路为：%s，是否调试：%t，上线类型：%s", dogFoodLine, runDebug, abgiType)
+
+					ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decrypt, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
 					if ConnectErr != nil {
 						autoLog.Sugar.Infof("上线失败")
 
@@ -343,4 +364,25 @@ func aaa() {
 	robotgo.KeyTap("enter")
 
 	autoLog.Sugar.Infof("操作完成！")
+}
+
+// 读取文件
+func GetLogInfo(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return strings.Join(lines, "\n"), nil
+
 }
