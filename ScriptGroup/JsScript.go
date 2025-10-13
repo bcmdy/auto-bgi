@@ -65,6 +65,10 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 
 			//修改runningOrder
 			newRunningOrder := fmt.Sprintf("%s.runningOrder", path)
+
+			if RunningOrder == "" {
+				RunningOrder = "0"
+			}
 			newData, err = sjson.SetBytes(newData, newRunningOrder, RunningOrder)
 			if err != nil {
 

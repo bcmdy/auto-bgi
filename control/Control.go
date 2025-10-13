@@ -302,6 +302,12 @@ func CancelTaskHotkey() {
 	}
 }
 
+// 按ESC
+func PressEsc() {
+	autoLog.Sugar.Infof("按下ESC")
+	pressKey("esc")
+}
+
 // 读取原神exe文件路径
 func ReadGenShinExe() string {
 	configPath := config.Cfg.BetterGIAddress + "\\User\\Config.json"

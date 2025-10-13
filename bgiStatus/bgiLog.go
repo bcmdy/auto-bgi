@@ -214,6 +214,10 @@ func (m *LogMonitor) Monitor() {
 					Notice.SendScreenshot()
 				}
 
+				if strings.Contains(line, "如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）") {
+					control.PressEsc()
+				}
+
 				//首页相关
 				//配置组名称
 				if strings.Contains(line, "配置组") && strings.Contains(line, "开始执行") {

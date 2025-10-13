@@ -245,7 +245,6 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 
 	autoLog.Sugar.Infof("今日收获统计")
 	re := regexp.MustCompile(`^交互或拾取："([^"]*)"`)
-	re2 := regexp.MustCompile(`^找到目标文本: ([^"]*)`)
 
 	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
 
@@ -259,6 +258,9 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 	harvestStats := make(map[string]int)
 
 	scanner := bufio.NewScanner(file)
+	var jsonData strings.Builder
+	var readingJSON bool
+
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -271,15 +273,33 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 				}
 			}
 			continue // 匹配到后可跳过第二种，以免重复
-
 		}
 
-		// 第二种匹配（找到目标文本）
-		if matches2 := re2.FindAllStringSubmatch(line, -1); matches2 != nil {
-			for _, match := range matches2 {
-				if len(match) > 1 {
-					item := match[1]
-					harvestStats[item]++
+		// ✅ 检测到 “[主流程]总累积获取” 段落开始
+		if strings.HasPrefix(line, "[主流程]总累积获取") {
+			readingJSON = true
+			jsonData.Reset() // 清空旧内容
+			idx := strings.Index(line, "{")
+			if idx != -1 {
+				jsonData.WriteString(line[idx:]) // 把 { 后面部分写入
+			}
+			continue
+		}
+
+		if readingJSON {
+			jsonData.WriteString(line)
+			// 检测 JSON 结束
+			if strings.HasSuffix(line, "}") {
+				readingJSON = false
+				// 尝试解析 JSON
+				data := make(map[string]int)
+				if err := json.Unmarshal([]byte(jsonData.String()), &data); err != nil {
+					autoLog.Sugar.Warnf("解析总累积获取 JSON 失败: %v", err)
+				} else {
+					// 合并到 harvestStats
+					for k, v := range data {
+						harvestStats[k] += v
+					}
 				}
 			}
 		}
