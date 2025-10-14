@@ -21,8 +21,8 @@ func (d *DogFood) DogFoodIsAOrB() string {
 	autoLog.Sugar.Infof("狗粮批发线路查询")
 	fileName := "默认账户"
 	if config.Cfg.Account.IsMultiUser {
-		autoLog.Sugar.Infof("批发是多用户,查询文件：%s.txt", fileName)
 		fileName = config.Cfg.Account.Uid
+		autoLog.Sugar.Infof("批发是多用户,查询文件：%s.txt", fileName)
 	} else {
 		autoLog.Sugar.Infof("不是多用户，查询默认账户")
 	}
