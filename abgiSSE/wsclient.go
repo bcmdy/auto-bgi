@@ -133,6 +133,7 @@ type OnlineUser struct {
 type Members struct {
 	Name        string `json:"name"`
 	IsSimulated bool   `json:"is_simulated"`
+	AbgiType    string `json:"abgi_type"`
 }
 
 // 获取在线人数

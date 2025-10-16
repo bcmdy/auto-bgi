@@ -26,12 +26,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
 // 检查 程序 是否在运行
 func IsWechatRunning(name string) bool {
 	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq "+name)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	output, err := cmd.Output()
 	if err != nil {
 
@@ -342,6 +344,10 @@ func BagStatistics() ([]Material, error) {
 	var bags []Material
 	var bag Material
 
+	bagMap := make(map[string]Material)
+
+	layout := "2006/1/2 15:04:05"
+
 	for scanner.Scan() {
 		for _, s := range split {
 			// 创建一个正则表达式来匹配 "晶蝶：数字" 模式
@@ -364,7 +370,34 @@ func BagStatistics() ([]Material, error) {
 				bag.Cl = strings.Replace(split[0], ",", "", -1)
 				bag.Num = split[1]
 
-				bags = append(bags, bag)
+				//判断是否已经有了
+				isNil := bagMap[bag.Cl]
+				if isNil.Data != "" {
+					//判断是否是同一天
+					time1, err1 := time.Parse(layout, isNil.Data)
+					time2, err2 := time.Parse(layout, bag.Data)
+					if err1 != nil || err2 != nil {
+						continue
+					}
+
+					y1, m1, d1 := time1.Date()
+					y2, m2, d2 := time2.Date()
+
+					fmt.Println("======", y1, m1, d1, bag.Cl)
+					fmt.Println("======", y1, m1, d1, bag.Cl)
+
+					if y1 == y2 && m1 == m2 && d1 == d2 {
+						continue
+					} else {
+						bagMap[bag.Cl] = bag
+						bags = append(bags, bag)
+					}
+
+				} else {
+					bagMap[bag.Cl] = bag
+					bags = append(bags, bag)
+				}
+
 			}
 		}
 

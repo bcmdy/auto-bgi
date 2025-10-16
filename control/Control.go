@@ -29,6 +29,7 @@ var (
 func OpenSoftware(programPath string) {
 
 	cmd := exec.Command("cmd", "/C", "start", "", programPath)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	err := cmd.Start()
 	if err != nil {
 		fmt.Println("无法打开软件:", err)
@@ -45,6 +46,7 @@ func CloseSoftware() {
 
 	// 创建命令
 	cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	// 执行命令并获取输出
 	output, err := cmd.CombinedOutput()
@@ -68,6 +70,7 @@ func CloseYuanShen() {
 	autoLog.Sugar.Infof("需要关闭原神")
 	// 创建命令用于强制关闭原神进程
 	cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	// 执行命令并获取输出
 	_, err := cmd.CombinedOutput()
