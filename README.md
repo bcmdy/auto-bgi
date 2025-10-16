@@ -211,7 +211,7 @@ http://<IP地址>:8082
 
 如果是今天跑的狗粮是A线，则选择什么模式上线就是什么模式
 
-如果是B线，强制调机
+如果是B线，强制调机 
 
 ---
 
@@ -257,5 +257,11 @@ auto-bgi.exe updateJs
 - 频道：`@wjdsg`
 
 **远程访问 autoBGI 的方法**：压缩包内附带教程文件（来自社区大佬）。花生壳也是一个不错的选择
+
+
+
+## 相关项目
+
+ABGI & BGI 游戏录屏项目：https://github.com/wjdsg0327/bgiSRecording
 
 ---
