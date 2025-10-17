@@ -1637,6 +1637,13 @@ func Archive(data LogAnalysis2Struct) string {
 
 		}
 	}
+
+	//如果时间小于30s就不归档
+	if executeTime.Seconds() < 30 {
+		autoLog.Sugar.Infof("%s执行时间小于30s，不归档", title)
+		return "执行时间小于30s，不归档"
+	}
+
 	if title == "" || executeTime.String() == "" || executeTime.String() == "0s" {
 		autoLog.Sugar.Errorf("归档数据字段缺失或格式错误: %s, %s", title, executeTime.String())
 		return "归档数据字段缺失或格式错误"

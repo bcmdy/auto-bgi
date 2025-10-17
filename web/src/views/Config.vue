@@ -471,6 +471,7 @@
                    <a-select-option value="TG">TG</a-select-option>
                    <a-select-option value="Wechat">Wechat</a-select-option>
                     <a-select-option value="oneBot">OneBot</a-select-option>
+                   <a-select-option value="FeiShu">飞书</a-select-option>
                  </a-select>
                </div>
              </a-form-item>
@@ -485,6 +486,44 @@
                 />
               </div>
             </a-form-item>
+
+            <!-- 飞书 -->
+           <div v-show="formData.Notice.Type === 'FeiShu'" class="tg-settings">
+              <a-form-item label="FeiShuWebhookURL" name="FeiShuWebhookURL" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">🤖</span>
+                  <a-input-password
+                    v-model:value="formData.Notice.FeiShu.FeiShuWebhookURL" 
+                    placeholder="飞书通知地址"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+
+              <a-form-item label="AppID" name="AppID" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">💬</span>
+                  <a-input-password 
+                    v-model:value="formData.Notice.FeiShu.AppID" 
+                    placeholder="飞书AppID"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+
+              <a-form-item label="AppSecret" name="AppSecret" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">🌐</span>
+                  <a-input-password
+                    v-model:value="formData.Notice.FeiShu.AppSecret" 
+                    placeholder="飞书AppSecret"
+                    class="enhanced-input"
+                  />
+                </div>
+              </a-form-item>
+            </div>
+
+            <!--  -->
 
             <div v-show="formData.Notice.Type === 'TG'" class="tg-settings">
               <a-form-item label="Telegram Token" name="TGToken" class="form-item-enhanced">
@@ -560,7 +599,7 @@
 
             </div>
 
-            
+          
           </div>
         </a-card>
 
@@ -755,7 +794,7 @@ const formData = reactive({
   BgiLog: '',
   basePath: '',
   Notice: {
-    Type: 'TG',
+    Type: 'Wechat',
     Wechat: '',
     TGNotice: {
       TGToken: '',
@@ -767,7 +806,12 @@ const formData = reactive({
       Token: "",
       QQNum: 0,
       groupNum: 0
-    }
+    },
+    FeiShu: {
+      FeiShuWebhookURL: '',
+      AppID: '',
+      AppSecret: ''
+    },
   },
   RepoUrl:"",
   Account: {

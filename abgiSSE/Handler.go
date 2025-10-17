@@ -55,6 +55,7 @@ func artifactsGroupPurchasing(info Information) {
 	}
 	time.Sleep(500 * time.Millisecond)
 	scriptGroupConfig.StartDogFoodOnline(RunDebug, dd)
-	fmt.Println(xiaoxi)
+	//fmt.Println(xiaoxi)
+	autoLog.Sugar.Info(xiaoxi)
 	Notice.SentText(xiaoxi)
 }

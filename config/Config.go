@@ -53,6 +53,13 @@ type Notice struct {
 	Wechat   string   `json:"Wechat" comment:"企业微信webhook地址"`
 	TGNotice TGNotice `json:"TGNotice" comment:"TG通知配置"`
 	OneBot   OneBot   `json:"OneBot" comment:"OneBot配置"`
+	FeiShu   FeiShu   `json:"FeiShu" comment:"飞书配置"`
+}
+
+type FeiShu struct {
+	FeiShuWebhookURL string `json:"FeiShuWebhookURL" comment:"飞书webhook地址"`
+	AppID            string `json:"AppID" comment:"飞书AppID"`
+	AppSecret        string `json:"AppSecret" comment:"飞书AppSecret"`
 }
 
 // OneBot 封装配置
@@ -200,7 +207,7 @@ func DefaultConfig() {
 		Cfg.LogKeywords = []string{"未识别到突发任务", "OCR 识别失败", "此路线出现3次卡死", "重试一次路线或放弃此路线！", "检测到复苏界面", "存在角色被击败", "执行路径时出错", "传送点未激活或不存在"}
 	}
 	if Cfg.Notice.Type == "" {
-		Cfg.Notice.Type = "wechat"
+		Cfg.Notice.Type = "Wechat"
 	}
 	if Cfg.MySign.Time == "" {
 		Cfg.MySign.Time = "0,20"

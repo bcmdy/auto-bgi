@@ -97,6 +97,12 @@ func SentText(text string) {
 		if err := oneBot.SendPrivateText(text); err != nil {
 			autoLog.Sugar.Error("通知-OneBot文本发送失败:", err)
 		}
+	case "FeiShu":
+		err := sendFeishuTextMessage(text)
+		if err != nil {
+			autoLog.Sugar.Error("通知-飞书文本发送失败:", err)
+		}
+
 	default:
 		autoLog.Sugar.Errorf("通知-文本未知通知类型:%s", config.Cfg.Notice.Type)
 	}
@@ -124,6 +130,12 @@ func SentImage(path string) error {
 			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-OneBot图片发送失败:%v", err)
+	case "FeiShu":
+		err = sendFeiShuImageMessage(path)
+		if err != nil {
+			autoLog.Sugar.Error("通知-飞书图片发送失败:", err)
+		}
+		return fmt.Errorf("通知-飞书图片发送失败:%v", err)
 	default:
 		autoLog.Sugar.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
 		return fmt.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
