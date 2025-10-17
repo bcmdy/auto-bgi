@@ -269,7 +269,7 @@ func main() {
 				abgiType = "debug"
 			}
 
-			autoLog.Sugar.Infof("当前狗粮批发线路为：%s，是否调试：%t，上线类型：%s", dogFoodLine, runDebug, abgiType)
+			autoLog.Sugar.Infof("当前狗粮批发线路为：%s，是否调试：%t，手动上线类型：%s", dogFoodLine, runDebug, abgiType)
 
 			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
 			if err != nil {
@@ -1252,3 +1252,5 @@ func main() {
 
 //打包脚本
 //  build.bat
+
+//go build -ldflags="-H=windowsgui"
