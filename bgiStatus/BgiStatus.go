@@ -373,6 +373,7 @@ func BagStatistics() ([]Material, error) {
 				//判断是否已经有了
 				isNil := bagMap[bag.Cl]
 				if isNil.Data != "" {
+
 					//判断是否是同一天
 					time1, err1 := time.Parse(layout, isNil.Data)
 					time2, err2 := time.Parse(layout, bag.Data)
@@ -383,14 +384,18 @@ func BagStatistics() ([]Material, error) {
 					y1, m1, d1 := time1.Date()
 					y2, m2, d2 := time2.Date()
 
-					fmt.Println("======", y1, m1, d1, bag.Cl)
-					fmt.Println("======", y1, m1, d1, bag.Cl)
+					//fmt.Println("======", y1, m1, d1, bag.Cl)
+					//fmt.Println("======", y1, m1, d1, bag.Cl)
 
 					if y1 == y2 && m1 == m2 && d1 == d2 {
 						continue
 					} else {
 						bagMap[bag.Cl] = bag
-						bags = append(bags, bag)
+						//判断数据是否一致
+						if isNil.Num != bag.Num {
+							bags = append(bags, bag)
+						}
+
 					}
 
 				} else {
