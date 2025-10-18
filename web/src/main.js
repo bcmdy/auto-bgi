@@ -25,6 +25,8 @@ import BagStatistics from './views/BagStatistics.vue'
 import Gitlog from './views/Gitlog.vue'
 import Online from './views/online.vue'
 import CDAwareAutoGather from './views/CDAwareAutoGather.vue' 
+import screen from './views/screen.vue'
+
 // 路由配置
 const routes = [
   { path: '/', component: Home },
@@ -46,7 +48,8 @@ const routes = [
   { path: '/BagStatistics', component: BagStatistics },
   { path: '/GitLog', component: Gitlog },
   { path: '/Online', component: Online }, // 修正 component 名称
-  { path: '/CDAwareAutoGather', component: CDAwareAutoGather }
+  { path: '/CDAwareAutoGather', component: CDAwareAutoGather },
+  { path: '/screen', component: screen }
 ]
 
 const router = createRouter({
