@@ -5,10 +5,12 @@ import (
 	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/Notice"
+	"auto-bgi/Ocr"
 	"auto-bgi/OneLong"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/abgiSSE"
+	"auto-bgi/abgiScreen"
 	"auto-bgi/abgiUpdate"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
@@ -31,6 +33,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -1103,10 +1106,46 @@ func main() {
 		if err != nil {
 			c.JSON(400, "截图失败")
 		}
-		time.Sleep(2)
+		//睡眠500毫秒
+		time.Sleep(500 * time.Millisecond)
 
 		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})
+
+	ocrController := ginServer.Group("/api/ocr")
+	{
+		ocrController.POST("/dogFood", func(c *gin.Context) {
+
+			var data map[string]string
+			if err := c.ShouldBindJSON(&data); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+			}
+
+			ocr, err2 := Ocr.BaiDuOcr(data["apiKey"], data["secretKey"])
+			if err2 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+				return
+			}
+			dogFood.WriteDogFoodNum(ocr)
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": ocr})
+
+		})
+	}
+
+	// 设置最大CPU使用
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	// 启动屏幕捕获协程
+	go abgiScreen.CaptureScreen()
+
+	// 启动广播协程
+	go abgiScreen.BroadcastFrames()
+
+	abgiScreenController := ginServer.Group("/api/abgiScreen")
+	{
+		abgiScreenController.GET("/ws", abgiScreen.HandleWebSocket)
+
+	}
 
 	// 静态文件服务（放在所有API路由之后）
 	ginServer.StaticFS("/assets", http.FS(distFS))

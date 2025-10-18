@@ -5,9 +5,12 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -80,4 +83,78 @@ func (d *DogFood) DogFoodIsAOrB() string {
 	}
 	return ""
 
+}
+
+// 将识别的数量写入到狗粮批发
+func (d *DogFood) WriteDogFoodNum(num string) string {
+	autoLog.Sugar.Infof("写入数量：%s", num)
+	fileName := "默认账户"
+	if config.Cfg.Account.IsMultiUser {
+		fileName = config.Cfg.Account.Uid
+		autoLog.Sugar.Infof("批发是多用户,查询文件：%s.txt", fileName)
+	} else {
+		autoLog.Sugar.Infof("不是多用户，查询默认账户")
+	}
+
+	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply\\records\\%s.txt", config.Cfg.BetterGIAddress, fileName))
+	file, err := os.Open(filePath)
+	if err != nil {
+		autoLog.Sugar.Errorf("狗粮批发txt打开失败，err:%v", err)
+		autoLog.Sugar.Infof("获取当前目录下所有 .txt 文件")
+		files, err := filepath.Glob(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply\\records\\*.txt", config.Cfg.BetterGIAddress))
+		if err != nil {
+			autoLog.Sugar.Errorf("狗粮批发没有找到任何文件")
+			return ""
+		}
+		if len(files) == 0 {
+			autoLog.Sugar.Errorf("未找到任何txt文件")
+			return ""
+		}
+		autoLog.Sugar.Infof("找到txt文件：%s", filepath.Base(files[0]))
+		filePath = filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply\\records\\%s", config.Cfg.BetterGIAddress, filepath.Base(files[0])))
+		file, err = os.Open(filePath)
+		if err != nil {
+			autoLog.Sugar.Errorf("狗粮批发txt打开失败，err:%v", err)
+			return ""
+		}
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+
+	//格式化今天的日期
+	today := time.Now().Format("2006/01/02")
+	var buf bytes.Buffer
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "日期:"+today) {
+			autoLog.Sugar.Infof("批发:%s", line)
+			re := regexp.MustCompile(`狗粮经验(\d+)`)
+			//提取出数字
+			match := re.FindStringSubmatch(line)
+			if len(match) > 1 {
+				autoLog.Sugar.Infof("找到数字：%s", match[1])
+				//相加
+				a, _ := strconv.Atoi(match[1])
+				b, _ := strconv.Atoi(num)
+				sum := strconv.Itoa(a + b)
+
+				newText := re.ReplaceAllString(line, "狗粮经验"+sum)
+				buf.WriteString(newText + "\n")
+				//批发和联机狗粮相加
+				autoLog.Sugar.Infof("批发:[%s]和联机狗粮:[%s]相加等于：%s", match[1], num, sum)
+				continue
+			}
+		}
+		buf.WriteString(line + "\n")
+
+	}
+	if err := scanner.Err(); err != nil {
+		autoLog.Sugar.Errorf("狗粮批发txt读取失败，err:%v", err)
+		return ""
+	}
+	err = os.WriteFile(filePath, buf.Bytes(), 0644)
+	if err != nil {
+		autoLog.Sugar.Errorf("狗粮批发txt写入失败，err:%v", err)
+	}
+	return ""
 }

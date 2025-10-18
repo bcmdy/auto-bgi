@@ -58,7 +58,7 @@ func CloseSoftware() {
 
 }
 
-// 关闭软件
+// CloseYuanShen 关闭软件
 // CloseYuanShen 函数用于关闭原神游戏及其启动器
 func CloseYuanShen() {
 
@@ -100,7 +100,7 @@ func CloseYuanShen() {
 
 }
 
-// 鼠标点击(x、y是鼠标坐标，key是键，是否双击)
+// MouseClick 鼠标点击(x、y是鼠标坐标，key是键，是否双击)
 func MouseClick(x, y int, key string, DoubleClick bool) {
 
 	// 移动鼠标到指定位置
@@ -113,7 +113,7 @@ func MouseClick(x, y int, key string, DoubleClick bool) {
 	robotgo.Click(key, DoubleClick) // 第二个参数为 true 表示双击，false 表示单击
 }
 
-// 截图
+// ScreenShot 截图
 func ScreenShot(imgName string) error {
 	screenWidth, screenHeight := robotgo.GetScreenSize()
 	imgScreen := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)

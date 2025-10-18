@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const CurrentVersion = "auto-bgi-2.9"
+const CurrentVersion = "auto-bgi-3.0"
 
 type ABgi struct {
 	Version string

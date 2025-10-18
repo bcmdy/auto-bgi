@@ -420,6 +420,13 @@ func BagStatistics() ([]Material, error) {
 	yuanShiStatistics, _ := YuanShiStatistics()
 	bags = append(bags, yuanShiStatistics...)
 
+	if len(bags) == 0 {
+		bag.Data = "没有数据"
+		bag.Cl = "没有数据"
+		bag.Num = "没有数据"
+		bags = append(bags, bag)
+	}
+
 	return bags, nil
 }
 
@@ -480,14 +487,15 @@ func CheckBag() map[string]int {
 // 原石统计
 func YuanShiStatistics() ([]Material, error) {
 	autoLog.Sugar.Infof("原石统计")
+	var bags []Material
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", config.Cfg.BetterGIAddress))
 	file, err := os.Open(filename)
 	if err != nil {
 		autoLog.Sugar.Errorf("没有相关JS:OCR读取当前抽卡资源并发送通知")
-		return nil, err
+		return bags, err
 	}
 	defer file.Close()
-	var bags []Material
+
 	// 创建一个扫描器来读取文件
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -514,18 +522,16 @@ func YuanShiStatistics() ([]Material, error) {
 
 // 摩拉统计
 func MorasStatistics() ([]Material, error) {
-
+	var bags []Material
 	autoLog.Sugar.Infof("摩拉统计")
 	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前摩拉记录并发送通知\\mora_log.txt", config.Cfg.BetterGIAddress))
 	// 打开文件
 	file, err := os.Open(filename)
 	if err != nil {
 		autoLog.Sugar.Infof("没有相关JS")
-		return nil, err
+		return bags, err
 	}
 	defer file.Close()
-
-	var bags []Material
 
 	// 创建一个扫描器来读取文件
 	scanner := bufio.NewScanner(file)

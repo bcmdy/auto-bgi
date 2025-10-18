@@ -282,7 +282,7 @@ func (m *LogMonitor) Monitor() {
 				//原神闪退检测
 				if strings.Contains(line, "当前获取焦点的窗口不是原神，尝试恢复窗口") {
 					YuanShenNum++
-					if YuanShenNum >= 60 {
+					if YuanShenNum >= 30 {
 						YuanShenNum = 0
 						Notice.SentText("当前获取焦点的窗口不是原神，尝试恢复窗口超过一分钟")
 						autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口超过一分钟")
