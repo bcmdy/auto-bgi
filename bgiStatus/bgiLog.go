@@ -209,6 +209,13 @@ func (m *LogMonitor) Monitor() {
 					autoLog.Sugar.Infof("上线成功")
 				}
 
+				//联机狗粮和批发狗粮数量合并
+				if strings.Contains(line, "分解可获得经验: ") {
+					num := strings.Replace(line, "分解可获得经验: ", "", -1)
+
+					dogFood.WriteDogFoodNum(num)
+				}
+
 				//联机狗粮
 				if strings.Contains(line, "所有队友已就绪") {
 					Notice.SendScreenshot()

@@ -87,7 +87,7 @@ func (d *DogFood) DogFoodIsAOrB() string {
 
 // 将识别的数量写入到狗粮批发
 func (d *DogFood) WriteDogFoodNum(num string) string {
-	autoLog.Sugar.Infof("写入数量：%s", num)
+	autoLog.Sugar.Infof("批发写入数量：%s", num)
 	fileName := "默认账户"
 	if config.Cfg.Account.IsMultiUser {
 		fileName = config.Cfg.Account.Uid
@@ -142,7 +142,7 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				buf.WriteString(newText + "\n")
 				//批发和联机狗粮相加
 				autoLog.Sugar.Infof("批发:[%s]和联机狗粮:[%s]相加等于：%s", match[1], num, sum)
-				continue
+				break
 			}
 		}
 		buf.WriteString(line + "\n")

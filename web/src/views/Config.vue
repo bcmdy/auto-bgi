@@ -775,7 +775,8 @@ const formData = reactive({
   },
   Control: {
     IsCloseYuanShen: false,
-    SendWeChatImage: false
+    SendWeChatImage: false,
+    AbgiScreen:false
   },
   MySign: {
     isMysSignIn: false,

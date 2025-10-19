@@ -66,7 +66,7 @@ export default {
     const router = useRouter()
     
     // 响应式数据
-    const title = ref('AutoArtifactsPro')
+    const title = ref('狗粮批发-联机收益查询')
     const jsVersion = ref('')
     const items = ref([])
     const images = ref([])

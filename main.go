@@ -474,7 +474,7 @@ func main() {
 			// 传递给模板
 
 			context.JSON(http.StatusInternalServerError, gin.H{
-				"title":     "狗粮批发查询" + "【" + version + "】",
+				"title":     "狗粮批发-联机收益查询" + "【" + version + "】",
 				"JsVersion": jsVersion,
 				"items":     nil,
 			})
@@ -483,7 +483,7 @@ func main() {
 		}
 
 		context.JSON(http.StatusOK, gin.H{
-			"title":     "狗粮批发查询" + "【" + version + "】",
+			"title":     "狗粮批发-联机收益查询" + "【" + version + "】",
 			"JsVersion": jsVersion,
 			"items":     pro,
 		})
