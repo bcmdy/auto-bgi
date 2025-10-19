@@ -109,7 +109,7 @@ func (o *OneLong) backupUsers() {
 		autoLog.Sugar.Infof("开始备份user文件夹")
 		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
 		if err4 != nil {
-			autoLog.Sugar.Errorf("备份失败: %v")
+			autoLog.Sugar.Errorf("备份失败: %v", err4)
 			return
 		}
 

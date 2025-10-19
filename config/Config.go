@@ -92,6 +92,7 @@ type Control struct {
 	IsCloseYuanShen  bool `json:"IsCloseYuanShen" comment:"bgi关闭需要是否关闭原神"`
 	SendWeChatImage  bool `json:"SendWeChatImage" comment:"是否开启每隔一小时发送截图"`
 	StartOpenBrowser bool `json:"StartOpenBrowser" comment:"是否开启启动时打开浏览器"`
+	AbgiScreen       bool `json:"AbgiScreen" comment:"是否开启bgi实时屏幕"`
 }
 
 type oneLong struct {

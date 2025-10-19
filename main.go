@@ -1107,7 +1107,7 @@ func main() {
 			c.JSON(400, "截图失败")
 		}
 		//睡眠500毫秒
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 
 		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})
@@ -1132,18 +1132,21 @@ func main() {
 		})
 	}
 
-	// 设置最大CPU使用
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	if config.Cfg.Control.AbgiScreen {
+		// 设置最大CPU使用
+		runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// 启动屏幕捕获协程
-	go abgiScreen.CaptureScreen()
+		// 启动屏幕捕获协程
+		go abgiScreen.CaptureScreen()
 
-	// 启动广播协程
-	go abgiScreen.BroadcastFrames()
+		// 启动广播协程
+		go abgiScreen.BroadcastFrames()
 
-	abgiScreenController := ginServer.Group("/api/abgiScreen")
-	{
-		abgiScreenController.GET("/ws", abgiScreen.HandleWebSocket)
+		abgiScreenController := ginServer.Group("/api/abgiScreen")
+		{
+			abgiScreenController.GET("/ws", abgiScreen.HandleWebSocket)
+
+		}
 
 	}
 

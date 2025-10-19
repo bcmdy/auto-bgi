@@ -256,7 +256,7 @@ func StartGroups(names []string) error {
 	return nil
 }
 
-// 启动一条龙
+// StartOneDragon 启动一条龙
 // StartOneDragon 启动一条龙任务（异步）
 func StartOneDragon(name string) {
 	autoLog.Sugar.Infof("准备启动一条龙：%s", name)

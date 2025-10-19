@@ -1,6 +1,7 @@
 package abgiScreen
 
 import (
+	"auto-bgi/config"
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -71,6 +72,11 @@ func encodeJPEG(img image.Image, quality int) []byte {
 
 // WebSocket 客户端管理
 func HandleWebSocket(c *gin.Context) {
+
+	if !config.Cfg.Control.AbgiScreen {
+		return
+	}
+
 	conn, err := (&websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}).Upgrade(c.Writer, c.Request, nil)
