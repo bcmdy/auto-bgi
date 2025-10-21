@@ -31,10 +31,11 @@ api.interceptors.response.use(
     return response.data
   },
   error => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('API请求错误:', error)
-    }
-    return Promise.reject(error)
+    // if (process.env.NODE_ENV !== 'production') {
+    //   console.error('API请求错误:', error)
+    //   alert(error.response.data.msg)
+    // }
+    return error.response.data
   }
 )
 

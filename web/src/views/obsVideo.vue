@@ -259,9 +259,12 @@ async function startRecording() {
   loadingStatus.starting = true
   try {
     const res = await apiMethods.StartRecording()
+    console.log("============",res.msg)
     if (res.status === 'success') {
       isRecording.value = true
       fetchVideos()
+    }else {
+      alert('❌'+res.msg)
     }
   } catch (err) {
     console.error(err)
@@ -292,6 +295,8 @@ async function saveReplayBuffer() {
     if (res.status === 'success') {
       alert('✨ 回放已保存！')
       fetchVideos()
+    }else {
+      alert('❌'+res.msg)
     }
   } catch (err) {
     console.error(err)
