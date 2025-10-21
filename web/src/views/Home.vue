@@ -221,17 +221,13 @@ const dataAnalysisButtons = ref([
   { text: 'CD管理自动采集', route: '/CDAwareAutoGather' }
 ])
 
-//实时屏幕
-const handleScreen = async () => {
-    //跳转页面
-    await router.push('/screen')
-}
 
 const bgiButtons = ref([
     { text: '仓库提交记录', route: '/GitLog' },
   { text: '调度器', route: '/listGroups' },
   { text: '实时日志', route: '/log' },
-    {text: '实时屏幕',action: handleScreen} ,
+    {text: '实时屏幕',route: '/screen'} ,
+  { text: '录屏管理', route: '/obsVideo' },
   { text: 'autobgi配置文件', route: '/Config' },
   { text: 'bgi一条龙配置', route: '/onelong' }
 ])

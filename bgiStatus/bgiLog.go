@@ -3,6 +3,7 @@ package bgiStatus
 import (
 	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/Notice"
+	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -105,6 +106,10 @@ func (m *LogMonitor) Monitor() {
 						Notice.SentText(msg)
 						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 						autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
+						go func() {
+							abgiObs.SaveReplayBuffer(fmt.Sprintf("%s_%s_%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine, time.Now().Format("20060102150405")))
+
+						}()
 					}
 				}
 				//一条龙结束操作

@@ -9,6 +9,7 @@ import (
 	"auto-bgi/OneLong"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
+	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/abgiScreen"
 	"auto-bgi/abgiUpdate"
@@ -1005,6 +1006,97 @@ func main() {
 
 	}
 
+	var videoInfoService abgiObs.VideoInfo
+
+	//obs
+	abgiObsController := ginServer.Group("/api/abgiObs")
+	{
+		abgiObsController.POST("/StartRecording", func(context *gin.Context) {
+			err := abgiObs.StartRecording()
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始录制"})
+		})
+		//结束录制
+		abgiObsController.POST("/StopRecording", func(context *gin.Context) {
+			err2 := abgiObs.StopRecording()
+			if err2 != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "结束录制"})
+		})
+		//查询录制状态
+		abgiObsController.GET("/IsRecording", func(context *gin.Context) {
+			isRecording, err3 := abgiObs.GetRecordingStatus()
+			if err3 != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err3.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": isRecording})
+		})
+
+		//保存重放缓冲区
+		abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
+			_, err2 := abgiObs.SaveReplayBuffer(time.Now().Format("20060102150405") + ".mkv")
+			if err2 != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "保存成功"})
+		})
+
+		//获取指定目录下的视频信息列表
+		abgiObsController.GET("/GetVideoInfo", func(context *gin.Context) {
+			// 获取目录路径参数
+
+			info, err := videoInfoService.GetAllRecordingsInfo(config.Cfg.ScreenRecord.ObsSavePath)
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": info})
+		})
+
+		//删除视频
+		abgiObsController.POST("/DeleteVideo", func(context *gin.Context) {
+			videoPath := context.Query("videoName") // 视频文件名
+			if videoPath == "" {
+				context.JSON(400, gin.H{"status": "error", "msg": "缺少视频文件名"})
+				return
+			}
+
+			err := videoInfoService.DeleteVideo(videoPath)
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "删除成功"})
+		})
+
+		abgiObsController.GET("/PlayVideoStream", func(c *gin.Context) {
+			video := config.Cfg.ScreenRecord.ObsSavePath + "/" + c.Query("path")
+
+			if video == "" {
+				c.JSON(400, gin.H{"status": "error", "msg": "缺少视频路径"})
+				return
+			}
+
+			// 检查文件是否存在
+			if _, err := os.Stat(video); err != nil {
+				c.JSON(404, gin.H{"status": "error", "msg": "视频不存在"})
+				return
+			}
+
+			// 设置浏览器可以播放视频的 Header
+			c.Header("Content-Type", "video/mkv") // 根据视频类型修改，如 .mkv/.flv
+			c.Header("Content-Disposition", "inline; filename="+filepath.Base(video))
+			c.File(video) // 返回视频文件流
+		})
+	}
+
 	// 定义 GitHub Push Webhook 的结构体
 	type GitHubWebhookPayload struct {
 		Ref        string `json:"ref"`
@@ -1084,6 +1176,15 @@ func main() {
 		autoLog.Sugar.Infof("一条龙关闭状态")
 	}
 
+	//obs是否连接
+	if config.Cfg.ScreenRecord.IsRecord {
+		err := abgiObs.EnsureConnected()
+		if err != nil {
+			autoLog.Sugar.Infof("OBS连接失败")
+		}
+		autoLog.Sugar.Infof("OBS连接成功")
+	}
+
 	//初始化bgi日志信息
 	bgiStatus.InitBgiLogStatus()
 
@@ -1133,6 +1234,7 @@ func main() {
 	}
 
 	if config.Cfg.Control.AbgiScreen {
+		autoLog.Sugar.Infof("屏幕捕获开启状态")
 		// 设置最大CPU使用
 		runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -1148,6 +1250,8 @@ func main() {
 
 		}
 
+	} else {
+		autoLog.Sugar.Infof("屏幕捕获关闭状态")
 	}
 
 	// 静态文件服务（放在所有API路由之后）

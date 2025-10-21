@@ -10,15 +10,6 @@
       </div>
     </header>
 
-          <!-- 左边状态信息 -->
-      <div class="status-card">
-        <h2>执行配置组：🧩<span>{{ statusData.group }}</span></h2>
-        <pre class="ExpectedToEnd">{{ statusData.ExpectedToEnd }}</pre>
-        <p><span>📜</span> 运行路线：<span>{{ statusData.line }}</span></p>
-        <p><span>📜</span> 运行脚本：<span>{{ statusData.scriptName }}</span></p>
-        <p><span>🗺️</span> 配置组进度：<span>{{ statusData.progress }}</span></p>
-        <p><span>✨</span><span>{{ statusData.jsProgress }}</span></p>
-      </div>
     
     <main class="main">
       <div class="video-container">
@@ -68,16 +59,7 @@ export default {
       resolution: '1280x720',
       frameCount: 0,
       lastFpsTime: Date.now(),
-      statusData : {
-        group: '加载中...',
-        ExpectedToEnd: '加载中...',
-        line: '加载中...',
-        progress: '加载中...',
-        running: '加载中...',
-        jsProgress: '加载中...',
-        scriptName: '加载中...'
-      },
-       statusTimer: null // 定时器引用
+
     }
   },
   computed: {
@@ -90,11 +72,7 @@ export default {
   },
   mounted() {
     this.connectWebSocket()
-    this.fetchStatus() // 页面加载先获取一次状态
-       // 每3秒刷新状态
-    this.statusTimer = setInterval(() => {
-      this.fetchStatus()
-    }, 3000)
+
   },
   beforeUnmount() {
     if (this.ws) this.ws.close()

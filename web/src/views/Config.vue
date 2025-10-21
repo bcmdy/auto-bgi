@@ -97,7 +97,7 @@
               </div>
               <div class="help-text">
                 <span class="help-icon">💡</span>
-                端口号，默认是 10086，如果冲突了可以改成你喜欢的
+                端口号，默认是 8082，冲突了可以改成你喜欢的
               </div>
             </a-form-item>
 
@@ -304,6 +304,15 @@
                 </span>
               </a-checkbox>
             </a-form-item>
+
+                <a-form-item class="checkbox-item">
+              <a-checkbox v-model:checked="formData.Control.AbgiScreen" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon">📸</span>
+                  是否开启实时屏幕(会增加功耗，不用的时候，关闭网页，重启生效)
+                </span>
+              </a-checkbox>
+            </a-form-item>
           </div>
         </a-card>
 
@@ -413,7 +422,7 @@
           <template #extra>
             <div class="card-extra">
               <span class="card-icon">🔍</span>
-              <a-tooltip title="需要配合班迪录屏使用,各个群里都有,班迪录屏需要为开启状态，默认启动录屏和停止录屏快捷键需要是F12，尽量自己在班迪录屏设置一个时间限制吧，防止程序报错，没有停止">
+              <a-tooltip title="需要配合obs使用,开启后会启动obs录屏功能,请确保obs已经安装并开启远程控制,obs地址和密码填写正确，否则无法使用录屏功能。请确保开起来websocket连接。如果需要回放，请确保开回放缓存功能">
                 <QuestionCircleOutlined class="help-icon-btn" />
               </a-tooltip>
             </div>
@@ -423,25 +432,34 @@
             <a-checkbox v-model:checked="formData.ScreenRecord.IsRecord" class="enhanced-checkbox">
                 <span class="checkbox-label">
                   <span class="checkbox-icon">🔍️</span>
-                  启用录屏功能
+                  启用录屏功能（请确保obs开启）
                 </span>
             </a-checkbox>
           </a-form-item>
 
-          <a-form-item label="开始录屏关键字" name="StartScreen" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
+          <a-form-item label="obs地址" name="StartScreen" class="form-item-enhanced" v-show="formData.ScreenRecord.IsRecord">
             <div class="input-wrapper">
               <span class="input-icon">🔍</span>
-              <a-input
+              <a-input-password
                   v-model:value="formData.ScreenRecord.StartScreen"
-                  placeholder="开始录屏关键字"
+                  placeholder="obs地址"
                   class="enhanced-input"
               />
             </div>
             <div class="input-wrapper">
               <span class="input-icon">🔍</span>
-              <a-input
+              <a-input-password
                   v-model:value="formData.ScreenRecord.EndScreen"
-                  placeholder="结束录屏关键字"
+                  placeholder="obs密码"
+                  class="enhanced-input"
+              />
+            </div>
+
+            <div class="input-wrapper">
+              <span class="input-icon">🔍</span>
+              <a-input
+                  v-model:value="formData.ScreenRecord.ObsSavePath"
+                  placeholder="OBS录屏保存路径，填你obs的保存路径，要去obs找"
                   class="enhanced-input"
               />
             </div>

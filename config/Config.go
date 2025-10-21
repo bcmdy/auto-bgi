@@ -80,6 +80,7 @@ type ScreenRecord struct {
 	IsRecord    bool   `json:"IsRecord" comment:"是否开启录屏"`
 	StartScreen string `json:"StartScreen" comment:"开始录屏关键字"`
 	EndScreen   string `json:"EndScreen" comment:"结束录屏关键字"`
+	ObsSavePath string `json:"ObsSavePath" comment:"OBS录屏保存路径"`
 }
 
 type OneRemote struct {

@@ -109,7 +109,20 @@ export const apiMethods = {
   // 黑名单相关
   getBlackList: () => api.get('/api/betterGi/blackList'),
   addBlackList: (blackList) => api.post('/api/betterGi/addBlackList', blackList),
-  deleteBlackList: (blackName) => api.post('/api/betterGi/deleteBlackList', blackName)
+  deleteBlackList: (blackName) => api.post('/api/betterGi/deleteBlackList', blackName),
+
+ //获取录制状态
+  IsRecording: () => api.get('/api/abgiObs/IsRecording'),
+  // 开始录制
+  StartRecording: () => api.post('/api/abgiObs/StartRecording'),
+  // 停止录制
+  StopRecording: () => api.post('/api/abgiObs/StopRecording'),
+  // 保存回放缓冲区
+  SaveReplayBuffer: () => api.post('/api/abgiObs/SaveReplayBuffer'),
+  // 获取视频信息
+  GetVideoInfo: () => api.get('/api/abgiObs/GetVideoInfo'),
+  //删除视频
+  DeleteVideo: (videoName) => api.post('/api/abgiObs/DeleteVideo?videoName='+videoName)
   
 }
 

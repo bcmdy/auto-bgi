@@ -26,6 +26,7 @@ import Gitlog from './views/Gitlog.vue'
 import Online from './views/online.vue'
 import CDAwareAutoGather from './views/CDAwareAutoGather.vue' 
 import screen from './views/screen.vue'
+import obsVideo from './views/obsVideo.vue'
 
 // 路由配置
 const routes = [
@@ -49,7 +50,8 @@ const routes = [
   { path: '/GitLog', component: Gitlog },
   { path: '/Online', component: Online }, // 修正 component 名称
   { path: '/CDAwareAutoGather', component: CDAwareAutoGather },
-  { path: '/screen', component: screen }
+  { path: '/screen', component: screen },
+  { path: '/obsVideo', component: obsVideo }, // 懒加载404 页面
 ]
 
 const router = createRouter({
