@@ -105,11 +105,13 @@ func (m *LogMonitor) Monitor() {
 						//m.sendAlert(msg, false)
 						Notice.SentText(msg)
 						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
-						autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
-						go func() {
-							abgiObs.SaveReplayBuffer(fmt.Sprintf("%s_%s_%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine, time.Now().Format("20060102150405")))
+						if config.Cfg.ScreenRecord.IsRecord {
+							autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
+							go func() {
+								abgiObs.SaveReplayBuffer(fmt.Sprintf("%s_%s_%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine, time.Now().Format("20060102150405")))
+							}()
+						}
 
-						}()
 					}
 				}
 				//一条龙结束操作
@@ -146,28 +148,28 @@ func (m *LogMonitor) Monitor() {
 					aaa()
 				}
 
-				//录屏操作
-				if config.Cfg.ScreenRecord.IsRecord {
-
-					if strings.Contains(line, config.Cfg.ScreenRecord.StartScreen) {
-
-						Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.StartScreen + "开始录屏")
-						Notice.SendScreenshot()
-						// 开始录屏
-						control.StartRecord()
-						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
-						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n开始录屏")
-					}
-					if strings.Contains(line, config.Cfg.ScreenRecord.EndScreen) {
-
-						Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.EndScreen + "结束录屏")
-						Notice.SendScreenshot()
-						// 开始录屏
-						control.StopRecord()
-						autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
-						autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
-					}
-				}
+				////录屏操作
+				//if config.Cfg.ScreenRecord.IsRecord {
+				//
+				//	if strings.Contains(line, config.Cfg.ScreenRecord.StartScreen) {
+				//
+				//		Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.StartScreen + "开始录屏")
+				//		Notice.SendScreenshot()
+				//		// 开始录屏
+				//		control.StartRecord()
+				//		autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
+				//		autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n开始录屏")
+				//	}
+				//	if strings.Contains(line, config.Cfg.ScreenRecord.EndScreen) {
+				//
+				//		Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.EndScreen + "结束录屏")
+				//		Notice.SendScreenshot()
+				//		// 开始录屏
+				//		control.StopRecord()
+				//		autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
+				//		autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
+				//	}
+				//}
 
 				//关键字触发执行一条龙
 				if config.Cfg.Account.OnlineAfterKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineAfterKeyword) {

@@ -1201,14 +1201,15 @@ func main() {
 
 	})
 
+	//桌面图片
 	ginServer.GET("/api/aBgiJt", func(c *gin.Context) {
 		//截图
 		err := control.ScreenShot("./img/abgi/jt.jpg")
 		if err != nil {
 			c.JSON(400, "截图失败")
 		}
-		//睡眠500毫秒
-		time.Sleep(1000 * time.Millisecond)
+		////睡眠500毫秒
+		//time.Sleep(1000 * time.Millisecond)
 
 		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})
