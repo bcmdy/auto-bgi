@@ -122,20 +122,28 @@ func SentImage(path string) error {
 		err = sendWeChatImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-微信图片发送失败:", err)
+			return fmt.Errorf("通知-微信图片发送失败:%v", err)
 		}
-		return fmt.Errorf("通知-微信图片发送失败:%v", err)
+		autoLog.Sugar.Info("通知-微信图片发送成功")
+		return nil
 	case "oneBot":
 		err = oneBot.SendPrivateWithImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
+			return fmt.Errorf("通知-OneBot图片发送失败:%v", err)
 		}
-		return fmt.Errorf("通知-OneBot图片发送失败:%v", err)
+		autoLog.Sugar.Info("通知-OneBot图片发送成功")
+		return nil
+
 	case "FeiShu":
 		err = sendFeiShuImageMessage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-飞书图片发送失败:", err)
+			return fmt.Errorf("通知-飞书图片发送失败:%v", err)
 		}
-		return fmt.Errorf("通知-飞书图片发送失败:%v", err)
+		autoLog.Sugar.Info("通知-飞书图片发送成功")
+		return nil
+
 	default:
 		autoLog.Sugar.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
 		return fmt.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)

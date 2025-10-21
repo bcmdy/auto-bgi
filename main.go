@@ -1040,7 +1040,7 @@ func main() {
 
 		//保存重放缓冲区
 		abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
-			_, err2 := abgiObs.SaveReplayBuffer(time.Now().Format("20060102150405") + ".mkv")
+			_, err2 := abgiObs.SaveReplayBuffer(time.Now().Format("2006-01-02-15-04-05") + ".mkv")
 			if err2 != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
 				return
