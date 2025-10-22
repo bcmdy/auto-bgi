@@ -688,10 +688,10 @@ func main() {
 	{
 		//启动一条龙
 		oneLongController.POST("/startOneLong", func(c *gin.Context) {
-			name := c.Query("name")
-			if name == "" {
+
+			var name string
+			if err := c.ShouldBindJSON(&name); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
-				return
 			}
 
 			OneLongService.StartOneLong(name)

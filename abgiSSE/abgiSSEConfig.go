@@ -84,7 +84,7 @@ func NameToImage(name string) {
 	dummyImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	d := &font.Drawer{
 		Dst:  dummyImg,
-		Src:  image.NewUniform(color.RGBA{131, 171, 249, 255}), // 蓝色文字
+		Src:  image.NewUniform(color.RGBA{59, 66, 85, 255}), // 蓝色文字
 		Face: face,
 	}
 	textWidth := d.MeasureString(name).Round()
@@ -96,7 +96,7 @@ func NameToImage(name string) {
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	// 背景颜色
-	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{131, 121, 85, 255}}, image.Point{}, draw.Src)
+	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{241, 241, 240, 255}}, image.Point{}, draw.Src)
 
 	// 设置绘制器
 	d.Dst = img

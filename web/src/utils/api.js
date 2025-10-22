@@ -56,7 +56,7 @@ export const apiMethods = {
   mysSignIn: () => api.post('/api/mysSignIn'),
   
   // 系统操作
-  startOneLong: (data) => api.post('/api/oneLong/startOneLong?name='+data),
+  startOneLong: (data) => api.post('/api/oneLong/startOneLong', data),
   closeBgi: () => api.post('/api/closeBgi'),
   closeYuanShen: () => api.post('/closeYuanShen'),
   backup: () => api.post('/backup'),
