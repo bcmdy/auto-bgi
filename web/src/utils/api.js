@@ -118,6 +118,12 @@ export const apiMethods = {
   StartRecording: () => api.post('/api/abgiObs/StartRecording'),
   // 停止录制
   StopRecording: () => api.post('/api/abgiObs/StopRecording'),
+  // 获取回放缓冲区状态
+  GetReplayBufferStatus: () => api.get('/api/abgiObs/GetReplayBufferStatus'),
+  // 启动回放缓冲区
+  StartReplayBuffer: () => api.post('/api/abgiObs/StartReplayBuffer'),
+  // 停止回放缓冲区
+  StopReplayBuffer: () => api.post('/api/abgiObs/StopReplayBuffer'),
   // 保存回放缓冲区
   SaveReplayBuffer: () => api.post('/api/abgiObs/SaveReplayBuffer'),
   // 获取视频信息

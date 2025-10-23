@@ -36,23 +36,41 @@
                 </div>
               </div>
             </div>
+            
+            <div class="status-badge replay-status" :class="{ recording: isReplayBufferActive }">
+              <div class="status-icon">
+                <span class="dot" :class="{ pulse: isReplayBufferActive, loading: loadingStatus.gettingReplayStatus }"></span>
+              </div>
+              <div class="status-content">
+                <div class="status-main">
+                  <span v-if="loadingStatus.gettingReplayStatus">⏳ 连接中</span>
+                  <span v-else>{{ isReplayBufferActive ? '🟢 回放激活' : '⚪ 回放待机' }}</span>
+                </div>
+                <div class="status-sub">
+                  <span v-if="loadingStatus.gettingReplayStatus">请稍等</span>
+                  <span v-else-if="isReplayBufferActive">缓冲运行中</span>
+                  <span v-else>启动后可用</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="control-buttons">
-            <button 
-              class="btn primary large mobile-full" 
-              @click="startRecording" 
-              :disabled="isRecording || loadingStatus.starting"
-            >
-              <span class="btn-icon">
-                <MobileSpinner v-if="loadingStatus.starting" />
-                <span v-else>🎬</span>
-              </span>
-              <span class="btn-text">{{ loadingStatus.starting ? '录制中...' : '开始录制' }}</span>
-            </button>
+            <div class="section-title">📹 录制</div>
             <div class="btn-row">
               <button 
-                class="btn secondary mobile-half" 
+                class="btn primary" 
+                @click="startRecording" 
+                :disabled="isRecording || loadingStatus.starting"
+              >
+                <span class="btn-icon">
+                  <MobileSpinner v-if="loadingStatus.starting" />
+                  <span v-else>🎬</span>
+                </span>
+                <span class="btn-text">{{ loadingStatus.starting ? '启动中' : '开始' }}</span>
+              </button>
+              <button 
+                class="btn secondary" 
                 @click="stopRecording" 
                 :disabled="!isRecording || loadingStatus.stopping"
               >
@@ -62,20 +80,48 @@
                 </span>
                 <span class="btn-text">{{ loadingStatus.stopping ? '停止中' : '停止' }}</span>
               </button>
+            </div>
+            
+            <div class="section-title">🔄 回放缓冲</div>
+            <div class="btn-row">
               <button 
-                class="btn accent mobile-half" 
-                @click="saveReplayBuffer" 
-                :disabled="loadingStatus.savingReplay"
+                class="btn primary" 
+                @click="startReplayBuffer" 
+                :disabled="isReplayBufferActive || loadingStatus.startingReplay"
               >
                 <span class="btn-icon">
-                  <MobileSpinner v-if="loadingStatus.savingReplay" />
-                  <span v-else>💾</span>
+                  <MobileSpinner v-if="loadingStatus.startingReplay" />
+                  <span v-else>▶️</span>
                 </span>
-                <span class="btn-text">{{ loadingStatus.savingReplay ? '保存中' : '回放' }}</span>
+                <span class="btn-text">{{ loadingStatus.startingReplay ? '启动中' : '启动' }}</span>
+              </button>
+              <button 
+                class="btn secondary" 
+                @click="stopReplayBuffer" 
+                :disabled="!isReplayBufferActive || loadingStatus.stoppingReplay"
+              >
+                <span class="btn-icon">
+                  <MobileSpinner v-if="loadingStatus.stoppingReplay" />
+                  <span v-else>⏸️</span>
+                </span>
+                <span class="btn-text">{{ loadingStatus.stoppingReplay ? '停止中' : '停止' }}</span>
               </button>
             </div>
             <button 
-              class="btn ghost mobile-full" 
+              class="btn accent" 
+              @click="saveReplayBuffer" 
+              :disabled="!isReplayBufferActive || loadingStatus.savingReplay"
+            >
+              <span class="btn-icon">
+                <MobileSpinner v-if="loadingStatus.savingReplay" />
+                <span v-else>💾</span>
+              </span>
+              <span class="btn-text">{{ loadingStatus.savingReplay ? '保存中' : '保存回放' }}</span>
+            </button>
+            
+            <div class="section-title">📂 文件</div>
+            <button 
+              class="btn ghost" 
               @click="fetchVideos" 
               :disabled="loadingStatus.fetchingVideos"
             >
@@ -83,7 +129,7 @@
                 <MobileSpinner v-if="loadingStatus.fetchingVideos" />
                 <span v-else>🔄</span>
               </span>
-              <span class="btn-text">{{ loadingStatus.fetchingVideos ? '加载中' : '刷新' }}</span>
+              <span class="btn-text">{{ loadingStatus.fetchingVideos ? '加载中' : '刷新列表' }}</span>
             </button>
           </div>
         </div>
@@ -100,9 +146,10 @@
                   {{ currentVideoName }}
                 </h2>
                 <button 
-                  class="btn ghost small mobile-close" 
+                  class="btn ghost small close-btn" 
                   @click="currentVideo = ''" 
                   :disabled="loadingStatus.loadingVideo"
+                  title="关闭"
                 >
                   <MobileSpinner v-if="loadingStatus.loadingVideo" />
                   <span v-else>✕</span>
@@ -127,7 +174,8 @@
           <div class="empty-content">
             <div class="empty-icon">🎞️</div>
             <h3>选择视频播放</h3>
-            <p>点击下方视频～</p>
+            <p class="mobile-hide">点击下方视频～</p>
+            <p class="mobile-show">在下方列表选择视频</p>
           </div>
         </div>
       </section>
@@ -175,24 +223,22 @@
                 
                 <div class="video-actions">
                   <button 
-                    class="btn primary small mobile-full" 
+                    class="btn primary small" 
                     @click.stop="playVideo(video.name)"
                     :disabled="loadingStatus.loadingVideo"
+                    :title="'播放'"
                   >
-                    <span class="icon">
-                      <MobileSpinner v-if="loadingStatus.loadingVideo && currentVideo === video.name" />
-                      <span v-else>▶️</span>
-                    </span>
+                    <MobileSpinner v-if="loadingStatus.loadingVideo && currentVideo === video.name" />
+                    <span v-else>▶️</span>
                   </button>
                   <button 
-                    class="btn danger small mobile-full" 
+                    class="btn danger small" 
                     @click.stop="DeleteVideo(video.name)"
                     :disabled="loadingStatus.deletingVideo"
+                    :title="'删除'"
                   >
-                    <span class="icon">
-                      <MobileSpinner v-if="loadingStatus.deletingVideo && deletingVideoName === video.name" />
-                      <span v-else>🗑️</span>
-                    </span>
+                    <MobileSpinner v-if="loadingStatus.deletingVideo && deletingVideoName === video.name" />
+                    <span v-else>🗑️</span>
                   </button>
                 </div>
               </div>
@@ -221,6 +267,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { apiMethods } from '@/utils/api'
 
 const isRecording = ref(false)
+const isReplayBufferActive = ref(false)
 const videos = ref([])
 const currentVideo = ref('')
 const currentVideoName = ref('')
@@ -230,8 +277,11 @@ const deletingVideoName = ref('')
 // 加载状态管理
 const loadingStatus = reactive({
   gettingStatus: false,
+  gettingReplayStatus: false,
   starting: false,
   stopping: false,
+  startingReplay: false,
+  stoppingReplay: false,
   savingReplay: false,
   fetchingVideos: false,
   loadingVideo: false,
@@ -255,6 +305,18 @@ async function getRecordingStatus() {
   }
 }
 
+async function getReplayBufferStatus() {
+  loadingStatus.gettingReplayStatus = true
+  try {
+    const res = await apiMethods.GetReplayBufferStatus()
+    isReplayBufferActive.value = res.msg?.outputActive === true
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loadingStatus.gettingReplayStatus = false
+  }
+}
+
 async function startRecording() {
   loadingStatus.starting = true
   try {
@@ -262,6 +324,10 @@ async function startRecording() {
     console.log("============",res.msg)
     if (res.status === 'success') {
       isRecording.value = true
+      // 延迟后再查询状态，确保后端已更新
+      setTimeout(() => {
+        getRecordingStatus()
+      }, 500)
       fetchVideos()
     }else {
       alert('❌'+res.msg)
@@ -279,12 +345,57 @@ async function stopRecording() {
     const res = await apiMethods.StopRecording()
     if (res.status === 'success') {
       isRecording.value = false
+      // 延迟后再查询状态，确保后端已更新
+      setTimeout(() => {
+        getRecordingStatus()
+      }, 500)
       fetchVideos()
     }
   } catch (err) {
     console.error(err)
   } finally {
     loadingStatus.stopping = false
+  }
+}
+
+async function startReplayBuffer() {
+  loadingStatus.startingReplay = true
+  try {
+    const res = await apiMethods.StartReplayBuffer()
+    console.log("============", res.msg)
+    if (res.status === 'success') {
+      isReplayBufferActive.value = true
+      // 延迟后再查询状态，确保后端已更新
+      setTimeout(() => {
+        getReplayBufferStatus()
+      }, 500)
+    } else {
+      alert('❌ ' + res.msg)
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loadingStatus.startingReplay = false
+  }
+}
+
+async function stopReplayBuffer() {
+  loadingStatus.stoppingReplay = true
+  try {
+    const res = await apiMethods.StopReplayBuffer()
+    if (res.status === 'success') {
+      isReplayBufferActive.value = false
+      // 延迟后再查询状态，确保后端已更新
+      setTimeout(() => {
+        getReplayBufferStatus()
+      }, 500)
+    } else {
+      alert('❌ ' + res.msg)
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loadingStatus.stoppingReplay = false
   }
 }
 
@@ -362,6 +473,7 @@ function formatTime(sizeMB) {
 
 onMounted(() => {
   getRecordingStatus()
+  getReplayBufferStatus()
   fetchVideos()
 })
 </script>
@@ -467,6 +579,9 @@ onMounted(() => {
 
 .status-section {
   padding: 0 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .status-badge {
   display: flex;
@@ -481,6 +596,10 @@ onMounted(() => {
 .status-badge.recording {
   background: #fee2e2;
   border-color: var(--pink-500);
+}
+.status-badge.replay-status.recording {
+  background: #d1fae5;
+  border-color: #10b981;
 }
 .status-icon .dot {
   width: 12px; height: 12px;
@@ -510,7 +629,24 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
 }
-.btn-row { display: flex; gap: 12px; }
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-top: 8px;
+  padding-left: 4px;
+  opacity: 0.8;
+}
+.section-title:first-child {
+  margin-top: 0;
+}
+.btn-row { 
+  display: flex; 
+  gap: 12px; 
+}
+.btn-row .btn {
+  flex: 1;
+}
 .btn.large { padding: 14px 20px; font-size: 1rem; }
 .btn {
   display: flex;
@@ -659,8 +795,29 @@ onMounted(() => {
   font-size: 0.85rem;
   color: var(--gray-600);
 }
-.video-actions { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
-.btn.small { padding: 6px 12px; font-size: 0.9rem; min-width: 40px; }
+.video-actions { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 6px; 
+  align-items: flex-end;
+  justify-content: center;
+}
+.btn.small { 
+  padding: 8px;
+  font-size: 1rem;
+  min-width: 42px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn.close-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px;
+  font-size: 1.2rem;
+  line-height: 1;
+}
 
 .empty-list {
   padding: 60px 24px;
@@ -671,10 +828,6 @@ onMounted(() => {
 .empty-sub { font-size: 0.9rem; margin-top: 4px; }
 
 /* ========== 手机端优化 ========== */
-.mobile-full { width: 100% !important; margin-bottom: 8px !important; }
-.mobile-half { width: 48% !important; margin: 0 2% 8px 0 !important; }
-.mobile-half:nth-child(2n) { margin-right: 0 !important; }
-.mobile-close { width: 32px !important; height: 32px !important; padding: 0 !important; }
 .mobile-hide { display: none; }
 .mobile-show { display: block; }
 
@@ -734,70 +887,155 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .main-layout { padding: 0 10px 20px; }
-  .control-card, .list-card { padding: 16px; }
-  .player-section { min-height: 300px; }
-  .player-container { max-width: 100%; }
-  .main-video { max-height: 300px; }
-  .card-header { padding: 16px; }
-  .control-buttons { padding: 0 16px 16px; }
-  
-  /* 按钮优化 */
-  .mobile-full { width: 100% !important; }
-  .mobile-half { width: 48% !important; margin-right: 4% !important; }
-  .mobile-half:nth-child(2n) { margin-right: 0 !important; }
-  .mobile-close { 
-    width: 36px !important; 
-    height: 36px !important; 
-    min-width: 36px !important;
-    font-size: 16px !important;
+  .main-layout { 
+    padding: 0 12px 20px; 
+    gap: 12px;
+    display: flex;
+    flex-direction: column;
   }
-  .mobile-hide { display: none !important; }
-  .mobile-show { display: block !important; }
   
-  .btn-text { font-size: 14px !important; }
-  .status-main { font-size: 16px !important; }
-  .status-sub { font-size: 12px !important; }
+  /* 控制区域优化 - 保持显示但更紧凑 */
+  .control-sidebar { 
+    order: 1;
+    width: 100%;
+  }
+  .control-card { 
+    padding: 0;
+  }
+  .card-header { 
+    padding: 14px 16px 12px; 
+  }
+  .card-title {
+    font-size: 1.1rem;
+  }
+  .status-section {
+    padding: 0 16px 14px;
+    gap: 10px;
+  }
+  .status-badge {
+    padding: 12px;
+  }
+  .status-main { 
+    font-size: 0.95rem;
+  }
+  .status-sub { 
+    font-size: 0.75rem;
+  }
   
-  /* 视频列表 */
+  /* 按钮区域优化 */
+  .control-buttons { 
+    padding: 0 16px 16px; 
+    gap: 8px;
+  }
+  .section-title {
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+  .btn-row { 
+    gap: 10px; 
+  }
+  .btn.large { 
+    padding: 13px 18px; 
+    font-size: 0.95rem;
+  }
+  .btn-text { 
+    font-size: 0.85rem;
+  }
+  .btn-icon {
+    font-size: 1rem;
+  }
+  
+  /* 视频列表区域 - 第二显示 */
+  .video-sidebar { 
+    order: 2;
+    width: 100%;
+  }
+  .list-card { 
+    max-height: none;
+  }
+  .video-list { 
+    max-height: 400px;
+    overflow-y: auto;
+  }
   .video-item { 
-    padding: 12px !important; 
-    gap: 8px !important;
-    min-height: 56px !important;
+    padding: 10px 16px;
+    gap: 10px;
   }
   .video-thumbnail { 
-    width: 48px !important; 
-    height: 36px !important; 
+    width: 52px;
+    height: 39px;
   }
   .video-title { 
-    font-size: 14px !important; 
-    line-height: 1.3 !important;
+    font-size: 0.9rem;
+    line-height: 1.4;
   }
-  .video-actions { gap: 2px !important; }
-  .btn.small.mobile-full { 
-    width: 36px !important; 
-    height: 36px !important; 
-    padding: 0 !important;
-    min-width: 36px !important;
+  .video-actions { 
+    gap: 4px;
+  }
+  .btn.small { 
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    min-width: 38px;
+    font-size: 1rem;
+  }
+  
+  /* 播放器区域 - 最后显示（选择后展开） */
+  .player-section { 
+    order: 3;
+    min-height: auto;
+  }
+  .player-container { 
+    max-width: 100%; 
+  }
+  .main-video { 
+    max-height: 350px;
+  }
+  .player-header {
+    padding: 14px 16px;
+  }
+  .player-title {
+    font-size: 1.1rem;
+  }
+  .video-wrapper {
+    padding: 16px;
+  }
+  .empty-player {
+    height: 280px;
+  }
+  .empty-icon {
+    font-size: 3rem;
+  }
+  .empty-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  /* 移动端专用样式 */
+  .close-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 8px !important;
+    font-size: 1.3rem !important;
+  }
+  .mobile-hide { 
+    display: none !important; 
+  }
+  .mobile-show { 
+    display: block !important; 
   }
   
   /* 动画简化 */
-  .list-enter-active, .list-leave-active { transition: all 0.2s ease; }
-  .list-enter-from, .list-leave-to { 
-    opacity: 0; 
-    transform: translateY(-10px); 
+  .list-enter-active, 
+  .list-leave-active,
+  .fade-enter-active, 
+  .fade-leave-active { 
+    transition: all 0.2s ease; 
   }
-  .fade-enter-active, .fade-leave-active { transition: all 0.2s ease; }
-
-  /* ========== 手机端: 隐藏录制控制，并确保文件列表在播放器下面 ========== */
-  /* 隐藏左侧录制控制区域（手机端不显示） */
-  .control-sidebar { display: none !important; }
-  /* 列表卡在手机端不限制高度，直接显示在播放器下方 */
-  .list-card { max-height: none !important; }
-  .video-list { max-height: none !important; overflow: visible !important; }
-  /* 确保播放器与列表在单列时的视觉顺序：播放器在上，列表在下（DOM 已是此顺序） */
-  .player-section { order: 1; }
-  .video-sidebar { order: 2; }
+  .list-enter-from, 
+  .list-leave-to { 
+    opacity: 0; 
+    transform: translateY(-8px); 
+  }
 }
 
 /* ========== 动画 ========== */

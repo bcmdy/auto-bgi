@@ -4,15 +4,16 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"fmt"
-	"github.com/andreykaipov/goobs"
-	"github.com/andreykaipov/goobs/api/requests/outputs"
-	"github.com/andreykaipov/goobs/api/requests/record"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/andreykaipov/goobs"
+	"github.com/andreykaipov/goobs/api/requests/outputs"
+	"github.com/andreykaipov/goobs/api/requests/record"
 )
 
 var (
@@ -132,9 +133,13 @@ func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error
 	}
 
 	go func() {
+		// 等待 OBS 将文件写入磁盘，避免文件还没生成就开始重命名
+		time.Sleep(3 * time.Second)
+
 		file, err := renameFile(fileName)
 		if err != nil {
 			autoLog.Sugar.Errorf("重命名文件失败: %v", err)
+			return
 		}
 		autoLog.Sugar.Infof("📁 已保存回放缓冲区，输出文件: %s", file)
 	}()
@@ -174,13 +179,22 @@ func renameFile(newName string) (string, error) {
 		return "", fmt.Errorf("未找到符合条件的回放文件")
 	}
 
+	// 清理文件名，移除路径分隔符
 	newName = filepath.Clean(newName)
 	if strings.ContainsAny(newName, string(os.PathSeparator)) {
 		return "", fmt.Errorf("文件名包含非法字符")
 	}
 
+	// 如果新文件名没有扩展名，使用原文件的扩展名
+	if filepath.Ext(newName) == "" {
+		newName = newName + filepath.Ext(latest.Name())
+	}
+
 	oldPath := filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, latest.Name())
 	newPath := filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, newName)
+
+	autoLog.Sugar.Infof("开始重命名文件: %s -> %s", oldPath, newPath)
+
 	err = os.Rename(oldPath, newPath)
 	if err != nil {
 		return "", fmt.Errorf("重命名文件失败: %v", err)
