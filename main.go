@@ -1038,6 +1038,34 @@ func main() {
 			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": isRecording})
 		})
 
+		//开启回放缓存
+		abgiObsController.GET("/StartReplayBuffer", func(context *gin.Context) {
+			err := abgiObs.StartReplayBuffer()
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+		})
+
+		//停止回放缓存
+		abgiObsController.GET("/StopReplayBuffer", func(context *gin.Context) {
+			err := abgiObs.StopReplayBuffer()
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+		})
+
+		////获取重放缓冲区状态
+		abgiObsController.GET("/GetReplayBufferStatus", func(context *gin.Context) {
+			status, err := abgiObs.GetReplayBufferStatus()
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": status})
+		})
+
 		//保存重放缓冲区
 		abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
 			_, err2 := abgiObs.SaveReplayBuffer(time.Now().Format("2006-01-02-15-04-05") + ".mkv")
@@ -1147,6 +1175,8 @@ func main() {
 	} else {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
 	}
+
+	//abgiSSE.NameToImage("余音袅袅乐无言")
 
 	//实时读取文件
 	go bgiStatus.LogM()

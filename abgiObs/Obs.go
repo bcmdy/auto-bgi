@@ -217,3 +217,38 @@ func replayTime(data string) (time.Time, error) {
 
 	return t, nil
 }
+
+// 开启回放缓存
+func StartReplayBuffer() error {
+
+	buffer, err := client.Outputs.StartReplayBuffer(&outputs.StartReplayBufferParams{})
+	if err != nil {
+		return fmt.Errorf("开启回放缓冲区失败: %v", err)
+	}
+	autoLog.Sugar.Infof("📼 已开启回放缓冲区，输出文件: %s", buffer)
+	return nil
+}
+
+// 停止回放缓存
+func StopReplayBuffer() error {
+	buffer, err := client.Outputs.StopReplayBuffer(&outputs.StopReplayBufferParams{})
+	if err != nil {
+		return fmt.Errorf("停止回放缓冲区失败: %v", err)
+	}
+	autoLog.Sugar.Infof("🛑 已停止回放缓冲区，输出文件: %s", buffer)
+	return nil
+}
+
+// 获取重放缓冲区状态
+func GetReplayBufferStatus() (*outputs.GetReplayBufferStatusResponse, error) {
+	if client == nil {
+		return nil, fmt.Errorf("OBS客户端未连接")
+	}
+
+	status, err := client.Outputs.GetReplayBufferStatus(&outputs.GetReplayBufferStatusParams{})
+	if err != nil {
+		return status, fmt.Errorf("获取回放缓冲区状态失败: %v", err)
+	}
+
+	return status, nil
+}
