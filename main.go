@@ -1181,8 +1181,10 @@ func main() {
 		err := abgiObs.EnsureConnected()
 		if err != nil {
 			autoLog.Sugar.Infof("OBS连接失败")
+		} else {
+			autoLog.Sugar.Infof("OBS连接成功")
 		}
-		autoLog.Sugar.Infof("OBS连接成功")
+
 	}
 
 	//初始化bgi日志信息
