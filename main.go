@@ -1039,21 +1039,23 @@ func main() {
 		})
 
 		//开启回放缓存
-		abgiObsController.GET("/StartReplayBuffer", func(context *gin.Context) {
+		abgiObsController.POST("/StartReplayBuffer", func(context *gin.Context) {
 			err := abgiObs.StartReplayBuffer()
 			if err != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
 				return
 			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始回放缓冲区"})
 		})
 
 		//停止回放缓存
-		abgiObsController.GET("/StopReplayBuffer", func(context *gin.Context) {
+		abgiObsController.POST("/StopReplayBuffer", func(context *gin.Context) {
 			err := abgiObs.StopReplayBuffer()
 			if err != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
 				return
 			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "停止回放缓冲区"})
 		})
 
 		////获取重放缓冲区状态
@@ -1068,7 +1070,7 @@ func main() {
 
 		//保存重放缓冲区
 		abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
-			_, err2 := abgiObs.SaveReplayBuffer(time.Now().Format("2006-01-02-15-04-05") + ".mkv")
+			_, err2 := abgiObs.SaveReplayBuffer("手动保存")
 			if err2 != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
 				return
@@ -1079,7 +1081,7 @@ func main() {
 		//获取指定目录下的视频信息列表
 		abgiObsController.GET("/GetVideoInfo", func(context *gin.Context) {
 			// 获取目录路径参数
-
+			time.Sleep(3 * time.Second)
 			info, err := videoInfoService.GetAllRecordingsInfo(config.Cfg.ScreenRecord.ObsSavePath)
 			if err != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})

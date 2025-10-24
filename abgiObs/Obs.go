@@ -4,16 +4,13 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"fmt"
-	"os"
-	"path/filepath"
+	"github.com/andreykaipov/goobs"
+	"github.com/andreykaipov/goobs/api/requests/outputs"
+	"github.com/andreykaipov/goobs/api/requests/record"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/andreykaipov/goobs"
-	"github.com/andreykaipov/goobs/api/requests/outputs"
-	"github.com/andreykaipov/goobs/api/requests/record"
 )
 
 var (
@@ -113,7 +110,47 @@ func Disconnect() {
 	}
 }
 
+var (
+	lastSentMap = struct {
+		sync.Mutex
+		m map[string]time.Time
+	}{m: make(map[string]time.Time)}
+
+	noticeTTL   = 20 * time.Second
+	maxCacheLen = 5
+)
+
 func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error) {
+
+	lastSentMap.Lock()
+	defer lastSentMap.Unlock()
+
+	// 如果存在并且 20 秒内，直接忽略
+	if t, ok := lastSentMap.m[fileName]; ok {
+		if time.Since(t) < noticeTTL {
+			autoLog.Sugar.Infof("最近保存过相同文件名，请等待 20 秒后重试：" + fileName)
+			return nil, fmt.Errorf("最近已发送过相同文件名，请等待 20 秒后重试")
+		}
+	}
+
+	// 如果超过最大缓存大小，移除最旧的一条
+	if len(lastSentMap.m) >= maxCacheLen {
+		var oldestKey string
+		var oldestTime time.Time
+		for k, v := range lastSentMap.m {
+			if oldestTime.IsZero() || v.Before(oldestTime) {
+				oldestKey = k
+				oldestTime = v
+			}
+		}
+		delete(lastSentMap.m, oldestKey)
+	}
+
+	// 更新为当前时间
+	lastSentMap.m[fileName] = time.Now()
+
+	//去除名字中的特殊符号
+	fileName = SanitizeFileName(fileName)
 
 	if client == nil {
 		return nil, fmt.Errorf("OBS客户端未连接")
@@ -124,6 +161,13 @@ func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error
 
 	fmt.Println("开始保存回放缓冲区")
 
+	_, err2 := setOutputSettings(fileName)
+	if err2 != nil {
+		autoLog.Sugar.Infof("设置输出设置失败: %v", err2)
+
+	}
+	autoLog.Sugar.Infof("回放保存成功: %v", fileName)
+
 	//睡眠5秒
 	time.Sleep(5 * time.Second)
 
@@ -132,104 +176,27 @@ func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error
 		autoLog.Sugar.Errorf("保存回放缓冲区失败: %v", err)
 	}
 
-	go func() {
-		// 等待 OBS 将文件写入磁盘，避免文件还没生成就开始重命名
-		time.Sleep(3 * time.Second)
-
-		file, err := renameFile(fileName)
-		if err != nil {
-			autoLog.Sugar.Errorf("重命名文件失败: %v", err)
-			return
-		}
-		autoLog.Sugar.Infof("📁 已保存回放缓冲区，输出文件: %s", file)
-	}()
-
 	return res, nil
 
 }
 
-// 文件重命名
-func renameFile(newName string) (string, error) {
-	files, err := os.ReadDir(config.Cfg.ScreenRecord.ObsSavePath)
-	if err != nil {
-		return "", fmt.Errorf("读取目录失败: %v", err)
+// SanitizeFileName 去除字符串中影响文件命名的特殊符号
+func SanitizeFileName(name string) string {
+	// 替换 Windows / Linux / macOS 不允许的字符
+	// 包括: \ / : * ? " < > | 和一些控制字符
+	reg := regexp.MustCompile(`[<>:"/\\|?*\x00-\x1F]`)
+	cleaned := reg.ReplaceAllString(name, "")
+
+	// 去掉首尾空格与点（防止 Windows 文件名非法）
+	cleaned = strings.Trim(cleaned, " .")
+	cleaned = strings.Replace(cleaned, ".json", "", -1)
+
+	// 防止文件名为空
+	if cleaned == "" {
+		cleaned = "untitled"
 	}
 
-	var latest os.DirEntry
-	var latestTime time.Time
-
-	for _, f := range files {
-		name := f.Name()
-		if !strings.Contains(name, "Replay_") {
-			continue
-		}
-		ext := filepath.Ext(name)
-		t, err := replayTime(strings.TrimSuffix(name, ext))
-		if err != nil {
-			autoLog.Sugar.Warnf("解析文件时间失败: %s, 错误: %v", name, err)
-			continue
-		}
-		if t.After(latestTime) {
-			latest = f
-			latestTime = t
-		}
-	}
-
-	if latest == nil {
-		return "", fmt.Errorf("未找到符合条件的回放文件")
-	}
-
-	// 清理文件名，移除路径分隔符
-	newName = filepath.Clean(newName)
-	if strings.ContainsAny(newName, string(os.PathSeparator)) {
-		return "", fmt.Errorf("文件名包含非法字符")
-	}
-
-	// 如果新文件名没有扩展名，使用原文件的扩展名
-	if filepath.Ext(newName) == "" {
-		newName = newName + filepath.Ext(latest.Name())
-	}
-
-	oldPath := filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, latest.Name())
-	newPath := filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, newName)
-
-	autoLog.Sugar.Infof("开始重命名文件: %s -> %s", oldPath, newPath)
-
-	err = os.Rename(oldPath, newPath)
-	if err != nil {
-		return "", fmt.Errorf("重命名文件失败: %v", err)
-	}
-
-	return newPath, nil
-}
-
-// 格式化日期
-func replayTime(data string) (time.Time, error) {
-	if !strings.HasPrefix(data, "Replay_") {
-		return time.Time{}, fmt.Errorf("文件名格式错误，需以 Replay_ 开头: %s", data)
-	}
-
-	parts := strings.Split(data, "_")
-	if len(parts) != 3 {
-		return time.Time{}, fmt.Errorf("文件名格式错误，期望 Replay_YYYY-MM-DD_HH-MM-SS: %s", data)
-	}
-
-	datePart := parts[1]
-	timePart := strings.ReplaceAll(parts[2], "-", ":")
-	if !regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`).MatchString(datePart) {
-		return time.Time{}, fmt.Errorf("日期格式错误，期望 YYYY-MM-DD: %s", datePart)
-	}
-	if !regexp.MustCompile(`^\d{2}:\d{2}:\d{2}$`).MatchString(timePart) {
-		return time.Time{}, fmt.Errorf("时间格式错误，期望 HH:MM:SS: %s", timePart)
-	}
-
-	full := datePart + " " + timePart
-	t, err := time.Parse("2006-01-02 15:04:05", full)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("解析时间失败: %s, 错误: %v", data, err)
-	}
-
-	return t, nil
+	return cleaned
 }
 
 // 开启回放缓存
@@ -265,4 +232,31 @@ func GetReplayBufferStatus() (*outputs.GetReplayBufferStatusResponse, error) {
 	}
 
 	return status, nil
+}
+
+// SetOutputSettings 设置回放缓存输出设置
+func setOutputSettings(fileName string) (*outputs.SetOutputSettingsResponse, error) {
+	if client == nil {
+		return nil, fmt.Errorf("OBS客户端未连接")
+	}
+
+	s := "回放缓存"
+
+	settings, err := client.Outputs.GetOutputSettings(&outputs.GetOutputSettingsParams{
+		OutputName: &s,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("获取输出设置失败: %v", err)
+	}
+	settings.OutputSettings["format"] = fileName + "%CCYY-%MM-%DD %hh-%mm-%ss"
+
+	outputSettings, err := client.Outputs.SetOutputSettings(&outputs.SetOutputSettingsParams{
+		OutputName:     &s,
+		OutputSettings: settings.OutputSettings,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return outputSettings, nil
 }
