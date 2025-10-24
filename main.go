@@ -1178,7 +1178,7 @@ func main() {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
 	}
 
-	//abgiSSE.NameToImage("余音袅袅乐无言")
+	//abgiSSE.NameToImage("古又")
 
 	//实时读取文件
 	go bgiStatus.LogM()

@@ -7,7 +7,6 @@ import (
 	"embed"
 	"encoding/base64"
 	"errors"
-	"github.com/disintegration/imaging"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -136,7 +135,7 @@ func NameToImage(name string) {
 		log.Fatal(err)
 	}
 
-	fontSize := 26.0 // 稍微大一点，更贴近截图比例
+	fontSize := 24.0 // 稍微大一点，更贴近截图比例
 	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    fontSize,
 		DPI:     72,
@@ -149,40 +148,23 @@ func NameToImage(name string) {
 	dummyImg := image.NewRGBA(image.Rect(241, 241, 239, 1))
 	d := &font.Drawer{
 		Dst:  dummyImg,
-		Src:  image.NewUniform(color.RGBA{59, 66, 85, 255}), // 深灰蓝
+		Src:  image.NewUniform(color.RGBA{80, 87, 105, 255}),
 		Face: face,
 	}
 	textWidth := d.MeasureString(name).Round()
 
-	paddingX := 8
-	width := textWidth + 4*paddingX
-	height := 60
+	paddingX := 3
+	width := textWidth + 2*paddingX
+	height := 28
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	bg := color.RGBA{245, 246, 247, 253} // 浅灰背景
+	bg := color.RGBA{245, 246, 247, 255}
 	draw.Draw(img, img.Bounds(), &image.Uniform{bg}, image.Point{}, draw.Src)
 
 	d.Dst = img
-	y := (height+int(fontSize))/2 - 5
+	y := (height+int(fontSize))/2 - 4
 	d.Dot = fixed.P(paddingX, y)
 	d.DrawString(name)
-
-	// ---- 可选：轻微平滑噪点，让背景不太“死白” ----
-	//rand.Seed(time.Now().UnixNano())
-	//for i := 0; i < width*height/50; i++ {
-	//	x := rand.Intn(width)
-	//	y := rand.Intn(height)
-	//	gray := uint8(240 + rand.Intn(10)) // 淡灰波动
-	//	img.Set(x, y, color.RGBA{gray, gray, gray, 255})
-	//}
-
-	// ---- 轻微模糊（让字体边缘更柔和） ----
-	blurred := imaging.Blur(img, 0.6)
-	//img = imaging.Clone(blurred)
-	rgbaImg := image.NewRGBA(blurred.Bounds())
-	draw.Draw(rgbaImg, rgbaImg.Bounds(), blurred, image.Point{}, draw.Src)
-
-	img = rgbaImg
 
 	outFile, err := os.Create(config.Cfg.BetterGIAddress + "/User/JsScript/ArtifactsGroupPurchasing/targets/" + name + ".png")
 	if err != nil {
@@ -195,4 +177,65 @@ func NameToImage(name string) {
 	}
 
 	log.Println("已生成 PNG:", name+".png")
+	NameToImageMark(name)
+}
+
+func NameToImageMark(name string) {
+	fontBytes, err := abgiFont.ReadFile("abgiFont/HYW.ttf")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	collection, err := opentype.ParseCollection(fontBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tt, err := collection.Font(0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fontSize := 24.0 // 稍微大一点，更贴近截图比例
+	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    fontSize,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dummyImg := image.NewRGBA(image.Rect(241, 241, 239, 1))
+	d := &font.Drawer{
+		Dst:  dummyImg,
+		Src:  image.NewUniform(color.RGBA{100, 119, 171, 255}),
+		Face: face,
+	}
+	textWidth := d.MeasureString(name).Round()
+
+	paddingX := 3
+	width := textWidth + 2*paddingX
+	height := 28
+
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	bg := color.RGBA{245, 246, 247, 255}
+	draw.Draw(img, img.Bounds(), &image.Uniform{bg}, image.Point{}, draw.Src)
+
+	d.Dst = img
+	y := (height+int(fontSize))/2 - 4
+	d.Dot = fixed.P(paddingX, y)
+	d.DrawString(name)
+
+	outFile, err := os.Create(config.Cfg.BetterGIAddress + "/User/JsScript/ArtifactsGroupPurchasing/targets/" + name + "备注.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer outFile.Close()
+
+	if err := png.Encode(outFile, img); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("已生成备注 PNG:", name+"备注.png")
 }
