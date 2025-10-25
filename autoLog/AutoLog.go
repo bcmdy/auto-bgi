@@ -1,6 +1,8 @@
 package autoLog
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -74,4 +76,43 @@ func Init() {
 
 func Sync() {
 	_ = Logger.Sync()
+}
+
+// 根据日期查询日志,默认是今天的
+// QueryLogs 查询日志，date为空时默认今天
+func QueryLogs(date string) ([]string, error) {
+	logDir := "logs"
+
+	// 如果没有指定日期，默认今天
+	var logFile string
+	if date == "" {
+		logFile = time.Now().Format("2006-01-02") + ".log"
+	} else {
+		// 简单校验日期格式
+		if _, err := time.Parse("2006-01-02", date); err != nil {
+			return nil, fmt.Errorf("日期格式错误，应为 YYYY-MM-DD")
+		}
+		logFile = date + ".log"
+	}
+
+	fullPath := filepath.Join(logDir, logFile)
+
+	// 打开日志文件
+	file, err := os.Open(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("打开日志文件失败: %w", err)
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("读取日志失败: %w", err)
+	}
+
+	return lines, nil
 }

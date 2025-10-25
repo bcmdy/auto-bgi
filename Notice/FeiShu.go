@@ -1,6 +1,7 @@
 package Notice
 
 import (
+	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"bytes"
 	"encoding/json"
@@ -41,8 +42,10 @@ func sendFeishuTextMessage(content string) error {
 // 注意：机器人 webhook 发送图片必须先上传图片以获取 image_key。
 func sendFeiShuImageMessage(imagePath string) error {
 
-	appAccessToken := getTenantAccessToken(config.Cfg.Notice.FeiShu.AppID, config.Cfg.Notice.FeiShu.AppSecret)
-
+	appAccessToken, err := getTenantAccessToken(config.Cfg.Notice.FeiShu.AppID, config.Cfg.Notice.FeiShu.AppSecret)
+	if err != nil {
+		return err
+	}
 	imageKey, err := uploadFeishuImage(imagePath, appAccessToken)
 	if err != nil {
 		return err
@@ -114,7 +117,7 @@ func uploadFeishuImage(imagePath, appAccessToken string) (string, error) {
 	return result.Data.ImageKey, nil
 }
 
-func getTenantAccessToken(appID, appSecret string) string {
+func getTenantAccessToken(appID, appSecret string) (string, error) {
 	url := "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
 	payload := map[string]string{
 		"app_id":     appID,
@@ -124,7 +127,8 @@ func getTenantAccessToken(appID, appSecret string) string {
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		panic(err)
+		autoLog.Sugar.Errorf("获取token失败: %v", err)
+		return "", fmt.Errorf("获取token失败: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -137,7 +141,9 @@ func getTenantAccessToken(appID, appSecret string) string {
 	}
 	json.Unmarshal(body, &result)
 	if result.Code != 0 {
-		panic(fmt.Sprintf("获取token失败: %v", result.Msg))
+		//panic(fmt.Sprintf("获取token失败: %v", result.Msg))
+		autoLog.Sugar.Errorf("获取token失败: %v", result.Msg)
+		return "", fmt.Errorf("获取token失败: %v", result.Msg)
 	}
-	return result.TenantAccessToken
+	return result.TenantAccessToken, nil
 }

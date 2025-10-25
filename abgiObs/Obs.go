@@ -7,6 +7,7 @@ import (
 	"github.com/andreykaipov/goobs"
 	"github.com/andreykaipov/goobs/api/requests/outputs"
 	"github.com/andreykaipov/goobs/api/requests/record"
+	"github.com/andreykaipov/goobs/api/requests/stream"
 	"regexp"
 	"strings"
 	"sync"
@@ -259,4 +260,18 @@ func setOutputSettings(fileName string) (*outputs.SetOutputSettingsResponse, err
 	}
 
 	return outputSettings, nil
+}
+
+// 启动流
+func StartStream() error {
+	if client == nil {
+		return fmt.Errorf("OBS客户端未连接")
+	}
+
+	_, err := client.Stream.StartStream(&stream.StartStreamParams{})
+	if err != nil {
+		return fmt.Errorf("启动流失败: %v", err)
+	}
+	autoLog.Sugar.Infof("🔴 已启动流")
+	return nil
 }

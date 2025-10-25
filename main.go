@@ -1125,46 +1125,59 @@ func main() {
 			c.Header("Content-Disposition", "inline; filename="+filepath.Base(video))
 			c.File(video) // 返回视频文件流
 		})
+
+		//启动流
+		abgiObsController.GET("/StartStream", func(context *gin.Context) {
+			err := abgiObs.StartStream()
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始流"})
+		})
 	}
 
-	// 定义 GitHub Push Webhook 的结构体
-	type GitHubWebhookPayload struct {
-		Ref        string `json:"ref"`
-		Repository struct {
-			FullName string `json:"full_name"`
-		} `json:"repository"`
-		Commits []struct {
-			ID        string `json:"id"`
-			Message   string `json:"message"`
-			Timestamp string `json:"timestamp"`
-			URL       string `json:"url"`
-			Author    struct {
-				Name  string `json:"name"`
-				Email string `json:"email"`
-			} `json:"author"`
-		} `json:"commits"`
+	type bgiWebhook struct {
+		Event      string `json:"event"`
+		Result     int    `json:"result"`
+		Timestamp  string `json:"timestamp"`
+		Screenshot string `json:"screenshot"`
+		Message    string `json:"message"`
+		SendTo     string `json:"send_to"`
 	}
 
 	//webhook
-	ginServer.POST("/webhook", func(c *gin.Context) {
-		var payload GitHubWebhookPayload
+	ginServer.POST("/bgiWebhook", func(c *gin.Context) {
+		var payload bgiWebhook
+
 		if err := c.ShouldBindJSON(&payload); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
+			fmt.Println(err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
 			return
 		}
 
-		branch := strings.TrimPrefix(payload.Ref, "refs/heads/")
-		fmt.Println("分支:", branch)
-		fmt.Println("仓库:", payload.Repository.FullName)
+		fmt.Println(payload.Event)
+		fmt.Println(payload.Result)
+		fmt.Println(payload.Timestamp)
+		fmt.Println(payload.Screenshot)
+		fmt.Println(payload.Message)
+		fmt.Println(payload.SendTo)
 
-		for _, commit := range payload.Commits {
-			GITLOG := fmt.Sprintf("Git通知=====提交ID: %s\n消息: %s\n作者: %s\n时间: %s\nURL: %s\n",
-				commit.ID, commit.Message, commit.Author.Name, commit.Timestamp, commit.URL)
-			autoLog.Sugar.Infof(GITLOG)
-			// 发送通知
-			Notice.SentText(GITLOG)
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
+
+	})
+
+	//查看日志
+	ginServer.GET("/api/autoLog", func(c *gin.Context) {
+
+		data := c.Query("data")
+
+		logs, err2 := autoLog.QueryLogs(data)
+		if err2 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": logs})
 	})
 
 	//检查BGI状态
@@ -1178,7 +1191,7 @@ func main() {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
 	}
 
-	//abgiSSE.NameToImage("古又")
+	//abgiSSE.NameToImage("如梦似幻")
 
 	//实时读取文件
 	go bgiStatus.LogM()

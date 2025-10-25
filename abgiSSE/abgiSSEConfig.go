@@ -154,7 +154,7 @@ func NameToImage(name string) {
 	textWidth := d.MeasureString(name).Round()
 
 	paddingX := 3
-	width := textWidth + 2*paddingX
+	width := textWidth + 1*paddingX
 	height := 28
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -215,7 +215,7 @@ func NameToImageMark(name string) {
 	textWidth := d.MeasureString(name).Round()
 
 	paddingX := 3
-	width := textWidth + 2*paddingX
+	width := textWidth + 1*paddingX
 	height := 28
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))

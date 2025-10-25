@@ -108,7 +108,7 @@ func (m *LogMonitor) Monitor() {
 						if config.Cfg.ScreenRecord.IsRecord {
 							autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 							go func() {
-								abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s-%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine))
+								abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine))
 							}()
 						}
 
