@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"auto-bgi/Notice"
 	"auto-bgi/ScriptRepo"
+	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -11,6 +12,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/agnivade/levenshtein"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
@@ -822,29 +824,53 @@ func LogAnalysis(fileName string) map[string]int {
 
 	for item, count := range res {
 		var data KeyValue
+		item = strings.ReplaceAll(item, "·", "")
+		item = strings.ReplaceAll(item, "。", "")
 
 		if IsStringInDictionaryCategory(item, Relics) {
 			syw += count
 		} else if strings.Contains(item, "蟹") {
 			xie += count
-		} else if item == "调查" || item == "周查" {
-			continue
 		} else {
-			data.Key = item
+
+			material := abgiConstant.Material
+			var name = ""
+			for _, m := range material {
+				if item == "月萤虫" {
+					name = "晶蝶"
+					break
+				}
+				_, f := ComputeDistance(item, m)
+				if f >= 0.3 {
+					name = m
+					break
+				}
+			}
+			if name != "" {
+				data.Key = name
+			} else {
+				//fmt.Println(item)
+				autoLog.Sugar.Infof("未知材料:%s", item)
+				data.Key = item
+			}
+
 			data.Value = count
 			//autoLog.Sugar.Infof("物品: %s, 数量: %d", item, count)
 		}
-		datas = append(datas, data)
+		if data.Value >= 10 {
+			datas = append(datas, data)
+		}
+
 	}
 	var data KeyValue
 	data.Key = "圣遗物"
 	data.Value = syw
 	datas = append(datas, data)
 
-	var dataXie KeyValue
-	dataXie.Key = "螃蟹"
-	dataXie.Value = xie
-	datas = append(datas, dataXie)
+	//var dataXie KeyValue
+	//dataXie.Key = "螃蟹"
+	//dataXie.Value = xie
+	//datas = append(datas, dataXie)
 
 	// 按值从大到小排序
 	sort.Slice(datas, func(i, j int) bool {
@@ -853,13 +879,31 @@ func LogAnalysis(fileName string) map[string]int {
 
 	// 取出前 5 个元素，考虑长度不足 5 的情况
 	mapData := make(map[string]int)
-	for i := 0; i < 10 && i < len(datas); i++ {
+	for i := 0; i < len(datas); i++ {
 
 		mapData[datas[i].Key] = datas[i].Value
 	}
 
 	return mapData
 
+}
+
+// 相似的计算
+func ComputeDistance(a, b string) (int, float64) {
+	distance := levenshtein.ComputeDistance(a, b)
+	//fmt.Println("编辑距离:", distance)
+
+	// 转化为相似度（0~1之间）
+	similarity := 1 - float64(distance)/float64(max(len([]rune(a)), len([]rune(b))))
+	//fmt.Printf("相似度: %.2f\n", similarity)
+	return distance, similarity
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func FindLogFiles(dirPath string) ([]string, error) {

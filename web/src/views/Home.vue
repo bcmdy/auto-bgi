@@ -213,7 +213,7 @@ const currentImage = computed(() => {
 
 // 按钮配置数据
 const dataAnalysisButtons = ref([
-  { text: '查看收获前10', route: '/logAnalysis' },
+  { text: '查看收获超过10', route: '/logAnalysis' },
   { text: '背包统计', route: '/BagStatistics' },
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
   { text: '归档查询', route: '/archive' },
