@@ -849,7 +849,7 @@ func LogAnalysis(fileName string) map[string]int {
 			if name != "" {
 				data.Key = name
 			} else {
-				//fmt.Println(item)
+
 				autoLog.Sugar.Infof("未知材料:%s", item)
 				data.Key = item
 			}

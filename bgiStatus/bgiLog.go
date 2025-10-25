@@ -140,6 +140,7 @@ func (m *LogMonitor) Monitor() {
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
 					//Notice.SentText("一条龙和配置组任务结束，所有配置组已归档@所有人")
 					Notice.SentText(data)
+					abgiObs.StopRecording()
 					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {
@@ -147,29 +148,6 @@ func (m *LogMonitor) Monitor() {
 					autoLog.Sugar.Infof("RDP 客户端断开连接")
 					aaa()
 				}
-
-				////录屏操作
-				//if config.Cfg.ScreenRecord.IsRecord {
-				//
-				//	if strings.Contains(line, config.Cfg.ScreenRecord.StartScreen) {
-				//
-				//		Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.StartScreen + "开始录屏")
-				//		Notice.SendScreenshot()
-				//		// 开始录屏
-				//		control.StartRecord()
-				//		autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
-				//		autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n开始录屏")
-				//	}
-				//	if strings.Contains(line, config.Cfg.ScreenRecord.EndScreen) {
-				//
-				//		Notice.SentText("关键词触发录屏 " + config.Cfg.ScreenRecord.EndScreen + "结束录屏")
-				//		Notice.SendScreenshot()
-				//		// 开始录屏
-				//		control.StopRecord()
-				//		autoLog.Sugar.Infof("录屏监控文件 %s", m.LogFile)
-				//		autoLog.Sugar.Infof("关键词触发录屏 【" + config.Cfg.ScreenRecord.StartScreen + "】\n结束录屏")
-				//	}
-				//}
 
 				//关键字触发执行一条龙
 				if config.Cfg.Account.OnlineAfterKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineAfterKeyword) {

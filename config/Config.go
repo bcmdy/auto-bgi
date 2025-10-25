@@ -94,6 +94,7 @@ type Control struct {
 	SendWeChatImage  bool `json:"SendWeChatImage" comment:"是否开启每隔一小时发送截图"`
 	StartOpenBrowser bool `json:"StartOpenBrowser" comment:"是否开启启动时打开浏览器"`
 	AbgiScreen       bool `json:"AbgiScreen" comment:"是否开启bgi实时屏幕"`
+	OBSReplayBuffer  bool `json:"OBSReplayBuffer" comment:"一条龙启动是否开启OBS重放缓冲"`
 }
 
 type oneLong struct {

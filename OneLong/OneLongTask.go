@@ -1,6 +1,7 @@
 package OneLong
 
 import (
+	"auto-bgi/abgiObs"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -68,6 +69,17 @@ func (o *OneLong) OneLongTask() {
 		}
 	} else {
 		autoLog.Sugar.Info("自动更新js已关闭")
+	}
+
+	//是否开启obs回放缓存
+	if config.Cfg.Control.OBSReplayBuffer {
+		autoLog.Sugar.Info("开启回放obs缓存")
+		err := abgiObs.StartReplayBuffer()
+		if err != nil {
+			autoLog.Sugar.Errorf("回放obs缓存失败: %v", err)
+		}
+	} else {
+		autoLog.Sugar.Info("不开启回放obs缓存")
 	}
 
 	// 6. 启动今日一条龙

@@ -289,7 +289,6 @@ func StartOneDragon(name string) {
 		return
 	}
 	autoLog.Sugar.Infof("启动一条龙成功: %s", name)
-
 }
 
 // 每隔1个小时发送截图

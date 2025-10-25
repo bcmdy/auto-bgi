@@ -117,7 +117,7 @@ var (
 		m map[string]time.Time
 	}{m: make(map[string]time.Time)}
 
-	noticeTTL   = 20 * time.Second
+	noticeTTL   = 60 * time.Second
 	maxCacheLen = 5
 )
 
