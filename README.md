@@ -216,7 +216,7 @@ abgi会根据关键字自动录制回放。
 
 简单来说，开启回放缓存功能，开启websocket连接就行了
 
-![image-20251022174914277](./assets/image-20251022174914277.png)
+![a16eedaede6ee596c3c54bdd759cda42](./assets/a16eedaede6ee596c3c54bdd759cda42.png)
 
 ![image-20251022174522872](./assets/image-20251022174522872.png)
 

@@ -20,15 +20,6 @@ type dd struct {
 // 启动狗粮联机
 func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]interface{}) {
 
-	////查询今天狗粮批发是什么线路
-	//dogFoodLine := dogFood.DogFoodIsAOrB()
-	//if dogFoodLine == "" {
-	//	autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
-	//	runDebug = true
-	//} else if dogFoodLine == "B" {
-	//	runDebug = true
-	//}
-
 	// 解析 JSON 字符串
 	var aa []dd
 	yourIndex := 0
@@ -67,7 +58,7 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 			newRunningOrder := fmt.Sprintf("%s.runningOrder", path)
 
 			if RunningOrder == "" {
-				RunningOrder = "0"
+				RunningOrder = "1234"
 			}
 			newData, err = sjson.SetBytes(newData, newRunningOrder, RunningOrder)
 			if err != nil {

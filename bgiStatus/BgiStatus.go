@@ -2175,7 +2175,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 	jsNamesInfoStructs := make([]JsNamesInfoStruct, 0, len(subDirs))
 
 	for _, name := range subDirs {
-		nowVersion := getJsNowVersion(scriptDir, name)
+		nowVersion := GetJsNowVersion(scriptDir, name)
 		newVersion, chineseName, err := GetJsNewVersion(name)
 		if err != nil {
 			continue
@@ -2203,7 +2203,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 	return jsNamesInfoStructs
 }
 
-func getJsNowVersion(basePath, jsName string) string {
+func GetJsNowVersion(basePath, jsName string) string {
 	return readVersion(filepath.Join(basePath, jsName, "manifest.json"))
 }
 

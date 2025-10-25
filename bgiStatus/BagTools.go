@@ -180,12 +180,6 @@ func DeleteYuanShi() {
 	}
 }
 
-func GetJsNowVersion(jsName string) string {
-	version := ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\%s", config.Cfg.BetterGIAddress, jsName))
-
-	return version
-}
-
 func GetJsNewVersion(jsName string) (string, string, error) {
 	repoDir := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git/repo/js"
 

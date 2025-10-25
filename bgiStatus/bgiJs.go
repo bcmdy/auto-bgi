@@ -63,7 +63,7 @@ func BatchUpdateScript() string {
 
 	for _, name := range subDirs {
 
-		nowVersion := getJsNowVersion(scriptDir, name)
+		nowVersion := GetJsNowVersion(scriptDir, name)
 		newVersion, chineseName, err := GetJsNewVersion(name)
 		if err != nil {
 			continue
