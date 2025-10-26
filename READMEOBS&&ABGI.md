@@ -6,6 +6,9 @@
 
 下载安装好，就可以进行图文一步走系列
 
-<img style="width: 100px; height: 300px;" alt="OBS-1" src="./assets/OBS-1.png" />
+<img src="./assets/OBS-1.png" width="50%" height="50%" />
 
-![OBS-2](./assets/OBS-2.png){width=50% height=50%}
+<img style="width: 25%; height: 25%;" alt="OBS-1" src="./assets/OBS-1.png" />
+
+![OBS-2](./assets/OBS-1.png){width=50% height=50%}
+
