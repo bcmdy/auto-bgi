@@ -8,4 +8,4 @@
 
 <img style="width: 100px; height: 300px;" alt="OBS-1" src="./assets/OBS-1.png" />
 
-![OBS-1](./assets/OBS-1.png){width=50% height=50%}
+![OBS-2](./assets/OBS-2.png){width=50% height=50%}
