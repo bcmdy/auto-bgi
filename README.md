@@ -225,7 +225,7 @@ abgi会根据关键字自动录制回放。
 
 ![image-20251022174536133](./assets/image-20251022174536133.png)
 
-详细的图文教程：./READMEOBS&&ABGI.md
+详细的图文教程：[配置OBS&&ABGI](./READMEOBS&&ABGI.md)
 
 ### ✅狗粮联机功能
 
