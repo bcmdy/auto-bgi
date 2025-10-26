@@ -6,4 +6,4 @@
 
 下载安装好，就可以进行图文一步走系列
 
-<img style="width: 25%; height: 25%;" alt="IMG3" src="./assets/OBS-1.png" />
+<img style="width: 25%; height: 25%;" alt="OBS-1" src="./assets/OBS-1.png" />
