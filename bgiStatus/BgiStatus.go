@@ -812,72 +812,77 @@ var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "�
 	"方巾", "枭羽", "怀钟", "药壶", "银莲", "怀表", "尾羽", "头带", "金杯", "之花", "之杯",
 	"沙漏", "绿花", "银冠", "鹰羽", "冒险", "游医的", "教官", "战狂", "流放"}
 
-// analyseLog handles the /api/analyse GET request
+// LogAnalysis TodayHarvest 获取今日收获
+// LogAnalysis 函数用于分析日志文件并统计材料数量
+// 参数 fileName: 日志文件名
+// 返回值: map[string]int - 材料名称及其数量的映射，只返回数量超过10的材料
 func LogAnalysis(fileName string) map[string]int {
+	// 记录日志分析开始
 	autoLog.Sugar.Infof("日志分析")
+	// 获取今日收获的数据，忽略错误
 	res, _ := TodayHarvest(fileName)
 
-	var datas []KeyValue
+	var syw = 0 // 圣遗物计数器
+	var xie = 0 // 螃蟹计数器
 
-	var syw = 0
-	var xie = 0
+	// 创建一个map用于存储材料统计结果
+	data := make(map[string]int)
 
+	// 遍历今日收获的每个项目及其数量
 	for item, count := range res {
-		var data KeyValue
+
+		// 清理项目名称，移除特殊字符
 		item = strings.ReplaceAll(item, "·", "")
 		item = strings.ReplaceAll(item, "。", "")
 
+		// 判断项目是否属于圣遗物类别
 		if IsStringInDictionaryCategory(item, Relics) {
-			syw += count
+			syw += count // 增加圣遗物计数
 		} else if strings.Contains(item, "蟹") {
-			xie += count
+			xie += count // 增加螃蟹计数
 		} else {
+			// 处理普通材料
 			material := abgiConstant.Material
-			var name = ""
-			var bestSim float64 = 0.0
+			var name = item           // 最匹配的材料名称
+			var bestSim float64 = 0.0 // 最高相似度
 
+			// 遍历所有材料进行匹配
 			for _, m := range material {
+				// 特殊处理：月萤虫视为晶蝶
 				if item == "月萤虫" {
 					name = "晶蝶"
 					bestSim = 1.0
 					break
 				}
 
+				// 计算当前材料与日志项目的相似度
 				_, f := ComputeDistance(item, m)
-				if f > bestSim { // 找到更相似的
+				if f > bestSim { // 找到更相似的匹配
 					bestSim = f
 					name = m
 				}
 			}
 
 			// 如果相似度达不到阈值，则视为未知
-			if bestSim < 0.3 {
+			if bestSim < 0.1 {
 				autoLog.Sugar.Infof("未知材料:%s", item)
 			}
 
-			data.Key = name
-			data.Value = count
+			data[name] += count
+
 		}
 
-		if data.Value >= 10 {
-			datas = append(datas, data)
-		}
 	}
-	var data KeyValue
-	data.Key = "圣遗物"
-	data.Value = syw
-	datas = append(datas, data)
 
-	// 按值从大到小排序
-	sort.Slice(datas, func(i, j int) bool {
-		return datas[i].Value > datas[j].Value
-	})
+	data["圣遗物"] = syw
+	data["螃蟹"] = xie
 
-	// 取出前 5 个元素，考虑长度不足 5 的情况
+	// 取出数量超过10的材料
 	mapData := make(map[string]int)
-	for i := 0; i < len(datas); i++ {
-
-		mapData[datas[i].Key] = datas[i].Value
+	for s, i2 := range data {
+		if i2 >= 10 {
+			mapData[s] = i2
+		}
 	}
 
 	return mapData
