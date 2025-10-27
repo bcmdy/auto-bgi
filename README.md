@@ -315,5 +315,3 @@ ABGI & BGI 游戏录屏项目：https://github.com/wjdsg0327/bgiSRecording
 11、通知新增飞书通知
 
 bgi52版本支持http请求，如果需要abgi的接口或者别的帮助，可以加我qq
-
----
