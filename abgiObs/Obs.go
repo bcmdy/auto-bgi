@@ -201,7 +201,14 @@ func SanitizeFileName(name string) string {
 }
 
 // 开启回放缓存
-func StartReplayBuffer() error {
+func StartReplayBuffer() (err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Errorf("⚠️ 捕获到异常: %v", r)
+			err = fmt.Errorf("启动回放缓冲区时发生未知错误: %v", r)
+		}
+	}()
 
 	buffer, err := client.Outputs.StartReplayBuffer(&outputs.StartReplayBufferParams{})
 	if err != nil {

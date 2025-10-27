@@ -348,7 +348,7 @@ async function stopRecording() {
       // 延迟后再查询状态，确保后端已更新
       setTimeout(() => {
         getRecordingStatus()
-      }, 500)
+      }, 1000)
       fetchVideos()
     }
   } catch (err) {

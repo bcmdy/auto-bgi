@@ -194,19 +194,18 @@ func (m *LogMonitor) Monitor() {
 					autoLog.Sugar.Infof("上线成功")
 				}
 
-				//联机狗粮和批发狗粮数量合并
-				if strings.Contains(line, "分解可获得经验: ") {
-					num := strings.Replace(line, "分解可获得经验: ", "", -1)
+				if strings.HasPrefix(line, "通知发送成功：") && strings.Contains(line, "联机狗粮分解获得经验") {
+					//提取数字
+					re := regexp.MustCompile(`\d+`)
+					num := re.FindString(line)
 
 					dogFood.WriteDogFoodNum(num)
 				}
 
-				//联机狗粮
-				if strings.Contains(line, "所有队友已就绪") {
-					Notice.SendScreenshot()
-				}
-
 				if strings.Contains(line, "如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）") {
+					Notice.SentText("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")
+					autoLog.Sugar.Infof("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")
+					Notice.SendScreenshot()
 					control.PressEsc()
 				}
 

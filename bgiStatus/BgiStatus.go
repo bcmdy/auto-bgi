@@ -832,45 +832,41 @@ func LogAnalysis(fileName string) map[string]int {
 		} else if strings.Contains(item, "蟹") {
 			xie += count
 		} else {
-
 			material := abgiConstant.Material
 			var name = ""
+			var bestSim float64 = 0.0
+
 			for _, m := range material {
 				if item == "月萤虫" {
 					name = "晶蝶"
+					bestSim = 1.0
 					break
 				}
+
 				_, f := ComputeDistance(item, m)
-				if f >= 0.3 {
+				if f > bestSim { // 找到更相似的
+					bestSim = f
 					name = m
-					break
 				}
 			}
-			if name != "" {
-				data.Key = name
-			} else {
 
+			// 如果相似度达不到阈值，则视为未知
+			if bestSim < 0.3 {
 				autoLog.Sugar.Infof("未知材料:%s", item)
-				data.Key = item
 			}
 
+			data.Key = name
 			data.Value = count
-			//autoLog.Sugar.Infof("物品: %s, 数量: %d", item, count)
 		}
+
 		if data.Value >= 10 {
 			datas = append(datas, data)
 		}
-
 	}
 	var data KeyValue
 	data.Key = "圣遗物"
 	data.Value = syw
 	datas = append(datas, data)
-
-	//var dataXie KeyValue
-	//dataXie.Key = "螃蟹"
-	//dataXie.Value = xie
-	//datas = append(datas, dataXie)
 
 	// 按值从大到小排序
 	sort.Slice(datas, func(i, j int) bool {
@@ -1961,6 +1957,7 @@ type LogAnalysis2Json struct {
 	Income     map[string]int // 收入项及其数量
 	Errors     map[string]int // 错误项及其数量
 	ErrorsMark map[string]int
+	ErrorTime  string
 	Consuming  string
 }
 
@@ -2112,6 +2109,9 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 					if xy != "" {
 						current.ErrorsMark[xy]++
 					}
+					time2, _ := tools.ExtractLogTime2(date, timestampLine)
+
+					current.ErrorTime = strings.ReplaceAll(time2, date, "")
 				}
 			}
 		}

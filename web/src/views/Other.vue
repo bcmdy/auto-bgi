@@ -222,6 +222,7 @@
                                         <th>错误名称</th>
                                         <th>坐标</th>
                                         <th>次数</th>
+                                        <th>时间</th>
                                         <th>操作</th>
                                     </tr>
                                 </thead>
@@ -232,6 +233,7 @@
                                         <td>{{ error.errorName || '未知错误' }}</td>
                                         <td>{{ error.coordinates || '无坐标' }}</td>
                                         <td>{{ error.count || 1 }}</td>
+                                        <td>{{ error.ErrorTime || '未知时间' }}</td>
                                         <td>
                                             <button class="copy-single-btn" @click="copySingleError(error, index)" title="复制此错误（含汇总信息）">
                                                 复制
@@ -504,14 +506,16 @@ export default {
                                 taskName: subTask.JsonName,
                                 errorName: errorName,
                                 errorsMark: subTask.ErrorsMark,
-                                extractedCoordinates: coordinates
+                                extractedCoordinates: coordinates,
+                                ErrorTime: subTask.ErrorTime,
                             });
                             
                             errors.push({
                                 taskName: subTask.JsonName,
                                 errorName: errorName,
                                 coordinates: coordinates,
-                                count: errorCount
+                                count: errorCount,
+                                ErrorTime: subTask.ErrorTime,
                             });
                         });
                     }
@@ -1584,7 +1588,7 @@ export default {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     width: 100%;
-    max-width: 700px;
+    max-width: 900px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
