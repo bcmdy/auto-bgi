@@ -232,6 +232,22 @@ func (m *LogMonitor) Monitor() {
 					}
 				}
 
+				if strings.Contains(line, "配置组") && strings.Contains(line, "执行结束") {
+					re := regexp.MustCompile(`"(.*?)"`)
+					matches := re.FindStringSubmatch(line)
+					if len(matches) > 1 {
+						BgiLogStatusInfo.Group = matches[1]
+
+						BgiLogStatusInfo.MapTrackingLine = "已经结束"
+						BgiLogStatusInfo.ScriptName = "已经结束"
+						BgiLogStatusInfo.JSProgress = "已经结束"
+						BgiLogStatusInfo.ConfigurationGroupExecutionProgress = "已经结束"
+
+					} else {
+						BgiLogStatusInfo.Group = "未找到配置组"
+					}
+				}
+
 				//查找配置组任务执行
 				if strings.Contains(line, "配置组任务执行: ") {
 					gp := strings.ReplaceAll(line, "配置组任务执行: ", "")

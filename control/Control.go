@@ -284,11 +284,6 @@ func mapHotkey(key string) string {
 	}
 }
 
-func pressKey(key string) {
-	hotkey := mapHotkey(key)
-	robotgo.KeyTap(hotkey)
-}
-
 // CancelTaskHotkey 停止当前脚本/独立任务
 func CancelTaskHotkey() {
 	// 构建配置文件路径，从配置中获取基础路径并拼接配置文件名
@@ -309,6 +304,44 @@ func CancelTaskHotkey() {
 func PressEsc() {
 	autoLog.Sugar.Infof("按下ESC")
 	pressKey("esc")
+}
+
+func pressKey(key string) {
+	hotkey := mapHotkey(key)
+	robotgo.KeyTap(hotkey)
+}
+
+//func pressKey(key string) {
+//	// 去掉空格并转小写
+//	keys := strings.Split(strings.ReplaceAll(strings.ToLower(key), " ", ""), "+")
+//
+//	mainKey := keys[len(keys)-1]
+//	var modifiers []string
+//	if len(keys) > 1 {
+//		modifiers = keys[:len(keys)-1]
+//	}
+//
+//	if len(modifiers) > 0 {
+//		// 转换 []string -> []interface{}
+//		args := make([]interface{}, len(modifiers))
+//		for i, v := range modifiers {
+//			args[i] = v
+//		}
+//		err := robotgo.KeyTap(mainKey, args...)
+//		if err != nil {
+//			autoLog.Sugar.Errorf("按键失败: %v", err)
+//		}
+//	} else {
+//		err := robotgo.KeyTap(mainKey)
+//		if err != nil {
+//			autoLog.Sugar.Errorf("按键失败: %v", err)
+//		}
+//	}
+//}
+
+func Test(key string) {
+	time.Sleep(time.Second * 5)
+	pressKey(key)
 }
 
 // 读取原神exe文件路径

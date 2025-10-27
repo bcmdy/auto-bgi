@@ -4,6 +4,7 @@ import (
 	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
+	"auto-bgi/JsAPI"
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
 	"auto-bgi/OneLong"
@@ -1281,6 +1282,13 @@ func main() {
 		})
 	}
 
+	//js-API
+	jsController := ginServer.Group("/api/js")
+	{
+		//发送今日收获前10
+		jsController.GET("/logAnalysis", JsAPI.SendLogAnalysis)
+	}
+
 	if config.Cfg.Control.AbgiScreen {
 		autoLog.Sugar.Infof("屏幕捕获开启状态")
 		// 设置最大CPU使用
@@ -1417,6 +1425,8 @@ func main() {
 
 		}
 	}
+
+	//control.Test("Alt + A")
 
 	//服务器端口
 	post := config.Cfg.Post
