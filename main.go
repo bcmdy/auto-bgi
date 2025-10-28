@@ -1139,12 +1139,12 @@ func main() {
 	}
 
 	type bgiWebhook struct {
-		Event      string `json:"event"`
-		Result     int    `json:"result"`
-		Timestamp  string `json:"timestamp"`
-		Screenshot string `json:"screenshot"`
-		Message    string `json:"message"`
-		SendTo     string `json:"send_to"`
+		Event      string `json:"event" comment:"事件"`
+		Result     int    `json:"result" comment:"结果"`
+		Timestamp  string `json:"timestamp" comment:"时间"`
+		Screenshot string `json:"screenshot" comment:"图片"`
+		Message    string `json:"message" comment:"内容"`
+		SendTo     string `json:"send_to" comment:"人员"`
 	}
 
 	//webhook
@@ -1164,7 +1164,7 @@ func main() {
 		fmt.Println(payload.Message)
 		fmt.Println(payload.SendTo)
 
-		c.JSON(http.StatusOK, gin.H{"status": "success"})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": payload})
 
 	})
 
