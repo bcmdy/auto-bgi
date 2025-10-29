@@ -13,9 +13,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/agnivade/levenshtein"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/otiai10/copy"
 	"github.com/robfig/cron/v3"
 	"io"
@@ -1450,74 +1447,6 @@ type GitLogStruct struct {
 	Message string
 	//提交修改的文件
 	Files []string
-}
-
-// 查询git日志
-func GitLog(n int) ([]GitLogStruct, error) {
-	localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
-
-	// 打开仓库
-	r, err := git.PlainOpen(localPath)
-	if err != nil {
-		return nil, fmt.Errorf("打开仓库失败: %w", err)
-	}
-
-	// 获取 HEAD
-	ref, err := r.Head()
-	if err != nil {
-		return nil, fmt.Errorf("获取 HEAD 失败: %w", err)
-	}
-
-	// 遍历日志
-	cIter, err := r.Log(&git.LogOptions{From: ref.Hash()})
-	if err != nil {
-		return nil, fmt.Errorf("获取日志失败: %w", err)
-	}
-
-	var logs []GitLogStruct
-	count := 0
-	err = cIter.ForEach(func(c *object.Commit) error {
-		var files []string
-
-		// 获取父提交，比较差异
-		if c.NumParents() > 0 {
-			parent, err := c.Parents().Next()
-			if err == nil {
-				patch, err := parent.Patch(c)
-				if err == nil {
-					for _, stat := range patch.Stats() {
-						files = append(files, stat.Name)
-					}
-				}
-			}
-		} else {
-			// 初始提交：直接获取树对象所有文件
-			tree, _ := c.Tree()
-			_ = tree.Files().ForEach(func(f *object.File) error {
-				files = append(files, f.Name)
-				return nil
-			})
-		}
-
-		logs = append(logs, GitLogStruct{
-			CommitTime: c.Author.When.Format("2006-01-02 15:04:05"),
-			Author:     c.Author.Name,
-			Message:    c.Message,
-			Files:      files,
-		})
-
-		count++
-		if count >= n {
-			return storer.ErrStop
-		}
-		return nil
-	})
-
-	if err != nil && err != storer.ErrStop {
-		return nil, fmt.Errorf("遍历提交日志失败: %w", err)
-	}
-
-	return logs, nil
 }
 
 // git拉取代码

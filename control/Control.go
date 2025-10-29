@@ -33,8 +33,11 @@ func OpenSoftware(programPath string) {
 	err := cmd.Start()
 	if err != nil {
 		fmt.Println("无法打开软件:", err)
+		autoLog.Sugar.Errorf("无法打开软件: %v", err)
+	} else {
+		fmt.Println("打开成功")
+		autoLog.Sugar.Infof("打开成功")
 	}
-	fmt.Println("打开成功")
 
 }
 
@@ -47,14 +50,15 @@ func CloseSoftware() {
 	// 创建命令
 	cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.Stdout = nil
+	cmd.Stderr = nil
 
 	// 执行命令并获取输出
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 
 	if err != nil {
 		autoLog.Sugar.Errorf("执行命令出错: %v\n", err)
 	}
-	autoLog.Sugar.Infof("命令输出: %s", string(output))
 
 }
 

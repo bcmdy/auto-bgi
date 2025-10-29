@@ -125,9 +125,10 @@ func Status() bool {
 }
 
 type OnlineUser struct {
-	GroupName string    `json:"group_name"`
-	Count     int64     `json:"count"`
-	Members   []Members `json:"members"`
+	GroupName   string    `json:"group_name"`
+	Count       int64     `json:"count"`
+	Description string    `json:"description"`
+	Members     []Members `json:"members"`
 }
 
 type Members struct {
@@ -142,7 +143,7 @@ func GroupsStatusHandler() interface{} {
 	if err2 != nil {
 		return 0
 	}
-	resp, err := http.Get(fmt.Sprintf("http://%s/api/GroupsStatusHandler?", decrypt))
+	resp, err := http.Get(fmt.Sprintf("http://%s/api/GroupsStatusHandler?uid="+config.Cfg.Account.Uid, decrypt))
 	if err != nil {
 		autoLog.Sugar.Error("获取在线用户失败:")
 		return 0

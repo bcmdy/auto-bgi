@@ -128,8 +128,6 @@ export const apiMethods = {
   SaveReplayBuffer: () => api.post('/api/abgiObs/SaveReplayBuffer'),
   // 获取视频信息
   GetVideoInfo: () => api.get('/api/abgiObs/GetVideoInfo'),
-  //删除视频
-  DeleteVideo: (videoName) => api.post('/api/abgiObs/DeleteVideo?videoName='+videoName)
   
 }
 

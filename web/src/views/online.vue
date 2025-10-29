@@ -41,6 +41,10 @@
       <div class="details-wrap">
         <div class="detail-panel" v-for="item in detailList" :key="item.key">
           <h2>{{ item.title }}</h2>
+          <div style="color:#FF66A3; font-weight:600; margin-bottom:10px;font-size: 13px;border: 1px solid #FF66A3;border-radius: 5px;padding:5px;">
+              {{ item.description }}
+          </div>
+
           <div class="detail-content">
             <div class="status-row" v-if="item.members && item.members.length > 0">
               <span class="label">在线人员：</span>
@@ -84,6 +88,7 @@ const fetchOnlineDetail = async () => {
     detailList.value = res.map(item => ({
       key: item.group_name,
       title: item.group_name,
+      description: item.description,
       count: item.count,
       members: Array.isArray(item.members) ? item.members : [],
       status: item.count > 0,

@@ -50,15 +50,15 @@ func (o *OneLong) StartOneLongTask() {
 func (o *OneLong) OneLongTask() {
 	autoLog.Sugar.Info("开始执行一条龙任务")
 
+	// 3. 关闭软件（同步，后续任务依赖此步骤）
+	control.CloseSoftware()
+	autoLog.Sugar.Info("软件已关闭")
+
 	// 2. 并行执行用户目录备份
 	go func() {
 		autoLog.Sugar.Info("开始备份 User 目录")
 		o.backupUsers()
 	}()
-
-	// 3. 关闭软件（同步，后续任务依赖此步骤）
-	control.CloseSoftware()
-	autoLog.Sugar.Info("软件已关闭")
 
 	// 4. 批量更新脚本
 	if config.Cfg.OneLong.AutoUpdateJs {
@@ -95,6 +95,14 @@ const interval = 72 * time.Hour
 
 // 每周一备份users文件夹
 func (o *OneLong) backupUsers() {
+
+	//捕获异常
+	defer func() {
+		if err := recover(); err != nil {
+			autoLog.Sugar.Errorf("backupUsers捕获异常: %v", err)
+			return
+		}
+	}()
 
 	var lastBackupStr string
 	err := config.DB.QueryRow(`SELECT autobgi_value FROM autoBgi_config WHERE autobgi_key = 'BackupUserTime'`).Scan(&lastBackupStr)
@@ -135,6 +143,6 @@ func (o *OneLong) backupUsers() {
 			autoLog.Sugar.Info("✅ 备份完成，时间已更新")
 		}
 	} else {
-		autoLog.Sugar.Infof("⏳ 未满足条件（上次：%v，下次至少需等待：%.0f小时）", lastBackup, (interval - now.Sub(lastBackup)).Hours())
+		autoLog.Sugar.Infof("未满足条件：%v，需等待：%.0f小时", lastBackup, (interval - now.Sub(lastBackup)).Hours())
 	}
 }
