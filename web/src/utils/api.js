@@ -71,6 +71,13 @@ export const apiMethods = {
   getLog: () => api.get('/api/gitLog'),
   getLogFiles: () => api.get('/api/logFiles'),
   getLogAnalysis: (file) => api.get('/api/logAnalysis', { params: { file } }),
+  queryAutoLogs: (keyword = '') => {
+    const params = {}
+    if (keyword && keyword.trim()) {
+      params.data = keyword.trim()
+    }
+    return api.get('/api/autoLog', { params })
+  },
   
   // 归档
   getArchive: (params) => api.get('/archive', { params }),

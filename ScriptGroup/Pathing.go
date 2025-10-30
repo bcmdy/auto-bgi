@@ -92,7 +92,6 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 	err = copy.Copy(repoDir+"\\"+updatePath.FolderName, config.Cfg.BetterGIAddress+"\\User\\AutoPathing\\"+updatePath.FolderName)
 	if err != nil {
 		autoLog.Sugar.Errorf("%s复制地图追踪文件夹失败: %v", updatePath.Name, err)
-
 	}
 	//查询仓库指定地图追踪所有json文件
 	listPathings, err := s.listPathingJsons(repoDir, updatePath.FolderName)
@@ -149,6 +148,22 @@ func (s *ScriptGroupConfig) UpdatePathing(updatePath config.UpdatePathing) (stri
 
 	return "更新地图追踪成功", nil
 
+}
+
+// 地图追踪更新，无配置组
+func (s *ScriptGroupConfig) updatePathingNoConfig(FolderName string) (string, error) {
+	repoDir := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "pathing")
+	var err error
+	//清空地图追踪文件夹
+	err = os.RemoveAll(config.Cfg.BetterGIAddress + "\\User\\AutoPathing\\" + FolderName)
+	if err != nil {
+		autoLog.Sugar.Errorf("%s清空地图追踪文件夹失败: %v", FolderName, err)
+	}
+	err = copy.Copy(repoDir+"\\"+FolderName, config.Cfg.BetterGIAddress+"\\User\\AutoPathing\\"+FolderName)
+	if err != nil {
+		autoLog.Sugar.Errorf("%s复制地图追踪文件夹失败: %v", FolderName, err)
+	}
+	return "更新地图追踪成功", nil
 }
 
 func (s *ScriptGroupConfig) CleanAllPathing(c *gin.Context) {

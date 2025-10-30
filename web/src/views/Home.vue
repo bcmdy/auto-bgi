@@ -218,7 +218,8 @@ const dataAnalysisButtons = ref([
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
   { text: '归档查询', route: '/archive' },
   { text: '配置组运行情况', route: '/other' },
-  { text: 'CD管理自动采集', route: '/CDAwareAutoGather' }
+  { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
+  { text: '自动日志查询', route: '/autoLog' }
 ])
 
 

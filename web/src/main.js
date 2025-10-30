@@ -9,6 +9,7 @@ import Home from './views/Home.vue'
 import Config from './views/Config.vue'
 import Log from './views/Log.vue'
 import LogAnalysis from './views/LogAnalysis.vue'
+import AutoLog from './views/AutoLog.vue'
 import Archive from './views/Archive.vue'
 import Other from './views/Other.vue'
 import JsNames from './views/JsNames.vue'
@@ -34,6 +35,7 @@ const routes = [
   { path: '/Config', component: Config },
   { path: '/log', component: Log },
   { path: '/logAnalysis', component: LogAnalysis },
+  { path: '/autoLog', component: AutoLog },
   { path: '/archive', component: Archive },
   { path: '/other', component: Other },
   { path: '/jsNames', component: JsNames },
