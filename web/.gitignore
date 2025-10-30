@@ -1,0 +1,7 @@
+# Ignore node modules and build output
+node_modules/
+dist/
+.vite/
+.env
+.DS_Store
+npm-debug.log
