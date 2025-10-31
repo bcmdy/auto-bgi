@@ -25,8 +25,6 @@ var (
 
 // ========== 确保连接 ==========
 func EnsureConnected() error {
-	connLock.Lock()
-	defer connLock.Unlock()
 
 	if client != nil {
 		return nil
@@ -52,7 +50,11 @@ func StartRecording() error {
 	defer connLock.Unlock()
 
 	if client == nil {
-		return fmt.Errorf("OBS客户端未连接")
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
 	}
 
 	_, err := client.Record.StartRecord(&record.StartRecordParams{})
@@ -104,7 +106,11 @@ func StopRecording(videoName string) error {
 	defer connLock.Unlock()
 
 	if client == nil {
-		return fmt.Errorf("OBS客户端未连接")
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
 	}
 
 	resp, err := client.Record.StopRecord(&record.StopRecordParams{})
@@ -126,7 +132,11 @@ func GetRecordingStatus() (*record.GetRecordStatusResponse, error) {
 	defer connLock.Unlock()
 
 	if client == nil {
-		return nil, fmt.Errorf("OBS客户端未连接")
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return nil, fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
 	}
 
 	status, err := client.Record.GetRecordStatus(&record.GetRecordStatusParams{})
@@ -163,6 +173,14 @@ var (
 )
 
 func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error) {
+
+	if client == nil {
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return nil, fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
+	}
 
 	lastSentMap.Lock()
 	defer lastSentMap.Unlock()
@@ -244,6 +262,14 @@ func SanitizeFileName(name string) string {
 // 开启回放缓存
 func StartReplayBuffer() (err error) {
 
+	if client == nil {
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			autoLog.Sugar.Errorf("⚠️ 捕获到异常: %v", r)
@@ -272,7 +298,11 @@ func StopReplayBuffer() error {
 // 获取重放缓冲区状态
 func GetReplayBufferStatus() (*outputs.GetReplayBufferStatusResponse, error) {
 	if client == nil {
-		return nil, fmt.Errorf("OBS客户端未连接")
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return nil, fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
 	}
 
 	status, err := client.Outputs.GetReplayBufferStatus(&outputs.GetReplayBufferStatusParams{})
@@ -286,7 +316,11 @@ func GetReplayBufferStatus() (*outputs.GetReplayBufferStatusResponse, error) {
 // SetOutputSettings 设置回放缓存输出设置
 func setOutputSettings(outName, fileName string) (*outputs.SetOutputSettingsResponse, error) {
 	if client == nil {
-		return nil, fmt.Errorf("OBS客户端未连接")
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return nil, fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
 	}
 
 	list, _ := client.Outputs.GetOutputList(&outputs.GetOutputListParams{})
@@ -316,7 +350,11 @@ func setOutputSettings(outName, fileName string) (*outputs.SetOutputSettingsResp
 // 启动流
 func StartStream() error {
 	if client == nil {
-		return fmt.Errorf("OBS客户端未连接")
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
 	}
 
 	_, err := client.Stream.StartStream(&stream.StartStreamParams{})
