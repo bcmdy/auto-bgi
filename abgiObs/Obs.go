@@ -8,6 +8,8 @@ import (
 	"github.com/andreykaipov/goobs/api/requests/outputs"
 	"github.com/andreykaipov/goobs/api/requests/record"
 	"github.com/andreykaipov/goobs/api/requests/stream"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -57,12 +59,47 @@ func StartRecording() error {
 	if err != nil {
 		return fmt.Errorf("启动录制失败: %v", err)
 	}
+
 	autoLog.Sugar.Infof("🎬 已开始录制")
 	return nil
 }
 
+func updateFileName(OutputPath, videoName string) {
+	if videoName == "" {
+		return
+	}
+
+	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02-15-01")+".mp4")
+
+	if OutputPath == "" {
+		return
+	}
+
+	fileName := filepath.Base(OutputPath)
+	fileName = SanitizeFileName(fileName)
+
+	// 等待文件可用
+	for i := 0; i < 5; i++ {
+		err := os.Rename(OutputPath, videoName)
+		if err == nil {
+			autoLog.Sugar.Infof("重命名成功：%s -> %s", fileName, videoName)
+			return
+		}
+
+		if os.IsPermission(err) || strings.Contains(err.Error(), "being used") {
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		autoLog.Sugar.Infof("重命名失败：" + err.Error())
+		return
+	}
+
+	autoLog.Sugar.Infof("重命名失败：文件始终被占用")
+}
+
 // 停止录制
-func StopRecording() error {
+func StopRecording(videoName string) error {
 	connLock.Lock()
 	defer connLock.Unlock()
 
@@ -74,6 +111,10 @@ func StopRecording() error {
 	if err != nil {
 		return fmt.Errorf("停止录制失败: %v", err)
 	}
+
+	go func() {
+		updateFileName(resp.OutputPath, videoName)
+	}()
 
 	autoLog.Sugar.Infof("🛑 已停止录制，输出文件: %s", resp.OutputPath)
 	return nil
@@ -162,7 +203,7 @@ func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error
 
 	fmt.Println("开始保存回放缓冲区")
 
-	_, err2 := setOutputSettings(fileName)
+	_, err2 := setOutputSettings("回放缓存", fileName)
 	if err2 != nil {
 		autoLog.Sugar.Infof("设置输出设置失败: %v", err2)
 
@@ -243,15 +284,18 @@ func GetReplayBufferStatus() (*outputs.GetReplayBufferStatusResponse, error) {
 }
 
 // SetOutputSettings 设置回放缓存输出设置
-func setOutputSettings(fileName string) (*outputs.SetOutputSettingsResponse, error) {
+func setOutputSettings(outName, fileName string) (*outputs.SetOutputSettingsResponse, error) {
 	if client == nil {
 		return nil, fmt.Errorf("OBS客户端未连接")
 	}
 
-	s := "回放缓存"
+	list, _ := client.Outputs.GetOutputList(&outputs.GetOutputListParams{})
+	for _, output := range list.Outputs {
+		fmt.Println(output)
+	}
 
 	settings, err := client.Outputs.GetOutputSettings(&outputs.GetOutputSettingsParams{
-		OutputName: &s,
+		OutputName: &outName,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("获取输出设置失败: %v", err)
@@ -259,7 +303,7 @@ func setOutputSettings(fileName string) (*outputs.SetOutputSettingsResponse, err
 	settings.OutputSettings["format"] = fileName + "%CCYY-%MM-%DD %hh-%mm-%ss"
 
 	outputSettings, err := client.Outputs.SetOutputSettings(&outputs.SetOutputSettingsParams{
-		OutputName:     &s,
+		OutputName:     &outName,
 		OutputSettings: settings.OutputSettings,
 	})
 	if err != nil {

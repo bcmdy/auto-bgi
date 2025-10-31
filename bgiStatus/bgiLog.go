@@ -140,7 +140,7 @@ func (m *LogMonitor) Monitor() {
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
 					//Notice.SentText("一条龙和配置组任务结束，所有配置组已归档@所有人")
 					Notice.SentText(data)
-					abgiObs.StopRecording()
+					abgiObs.StopReplayBuffer()
 					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
 				if strings.Contains(line, "OnRdpClientDisconnected") {

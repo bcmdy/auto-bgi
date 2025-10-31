@@ -10,6 +10,7 @@ import (
 	"auto-bgi/OneLong"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
+	"auto-bgi/abgiFunction"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/abgiScreen"
@@ -18,7 +19,6 @@ import (
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
-	"auto-bgi/internal/mysConfig"
 	"auto-bgi/task"
 	"auto-bgi/tools"
 	"bufio"
@@ -50,6 +50,7 @@ func init() {
 	// 初始化日志
 	autoLog.Init()
 	config.InitDB()
+	abgiFunction.InitFunction()
 	defer autoLog.Sync()
 	ips, err := tools.GetLocalIPs()
 	if err != nil {
@@ -84,8 +85,6 @@ var upgrader = websocket.Upgrader{
 
 var imageList []string
 var imageListOnce sync.Once
-
-var Version = "未知"
 
 func loadImages() {
 	imageDir := "./img"
@@ -249,15 +248,6 @@ func main() {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
 				return
 			}
-			//abgiType := c.Param("typeKey")
-			//if abgiType == "" {
-			//	c.JSON(http.StatusBadRequest, gin.H{"message": "上线类型错误"})
-			//	return
-			//}
-
-			//if runDebug {
-			//	abgiType = "debug"
-			//}
 
 			runDebug := c.Query("runDebug") == "true"
 			abgiType := "noDebug"
@@ -541,11 +531,7 @@ func main() {
 
 	//获取仓库提交记录（最新的10条）
 	ginServer.GET("/api/gitLog", func(context *gin.Context) {
-		//gitLog, err := bgiStatus.GitLog(10)
-		//fmt.Println(err)
-		//context.JSON(http.StatusOK, gin.H{
-		//	"gitLog": gitLog,
-		//})
+
 		gitLog := ScriptRepo.Read()
 		context.JSON(http.StatusOK, gin.H{
 			"gitLog": gitLog,
@@ -595,7 +581,7 @@ func main() {
 
 		bgiStatus.InitBgiLogStatus()
 
-		c.String(200, fmt.Sprintf("成功归档 %d 条记录"))
+		c.String(200, fmt.Sprintf("成功归档"))
 	})
 
 	//日志分析
@@ -611,7 +597,7 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
 	})
 
-	//查询关注脚本情况
+	//查询脚本情况
 	ginServer.GET("/api/jsNames", func(context *gin.Context) {
 
 		jsNamesInfo := bgiStatus.JsNamesInfo()
@@ -890,6 +876,9 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
 		})
 
+		//地图追踪更新，无配置组
+		scriptGroup.POST("/UpdatePathingNoConfig", scriptGroupConfig.UpdatePathingNoConfig)
+
 		//查询地图追踪配置
 		scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
 
@@ -1022,7 +1011,8 @@ func main() {
 		})
 		//结束录制
 		abgiObsController.POST("/StopRecording", func(context *gin.Context) {
-			err2 := abgiObs.StopRecording()
+			videoName := context.Query("videoName")
+			err2 := abgiObs.StopRecording(videoName)
 			if err2 != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
 				return
@@ -1041,6 +1031,7 @@ func main() {
 
 		//开启回放缓存
 		abgiObsController.POST("/StartReplayBuffer", func(context *gin.Context) {
+
 			err := abgiObs.StartReplayBuffer()
 			if err != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
@@ -1071,6 +1062,7 @@ func main() {
 
 		//保存重放缓冲区
 		abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
+
 			_, err2 := abgiObs.SaveReplayBuffer("手动保存")
 			if err2 != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
@@ -1180,61 +1172,6 @@ func main() {
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": logs})
 	})
-
-	//检查BGI状态
-	go bgiStatus.CheckBetterGIStatus()
-
-	//开启每隔一小时发送截图
-	if config.Cfg.Control.SendWeChatImage {
-		autoLog.Sugar.Infof("开启每隔一小时发送截图")
-		go task.SendWeChatImageTask()
-	} else {
-		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
-	}
-
-	//abgiSSE.NameToImage("如梦似幻")
-
-	//实时读取文件
-	go bgiStatus.LogM()
-
-	if config.Cfg.OneRemote.IsMonitor {
-		go bgiStatus.Log1Remote()
-		autoLog.Sugar.Infof("1Remote监控开启状态")
-	}
-
-	//米游社自动签到
-	mysConfig.LoadConfig("mysConfig.yaml")
-	if config.Cfg.MySign.IsMySignIn {
-
-		go task.MysSignIn()
-
-		autoLog.Sugar.Infof("米游社自动签到开启状态")
-	} else {
-		autoLog.Sugar.Infof("米游社自动签到关闭状态")
-	}
-
-	//一条龙
-	if config.Cfg.OneLong.IsStartTimeLong {
-		go OneLongService.StartOneLongTask()
-		autoLog.Sugar.Infof("一条龙开启状态")
-
-	} else {
-		autoLog.Sugar.Infof("一条龙关闭状态")
-	}
-
-	//obs是否连接
-	if config.Cfg.ScreenRecord.IsRecord {
-		err := abgiObs.EnsureConnected()
-		if err != nil {
-			autoLog.Sugar.Infof("OBS连接失败")
-		} else {
-			autoLog.Sugar.Infof("OBS连接成功")
-		}
-
-	}
-
-	//初始化bgi日志信息
-	bgiStatus.InitBgiLogStatus()
 
 	// 1. 静态资源挂载（直接让前端可以访问图片）
 	ginServer.Static("/img", "./img")
@@ -1422,7 +1359,6 @@ func main() {
 				autoLog.Sugar.Errorf("更新ABGI失败: %v", err)
 			}
 			os.Exit(1)
-
 		}
 	}
 
@@ -1430,13 +1366,13 @@ func main() {
 
 	//服务器端口
 	post := config.Cfg.Post
-	if post == "" {
+	if post == "" || post == ":" {
 		post = ":8082"
 	}
 	err = ginServer.Run(post)
 
 	if err != nil {
-		autoLog.Sugar.Errorf("启动失败:%v", err)
+		autoLog.Sugar.Errorf("服务器启动失败:%v", err)
 		return
 	}
 
@@ -1458,3 +1394,4 @@ func main() {
 //  build.bat
 
 //go build -ldflags="-H=windowsgui"
+//go build -ldflags="-H=windowsgui" -o auto-bgi无窗口.exe

@@ -87,6 +87,10 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 			newRunDebug := fmt.Sprintf("%s.runDebug", path)
 			newData, err = sjson.SetBytes(newData, newRunDebug, runDebug)
 
+			//修改runExtra
+			newRunExtra := fmt.Sprintf("%s.runExtra", path)
+			newData, err = sjson.SetBytes(newData, newRunExtra, runDebug)
+
 			if err != nil {
 
 				autoLog.Sugar.Errorf("修改runDebug失败:%d", err)

@@ -65,4 +65,5 @@ func InitFunction() {
 
 	//初始化bgi日志信息
 	bgiStatus.InitBgiLogStatus()
+
 }
