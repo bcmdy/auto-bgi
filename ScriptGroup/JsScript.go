@@ -96,8 +96,15 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 				autoLog.Sugar.Errorf("修改runDebug失败:%d", err)
 			}
 
-			for i2, a := range aa {
-				//修改uid
+			for i2 := range 4 {
+				var a dd
+
+				if i2 < len(aa) {
+					a = aa[i2]
+				} else {
+					a.UID = ""
+					a.Name = ""
+				}
 				newUid := fmt.Sprintf("%s.p%dUID", path, i2+1)
 				newData, err = sjson.SetBytes(newData, newUid, a.UID)
 				if err != nil {
@@ -112,6 +119,23 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 					autoLog.Sugar.Errorf("修改name失败:%d", err)
 				}
 			}
+
+			//for i2, a := range aa {
+			//	//修改uid
+			//	newUid := fmt.Sprintf("%s.p%dUID", path, i2+1)
+			//	newData, err = sjson.SetBytes(newData, newUid, a.UID)
+			//	if err != nil {
+			//
+			//		autoLog.Sugar.Errorf("修改修改uid失败:%d", err)
+			//	}
+			//	//修改name
+			//	newName := fmt.Sprintf("%s.p%dName", path, i2+1)
+			//	newData, err = sjson.SetBytes(newData, newName, a.Name)
+			//	if err != nil {
+			//
+			//		autoLog.Sugar.Errorf("修改name失败:%d", err)
+			//	}
+			//}
 
 		}
 	}
