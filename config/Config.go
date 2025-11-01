@@ -30,6 +30,7 @@ type Config struct {
 	ScreenRecord    ScreenRecord    `json:"ScreenRecord" comment:"录屏配置"`
 	BgiLog          string          `json:"BgiLog" comment:"bgi日志"`
 	Notice          Notice          `json:"Notice" comment:"通知配置"`
+	CommandBot      CommandBot      `json:"CommandBot" comment:"命令机器人配置"`
 	UpdatePath      []UpdatePathing `json:"UpdatePath" comment:"地图追踪更新配置"`
 	Account         Account         `json:"Account" comment:"账号配置"`
 }
@@ -107,6 +108,11 @@ type oneLong struct {
 type MySign struct {
 	IsMySignIn bool   `json:"isMysSignIn" comment:"是否开启我的签到"`
 	Time       string `json:"Time" comment:"我的签到时间"`
+}
+
+type CommandBot struct {
+	TgBOT     bool `json:"TgBOT" comment:"是否开启TG机器人"`
+	FeiShuBot bool `json:"FeiShuBot" comment:"是否开启飞书机器人"`
 }
 
 var Cfg Config

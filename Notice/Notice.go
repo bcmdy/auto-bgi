@@ -17,6 +17,7 @@ func init() {
 			sprintf := fmt.Sprintf("Telegram bot初始化失败: %v", err)
 			fmt.Println(sprintf)
 		} else {
+
 			fmt.Println("Telegram bot配置成功")
 		}
 	}
@@ -24,29 +25,6 @@ func init() {
 }
 
 var oneBot OneBotClient
-
-//func SentText(text string) {
-//
-//	switch config.Cfg.Notice.Type {
-//	case "TG":
-//		err := sendTGNotification(text)
-//		if err != nil {
-//			autoLog.Sugar.Error("通知-TG文本发送失败:", err)
-//		}
-//		return
-//	case "Wechat":
-//		sendWeChatNotification(text)
-//		return
-//	case "oneBot":
-//		err := oneBot.SendPrivateText(text)
-//		if err != nil {
-//			autoLog.Sugar.Error("通知-OneBot文本发送失败:", err)
-//		}
-//	default:
-//		autoLog.Sugar.Errorf("通知-文本未知通知类型:%s", config.Cfg.Notice.Type)
-//		return
-//	}
-//}
 
 var (
 	lastSentMap = struct {
@@ -176,6 +154,12 @@ func SendScreenshot() error {
 			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-OneBot图片发送失败:%v", err)
+	case "FeiShu":
+		err = sendFeiShuImageMessage("jt.jpg")
+		if err != nil {
+			autoLog.Sugar.Error("通知-飞书图片发送失败:", err)
+		}
+		return fmt.Errorf("通知-飞书图片发送失败:%v", err)
 	default:
 		autoLog.Sugar.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)
 		return fmt.Errorf("通知-图片未知通知类型:%s", config.Cfg.Notice.Type)

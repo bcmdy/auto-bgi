@@ -628,6 +628,35 @@
           </div>
         </a-card>
 
+        <a-card title="命令机器人设置" class="config-card notice-settings">
+          <template #extra>
+            <div class="card-extra">
+              <span class="card-icon">🤖</span>
+              <a-tooltip title="命令机器人设置，支持通过机器人发送命令控制autobgi">
+                <QuestionCircleOutlined class="help-icon-btn" />
+              </a-tooltip>
+            </div>
+          </template>
+
+               <a-form-item class="checkbox-item">
+            <a-checkbox v-model:checked="formData.CommandBot.TgBOT" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon">🔍️</span>
+                  是否开启TG机器人
+                </span>
+            </a-checkbox>
+          </a-form-item>
+
+                   <a-form-item class="checkbox-item">
+            <a-checkbox v-model:checked="formData.CommandBot.FeiShuBot" class="enhanced-checkbox">
+                <span class="checkbox-label">
+                  <span class="checkbox-icon">🔍️</span>
+                  是否开启飞书机器人
+                </span>
+            </a-checkbox>
+          </a-form-item>
+        </a-card>
+
         <!-- //联机设置 -->
         <a-card title="联机设置" class="config-card account-settings">
           <template #extra>
@@ -850,6 +879,10 @@ const formData = reactive({
     AccountKey: "",
     OnlineAfterKeyword:"",
     OnlineAfterOneLong:""
+  },
+  CommandBot: {
+    TgBOT: false,
+    FeiShuBot: false,
   }
 })
 
@@ -959,6 +992,9 @@ const loadConfig = async () => {
        if (data.Account) {
         Object.assign(formData.Account, data.Account)
       }
+      if (data.CommandBot) {
+        Object.assign(formData.CommandBot, data.CommandBot)
+      }
   
     }
   } catch (error) {
@@ -988,8 +1024,8 @@ const handleSubmit = async () => {
       basePath: formData.basePath,
       Notice: formData.Notice,
       Account: formData.Account,
-      RepoUrl: formData.RepoUrl
-
+      RepoUrl: formData.RepoUrl,
+      CommandBot: formData.CommandBot
     }
 
     console.log('提交的配置:', payload)

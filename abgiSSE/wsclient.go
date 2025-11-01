@@ -1,7 +1,6 @@
 package abgiSSE
 
 import (
-	"auto-bgi/ScriptGroup"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"encoding/json"
@@ -71,8 +70,6 @@ func Connect(url string, runDebug bool, headers http.Header) error {
 	go abgiClient.listen()
 	return nil
 }
-
-var scriptGroupConfig ScriptGroup.ScriptGroupConfig
 
 func (c *AbgiClient) listen() {
 	for {

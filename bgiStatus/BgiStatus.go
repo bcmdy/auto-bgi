@@ -115,7 +115,11 @@ func CheckBetterGIStatus() {
 				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
 			} else {
 				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
-				control.CloseYuanShen()
+				// 检查配置文件中是否设置了需要关闭原神
+				if config.Cfg.Control.IsCloseYuanShen {
+					autoLog.Sugar.Infof("需要关闭原神")
+					control.CloseYuanShen()
+				}
 				autoLog.Sugar.Infof("BetterGI 已关闭: %s", time.Now().Format("2006-01-02 15:04:05"))
 			}
 			lastRunning = running

@@ -189,7 +189,7 @@ func ocr(path, apiKey, secretKey string) string {
 	return buf.String()
 }
 
-func cropImage(srcPath, dstPath string, x, y, w, h int) error {
+func CropImage(srcPath, dstPath string, x, y, w, h int) error {
 	// 打开源图片
 	file, err := os.Open(srcPath)
 	if err != nil {
@@ -235,7 +235,7 @@ func cropImage(srcPath, dstPath string, x, y, w, h int) error {
 }
 
 func BaiDuOcr(apiKey, secretKey string) (string, error) {
-	err := cropImage("./img/abgi/baiDu.jpg", "./img/abgi/baiDuCrop.jpg", 1534, 889, 110, 60)
+	err := CropImage("./img/abgi/baiDu.jpg", "./img/abgi/baiDuCrop.jpg", 1534, 889, 110, 60)
 	if err != nil {
 		autoLog.Sugar.Errorf("裁剪图片失败: %v", err)
 		return "截图识别", err

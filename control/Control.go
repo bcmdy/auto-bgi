@@ -60,18 +60,18 @@ func CloseSoftware() {
 		autoLog.Sugar.Errorf("执行命令出错: %v\n", err)
 	}
 
+	// 检查配置文件中是否设置了需要关闭原神
+	if config.Cfg.Control.IsCloseYuanShen {
+		autoLog.Sugar.Infof("需要关闭原神")
+		CloseYuanShen()
+	}
+
 }
 
 // CloseYuanShen 关闭软件
 // CloseYuanShen 函数用于关闭原神游戏及其启动器
 func CloseYuanShen() {
 
-	// 检查配置文件中是否设置了需要关闭原神
-	if !config.Cfg.Control.IsCloseYuanShen {
-		autoLog.Sugar.Infof("不需要关闭原神")
-		return
-	}
-	autoLog.Sugar.Infof("需要关闭原神")
 	// 创建命令用于强制关闭原神进程
 	cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}

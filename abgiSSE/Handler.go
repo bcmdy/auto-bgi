@@ -2,12 +2,15 @@ package abgiSSE
 
 import (
 	"auto-bgi/Notice"
+	"auto-bgi/ScriptGroup"
 	"auto-bgi/autoLog"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"time"
 )
+
+var scriptGroupConfig ScriptGroup.ScriptGroupConfig
 
 func HandleImg(info Information) {
 	if info.Img.Base64Str != "" {

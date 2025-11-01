@@ -1,7 +1,6 @@
 package ArtifactsBulkSupply
 
 import (
-	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"bufio"
@@ -62,7 +61,7 @@ func (d *DogFood) DogFoodIsAOrB() string {
 		line := scanner.Text()
 		if strings.Contains(line, "日期:"+today) {
 			autoLog.Sugar.Infof("今天的狗粮批发线路是:%s", line)
-			Notice.SentText(fmt.Sprintf("今天的狗粮批发线路是:%s", line))
+			//Notice.SentText(fmt.Sprintf("今天的狗粮批发线路是:%s", line))
 			if strings.Contains(line, "A") {
 				autoLog.Sugar.Infof("今天的狗粮批发线路是A")
 				return "A"
@@ -71,7 +70,7 @@ func (d *DogFood) DogFoodIsAOrB() string {
 				return "B"
 			} else {
 				autoLog.Sugar.Errorf("今天的狗粮批发线路查询失败，未找到A或B")
-				Notice.SentText("今天的狗粮批发线路查询失败，未找到A或B")
+				//Notice.SentText("今天的狗粮批发线路查询失败，未找到A或B")
 				return ""
 			}
 		}
@@ -143,7 +142,7 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				buf.WriteString(newText + "\n")
 				//批发和联机狗粮相加
 				autoLog.Sugar.Infof("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum)
-				Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
+				//Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
 				continue
 			}
 		}

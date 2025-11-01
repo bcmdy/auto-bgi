@@ -1,7 +1,6 @@
 package bgiStatus
 
 import (
-	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/Notice"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
@@ -66,8 +65,6 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 }
 
 var YuanShenNum int
-
-var dogFood = ArtifactsBulkSupply.DogFood{}
 
 func (m *LogMonitor) Monitor() {
 
@@ -162,36 +159,7 @@ func (m *LogMonitor) Monitor() {
 
 				//上线操作
 				if config.Cfg.Account.OnlineKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineKeyword) {
-
-					decrypt, err := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
-					if err != nil {
-						autoLog.Sugar.Infof("密钥错误")
-						return
-					}
-
-					runDebug := false
-					abgiType := "noDebug"
-					//查询今天狗粮批发是什么线路
-					dogFoodLine := dogFood.DogFoodIsAOrB()
-					if dogFoodLine == "" {
-						autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
-						runDebug = true
-						abgiType = "debug"
-					} else if dogFoodLine == "B" {
-						runDebug = true
-						abgiType = "debug"
-					} else if runDebug {
-						abgiType = "debug"
-					}
-
-					autoLog.Sugar.Infof("当前狗粮批发线路为：%s，是否调试：%t，上线类型：%s", dogFoodLine, runDebug, abgiType)
-
-					ConnectErr := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decrypt, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
-					if ConnectErr != nil {
-						autoLog.Sugar.Infof("上线失败")
-
-					}
-					autoLog.Sugar.Infof("上线成功")
+					abgiSSE.OnStart()
 				}
 
 				if strings.HasPrefix(line, "通知发送成功：") && strings.Contains(line, "联机狗粮分解获得经验") {
@@ -199,7 +167,7 @@ func (m *LogMonitor) Monitor() {
 					re := regexp.MustCompile(`\d+`)
 					num := re.FindString(line)
 
-					dogFood.WriteDogFoodNum(num)
+					abgiSSE.WriteDogFoodNum(num)
 				}
 
 				if strings.Contains(line, "如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）") {

@@ -32,6 +32,7 @@ func InitTG(token, proxy string) error {
 		fmt.Println("TG配置错误", err)
 		return err
 	}
+
 	log.Printf("[TG] bot authorized: @%s", bot.Self.UserName)
 	return nil
 }
@@ -53,4 +54,9 @@ func sendTGImage(path string) error {
 	photo := tgbotapi.NewPhoto(config.Cfg.Notice.TGNotice.ChatID, tgbotapi.FilePath(path))
 	_, err := bot.Send(photo)
 	return err
+}
+
+func GetTGBot() *tgbotapi.BotAPI {
+
+	return bot
 }

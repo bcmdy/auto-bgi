@@ -1,6 +1,7 @@
 package abgiFunction
 
 import (
+	"auto-bgi/AbgiBot"
 	"auto-bgi/OneLong"
 	"auto-bgi/abgiObs"
 	"auto-bgi/autoLog"
@@ -65,5 +66,20 @@ func InitFunction() {
 
 	//初始化bgi日志信息
 	bgiStatus.InitBgiLogStatus()
+
+	if config.Cfg.CommandBot.TgBOT {
+		go func() {
+			err := AbgiBot.InitTG(config.Cfg.Notice.TGNotice.TGToken, config.Cfg.Notice.TGNotice.Proxy)
+			if err != nil {
+				autoLog.Sugar.Infof("TG机器人开启失败")
+			} else {
+				autoLog.Sugar.Infof("TG机器人开启状态")
+			}
+		}()
+	}
+
+	if config.Cfg.CommandBot.FeiShuBot {
+		go AbgiBot.InitFeiShuBot()
+	}
 
 }
