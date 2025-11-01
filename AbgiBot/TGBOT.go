@@ -5,6 +5,7 @@ import (
 	"auto-bgi/OneLong"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
+	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/control"
 	"auto-bgi/task"
@@ -13,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"strings"
 )
 
@@ -110,6 +112,15 @@ func BotCommand(command string) string {
 			}
 			return "停止成功"
 		},
+		"批量更新脚本": func() string {
+			if err := bgiStatus.BatchUpdateScript(); err != "" {
+				autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
+				return "批量更新脚本失败"
+			} else {
+				autoLog.Sugar.Infof("批量更新脚本成功")
+				return "批量更新脚本成功"
+			}
+		},
 		"关闭原神": func() string {
 			control.CloseYuanShen()
 			return "关闭成功"
@@ -117,6 +128,26 @@ func BotCommand(command string) string {
 		"关闭bgi": func() string {
 			control.CloseSoftware()
 			return "关闭成功"
+		},
+		"电脑关机": func() string {
+			// Windows 关机命令：立即关机
+			cmd := exec.Command("shutdown", "/s", "/t", "60")
+
+			err := cmd.Run()
+			if err != nil {
+				return "💗关机失败💗"
+			} else {
+				return "💗60秒之后，电脑将会关机💗"
+			}
+		},
+		"取消关机": func() string {
+			// Windows 取消关机命令
+			cmd := exec.Command("shutdown", "/a")
+			err := cmd.Run()
+			if err != nil {
+				return "💗取消关机失败💗"
+			}
+			return "💗取消关机成功💗"
 		},
 	}
 

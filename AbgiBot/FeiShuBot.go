@@ -1,20 +1,13 @@
 package AbgiBot
 
 import (
-	"auto-bgi/Notice"
-	"auto-bgi/abgiObs"
-	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
-	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
-	"auto-bgi/control"
-	"auto-bgi/task"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	lark "github.com/larksuite/oapi-sdk-go/v3"
-
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
@@ -47,7 +40,7 @@ func InitFeiShuBot() {
 
 			fmt.Printf("收到消息: %s\n", data)
 			fmt.Println("回话id", event.Event.Message.MessageId)
-			command := FeiShuBotCommand(data)
+			command := BotCommand(data)
 			send(*event.Event.Message.MessageId, command)
 
 			return nil
@@ -64,69 +57,6 @@ func InitFeiShuBot() {
 		autoLog.Sugar.Errorf("飞书机器人启动失败")
 		panic(err)
 	}
-}
-
-func FeiShuBotCommand(command string) string {
-	commandMap := map[string]func() string{
-		"联机上线": func() string {
-			abgiSSE.OnStart()
-			return "上线成功"
-		},
-		"联机下线": func() string {
-			abgiSSE.Close()
-			return "下线成功"
-		},
-		"情况": func() string {
-			info := bgiStatus.BgiLogStatusInfo
-			return fmt.Sprintf("⚠️通知：💗💗\n配置组：%s\n路线：%s💗\n%s", info.Group, info.MapTrackingLine, info.Timestamp)
-		},
-		"截图": func() string {
-			Notice.SendScreenshot()
-			return "发送成功"
-		},
-		"开始录屏": func() string {
-			err := abgiObs.StartRecording()
-			if err != nil {
-				return fmt.Sprintf("启动失败：%v", err.Error())
-			}
-			return "录屏成功"
-		},
-		"停止录屏": func() string {
-			info := bgiStatus.BgiLogStatusInfo
-			err := abgiObs.StopRecording(info.Group)
-			if err != nil {
-				return fmt.Sprintf("停止失败：%v", err.Error())
-			}
-			return "停止成功"
-		},
-		"关闭原神": func() string {
-			control.CloseYuanShen()
-			return "关闭成功"
-		},
-		"关闭bgi": func() string {
-			control.CloseSoftware()
-			return "关闭成功"
-		},
-	}
-
-	if response, exists := commandMap[command]; exists {
-		return response()
-	}
-
-	if strings.Contains(command, "启动一条龙") {
-		oneLong.StartOneLong(strings.Replace(command, "启动一条龙", "", -1))
-		return "启动一条龙成功"
-	} else if strings.Contains(command, "启动配置组") {
-		groups := strings.Replace(command, "启动配置组", "", -1)
-		data := strings.Split(groups, " ")
-		err := task.StartGroups(data)
-		if err != nil {
-			return fmt.Sprintf("启动失败：%v", err.Error())
-		}
-		return "启动配置组成功"
-	}
-
-	return "指令错误"
 }
 
 // send 函数用于发送回复消息
