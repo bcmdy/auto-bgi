@@ -89,7 +89,7 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 
 			//修改runExtra
 			newRunExtra := fmt.Sprintf("%s.runExtra", path)
-			newData, err = sjson.SetBytes(newData, newRunExtra, runDebug)
+			newData, err = sjson.SetBytes(newData, newRunExtra, !runDebug)
 
 			if err != nil {
 
