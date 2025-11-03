@@ -274,7 +274,7 @@ ABGI & BGI 游戏录屏项目：https://github.com/wjdsg0327/bgiSRecording
 
 # 更新记录
 
-#### 3.0版本
+#### 3.1版本
 
 时间：2025-11-03
 
