@@ -16,3 +16,6 @@ echo ====== 前端打包完成 ======
 echo ====== 后端打包开始 ======
 call go build
 echo ====== 后端打包完成 ======
+echo ===========后端无窗口打包开始==============
+call go build -ldflags="-H=windowsgui" -o auto-bgi无窗口.exe
+echo ===========后端无窗口打包完成==============

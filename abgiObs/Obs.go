@@ -71,7 +71,7 @@ func updateFileName(OutputPath, videoName string) {
 		return
 	}
 
-	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02-15-01")+".mp4")
+	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02-15-01")+".mkv")
 
 	if OutputPath == "" {
 		return
@@ -173,6 +173,14 @@ var (
 )
 
 func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error) {
+
+	//捕获错误
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Errorf("⚠️ 停止回放缓冲区失败: %v", r)
+
+		}
+	}()
 
 	if client == nil {
 		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
@@ -287,6 +295,14 @@ func StartReplayBuffer() (err error) {
 
 // 停止回放缓存
 func StopReplayBuffer() error {
+	//捕获错误
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Errorf("⚠️ 停止回放缓冲区失败: %v", r)
+
+		}
+	}()
+
 	buffer, err := client.Outputs.StopReplayBuffer(&outputs.StopReplayBufferParams{})
 	if err != nil {
 		return fmt.Errorf("停止回放缓冲区失败: %v", err)

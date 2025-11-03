@@ -155,7 +155,7 @@ func main() {
 
 	})
 
-	//查询今日所有日志文件
+	//查询所有日志文件
 	ginServer.GET("/api/logFiles", func(c *gin.Context) {
 		filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
 		files, err := bgiStatus.FindLogFiles(filePath)
@@ -165,6 +165,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"files": files})
 	})
 
+	//读取日志
 	ginServer.GET("/api/logInfo", func(c *gin.Context) {
 
 		filePath := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, time.Now().Format("20060102"))) // 本地日志路径
@@ -679,6 +680,7 @@ func main() {
 			var name string
 			if err := c.ShouldBindJSON(&name); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
+				return
 			}
 
 			OneLongService.StartOneLong(name)
@@ -1224,6 +1226,8 @@ func main() {
 	{
 		//发送今日收获前10
 		jsController.GET("/logAnalysis", JsAPI.SendLogAnalysis)
+		//给指定区域截图
+		jsController.POST("/screenShot", JsAPI.ScreenShot)
 	}
 
 	if config.Cfg.Control.AbgiScreen {
