@@ -267,6 +267,8 @@ auto-bgi.exe online
 
 ##### qq群：215053644
 
+![image-20251022174536133](./assets/qrcode_1762334743024.jpg)
+
 
 
 ## 相关项目
