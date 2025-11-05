@@ -91,10 +91,12 @@ func (o *OneLong) OneLongTask() {
 	autoLog.Sugar.Info("一条龙任务执行完成")
 }
 
-const interval = 72 * time.Hour
+// const interval = 72 * time.Hour
 
 // 每周一备份users文件夹
 func (o *OneLong) backupUsers() {
+
+	interval := time.Duration(config.Cfg.Control.BackupUsersHour) * time.Hour
 
 	//捕获异常
 	defer func() {
@@ -127,7 +129,7 @@ func (o *OneLong) backupUsers() {
 	if now.Sub(lastBackup) >= interval {
 		autoLog.Sugar.Info("🟢 满足条件，开始备份 users 文件夹...")
 		autoLog.Sugar.Infof("开始备份user文件夹")
-		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
+		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006-01-02-15-04-05")+".zip", true)
 		if err4 != nil {
 			autoLog.Sugar.Errorf("备份失败: %v", err4)
 			return

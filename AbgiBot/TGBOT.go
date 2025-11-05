@@ -3,6 +3,7 @@ package AbgiBot
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
+	"auto-bgi/abgiAi"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
@@ -154,8 +155,14 @@ func BotCommand(command string) string {
 	if response, exists := commandMap[command]; exists {
 		return response()
 	}
+	if strings.HasPrefix(command, "老王") {
+		conversation, err := abgiAi.Conversation(command)
+		if err != nil {
+			return "老王不想回答你"
+		}
+		return conversation
 
-	if strings.Contains(command, "启动一条龙") {
+	} else if strings.HasPrefix(command, "启动一条龙") {
 		oneLong.StartOneLong(strings.Replace(command, "启动一条龙", "", -1))
 		return "启动一条龙成功"
 	} else if strings.Contains(command, "启动配置组") {

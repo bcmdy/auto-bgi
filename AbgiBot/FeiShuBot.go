@@ -25,6 +25,12 @@ func InitFeiShuBot() {
 	// 注册事件 Register event
 	eventHandler := dispatcher.NewEventDispatcher("", "").
 		OnP2MessageReceiveV1(func(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
+			fmt.Println("event.Event.Sender.SenderType", *event.Event.Sender.SenderType)
+			if event.Event.Sender != nil && event.Event.Sender.SenderType != nil &&
+				*event.Event.Sender.SenderType == "bot" {
+				return nil
+			}
+
 			prettify := larkcore.Prettify(event.Event.Message.Content)
 
 			var inner string
@@ -55,7 +61,7 @@ func InitFeiShuBot() {
 	err := larkWsClient.Start(context.Background())
 	if err != nil {
 		autoLog.Sugar.Errorf("飞书机器人启动失败")
-		panic(err)
+		return
 	}
 }
 
@@ -64,8 +70,9 @@ func InitFeiShuBot() {
 //   - MessageId: 需要回复的消息ID
 func send(MessageId, content string) {
 
+	all := strings.ReplaceAll(content, "\n\t", "")
 	s := `{"text":"content"}`
-	res := strings.ReplaceAll(s, "content", content)
+	res := strings.ReplaceAll(s, "content", all)
 
 	// 使用构建器模式创建回复消息请求
 	req := larkim.NewReplyMessageReqBuilder().

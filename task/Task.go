@@ -19,7 +19,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -242,22 +241,15 @@ func StartGroups(names []string) error {
 	}
 
 	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
+	cmdArgs := append([]string{"/C", "start", betterGIPath}, args...)
 
-	cmd := exec.Command(betterGIPath, args...)
+	exec.Command("cmd", cmdArgs...).Start()
 
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	err := cmd.Start()
-	if err != nil {
-		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
-		return err
-	}
-	autoLog.Sugar.Infof("启动配置组成功: %v", names)
+	autoLog.Sugar.Infof("执行命令:cmd /C start %s %s", betterGIPath, fmt.Sprintf("--startGroups %s", strings.Join(names, " ")))
+
 	return nil
 }
 
-// StartOneDragon 启动一条龙
-// StartOneDragon 启动一条龙任务（异步）
 func StartOneDragon(name string) {
 	autoLog.Sugar.Infof("准备启动一条龙：%s", name)
 
@@ -274,90 +266,11 @@ func StartOneDragon(name string) {
 		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
 		return
 	}
+	exec.Command("cmd", "/C", "start", betterGIPath, "--startOneDragon", name).Start()
 
-	tryStart := func() error {
-		autoLog.Sugar.Infof("尝试启动一条龙：%s", name)
-		cmd := exec.Command(betterGIPath, "--startOneDragon", name)
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-		cmd.Stdout = nil
-		cmd.Stderr = nil
-		if err := cmd.Start(); err != nil {
-			return fmt.Errorf("启动失败: %w", err)
-		}
+	autoLog.Sugar.Infof("执行命令：cmd /C start %s %s %s", betterGIPath, "--startOneDragon", name)
 
-		// 等几秒让进程初始化
-		time.Sleep(10 * time.Second)
-
-		if IsWechatRunning(name) {
-			return fmt.Errorf("检测到启动失败")
-		}
-		return nil
-	}
-
-	if err := tryStart(); err != nil {
-		// 关闭软件
-		control.CloseSoftware()
-		autoLog.Sugar.Warnf("第一次启动失败：%v，准备重试一次...", err)
-		time.Sleep(3 * time.Second)
-		if err2 := tryStart(); err2 != nil {
-			autoLog.Sugar.Errorf("重试仍失败：%v", err2)
-			return
-		}
-	}
-
-	autoLog.Sugar.Infof("启动一条龙成功：%s", name)
 }
-
-func IsWechatRunning(name string) bool {
-	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq "+name)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	output, err := cmd.Output()
-	if err != nil {
-
-		autoLog.Sugar.Error("BetterGI.exe 是否在运行:", err)
-		return false
-	}
-
-	return strings.Contains(string(output), "BetterGI.exe")
-}
-
-//func StartOneDragon(name string) {
-//	autoLog.Sugar.Infof("准备启动一条龙：%s", name)
-//
-//	// 关闭软件
-//	control.CloseSoftware()
-//
-//	// 延迟，确保软件关闭完成
-//	delay := 3 * time.Second
-//	autoLog.Sugar.Infof("等待 %v 后启动...", delay)
-//	time.Sleep(delay)
-//
-//	// 构建执行路径
-//	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
-//	if _, err := os.Stat(betterGIPath); err != nil {
-//		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
-//		return
-//	}
-//
-//	// 检查文件是否存在
-//	if _, err := os.Stat(betterGIPath); err != nil {
-//		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
-//		return
-//	}
-//
-//	// 构建命令
-//	autoLog.Sugar.Infof("命令: %s %s %s", betterGIPath, "--startOneDragon", name)
-//	cmd := exec.Command(betterGIPath, "--startOneDragon", name)
-//	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // 可选：隐藏窗口
-//	cmd.Stdout = nil
-//	cmd.Stderr = nil
-//	err := cmd.Start()
-//	if err != nil {
-//		autoLog.Sugar.Errorf("启动一条龙失败: %v", err)
-//		return
-//	}
-//	autoLog.Sugar.Infof("启动一条龙成功: %s", name)
-//}
 
 // 每隔1个小时发送截图
 func SendWeChatImageTask() {

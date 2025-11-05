@@ -59,7 +59,7 @@ export const apiMethods = {
   startOneLong: (data) => api.post('/api/oneLong/startOneLong', data),
   closeBgi: () => api.post('/api/closeBgi'),
   closeYuanShen: () => api.post('/closeYuanShen'),
-  backup: () => api.post('/backup'),
+  backup: () => api.post('/api/backup'),
   autoUpdateJsAndPathing: () => api.post('/autoUpdateJsAndPathing'),
   
   // 配置相关
@@ -135,6 +135,8 @@ export const apiMethods = {
   SaveReplayBuffer: () => api.post('/api/abgiObs/SaveReplayBuffer'),
   // 获取视频信息
   GetVideoInfo: () => api.get('/api/abgiObs/GetVideoInfo'),
+  //删除视频
+  DeleteVideo: (filePath) => api.post('/api/abgiObs/DeleteVideo?videoName='+filePath),
   
 }
 

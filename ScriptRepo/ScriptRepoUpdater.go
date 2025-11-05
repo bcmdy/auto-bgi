@@ -18,7 +18,7 @@ import (
 var proxyOptions = transport.ProxyOptions{}
 
 func init() {
-	if myConfig.Cfg.Notice.Type == "TG" {
+	if myConfig.Cfg.Notice.TGNotice.Proxy != "" {
 		proxyOptions.URL = myConfig.Cfg.Notice.TGNotice.Proxy
 	}
 

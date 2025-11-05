@@ -3,6 +3,7 @@ package abgiFunction
 import (
 	"auto-bgi/AbgiBot"
 	"auto-bgi/OneLong"
+	"auto-bgi/abgiAi"
 	"auto-bgi/abgiObs"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
@@ -79,7 +80,12 @@ func InitFunction() {
 	}
 
 	if config.Cfg.CommandBot.FeiShuBot {
+		autoLog.Sugar.Infof("飞书机器人开启状态")
 		go AbgiBot.InitFeiShuBot()
 	}
 
+	if config.Cfg.AbgiAiConfig.IsAbgiAi {
+		autoLog.Sugar.Infof("AI开启状态")
+		go abgiAi.InitAi()
+	}
 }

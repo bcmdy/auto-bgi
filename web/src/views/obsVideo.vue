@@ -421,7 +421,7 @@ async function fetchVideos() {
   try {
     const res = await apiMethods.GetVideoInfo()
     if (res.status === 'success') {
-      videos.value = res.msg
+      videos.value = res.msg==null?[]:res.msg
     }
   } catch (err) {
     console.error(err)

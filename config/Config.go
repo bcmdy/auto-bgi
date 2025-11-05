@@ -33,6 +33,7 @@ type Config struct {
 	CommandBot      CommandBot      `json:"CommandBot" comment:"命令机器人配置"`
 	UpdatePath      []UpdatePathing `json:"UpdatePath" comment:"地图追踪更新配置"`
 	Account         Account         `json:"Account" comment:"账号配置"`
+	AbgiAiConfig    AbgiAiConfig    `json:"AbgiAiConfig" comment:"abgiAi配置"`
 }
 type Account struct {
 	Uid                string `json:"Uid" comment:"账号UID"`
@@ -92,6 +93,7 @@ type OneRemote struct {
 
 type Control struct {
 	IsCloseYuanShen  bool `json:"IsCloseYuanShen" comment:"bgi关闭需要是否关闭原神"`
+	BackupUsersHour  int  `json:"BackupUsersHour" comment:"每隔几个小时备份users文件夹"`
 	SendWeChatImage  bool `json:"SendWeChatImage" comment:"是否开启每隔一小时发送截图"`
 	StartOpenBrowser bool `json:"StartOpenBrowser" comment:"是否开启启动时打开浏览器"`
 	AbgiScreen       bool `json:"AbgiScreen" comment:"是否开启bgi实时屏幕"`
@@ -113,6 +115,13 @@ type MySign struct {
 type CommandBot struct {
 	TgBOT     bool `json:"TgBOT" comment:"是否开启TG机器人"`
 	FeiShuBot bool `json:"FeiShuBot" comment:"是否开启飞书机器人"`
+}
+
+type AbgiAiConfig struct {
+	IsAbgiAi bool   `json:"IsAbgiAi" comment:"是否开启bgiai"`
+	ApiKey   string `json:"ApiKey" comment:"密钥"`
+	BaseURL  string `json:"BaseUrl" comment:"地址"`
+	Model    string `json:"Model" comment:"模型"`
 }
 
 var Cfg Config
@@ -227,6 +236,10 @@ func DefaultConfig() {
 			Cfg.MySign.Time = "0,20"
 		}
 	}
+	if Cfg.Control.BackupUsersHour == 0 {
+		Cfg.Control.BackupUsersHour = 72
+	}
+
 	if Cfg.UpdatePath == nil {
 		Cfg.UpdatePath = []UpdatePathing{}
 	}

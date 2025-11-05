@@ -48,7 +48,9 @@ func CloseSoftware() {
 	time.Sleep(5 * time.Second)
 
 	// 创建命令
-	cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
+	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "BetterGI.exe", "/FI", "USERNAME eq %USERNAME%")
+
+	//cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	cmd.Stdout = nil
 	cmd.Stderr = nil

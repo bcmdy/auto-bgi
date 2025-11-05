@@ -63,7 +63,7 @@ func BatchUpdateScript() string {
 
 	for _, name := range subDirs {
 
-		nowVersion := GetJsNowVersion(scriptDir, name)
+		nowVersion, _ := GetJsNowVersion(scriptDir, name)
 		newVersion, chineseName, err := GetJsNewVersion(name)
 		if err != nil {
 			continue
@@ -73,6 +73,7 @@ func BatchUpdateScript() string {
 			if name == "CD-Aware-AutoGather" {
 				autoLog.Sugar.Infof("脚本更新：带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
 				Notice.SentText("带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
+				continue
 			}
 
 			// 开始更新

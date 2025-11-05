@@ -320,6 +320,19 @@
                 </span>
               </a-checkbox>
             </a-form-item>
+
+            <a-form-item label="每隔几个小时备份users文件夹" name="BackupUsersHourNum" class="form-item-enhanced">
+                <div class="input-wrapper">
+                  <span class="input-icon">💬</span>
+                  <a-input-number
+                    type=number
+                    v-model:value="formData.Control.BackupUsersHour" 
+                    placeholder="小时"
+                    class="enhanced-input"
+                    style="width: 100%;flex-direction: column;display: flex;"
+                  />
+                </div>
+              </a-form-item>
           </div>
         </a-card>
 
@@ -830,7 +843,9 @@ const formData = reactive({
   Control: {
     IsCloseYuanShen: false,
     SendWeChatImage: false,
-    AbgiScreen:false
+    AbgiScreen:false,
+    BackupUsersHour:72,
+    OBSReplayBuffer:false
   },
   MySign: {
     isMysSignIn: false,
@@ -883,6 +898,12 @@ const formData = reactive({
   CommandBot: {
     TgBOT: false,
     FeiShuBot: false,
+  },
+  AbgiAiConfig: {
+    IsAbgiAi: false,
+    ApiKey: "",
+    ApiUrl: "",
+    Model: "",
   }
 })
 
@@ -995,6 +1016,9 @@ const loadConfig = async () => {
       if (data.CommandBot) {
         Object.assign(formData.CommandBot, data.CommandBot)
       }
+      if (data.AbgiAiConfig) {
+        Object.assign(formData.AbgiAiConfig, data.AbgiAiConfig)
+      }
   
     }
   } catch (error) {
@@ -1025,7 +1049,8 @@ const handleSubmit = async () => {
       Notice: formData.Notice,
       Account: formData.Account,
       RepoUrl: formData.RepoUrl,
-      CommandBot: formData.CommandBot
+      CommandBot: formData.CommandBot,
+      AbgiAiConfig: formData.AbgiAiConfig
     }
 
     console.log('提交的配置:', payload)

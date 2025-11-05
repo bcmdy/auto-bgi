@@ -16,7 +16,6 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/robfig/cron/v3"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -43,65 +42,6 @@ func IsWechatRunning(name string) bool {
 	return strings.Contains(string(output), "BetterGI.exe")
 }
 
-// 检查 YuanShen.exe 是否在运行
-//func IsYuanShenRunning() bool {
-//	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq YuanShen.exe")
-//	output, err := cmd.Output()
-//	if err != nil {
-//
-//		autoLog.Sugar.Error("YuanShen.exe 是否在运行:", err)
-//		return false
-//	}
-//
-//	return strings.Contains(string(output), "YuanShen.exe")
-//}
-
-//var notified = false
-//var okInform = false
-//var okRun = true
-//
-//func CheckBetterGIStatus() {
-//
-//	cronTab := cron.New(cron.WithSeconds())
-//
-//	// 定时任务,cron表达式
-//	spec := "*/30 * * * * *"
-//
-//	task := func() {
-//
-//		// 检查进程
-//		if IsWechatRunning() {
-//
-//			if okRun {
-//				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
-//				BgiLogStatusInfo.Running = IsWechatRunning()
-//				notified = false // 清除通知状态
-//				okRun = false    // 清除通知状态
-//			}
-//		} else {
-//			if !notified {
-//				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
-//				control.CloseYuanShen()
-//				notified = true
-//				okRun = true
-//				BgiLogStatusInfo.Running = IsWechatRunning()
-//			} else if !okInform {
-//				autoLog.Sugar.Infof("BetterGI 已关闭，已通知过: %s", time.Now().Format("2006-01-02 15:04:05"))
-//				okInform = true
-//				BgiLogStatusInfo.Running = IsWechatRunning()
-//			}
-//		}
-//
-//	}
-//
-//	// 添加定时任务
-//	cronTab.AddFunc(spec, task)
-//	// 启动定时器
-//	cronTab.Start()
-//	// 阻塞主线程停止
-//	select {}
-//}
-
 var lastRunning = true
 
 func CheckBetterGIStatus() {
@@ -115,12 +55,12 @@ func CheckBetterGIStatus() {
 				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
 			} else {
 				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
+				autoLog.Sugar.Infof("BetterGI 已关闭: %s", time.Now().Format("2006-01-02 15:04:05"))
 				// 检查配置文件中是否设置了需要关闭原神
 				if config.Cfg.Control.IsCloseYuanShen {
 					autoLog.Sugar.Infof("需要关闭原神")
 					control.CloseYuanShen()
 				}
-				autoLog.Sugar.Infof("BetterGI 已关闭: %s", time.Now().Format("2006-01-02 15:04:05"))
 			}
 			lastRunning = running
 		}
@@ -134,116 +74,6 @@ func CheckBetterGIStatus() {
 
 	cronTab.Start()
 	select {}
-}
-
-func JsProgress(filename string, patterns ...string) (string, error) {
-	// 编译所有的正则表达式
-	var regexps []*regexp.Regexp
-	for _, p := range patterns {
-		re, err := regexp.Compile(p)
-		if err != nil {
-			return "", fmt.Errorf("正则表达式编译失败: %v", err)
-		}
-		regexps = append(regexps, re)
-	}
-
-	// 打开文件
-	file, err := os.Open(filename)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	// 扫描文件行并尝试匹配所有正则表达式
-	var lastMatch string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		for _, re := range regexps {
-			if re.MatchString(line) {
-				lastMatch = line
-				break // 当前行已经匹配，继续下一行
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	// 返回最后一行匹配结果
-	if lastMatch != "" {
-		return lastMatch, nil
-	}
-	return "", fmt.Errorf("没有找到匹配的行")
-}
-
-func Progress(filename string, line string) (string, error) {
-
-	start := strings.Index(line, `"`)
-	end := strings.LastIndex(line, `"`)
-
-	content := "0/0"
-	// 检查是否找到了两个引号且位置有效
-	if start == -1 || end == -1 || start >= end {
-		content = line
-	} else {
-		content = line[start+1 : end]
-	}
-
-	// 1. 读取 JSON 文件
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return "", fmt.Errorf("进度读取文件失败:%s", filename)
-	}
-	// 2. 解析为 map[string]interface{}（保持原始结构）
-	var jsonData map[string]interface{}
-	if err := json.Unmarshal(data, &jsonData); err != nil {
-
-		autoLog.Sugar.Errorf("解析 JSON 失败: %v", err)
-		return "", err
-	}
-	// 3. 获取 projects 数组
-	projects, ok := jsonData["projects"].([]interface{})
-	if !ok {
-		log.Fatal("projects 字段不是数组或不存在")
-		return "", err
-	}
-	pro := "0/0"
-	for i, project := range projects {
-		projectMap := project.(map[string]interface{})
-		if projectMap["name"] == content {
-			pro = fmt.Sprintf("%d/%d", i, len(projects))
-			break
-		}
-	}
-
-	return pro, nil
-}
-
-// 根据配置组文件名字找到排序号
-func GetGroupNum(filename string) (int, error) {
-
-	// 1. 读取 JSON 文件
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("读取文件失败: %v", err)
-		return 0, err
-	}
-	// 2. 解析为 map[string]interface{}（保持原始结构）
-	var jsonData map[string]interface{}
-	if err := json.Unmarshal(data, &jsonData); err != nil {
-		log.Fatalf("解析 JSON 失败: %v", err)
-		return 0, err
-	}
-	// 3. 获取 projects 数组
-	index, ok := jsonData["index"].(interface{})
-	if !ok {
-		log.Fatal("projects 字段不是数组或不存在")
-		return 0, err
-	}
-
-	return int(index.(float64)), nil
 }
 
 func TodayHarvest(fileName string) (map[string]int, error) {
@@ -263,8 +93,6 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 	harvestStats := make(map[string]int)
 
 	scanner := bufio.NewScanner(file)
-	var jsonData strings.Builder
-	var readingJSON bool
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -277,37 +105,9 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 					harvestStats[item]++
 				}
 			}
-			continue // 匹配到后可跳过第二种，以免重复
+
 		}
 
-		// ✅ 检测到 “[主流程]总累积获取” 段落开始
-		if strings.HasPrefix(line, "[主流程]总累积获取") {
-			readingJSON = true
-			jsonData.Reset() // 清空旧内容
-			idx := strings.Index(line, "{")
-			if idx != -1 {
-				jsonData.WriteString(line[idx:]) // 把 { 后面部分写入
-			}
-			continue
-		}
-
-		if readingJSON {
-			jsonData.WriteString(line)
-			// 检测 JSON 结束
-			if strings.HasSuffix(line, "}") {
-				readingJSON = false
-				// 尝试解析 JSON
-				data := make(map[string]int)
-				if err := json.Unmarshal([]byte(jsonData.String()), &data); err != nil {
-					autoLog.Sugar.Warnf("解析总累积获取 JSON 失败: %v", err)
-				} else {
-					// 合并到 harvestStats
-					for k, v := range data {
-						harvestStats[k] += v
-					}
-				}
-			}
-		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -1067,8 +867,8 @@ func downloadFile(filename, url string) error {
 // keepRoot = true 时会在压缩包中保留 sourceDir 的目录名
 func ZipDir(sourceDir, zipFilePath string, keepRoot bool) error {
 
-	//清理历史备份
-	_ = ClearDir("Users")
+	////清理历史备份
+	//_ = ClearDir("Users")
 
 	fmt.Println("压缩目录:", sourceDir)
 	fmt.Println("输出文件:", zipFilePath)
@@ -1092,6 +892,9 @@ func ZipDir(sourceDir, zipFilePath string, keepRoot bool) error {
 
 		if info.IsDir() {
 			// ✅ 不写入目录条目，让解压自动生成
+			return nil
+		}
+		if !info.Mode().IsRegular() {
 			return nil
 		}
 
@@ -1131,9 +934,9 @@ func ZipDir(sourceDir, zipFilePath string, keepRoot bool) error {
 func Backup() error {
 
 	autoLog.Sugar.Infof("开始备份user文件夹")
-	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006100215020405")+".zip", true)
+	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006-01-02-15-04-05")+".zip", true)
 	if err4 != nil {
-		autoLog.Sugar.Errorf("备份失败: %v")
+		autoLog.Sugar.Errorf("备份失败: %v", err4)
 		return fmt.Errorf("备份失败")
 	}
 
@@ -2157,9 +1960,16 @@ func JsNamesInfo() []JsNamesInfoStruct {
 	jsNamesInfoStructs := make([]JsNamesInfoStruct, 0, len(subDirs))
 
 	for _, name := range subDirs {
-		nowVersion := GetJsNowVersion(scriptDir, name)
+		nowVersion, nowChineseName := GetJsNowVersion(scriptDir, name)
 		newVersion, chineseName, err := GetJsNewVersion(name)
 		if err != nil {
+			jsNamesInfoStructs = append(jsNamesInfoStructs, JsNamesInfoStruct{
+				Name:        name,
+				NowVersion:  nowVersion,
+				NewVersion:  newVersion,
+				ChineseName: nowChineseName,
+				Mark:        "未知",
+			})
 			continue
 		}
 
@@ -2185,7 +1995,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 	return jsNamesInfoStructs
 }
 
-func GetJsNowVersion(basePath, jsName string) string {
+func GetJsNowVersion(basePath, jsName string) (string, string) {
 	return readVersion(filepath.Join(basePath, jsName, "manifest.json"))
 }
 
@@ -2205,24 +2015,25 @@ func GetJsNowVersion(basePath, jsName string) string {
 //	return string(body)
 //}
 
-func readVersion(manifestPath string) string {
+func readVersion(manifestPath string) (string, string) {
 	file, err := os.Open(manifestPath)
 	if err != nil {
 		autoLog.Sugar.Warnf("打开文件失败: %v", err)
-		return "未知版本"
+		return "未知版本", "未知"
 	}
 	defer file.Close()
 
 	var data map[string]interface{}
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
 		autoLog.Sugar.Warnf("解析JSON失败: %d%v", manifestPath, err)
-		return "未知版本"
+		return "未知版本", data["name"].(string)
 	}
 
 	if version, ok := data["version"].(string); ok {
-		return version
+
+		return version, data["name"].(string)
 	}
-	return "未知版本"
+	return "未知版本", data["name"].(string)
 }
 
 var monitor *LogMonitor

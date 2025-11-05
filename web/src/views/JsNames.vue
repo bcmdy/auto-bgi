@@ -57,7 +57,8 @@
                 v-else
                 v-for="item in sortedPluginData"
                 :key="item.Name"
-                :class="{ highlight: item.Mark === '有更新' }"
+                :class="{ highlight: item.Mark === '有更新', highlighta: item.Mark === '未知' }"
+      
               >
                 <td>{{ item.ChineseName }}</td>
                 <td>{{ item.NowVersion }}</td>
@@ -66,6 +67,7 @@
                 <td>
                   <button
                     class="btn update-btn"
+                    :class="{ 'haveUpdate-btn': item.Mark === '有更新' }"
                     :disabled="item.Mark !== '有更新' || isUpdating[item.Name]"
                     @click="updatePlugin(item.Name)"
                   >
@@ -81,7 +83,7 @@
             <div
               v-for="item in sortedPluginData"
               :key="item.Name"
-              :class="{ highlight: item.Mark === '有更新', 'mobile-card': true }"
+              :class="{ highlight: item.Mark === '有更新', 'mobile-card': true, highlightm: item.Mark === '未知' }"
             >
               <div class="card-header">
                 <div class="card-title">
@@ -109,6 +111,7 @@
               <div class="card-actions">
                 <button
                   class="btn update-btn mobile-update-btn"
+                  :class="{ 'haveUpdate-btn': item.Mark === '有更新' }"
                   :disabled="item.Mark !== '有更新' || isUpdating[item.Name]"
                   @click="updatePlugin(item.Name)"
                 >
@@ -132,7 +135,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, h } from 'vue'
 import { useRouter } from 'vue-router'
 
 export default {
@@ -263,6 +266,13 @@ export default {
   transition: transform 0.5s ease-in-out;
 }
 
+.haveUpdate-btn {
+  background-color: #2cce3a!important;
+  color: #000!important;
+}
+
+
+
 .carousel-slide {
   flex: 0 0 100%;
   opacity: 0.9;
@@ -274,6 +284,8 @@ export default {
   object-fit: cover;
   display: block;
 }
+
+
 
 .header-content {
   margin-top: 1rem;
@@ -343,7 +355,18 @@ export default {
 }
 
 .highlight {
-  background-color: #ffe4f0 !important;
+  background-color: #F48FB1 !important;
+}
+
+.highlighta {
+  background-color: #928e90 !important;
+  border : 2px solid #d18ba6 !important;
+ 
+}
+
+.highlightm{
+  background-color: #928e90 !important;
+  border : 2px solid #d18ba6 !important;
 }
 
 /* PC端隐藏移动端卡片列表 */
