@@ -3,6 +3,7 @@ package AbgiBot
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
+	"auto-bgi/ScriptRepo"
 	"auto-bgi/abgiAi"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
@@ -92,7 +93,7 @@ func BotCommand(command string) string {
 		},
 		"情况": func() string {
 			info := bgiStatus.BgiLogStatusInfo
-			return fmt.Sprintf("⚠️通知：💗💗\n配置组：%s\n路线：%s💗\n%s", info.Group, info.MapTrackingLine, info.Timestamp)
+			return fmt.Sprintf("⚠通知：💗\n配置组：%s\n路线：%s💗\n%s", info.Group, info.MapTrackingLine, info.Timestamp)
 		},
 		"截图": func() string {
 			Notice.SendScreenshot()
@@ -173,7 +174,13 @@ func BotCommand(command string) string {
 			return fmt.Sprintf("启动失败：%v", err.Error())
 		}
 		return "启动配置组成功"
+	} else if strings.Contains(command, "订阅配置组") {
+		ScriptName := strings.Replace(command, "订阅配置组", "", -1)
+		script, err := ScriptRepo.SubscribeScript(ScriptName)
+		if err != nil {
+			return fmt.Sprintf("订阅失败：%v", err.Error())
+		}
+		return script
 	}
-
-	return "指令错误"
+	return "老王不想回答你的无礼问题..."
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
+	otiai10Copy "github.com/otiai10/copy"
 	"log"
 	"os"
 	"path/filepath"
@@ -44,6 +45,7 @@ func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 			ProxyOptions: proxyOptions,
 		})
 		if err != nil {
+
 			return "", false, fmt.Errorf("克隆仓库失败: %w", err)
 		}
 		updated = true
@@ -214,4 +216,19 @@ func parseLastUpdated(v interface{}) time.Time {
 		}
 	}
 	return time.Time{}
+}
+
+// Subscribe 订阅脚本
+func SubscribeScript(ScriptName string) (string, error) {
+	ReposScriptPath := filepath.Join(myConfig.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "js", ScriptName)
+
+	//复制user
+	UserScriptPath := filepath.Join(myConfig.Cfg.BetterGIAddress, "User", "JsScript", ScriptName)
+
+	err := otiai10Copy.Copy(ReposScriptPath, UserScriptPath)
+	if err != nil {
+		return "订阅失败", err
+	}
+	return "订阅成功", nil
+
 }

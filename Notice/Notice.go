@@ -17,7 +17,6 @@ func init() {
 			sprintf := fmt.Sprintf("Telegram bot初始化失败: %v", err)
 			fmt.Println(sprintf)
 		} else {
-
 			fmt.Println("Telegram bot配置成功")
 		}
 	}
@@ -43,6 +42,7 @@ func SentText(text string) {
 	// 如果存在并且 20 秒内，直接忽略
 	if t, ok := lastSentMap.m[text]; ok {
 		if time.Since(t) < noticeTTL {
+			autoLog.Sugar.Debug("通知-文本重复发送，忽略:", text)
 			return
 		}
 	}

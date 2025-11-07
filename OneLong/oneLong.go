@@ -17,7 +17,6 @@ type OneLong struct {
 }
 
 var oneDragon OneDragon
-var chaBaoBgiConfig ChaBaoBgiConfig
 
 // StartOneLong 启动指定一条龙
 func (o *OneLong) StartOneLong(longName string) {
