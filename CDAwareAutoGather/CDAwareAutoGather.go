@@ -5,9 +5,11 @@ import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/tools"
 	"bufio"
 	"encoding/json"
 	"fmt"
+	otiai10Copy "github.com/otiai10/copy"
 	"github.com/tidwall/sjson"
 	"os"
 	"path/filepath"
@@ -258,5 +260,56 @@ func (u *UidInfo) WriteAllRoute(CDAwareAutoGatherGroup string, cdAwareAutoGather
 	if err := os.WriteFile(CDAwareAutoGatherGroupFilename, newData, 0644); err != nil {
 
 		autoLog.Sugar.Errorf("写入 CD管理的自动采集[%s]失败:%d", CDAwareAutoGatherGroupFilename, err)
+	}
+}
+
+var CKRouter = map[string]string{
+	"矿物\\水晶块\\诺艾尔的提瓦特矿闻录\\火山\\层岩巨渊\\地下矿区": "矿物\\水晶块\\诺艾尔的提瓦特矿闻录@火山\\层岩巨渊·地下矿区",
+	"矿物\\紫晶块\\紫晶块\\大剑\\\\蜜柑魚":             "矿物\\紫晶块\\紫晶块[大剑]@蜜柑魚",
+	"食材与炼金\\日落果\\有草神\\今天下雨w":              "食材与炼金\\日落果\\有草神@今天下雨w",
+	"食材与炼金\\松茸\\有草神\\未知作者":                "食材与炼金\\松茸\\有草神@未知作者",
+	"矿物\\萃凝晶\\萃凝晶\\火神赶路\\大剑\\无限不循环":       "矿物\\萃凝晶\\萃凝晶-火神赶路-大剑@无限不循环",
+	"食材与炼金\\枣椰\\有草神\\不瘦五十斤不改名":            "食材与炼金\\枣椰\\有草神@不瘦五十斤不改名",
+	"食材与炼金\\金鱼草\\金鱼草\\白白喵":                "食材与炼金\\金鱼草\\金鱼草@白白喵",
+}
+
+// 更新所有CD管理
+func (u *UidInfo) UpdateAllCD() {
+	info := u.ReadInfo("3")
+	for _, router := range info {
+		for _, detail := range router.CDAwareAutoGather {
+			TextName := strings.ReplaceAll(detail.TextName, "_", "\\")
+			TextName = strings.ReplaceAll(TextName, ".txt", "")
+			//找到本地仓库文件夹
+			localJoin := filepath.Join(config.Cfg.BetterGIAddress, "User", "AutoPathing", TextName)
+			ckJoin := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "pathing", TextName)
+
+			if _, err := os.Stat(localJoin); os.IsNotExist(err) {
+				cKRouter := CKRouter[TextName]
+				if cKRouter != "" {
+					TextName = cKRouter
+					localJoin = filepath.Join(config.Cfg.BetterGIAddress, "User", "AutoPathing", cKRouter)
+					ckJoin = filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "pathing", cKRouter)
+				} else {
+					autoLog.Sugar.Error("=============", TextName)
+					autoLog.Sugar.Errorf("本地仓库文件夹不存在:%d", err)
+					continue
+				}
+			}
+			dirs, err := tools.CompareDirs(localJoin, ckJoin)
+			if err != nil {
+				autoLog.Sugar.Errorf("比较文件夹失败:%d", err)
+			}
+			if !dirs {
+				autoLog.Sugar.Infof("文件有更新:%s", TextName)
+				err = otiai10Copy.Copy(ckJoin, localJoin)
+				if err != nil {
+					autoLog.Sugar.Errorf("更新文件失败:%d", err)
+				} else {
+					autoLog.Sugar.Infof("更新文件成功:%s", TextName)
+				}
+			}
+
+		}
 	}
 }

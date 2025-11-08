@@ -23,6 +23,7 @@
         </button>
       </div>
       <button @click="CDAllMaterial" class="refresh-btn">是否加入背包统计</button>
+      <button @click="UpdateAllCD" class="refresh-btn">一键更新全部材料</button>
     </div>
 
     <!-- 加载状态 -->
@@ -269,6 +270,14 @@ const CDAllMaterial = async () => {
   }
 }
 
+const UpdateAllCD = async () => {
+  try {
+    await apiMethods.UpdateAllCD()
+    alert('更新成功,具体请看日志:logs/。没有更新的材料，请联系abgi')
+  } catch (err) {
+    console.error('CDAllMaterial失败:', err)
+  }
+}
 
 // 组件挂载
 onMounted(() => {
