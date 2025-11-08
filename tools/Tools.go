@@ -1,7 +1,9 @@
 package tools
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -267,4 +269,75 @@ func UniqueStrings(arr []string) []string {
 		}
 	}
 	return result
+}
+
+// CompareDirs 判断两个文件夹内容是否一致
+func CompareDirs(dir1, dir2 string) (bool, error) {
+	files1 := make(map[string][16]byte)
+	files2 := make(map[string][16]byte)
+
+	err := filepath.Walk(dir1, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			rel, _ := filepath.Rel(dir1, path)
+			hash, err := hashFileMD5(path)
+			if err != nil {
+				return err
+			}
+			files1[rel] = hash
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	err = filepath.Walk(dir2, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			rel, _ := filepath.Rel(dir2, path)
+			hash, err := hashFileMD5(path)
+			if err != nil {
+				return err
+			}
+			files2[rel] = hash
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if len(files1) != len(files2) {
+		return false, nil
+	}
+
+	for k, v := range files1 {
+		if hv, ok := files2[k]; !ok || v != hv {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+// hashFileMD5 计算文件的 MD5 哈希
+func hashFileMD5(filePath string) ([16]byte, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return [16]byte{}, err
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return [16]byte{}, err
+	}
+	var result [16]byte
+	copy(result[:], h.Sum(nil))
+	return result, nil
 }
