@@ -44,7 +44,7 @@
               <a-textarea
                 v-model:value="formState.data"
                 :auto-size="{ minRows: 3, maxRows: 6 }"
-                placeholder="JSON 字符串或任意文本，将作为 data 传入任务函数"
+                placeholder="一条龙名字或者配置组名字，多个配置组用空格分隔"
                 allow-clear
               />
             </a-form-item>
@@ -132,8 +132,8 @@ const formState = reactive({
 })
 
 const presetSpecs = [
-  { label: '每分钟', spec: '0 * * * * *' },
-  { label: '每 5 分钟', spec: '0 */5 * * * *' },
+  { label: '每天4点5分', spec: '0 5 4 * * *' },
+  { label: '每个月的1号', spec: '0 0 0 1 * *' },
   { label: '每小时整点', spec: '0 0 * * * *' },
   { label: '每天 3 点', spec: '0 0 3 * * *' }
 ]

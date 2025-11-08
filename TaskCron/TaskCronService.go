@@ -1,6 +1,7 @@
 package TaskCron
 
 import (
+	"auto-bgi/autoLog"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 	"strconv"
@@ -25,10 +26,12 @@ func Add(c *gin.Context) {
 	}
 	fn, ok := task[taskCron.Name]
 	if !ok {
+		autoLog.Sugar.Error("任务名称不存在")
 		c.String(400, "任务名称不存在")
 		return
 	}
 	Tm.Add(taskCron.Spec, taskCron.Name, taskCron.Data, fn)
+	autoLog.Sugar.Info("任务已添加")
 	c.String(200, "任务已添加")
 }
 
