@@ -102,6 +102,8 @@ export const apiMethods = {
   getCDAwareAutoGather: (status = '3') => api.get('/api/CD-Aware-AutoGather/ReadInfo', { params: { status } }),
   // 更新是否加入背包统计
   CDAllMaterial : () => api.post('/api/CD-Aware-AutoGather/CDAllMaterial'),
+  // 一键更新全部材料
+  UpdateAllCD : () => api.post('/api/CD-Aware-AutoGather/UpdateAllCD'),
   
   // 启动配置组
   startGroups: (names) => {
