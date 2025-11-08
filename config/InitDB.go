@@ -42,6 +42,13 @@ func InitDB() {
 					weekday INTEGER NOT NULL,
 					material_name TEXT NOT NULL
 				);
+
+				CREATE TABLE IF NOT EXISTS tasks (
+						id INTEGER PRIMARY KEY AUTOINCREMENT,
+						name TEXT NOT NULL UNIQUE,
+						spec TEXT NOT NULL,
+				        data TEXT NOT NULL
+					);
 `)
 	if err != nil {
 		panic("建表失败: " + err.Error())

@@ -85,7 +85,7 @@ func TodayHarvest(fileName string) (map[string]int, error) {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("打开文件失败: %v", err)
+		return nil, fmt.Errorf("TodayHarvest打开文件失败: %v", err)
 	}
 	defer file.Close()
 
@@ -2018,7 +2018,7 @@ func GetJsNowVersion(basePath, jsName string) (string, string) {
 func readVersion(manifestPath string) (string, string) {
 	file, err := os.Open(manifestPath)
 	if err != nil {
-		autoLog.Sugar.Warnf("打开文件失败: %v", err)
+		autoLog.Sugar.Warnf("readVersion打开文件失败: %v", err)
 		return "未知版本", "未知"
 	}
 	defer file.Close()

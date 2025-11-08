@@ -3,6 +3,7 @@ package abgiFunction
 import (
 	"auto-bgi/AbgiBot"
 	"auto-bgi/OneLong"
+	"auto-bgi/TaskCron"
 	"auto-bgi/abgiAi"
 	"auto-bgi/abgiObs"
 	"auto-bgi/autoLog"
@@ -88,4 +89,7 @@ func InitFunction() {
 		autoLog.Sugar.Infof("AI开启状态")
 		go abgiAi.InitAi()
 	}
+
+	//定时任务
+	TaskCron.InitTaskCron()
 }

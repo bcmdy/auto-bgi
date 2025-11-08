@@ -1,10 +1,10 @@
-import { createApp } from 'vue'
+﻿import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import Antd from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
 
-// 导入所有页面组件
+// 导入所有页面组�?
 import Home from './views/Home.vue'
 import Config from './views/Config.vue'
 import Log from './views/Log.vue'
@@ -28,6 +28,7 @@ import Online from './views/online.vue'
 import CDAwareAutoGather from './views/CDAwareAutoGather.vue' 
 import screen from './views/screen.vue'
 import obsVideo from './views/obsVideo.vue'
+import TaskCron from './views/TaskCron.vue'
 
 // 路由配置
 const routes = [
@@ -39,7 +40,7 @@ const routes = [
   { path: '/archive', component: Archive },
   { path: '/other', component: Other },
   { path: '/jsNames', component: JsNames },
-  {path: '/Pathing', component: Pathing}, // 懒加载
+  {path: '/Pathing', component: Pathing}, // 懒加�?
   { path: '/listGroups', component: ListGroups },
   { path: '/getAutoArtifactsPro', component: AutoArtifactsPro },
   { path: '/getAutoArtifactsPro2', component: AutoArtifactsPro2 },
@@ -53,7 +54,8 @@ const routes = [
   { path: '/Online', component: Online }, // 修正 component 名称
   { path: '/CDAwareAutoGather', component: CDAwareAutoGather },
   { path: '/screen', component: screen },
-  { path: '/obsVideo', component: obsVideo }, // 懒加载404 页面
+  { path: '/obsVideo', component: obsVideo }, // 懒加�?04 页面
+  { path: '/taskCron', component: TaskCron }
 ]
 
 const router = createRouter({

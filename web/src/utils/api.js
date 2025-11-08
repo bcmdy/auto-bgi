@@ -139,6 +139,12 @@ export const apiMethods = {
   GetVideoInfo: () => api.get('/api/abgiObs/GetVideoInfo'),
   //删除视频
   DeleteVideo: (filePath) => api.post('/api/abgiObs/DeleteVideo?videoName='+filePath),
+
+  // 定时任务管理
+  getTaskCronList: () => api.get('/api/taskCron/list'),
+  getAvailableTaskCronNames: () => api.get('/api/taskCron/getTasks'),
+  addTaskCron: (payload) => api.post('/api/taskCron/add', payload),
+  removeTaskCron: (id) => api.post(`/api/taskCron/remove?id=${id}`)
   
 }
 

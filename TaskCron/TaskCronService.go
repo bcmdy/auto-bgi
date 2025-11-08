@@ -1,0 +1,52 @@
+package TaskCron
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
+	"strconv"
+)
+
+// 列出任务
+func List(c *gin.Context) {
+	list := Tm.List()
+	if list != nil {
+		c.JSON(200, list)
+		return
+	}
+	c.JSON(400, []TaskCron{})
+}
+
+// 添加任务
+func Add(c *gin.Context) {
+	var taskCron TaskCron
+	if err := c.ShouldBindJSON(&taskCron); err != nil {
+		c.String(400, "参数错误: %v", err)
+		return
+	}
+	fn, ok := task[taskCron.Name]
+	if !ok {
+		c.String(400, "任务名称不存在")
+		return
+	}
+	Tm.Add(taskCron.Spec, taskCron.Name, taskCron.Data, fn)
+	c.String(200, "任务已添加")
+}
+
+func Remove(c *gin.Context) {
+	data := c.Query("id")
+	if data == "" {
+		c.String(400, "缺少参数 id")
+	}
+	id, _ := strconv.ParseInt(data, 10, 64)
+
+	Tm.Remove(cron.EntryID(id))
+	c.String(200, "任务已删除")
+}
+
+func GetTask(context *gin.Context) {
+	var taskList []string
+	for k := range task {
+		taskList = append(taskList, k)
+	}
+	context.JSON(200, taskList)
+}
