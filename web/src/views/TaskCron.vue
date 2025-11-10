@@ -135,7 +135,7 @@ const presetSpecs = [
   { label: '每天4点5分', spec: '0 5 4 * * *' },
   { label: '每个月的1号', spec: '0 0 0 1 * *' },
   { label: '每小时整点', spec: '0 0 * * * *' },
-  { label: '每天 3 点', spec: '0 0 3 * * *' }
+  { label: '每天23点30分', spec: '0 30 23 * * *' }
 ]
 
 const taskCronList = ref([])

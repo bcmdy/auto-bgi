@@ -10,6 +10,7 @@ import (
 	"auto-bgi/OneLong"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
+	"auto-bgi/TaskCron"
 	"auto-bgi/abgiFunction"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
@@ -521,7 +522,7 @@ func main() {
 	})
 
 	//备份文件
-	ginServer.POST("/backup", func(context *gin.Context) {
+	ginServer.POST("/api/backup", func(context *gin.Context) {
 		err := bgiStatus.Backup()
 		if err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
@@ -697,6 +698,7 @@ func main() {
 			}
 
 			cfg := config.OneLongConfig(name)
+			//dragon := OneLong.ReadOneDragon(name)
 			c.JSON(http.StatusOK, cfg)
 		})
 
@@ -947,6 +949,12 @@ func main() {
 			material := CDAwareAutoGatherService.CDAllMaterial()
 			context.JSON(http.StatusOK, material)
 		})
+
+		//更新所有cd管理材料
+		CDAwareAutoGatherController.POST("/UpdateAllCD", func(context *gin.Context) {
+			CDAwareAutoGatherService.UpdateAllCD()
+			context.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功,具体请看日志:logs/"})
+		})
 	}
 
 	//BetterGI
@@ -1023,6 +1031,7 @@ func main() {
 		})
 		//查询录制状态
 		abgiObsController.GET("/IsRecording", func(context *gin.Context) {
+			time.Sleep(3 * time.Second)
 			isRecording, err3 := abgiObs.GetRecordingStatus()
 			if err3 != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err3.Error()})
@@ -1054,6 +1063,7 @@ func main() {
 
 		////获取重放缓冲区状态
 		abgiObsController.GET("/GetReplayBufferStatus", func(context *gin.Context) {
+			time.Sleep(3 * time.Second)
 			status, err := abgiObs.GetReplayBufferStatus()
 			if err != nil {
 				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
@@ -1130,6 +1140,16 @@ func main() {
 			}
 			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始流"})
 		})
+	}
+
+	//定时任务
+	taskCronController := ginServer.Group("/api/taskCron")
+	{
+		taskCronController.GET("/list", TaskCron.List)
+		taskCronController.POST("/add", TaskCron.Add)
+		taskCronController.POST("/remove", TaskCron.Remove)
+		//查询可以设置的定时的任务
+		taskCronController.GET("/getTasks", TaskCron.GetTask)
 	}
 
 	type bgiWebhook struct {

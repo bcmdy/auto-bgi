@@ -25,13 +25,14 @@ func init() {
 
 var oneBot OneBotClient
 
+// 每个消息推送发送的消息不能超过20条/分钟。
 var (
 	lastSentMap = struct {
 		sync.Mutex
 		m map[string]time.Time
 	}{m: make(map[string]time.Time)}
 
-	noticeTTL   = 20 * time.Second
+	noticeTTL   = 30 * time.Second
 	maxCacheLen = 5
 )
 
@@ -88,6 +89,33 @@ func SentText(text string) {
 
 func SentImage(path string) error {
 
+	lastSentMap.Lock()
+	defer lastSentMap.Unlock()
+
+	// 如果存在并且 20 秒内，直接忽略
+	if t, ok := lastSentMap.m[path]; ok {
+		if time.Since(t) < noticeTTL {
+			autoLog.Sugar.Debug("通知-图片重复发送，忽略:", path)
+			return nil
+		}
+	}
+
+	// 如果超过最大缓存大小，移除最旧的一条
+	if len(lastSentMap.m) >= maxCacheLen {
+		var oldestKey string
+		var oldestTime time.Time
+		for k, v := range lastSentMap.m {
+			if oldestTime.IsZero() || v.Before(oldestTime) {
+				oldestKey = k
+				oldestTime = v
+			}
+		}
+		delete(lastSentMap.m, oldestKey)
+	}
+
+	// 更新为当前时间
+	lastSentMap.m[path] = time.Now()
+
 	var err error
 	switch config.Cfg.Notice.Type {
 	case "TG":
@@ -130,6 +158,33 @@ func SentImage(path string) error {
 
 // 电脑截图
 func SendScreenshot() error {
+
+	lastSentMap.Lock()
+	defer lastSentMap.Unlock()
+
+	// 如果存在并且 20 秒内，直接忽略
+	if t, ok := lastSentMap.m["jt.jpg"]; ok {
+		if time.Since(t) < noticeTTL {
+			autoLog.Sugar.Debug("通知-截图重复发送，忽略:", "jt.jpg")
+			return nil
+		}
+	}
+
+	// 如果超过最大缓存大小，移除最旧的一条
+	if len(lastSentMap.m) >= maxCacheLen {
+		var oldestKey string
+		var oldestTime time.Time
+		for k, v := range lastSentMap.m {
+			if oldestTime.IsZero() || v.Before(oldestTime) {
+				oldestKey = k
+				oldestTime = v
+			}
+		}
+		delete(lastSentMap.m, oldestKey)
+	}
+
+	// 更新为当前时间
+	lastSentMap.m["jt.jpg"] = time.Now()
 
 	err := control.ScreenShot("jt.jpg")
 	if err != nil {

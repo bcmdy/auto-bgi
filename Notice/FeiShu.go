@@ -32,7 +32,8 @@ func sendFeishuTextMessage(content string) error {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	fmt.Println("飞书响应:", string(body))
+	//fmt.Println("飞书响应:", string(body))
+	autoLog.Sugar.Infof("飞书响应:%s", string(body))
 	return nil
 }
 
