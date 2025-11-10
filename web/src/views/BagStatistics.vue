@@ -12,6 +12,12 @@
           <span class="btn-text">清理统计，只保留一天</span>
           <span class="btn-sparkle">💫</span>
         </button>
+        <!-- 转为变化图 -->
+          <button class="btn clean-btn" @click="goBagStatisticsTrend">
+  
+          <span class="btn-text">转为变化图</span>
+   
+        </button>
       </div>
       <h1>{{ title }}</h1>
     </header>
@@ -389,6 +395,10 @@ export default {
     // 返回主页
     goHome() {
       this.$router.push('/');
+    },
+
+    goBagStatisticsTrend() {
+      this.$router.push('/BagStatisticsTrend');
     },
 
     //

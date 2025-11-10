@@ -23,6 +23,7 @@ import OneLong from './views/OneLong.vue'
 import Error from './views/Error.vue'
 import CalculateTaskEnabledList from './views/CalculateTaskEnabledList.vue'
 import BagStatistics from './views/BagStatistics.vue'
+import MaterialTrend from './views/MaterialTrend.vue'
 import Gitlog from './views/Gitlog.vue'
 import Online from './views/online.vue'
 import CDAwareAutoGather from './views/CDAwareAutoGather.vue' 
@@ -50,6 +51,7 @@ const routes = [
   { path: '/error', component: Error },
   { path: '/CalculateTaskEnabledList', component: CalculateTaskEnabledList },
   { path: '/BagStatistics', component: BagStatistics },
+  { path: '/BagStatisticsTrend', component: MaterialTrend },
   { path: '/GitLog', component: Gitlog },
   { path: '/Online', component: Online }, // 修正 component 名称
   { path: '/CDAwareAutoGather', component: CDAwareAutoGather },
