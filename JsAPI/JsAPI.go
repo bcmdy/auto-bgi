@@ -73,9 +73,15 @@ func ScreenShot(context *gin.Context) {
 }
 
 func AbgiAiConversation(context *gin.Context) {
-	query := context.Query("ask")
-	conversation, err := abgiAi.JsConversation(query)
+	//query := context.Query("ask")
+	var query struct {
+		Ask string `json:"ask"`
+	}
+	err := context.ShouldBindJSON(&query)
+
+	conversation, err := abgiAi.JsConversation(query.Ask)
 	if err != nil {
+		autoLog.Sugar.Errorf("JsConversation 失败: %v", err)
 		return
 	}
 	context.JSON(200, conversation)

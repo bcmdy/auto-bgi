@@ -1,10 +1,11 @@
 package TaskCron
 
 import (
+	"auto-bgi/OneLong"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
-	taskOneLong "auto-bgi/task"
+	taskTask "auto-bgi/task"
 	"database/sql"
 	"github.com/robfig/cron/v3"
 	"os/exec"
@@ -42,20 +43,22 @@ func (tm *TaskManager) Start() {
 var task map[string]func(data string)
 var Tm *TaskManager
 
+var taskOneLong OneLong.OneLong
+
 func InitTaskCron() {
 	task = make(map[string]func(string))
 	task["一条龙"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：一条龙现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
-		taskOneLong.StartOneDragon(data)
+		taskOneLong.OneLongTask(data)
 	}
 	task["配置组"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：配置组现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
 		split := strings.Split(data, " ")
-		taskOneLong.StartGroups(split)
+		taskTask.StartGroups(split)
 	}
 	task["米游社签到"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：米游社签到现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
-		taskOneLong.MiYouSheSign()
+		taskTask.MiYouSheSign()
 	}
 	task["关闭原神和关闭bgi"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：关闭原神和关闭bgi现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)

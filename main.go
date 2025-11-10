@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"github.com/go-toast/toast"
 	"github.com/gorilla/websocket"
 	"github.com/iancoleman/orderedmap"
 	"io"
@@ -1178,6 +1179,19 @@ func main() {
 		fmt.Println(payload.Message)
 		fmt.Println(payload.SendTo)
 
+		iconPath, _ := filepath.Abs("./img/ff.png") // 转为绝对路径
+
+		notification := toast.Notification{
+			AppID:   "autoBgi",
+			Title:   payload.Event,
+			Message: payload.Message,
+			Icon:    iconPath, // 可选
+		}
+		err := notification.Push()
+		if err != nil {
+			autoLog.Sugar.Errorf("推送失败: %v", err)
+		}
+
 		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": payload})
 
 	})
@@ -1249,7 +1263,7 @@ func main() {
 		//给指定区域截图
 		jsController.POST("/screenShot", JsAPI.ScreenShot)
 		//ai
-		jsController.GET("/abgiAiConversation", JsAPI.AbgiAiConversation)
+		jsController.POST("/abgiAiConversation", JsAPI.AbgiAiConversation)
 	}
 
 	if config.Cfg.Control.AbgiScreen {
@@ -1341,7 +1355,7 @@ func main() {
 	if len(os.Args) > 1 {
 		if os.Args[1] == "OneLong" {
 
-			OneLongService.OneLongTask()
+			OneLongService.OneLongTask("")
 			autoLog.Sugar.Infof("一条龙启动")
 		} else if os.Args[1] == "updateJs" {
 			if err := bgiStatus.BatchUpdateScript(); err != "" {

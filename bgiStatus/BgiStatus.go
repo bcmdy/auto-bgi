@@ -2025,7 +2025,7 @@ func readVersion(manifestPath string) (string, string) {
 
 	var data map[string]interface{}
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		autoLog.Sugar.Warnf("解析JSON失败: %d%v", manifestPath, err)
+		autoLog.Sugar.Warnf("解析JSON失败: %s %v", manifestPath, err)
 		return "未知版本", data["name"].(string)
 	}
 

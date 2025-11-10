@@ -24,7 +24,7 @@ func (o *OneLong) StartOneLongTask() {
 
 		autoLog.Sugar.Infof("一条龙服务启动 %v", time.Now().Format("2006-01-02 15:04:05"))
 
-		o.OneLongTask()
+		o.OneLongTask("")
 
 		time.Sleep(1000 * time.Millisecond)
 
@@ -47,7 +47,7 @@ func (o *OneLong) StartOneLongTask() {
 }
 
 // 启动一条龙
-func (o *OneLong) OneLongTask() {
+func (o *OneLong) OneLongTask(longName string) {
 	autoLog.Sugar.Info("开始执行一条龙任务")
 
 	// 3. 关闭软件（同步，后续任务依赖此步骤）
@@ -82,9 +82,11 @@ func (o *OneLong) OneLongTask() {
 		autoLog.Sugar.Info("不开启回放obs缓存")
 	}
 
-	// 6. 启动今日一条龙
-	longName := config.GetTodayOneLongName()
-	autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
+	if longName == "" {
+		// 6. 启动今日一条龙
+		longName = config.GetTodayOneLongName()
+		autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
+	}
 
 	o.StartOneLong(longName)
 
