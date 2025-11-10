@@ -1248,6 +1248,8 @@ func main() {
 		jsController.GET("/logAnalysis", JsAPI.SendLogAnalysis)
 		//给指定区域截图
 		jsController.POST("/screenShot", JsAPI.ScreenShot)
+		//ai
+		jsController.GET("/abgiAiConversation", JsAPI.AbgiAiConversation)
 	}
 
 	if config.Cfg.Control.AbgiScreen {

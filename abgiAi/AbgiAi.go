@@ -27,7 +27,7 @@ func InitAi() {
 
 	agent := llmagent.New("assistant",
 		llmagent.WithModel(modelInstance),
-		llmagent.WithTools(createFunctionTool()),
+		//llmagent.WithTools(createFunctionTool()),
 		llmagent.WithGenerationConfig(genConfig),
 	)
 
@@ -43,6 +43,27 @@ func Conversation(ask string) (string, error) {
 		"user-001",
 		"session-001",
 		model.NewUserMessage("你是一个机器人，你的名字叫老王，你必须使用工具来回答我的问题，我的问题是："+ask))
+
+	if err != nil {
+		return "", err
+	}
+
+	for event := range events {
+		if event.Response != nil && len(event.Response.Choices) > 0 {
+			fmt.Println(event.Response.Choices[0].Message.Content)
+			return event.Response.Choices[0].Message.Content, nil
+		}
+	}
+	fmt.Println()
+	return "", fmt.Errorf("对话失败")
+}
+
+func JsConversation(ask string) (string, error) {
+	ctx := context.Background()
+	events, err := abgiAgent.Run(ctx,
+		"user-001",
+		"session-001",
+		model.NewUserMessage(ask))
 
 	if err != nil {
 		return "", err

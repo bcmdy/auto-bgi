@@ -3,6 +3,7 @@ package JsAPI
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
+	"auto-bgi/abgiAi"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -69,4 +70,13 @@ func ScreenShot(context *gin.Context) {
 	if err != nil {
 		autoLog.Sugar.Errorf("裁剪图片失败: %v", err)
 	}
+}
+
+func AbgiAiConversation(context *gin.Context) {
+	query := context.Query("ask")
+	conversation, err := abgiAi.JsConversation(query)
+	if err != nil {
+		return
+	}
+	context.JSON(200, conversation)
 }
