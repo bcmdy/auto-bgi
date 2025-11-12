@@ -30,6 +30,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-toast/toast"
 	"github.com/gorilla/websocket"
+	htgotts "github.com/hegedustibor/htgo-tts"
+	"github.com/hegedustibor/htgo-tts/handlers"
+	"github.com/hegedustibor/htgo-tts/voices"
 	"github.com/iancoleman/orderedmap"
 	"io"
 	"io/fs"
@@ -1172,10 +1175,10 @@ func main() {
 			return
 		}
 
-		fmt.Println(payload.Event)
-		fmt.Println(payload.Result)
-		fmt.Println(payload.Timestamp)
-		fmt.Println(payload.Screenshot)
+		//fmt.Println(payload.Event)
+		//fmt.Println(payload.Result)
+		//fmt.Println(payload.Timestamp)
+		//fmt.Println(payload.Screenshot)
 		fmt.Println(payload.Message)
 		fmt.Println(payload.SendTo)
 
@@ -1191,6 +1194,13 @@ func main() {
 		if err != nil {
 			autoLog.Sugar.Errorf("推送失败: %v", err)
 		}
+
+		if payload.SendTo == "" {
+			payload.SendTo = "老王"
+		}
+
+		speech := htgotts.Speech{Folder: "audio", Language: voices.Chinese, Handler: &handlers.Native{}}
+		speech.Speak(payload.SendTo + "," + payload.Message)
 
 		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": payload})
 

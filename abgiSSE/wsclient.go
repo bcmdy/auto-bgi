@@ -75,7 +75,8 @@ func (c *AbgiClient) listen() {
 	for {
 		_, msg, err := c.Conn.ReadMessage()
 		if err != nil {
-			log.Println("WebSocket 连接断开:")
+			//log.Println("WebSocket 连接断开:")
+			autoLog.Sugar.Error("WebSocket 连接断开:")
 			// 关闭连接
 			c.Conn.Close()
 			abgiClient = nil
