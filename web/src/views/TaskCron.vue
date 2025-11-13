@@ -10,7 +10,13 @@
           <a-alert
             type="info"
             show-icon
-            message="Cron 表达式需包含秒（WithSeconds）。例如：0 0 * * * * 表示每小时整点。"
+            message="Cron表达式由6个必填字段和1个可选字段组成，格式为：秒 分 时 日 月 周 年（年份可省略）
+            各字段说明：秒、分：0-59,   
+            支持字符 * , - /小时：0-23，    
+            规则同上日期：1-31（需注意月份天数）
+               月份：1-12 或月份缩写
+            星期：1-7（1=周日，7=周六），可用?表示不指定
+            年份：1970-2099（可选）。在线生成器：https://cron.ciding.cc/"
             class="cron-tip"
           />
 
@@ -55,6 +61,10 @@
               </a-button>
               <a-button style="margin-left: 8px" @click="resetForm">
                 重置
+              </a-button>
+
+              <a-button style="margin-left: 10px;background-color: aquamarine;" @click="comeBack">
+                返回首页
               </a-button>
             </div>
           </a-form>
@@ -111,10 +121,21 @@
                 </template>
               </a-table>
             </div>
+         
 
             <a-empty v-else-if="!tableLoading" description="暂无任务" />
           </a-spin>
         </a-card>
+<div style="width: 115vh;  position:absolute; display: flex; flex-wrap: wrap; overflow: auto;">
+  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
+       src="https://upload-bbs.miyoushe.com/upload/2025/09/30/162891450/40ba73d1c8ce78112681a7ed7137dad1_6952277989857444872.jpg?x-oss-process=image/resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="">
+  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
+       src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/b5cc5bf0ded8b38e961ab8b077f1b1e3_2998161025089190383.jpg" alt="">
+  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
+       src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/0c50bf57fdf196423eeeff3c23a70b78_3217896051162954880.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="">
+  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
+       src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/458f4678e4481f5e79bd25690adf4be1_6025800658609407775.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="">
+</div>
       </a-col>
     </a-row>
   </div>
@@ -179,6 +200,11 @@ const fetchTaskNameOptions = async () => {
   } finally {
     dropdownLoading.value = false
   }
+}
+
+async function comeBack() {
+  window.location.href = '/'
+
 }
 
 const handleAddTask = async () => {

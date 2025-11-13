@@ -7,44 +7,8 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"database/sql"
-	"fmt"
-	"github.com/robfig/cron/v3"
 	"time"
 )
-
-func (o *OneLong) StartOneLongTask() {
-
-	cronTab := cron.New(cron.WithSeconds())
-
-	// 定时任务,cron表达式
-	spec := fmt.Sprintf("0 %d %d * * *", config.Cfg.OneLong.OneLongMinute, config.Cfg.OneLong.OneLongHour)
-
-	// 定义定时器调用的任务函数
-	task := func() {
-
-		autoLog.Sugar.Infof("一条龙服务启动 %v", time.Now().Format("2006-01-02 15:04:05"))
-
-		o.OneLongTask("")
-
-		time.Sleep(1000 * time.Millisecond)
-
-		schedule, err := config.Parser.Parse(spec)
-		if err != nil {
-			autoLog.Sugar.Error("解析失败:", err)
-			return
-		}
-
-		autoLog.Sugar.Infof("一条龙服务启动完毕 %v", schedule.Next(time.Now()).Format("2006-01-02 15:04:05"))
-	}
-
-	// 添加定时任务
-	cronTab.AddFunc(spec, task)
-	// 启动定时器
-	cronTab.Start()
-	// 阻塞主线程停止
-	select {}
-
-}
 
 // 启动一条龙
 func (o *OneLong) OneLongTask(longName string) {
@@ -80,12 +44,6 @@ func (o *OneLong) OneLongTask(longName string) {
 		}
 	} else {
 		autoLog.Sugar.Info("不开启回放obs缓存")
-	}
-
-	if longName == "" {
-		// 6. 启动今日一条龙
-		longName = config.GetTodayOneLongName()
-		autoLog.Sugar.Infof("今日启动一条龙: %s", longName)
 	}
 
 	o.StartOneLong(longName)

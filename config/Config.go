@@ -1,7 +1,6 @@
 package config
 
 import (
-	"auto-bgi/autoLog"
 	"encoding/json"
 	"fmt"
 	"github.com/robfig/cron/v3"
@@ -10,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -19,10 +17,8 @@ type Config struct {
 	BetterGIAddress string          `json:"BetterGIAddress" comment:"BetterGI地址"`
 	RepoUrl         string          `json:"RepoUrl" comment:"仓库地址"`
 	Content         string          `json:"content" comment:"通知内容"`
-	ConfigNames     []string        `json:"ConfigNames" comment:"一条龙配置名称"`
 	BagStatistics   string          `json:"BagStatistics" comment:"需要统计的物品"`
 	Post            string          `json:"post" comment:"post地址"`
-	MySign          MySign          `json:"MySign" comment:"米游社签到"`
 	BasePath        string          `json:"basePath"`
 	Control         Control         `json:"Control" comment:"控制配置"`
 	LogKeywords     []string        `json:"LogKeywords" comment:"日志关键词"`
@@ -101,15 +97,7 @@ type Control struct {
 }
 
 type oneLong struct {
-	IsStartTimeLong bool `json:"isStartTimeLong" comment:"是否开启一条龙"`
-	OneLongHour     int  `json:"OneLongHour" comment:"一条龙小时"`
-	OneLongMinute   int  `json:"OneLongMinute" comment:"一条龙分钟"`
-	AutoUpdateJs    bool `json:"AutoUpdateJs" comment:"是否开启自动更新js"`
-}
-
-type MySign struct {
-	IsMySignIn bool   `json:"isMysSignIn" comment:"是否开启我的签到"`
-	Time       string `json:"Time" comment:"我的签到时间"`
+	AutoUpdateJs bool `json:"AutoUpdateJs" comment:"是否开启自动更新js"`
 }
 
 type CommandBot struct {
@@ -214,9 +202,6 @@ func ReloadConfig() error {
 
 // 配置验证补全
 func DefaultConfig() {
-	if len(Cfg.ConfigNames) != 7 {
-		Cfg.ConfigNames = []string{"默认配置", "默认配置", "默认配置", "默认配置", "默认配置", "默认配置", "默认配置"}
-	}
 
 	if Cfg.OneRemote.LogKeywords == nil {
 		Cfg.OneRemote.LogKeywords = []string{"OnRdpClientDisconnected"}
@@ -227,15 +212,7 @@ func DefaultConfig() {
 	if Cfg.Notice.Type == "" {
 		Cfg.Notice.Type = "Wechat"
 	}
-	if Cfg.MySign.Time == "" {
-		Cfg.MySign.Time = "0,20"
-	} else {
-		Cfg.MySign.Time = strings.TrimSpace(Cfg.MySign.Time)
-		timeList := strings.Split(Cfg.MySign.Time, ",")
-		if len(timeList) != 2 {
-			Cfg.MySign.Time = "0,20"
-		}
-	}
+
 	if Cfg.Control.BackupUsersHour == 0 {
 		Cfg.Control.BackupUsersHour = 72
 	}
@@ -247,14 +224,6 @@ func DefaultConfig() {
 }
 
 // 获取今天启动的一条龙名字
-func GetTodayOneLongName() string {
-	var oneLongs = Cfg.ConfigNames
-	now := time.Now()
-	weekdayNum := int(now.Weekday())
-	autoLog.Sugar.Infof("今天是: 星期%d", weekdayNum)
-	oneLongName := oneLongs[weekdayNum]
-	return oneLongName
-}
 
 func FindLogFiles(dirPath string) ([]string, error) {
 	pattern := filepath.Join(dirPath, "*.log")

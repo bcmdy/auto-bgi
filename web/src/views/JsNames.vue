@@ -46,6 +46,10 @@
                   <span>状态</span>
                   <i class="sort-icon" :class="getSortIcon('Mark')"></i>
                 </th>
+                 <th data-key="LastUpdated" @click="sortTable('LastUpdated')" class="sortable">
+                  <span>最后更新时间</span>
+                  <i class="sort-icon" :class="getSortIcon('LastUpdated')"></i>
+                </th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -64,7 +68,10 @@
                 <td>{{ item.NowVersion }}</td>
                 <td>{{ item.NewVersion }}</td>
                 <td>{{ item.Mark }}</td>
-                <td>
+                <td>{{ item.LastUpdated }}</td>
+                
+
+                <td style="background: #FFF6FB;border: 2px solid #ddd;">
                   <button
                     class="btn update-btn"
                     :class="{ 'haveUpdate-btn': item.Mark === '有更新' }"
@@ -101,7 +108,17 @@
                     <span class="version-value">{{ item.NewVersion }}</span>
                   </div>
                 </div>
-                <h1></h1>
+                  <h1></h1>
+                <!-- 最后更新时间 -->
+                    <div class="card-versions">
+                  <div class="version-item">
+                    <span class="version-label">最后更新时间： </span>
+                    <span class="version-value">{{ item.LastUpdated }}</span>
+                  </div>
+                  <h1></h1>
+                </div>
+              
+              
                 <div class="card-status">
                   <span class="status-icon">📊</span>
                   <span class="status-text" :class="{ 'status-update': item.Mark === '有更新' }">{{ item.Mark }}</span>
@@ -267,8 +284,10 @@ export default {
 }
 
 .haveUpdate-btn {
-  background-color: #2cce3a!important;
+  background-color: #c0ebff!important;
   color: #000!important;
+  width: 90px;
+  font-size: 20px;
 }
 
 
@@ -307,6 +326,7 @@ export default {
 .desktop-table td {
   border: 1px solid #ddd;
   padding: 0.75rem;
+  text-align: center;
 }
 
 .sortable {
@@ -355,7 +375,7 @@ export default {
 }
 
 .highlight {
-  background-color: #F48FB1 !important;
+  background-color: #FFBFCD !important;
 }
 
 .highlighta {

@@ -131,6 +131,13 @@
               </span>
               <span class="btn-text">{{ loadingStatus.fetchingVideos ? '加载中' : '刷新列表' }}</span>
             </button>
+
+                 <button 
+              class="btn ghost" 
+              @click="comeBack" 
+            >
+              <span class="btn-text">返回首页</span>
+            </button>
           </div>
         </div>
       </aside>
@@ -428,6 +435,11 @@ async function fetchVideos() {
   } finally {
     loadingStatus.fetchingVideos = false
   }
+}
+
+async function comeBack() {
+  window.location.href = '/'
+
 }
 
 async function playVideo(name) {

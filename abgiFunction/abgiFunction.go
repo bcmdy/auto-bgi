@@ -37,23 +37,6 @@ func InitFunction() {
 
 	//米游社自动签到
 	mysConfig.LoadConfig("mysConfig.yaml")
-	if config.Cfg.MySign.IsMySignIn {
-
-		go task.MysSignIn()
-
-		autoLog.Sugar.Infof("米游社自动签到开启状态")
-	} else {
-		autoLog.Sugar.Infof("米游社自动签到关闭状态")
-	}
-
-	//一条龙
-	if config.Cfg.OneLong.IsStartTimeLong {
-		go OneLongService.StartOneLongTask()
-		autoLog.Sugar.Infof("一条龙开启状态")
-
-	} else {
-		autoLog.Sugar.Infof("一条龙关闭状态")
-	}
 
 	//obs是否连接
 	if config.Cfg.ScreenRecord.IsRecord {
@@ -63,7 +46,6 @@ func InitFunction() {
 		} else {
 			autoLog.Sugar.Infof("OBS连接成功")
 		}
-
 	}
 
 	//初始化bgi日志信息

@@ -37,6 +37,23 @@ func OnStart() {
 	ConnectErr := Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decrypt, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
 	if ConnectErr != nil {
 		autoLog.Sugar.Infof("上线失败")
+		return
+
+	}
+	autoLog.Sugar.Infof("上线成功")
+}
+
+// 调试上线
+func OnStartDebug() {
+	decrypt, err := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	if err != nil {
+		autoLog.Sugar.Infof("密钥错误")
+		return
+	}
+	ConnectErr := Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decrypt, "debug", config.Cfg.Account.Uid, config.Cfg.Account.Name), true, nil)
+	if ConnectErr != nil {
+		autoLog.Sugar.Infof("上线失败")
+		return
 
 	}
 	autoLog.Sugar.Infof("上线成功")

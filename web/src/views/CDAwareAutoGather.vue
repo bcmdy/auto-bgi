@@ -47,7 +47,7 @@
     <div v-else-if="data.length > 0" class="data-container">
       <div v-for="(account, accountIndex) in data" :key="accountIndex" class="account-section">
         <div class="account-header">
-          <h2>👤 {{ account.UID }}</h2>
+          <h2>👤 {{ account.UID }}---({{ getFilteredGathers(account.CDAwareAutoGather).length }})</h2>
         </div>
         
         <div class="gather-list">

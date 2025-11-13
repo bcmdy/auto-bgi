@@ -17,10 +17,18 @@ import (
 
 // 读取配置组配置
 func (s *ScriptGroupConfig) ReadConfig(name string) ScriptGroupConfig {
+	if name == "" {
+		return ScriptGroupConfig{}
+	}
+	if strings.Contains(name, "==(已经结束)") {
+		name = strings.Replace(name, "==(已经结束)", "", 1)
+	}
+
 	filename := config.Cfg.BetterGIAddress + "\\User\\ScriptGroup\\" + name + ".json"
 	file, err := os.ReadFile(filename)
 	if err != nil {
-		fmt.Println("读取文件失败:", err)
+
+		autoLog.Sugar.Errorf("ReadConfig读取文件失败:%v", err)
 		return ScriptGroupConfig{}
 	}
 

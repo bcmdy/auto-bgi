@@ -30,9 +30,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-toast/toast"
 	"github.com/gorilla/websocket"
-	htgotts "github.com/hegedustibor/htgo-tts"
-	"github.com/hegedustibor/htgo-tts/handlers"
-	"github.com/hegedustibor/htgo-tts/voices"
 	"github.com/iancoleman/orderedmap"
 	"io"
 	"io/fs"
@@ -535,7 +532,7 @@ func main() {
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "备份成功"})
 	})
 
-	//获取仓库提交记录（最新的10条）
+	//获取仓库提交记录
 	ginServer.GET("/api/gitLog", func(context *gin.Context) {
 
 		gitLog := ScriptRepo.Read()
@@ -1195,14 +1192,14 @@ func main() {
 			autoLog.Sugar.Errorf("推送失败: %v", err)
 		}
 
-		if payload.SendTo == "" {
-			payload.SendTo = "老王"
-		}
-
-		speech := htgotts.Speech{Folder: "audio", Language: voices.Chinese, Handler: &handlers.Native{}}
-		speech.Speak(payload.SendTo + "," + payload.Message)
-
-		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": payload})
+		//if payload.SendTo == "" {
+		//	payload.SendTo = "老王"
+		//}
+		//
+		//speech := htgotts.Speech{Folder: "audio", Language: voices.Chinese, Handler: &handlers.Native{}}
+		//speech.Speak(payload.SendTo + "," + payload.Message)
+		//
+		//c.JSON(http.StatusOK, gin.H{"status": "success", "msg": payload})
 
 	})
 

@@ -104,39 +104,6 @@
           </div>
         </a-card>
 
-        <!-- 一条龙配置 -->
-        <a-card title="一条龙配置" class="config-card onelong-config">
-          <template #extra>
-            <div class="card-extra">
-              <span class="card-icon">🐉</span>
-              <a-tooltip title="这个是你的一条龙配置的名称，根据今天周几，来启动哪一个一条龙，必须要有7个，从星期天开始。">
-                <QuestionCircleOutlined class="help-icon-btn" />
-              </a-tooltip>
-            </div>
-          </template>
-          
-          <div class="weekday-grid">
-            <div 
-              v-for="(day, index) in weekdays" 
-              :key="index"
-              class="weekday-item"
-              :class="{ 'active': formData.ConfigNames[index] }"
-            >
-              <div class="weekday-label">
-                <span class="day-icon">{{ getDayIcon(index) }}</span>
-                {{ day }}
-              </div>
-              <a-select 
-                v-model:value="formData.ConfigNames[index]" 
-                placeholder="选择配置"
-                :options="configOptions"
-                size="large"
-                class="weekday-select"
-                :class="{ 'has-value': formData.ConfigNames[index] }"
-              />
-            </div>
-          </div>
-        </a-card>
 
         <!-- 背包统计 -->
         <a-card title="背包统计" class="config-card bag-statistics">
@@ -222,51 +189,9 @@
           </div>
         </a-card>
 
-        <!-- 一条龙时间设置 -->
-        <a-card title="一条龙时间设置" class="config-card time-settings">
-          <template #extra>
-            <div class="card-extra">
-              <span class="card-icon">⏰</span>
-              <a-tooltip title="每天定时启动一条龙，记住，不管你当前bgi在干什么，都会结束，开始一条龙">
-                <QuestionCircleOutlined class="help-icon-btn" />
-              </a-tooltip>
-            </div>
-          </template>
-
-          <div class="time-settings-content">
-            <a-form-item class="checkbox-item">
-              <a-checkbox v-model:checked="formData.OneLong.isStartTimeLong" class="enhanced-checkbox">
-                <span class="checkbox-label">
-                  <span class="checkbox-icon">🎯</span>
-                  启用一条龙定时启动
-                </span>
-              </a-checkbox>
-            </a-form-item>
-
-            <div class="time-inputs" v-show="formData.OneLong.isStartTimeLong">
-              <div class="time-input-group">
-                <a-form-item label="启动小时（0~23）" name="OneLongHour" class="time-form-item">
-                  <a-input-number 
-                    v-model:value="formData.OneLong.OneLongHour" 
-                    :min="0" 
-                    :max="23" 
-                    placeholder="例如：13"
-                    class="enhanced-input-number"
-                  />
-                </a-form-item>
-              </div>
-              <div class="time-input-group">
-                <a-form-item label="启动分钟（0~59）" name="OneLongMinute" class="time-form-item">
-                  <a-input-number 
-                    v-model:value="formData.OneLong.OneLongMinute" 
-                    :min="0" 
-                    :max="59" 
-                    placeholder="例如：55"
-                    class="enhanced-input-number"
-                  />
-                </a-form-item>
-              </div>
-
+        <!-- 一条龙设置 -->
+        <a-card title="一条龙设置" class="config-card time-settings">
+    
             <a-form-item class="checkbox-item">
               <a-checkbox v-model:checked="formData.OneLong.AutoUpdateJs" class="enhanced-checkbox">
                 <span class="checkbox-label">
@@ -283,8 +208,7 @@
               </a-checkbox>
             </a-form-item>
               
-            </div>
-          </div>
+      
         </a-card>
 
         <!-- 控制配置 -->
@@ -336,39 +260,7 @@
           </div>
         </a-card>
 
-        <!-- 米游社签到设置 -->
-        <a-card title="米游社签到设置" class="config-card mys-sign">
-          <template #extra>
-            <div class="card-extra">
-              <span class="card-icon">🎁</span>
-              <a-tooltip title="米游社签到设置，在根目录下mysConfig.yaml配置好米游社cookie和stoken，开启后会每天定时签到">
-                <QuestionCircleOutlined class="help-icon-btn" />
-              </a-tooltip>
-            </div>
-          </template>
-
-          <div class="mys-sign-content">
-            <a-form-item class="checkbox-item">
-              <a-checkbox v-model:checked="formData.MySign.isMysSignIn" class="enhanced-checkbox">
-                <span class="checkbox-label">
-                  <span class="checkbox-icon">🎁</span>
-                  启用米游社签到
-                </span>
-              </a-checkbox>
-            </a-form-item>
-
-            <a-form-item label="签到时间" name="mysUrl" class="form-item-enhanced" v-show="formData.MySign.Time">
-              <div class="input-wrapper">
-                <span class="input-icon">🔗</span>
-                <a-input 
-                  v-model:value="formData.MySign.Time" 
-                  placeholder="0,20"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
-          </div>
-        </a-card>
+ 
 
         <!-- 1Remote 配置 -->
         <a-card title="1Remote远程监控" class="config-card one-remote-config">
@@ -831,13 +723,9 @@ const formData = reactive({
   BetterGIAddress: '',
   content: '',
   post: '10086',
-  ConfigNames: new Array(7).fill(''),
   bagKeywords: [''],
   LogKeywords: [''],
   OneLong: {
-    isStartTimeLong: false,
-    OneLongHour: 13,
-    OneLongMinute: 55,
     AutoUpdateJs:true
   },
   Control: {
@@ -846,10 +734,6 @@ const formData = reactive({
     AbgiScreen:false,
     BackupUsersHour:72,
     OBSReplayBuffer:false
-  },
-  MySign: {
-    isMysSignIn: false,
-    Time: ''
   },
   OneRemote: {
     IsMonitor: false,
@@ -969,7 +853,6 @@ const loadConfig = async () => {
       formData.BgiLog = data.BgiLog || ''
       formData.RepoUrl = data.RepoUrl || ''
       
-      formData.ConfigNames = data.ConfigNames || new Array(7).fill('')
       
       if (data.BagStatistics) {
         formData.bagKeywords = data.BagStatistics.split(',').map(k => k.trim()).filter(k => k)
@@ -995,9 +878,7 @@ const loadConfig = async () => {
         Object.assign(formData.Control, data.Control)
       }
 
-      if (data.MySign) {
-        Object.assign(formData.MySign, data.MySign)
-      }
+  
 
       if (data.OneRemote) {
         Object.assign(formData.OneRemote, data.OneRemote)
@@ -1033,7 +914,6 @@ const handleSubmit = async () => {
     const payload = {
       BetterGIAddress: formData.BetterGIAddress,
       content: formData.content,
-      ConfigNames: formData.ConfigNames,
       BagStatistics: formData.bagKeywords.filter(k => k.trim()).join(','),
       post: ':' + formData.post,
       LogKeywords: formData.LogKeywords.filter(k => k.trim()).length > 0
@@ -1041,7 +921,6 @@ const handleSubmit = async () => {
         : [''],
       OneLong: formData.OneLong,
       Control: formData.Control,
-      MySign: formData.MySign,
       OneRemote: formData.OneRemote,
       ScreenRecord: formData.ScreenRecord,
       BgiLog: formData.BgiLog,

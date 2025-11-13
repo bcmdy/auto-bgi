@@ -15,6 +15,7 @@ import (
 	"github.com/agnivade/levenshtein"
 	"github.com/otiai10/copy"
 	"github.com/robfig/cron/v3"
+	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"os"
@@ -1094,131 +1095,6 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 	return result
 }
 
-//func GroupTime(fileName string) ([]GroupMap, error) {
-//	layoutFull := "2006-01-02 15:04:05"
-//
-//	today := time.Now().Format("2006-01-02")
-//
-//	//提取文件名字的数字
-//	// 正则表达式匹配数字
-//	re := regexp.MustCompile(`\d+`)
-//	// 查找所有匹配项
-//	matches := re.FindAllString(fileName, -1)
-//	// 检查是否找到匹配项
-//	if len(matches) > 0 {
-//		//格式化转换
-//		formatted := matches[0][:4] + "-" + matches[0][4:6] + "-" + matches[0][6:]
-//
-//		today = formatted
-//	}
-//
-//	filename := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName))
-//
-//	file, err := os.Open(filename)
-//	if err != nil {
-//		return nil, err
-//	}
-//	defer file.Close()
-//
-//	timeRegexp := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2}\.\d{3})\]`)
-//	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
-//	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
-//
-//	type TempGroup struct {
-//		GroupName string
-//		StartTime time.Time
-//		LineTime  string // 日志时间字符串
-//	}
-//
-//	var results []GroupMap
-//	var temp *TempGroup
-//	scanner := bufio.NewScanner(file)
-//	var prevLine string
-//
-//	var sunTime time.Duration
-//
-//	for scanner.Scan() {
-//		line := scanner.Text()
-//
-//		if prevLine != "" {
-//			// 开始记录
-//			if startMatch := startRegexp.FindStringSubmatch(line); startMatch != nil {
-//				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
-//					t, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
-//					temp = &TempGroup{
-//						GroupName: startMatch[1],
-//						StartTime: t,
-//						LineTime:  timeMatch[1],
-//					}
-//				}
-//			}
-//
-//			// 结束记录
-//			if endMatch := endRegexp.FindStringSubmatch(line); endMatch != nil && temp != nil && endMatch[1] == temp.GroupName {
-//				if timeMatch := timeRegexp.FindStringSubmatch(prevLine); timeMatch != nil {
-//					endTime, _ := time.Parse(layoutFull, today+" "+timeMatch[1])
-//					duration := endTime.Sub(temp.StartTime)
-//
-//					sunTime += duration
-//
-//					// 过滤收益
-//					startStr := temp.StartTime.Format("2006-01-02 15:04:05")
-//					endStr := endTime.Format("2006-01-02 15:04:05")
-//
-//					// 组装
-//					results = append(results, GroupMap{
-//						Title: temp.GroupName,
-//						Detail: GroupDetail{
-//							StartTime:   startStr,
-//							EndTime:     endStr,
-//							ExecuteTime: duration.String(),
-//						},
-//					})
-//
-//					// 重置临时变量
-//					temp = nil
-//				}
-//			}
-//		}
-//		prevLine = line
-//	}
-//
-//	if err := scanner.Err(); err != nil {
-//		return nil, err
-//	}
-//
-//	// 计算总时长
-//	results = append(results, GroupMap{
-//		Title: "合计",
-//		Detail: GroupDetail{
-//			StartTime:   "00:00:00",
-//			EndTime:     "00:00:00",
-//			ExecuteTime: sunTime.String(),
-//		},
-//	})
-//
-//	return results, nil
-//}
-
-// 判断配置文件是否正确
-func CheckConfig() (bool, error) {
-	fmt.Println("配置文件路径", config.Cfg.BetterGIAddress)
-	_, err := os.Stat(config.Cfg.BetterGIAddress)
-	if err == nil {
-		fmt.Println("Bgi安装目录设置正确")
-	}
-	if os.IsNotExist(err) {
-		return false, fmt.Errorf("Bgi安装目录设置错误目录设置错误，请检查配置文件BetterGIAddress：你有没有加双斜杠呀，没有看网站说明")
-	}
-	names := config.Cfg.ConfigNames
-	if len(names) == 7 {
-		fmt.Println("配置组configNames正确")
-	} else {
-		return false, fmt.Errorf("配置组configNames不正确")
-	}
-	return true, nil
-}
-
 func GetGroupPInfo() string {
 
 	//读取文件内容
@@ -1942,6 +1818,7 @@ type JsNamesInfoStruct struct {
 	NowVersion  string
 	NewVersion  string
 	Mark        string
+	LastUpdated string // 最后更新时间
 }
 
 func JsNamesInfo() []JsNamesInfoStruct {
@@ -1979,9 +1856,7 @@ func JsNamesInfo() []JsNamesInfoStruct {
 			mark = "有更新"
 		}
 
-		//if nowVersion != newVersion {
-		//	mark = "有更新"
-		//}
+		//最后更新时间
 
 		jsNamesInfoStructs = append(jsNamesInfoStructs, JsNamesInfoStruct{
 			Name:        name,
@@ -1992,6 +1867,27 @@ func JsNamesInfo() []JsNamesInfoStruct {
 		})
 	}
 
+	// 读取
+	filePath := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo.json")
+	repo, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	newData := repo
+	name := gjson.Get(string(newData), "indexes.1.children.#.name")
+
+	for i := range jsNamesInfoStructs {
+		if jsNamesInfoStructs[i].Mark == "未知" {
+			jsNamesInfoStructs[i].LastUpdated = "0001-01-01 01:01:01"
+		}
+		for _, name := range name.Array() {
+			if name.String() == jsNamesInfoStructs[i].Name {
+				result := gjson.Get(string(newData), "indexes.1.children."+fmt.Sprint(i)+".lastUpdated")
+				jsNamesInfoStructs[i].LastUpdated = result.String()
+			}
+		}
+
+	}
 	return jsNamesInfoStructs
 }
 

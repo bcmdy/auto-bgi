@@ -19,8 +19,6 @@ import (
 var (
 	client   *goobs.Client
 	connLock sync.Mutex
-	//address  = "localhost:4455" // OBS WebSocket 地址
-	//password = "123456"         // OBS WebSocket 密码（如有）
 )
 
 // ========== 确保连接 ==========

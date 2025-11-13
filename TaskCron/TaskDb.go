@@ -65,7 +65,8 @@ func (tm *TaskManager) loadTasksFromDB() {
 				autoLog.Sugar.Infof("恢复任务[%s] 失败: %v\n", t.Name, err)
 			}
 		} else {
-			autoLog.Sugar.Infof("跳过未知任务函数[%s]\n", t.Name)
+			autoLog.Sugar.Infof("未知任务函数[%s]进行删除\n", t.Name)
+			tm.deleteFromDB(t.Name)
 		}
 	}
 

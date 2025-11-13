@@ -79,7 +79,7 @@ func DetectJsonType(longName string) (string, error) {
 
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return "", fmt.Errorf("读取文件失败: %w", err)
+		return "", fmt.Errorf("DetectJsonType读取文件失败: %w", err)
 	}
 
 	// 解析为 map

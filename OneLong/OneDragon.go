@@ -47,7 +47,7 @@ func (oneDragon *OneDragon) ReadOneDragon(longName string) error {
 	file, err := os.ReadFile(filename)
 	if err != nil {
 
-		return fmt.Errorf("读取文件失败:%s ", err)
+		return fmt.Errorf("ReadOneDragon读取文件失败:%s ", err)
 	}
 
 	if err := json.Unmarshal(file, &oneDragon); err != nil {
@@ -62,7 +62,7 @@ func (oneDragon *OneDragon) SaveOneDragon(longName string) error {
 
 	filename := filepath.Join(config.Cfg.BetterGIAddress, "User", "OneDragon", longName+".json")
 
-	// 格式化输出，方便人工看
+	// 格式化输出，方便人工看是的
 	data, err := json.MarshalIndent(oneDragon, "", "  ")
 	if err != nil {
 		return fmt.Errorf("序列化 JSON 失败: %w", err)
