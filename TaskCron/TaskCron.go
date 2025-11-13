@@ -46,6 +46,7 @@ var task map[string]func(data string)
 var Tm *TaskManager
 
 var taskOneLong OneLong.OneLong
+var AudioService control.Audio
 
 func InitTaskCron() {
 	task = make(map[string]func(string))
@@ -95,6 +96,10 @@ func InitTaskCron() {
 	task["狗粮联机调试上线"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：联系上线-调试-现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
 		abgiSSE.OnStartDebug()
+	}
+	task["电脑静音"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：电脑静音-现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
+		AudioService.Mute()
 	}
 
 	Tm = NewTaskManager(config.DB)
