@@ -1151,6 +1151,8 @@ func main() {
 		taskCronController.POST("/remove", TaskCron.Remove)
 		//查询可以设置的定时的任务
 		taskCronController.GET("/getTasks", TaskCron.GetTask)
+		//更新定时任务
+		taskCronController.POST("/update", TaskCron.Update)
 	}
 
 	type bgiWebhook struct {

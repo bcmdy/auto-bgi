@@ -20,7 +20,7 @@
             class="cron-tip"
           />
 
-          <a-form layout="vertical" @submit.prevent="handleAddTask">
+          <a-form layout="vertical" @submit.prevent="handleSubmitTask">
             <a-form-item label="任务名称">
               <a-select
                 v-model:value="formState.name"
@@ -56,11 +56,11 @@
             </a-form-item>
 
             <div class="form-actions">
-              <a-button type="primary" :loading="formLoading" :disabled="submitDisabled" @click="handleAddTask">
-                添加任务
+              <a-button type="primary" :loading="formLoading" :disabled="submitDisabled" @click="handleSubmitTask">
+                {{ isEditing ? '保存修改' : '添加任务' }}
               </a-button>
               <a-button style="margin-left: 8px" @click="resetForm">
-                重置
+                {{ isEditing ? '取消编辑' : '重置' }}
               </a-button>
 
               <a-button style="margin-left: 10px;background-color: aquamarine;" @click="comeBack">
@@ -100,6 +100,15 @@
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'action'">
                     <a-space>
+                      <a-tooltip title="编辑任务">
+                        <a-button
+                          type="text"
+                          size="small"
+                          @click="startEdit(record)"
+                        >
+                          编辑
+                        </a-button>
+                      </a-tooltip>
                       <a-tooltip title="删除任务">
                         <a-button
                           type="text"
@@ -154,9 +163,9 @@ const formState = reactive({
 
 const presetSpecs = [
   { label: '每天4点5分', spec: '0 5 4 * * *' },
-  { label: '每个月的1号', spec: '0 0 0 1 * *' },
-  { label: '每小时整点', spec: '0 0 * * * *' },
-  { label: '每天23点30分', spec: '0 30 23 * * *' }
+  { label: '每周一四点运行', spec: '0 0 4 ? * MON' },
+  { label: '每天23点30分', spec: '0 30 23 * * *' },
+    { label: '除周一外其他天四点运行', spec: '0 0 4 ? * TUE,WED,THU,FRI,SAT,SUN' }
 ]
 
 const taskCronList = ref([])
@@ -164,6 +173,7 @@ const availableTaskNames = ref([])
 const tableLoading = ref(false)
 const formLoading = ref(false)
 const dropdownLoading = ref(false)
+const editingTaskId = ref(null)
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
@@ -171,12 +181,14 @@ const columns = [
   { title: 'Cron 表达式', dataIndex: 'spec', key: 'spec', width: 180 },
   { title: '下次执行时间', dataIndex: 'next', key: 'next', width: 200 },
   { title: '任务参数', dataIndex: 'data', key: 'data' },
-  { title: '操作', key: 'action', width: 100 }
+  { title: '操作', key: 'action', width: 150 }
 ]
 
 const submitDisabled = computed(() => {
   return !formState.name || !formState.spec.trim()
 })
+
+const isEditing = computed(() => editingTaskId.value !== null)
 
 const fetchTaskList = async () => {
   tableLoading.value = true
@@ -207,12 +219,13 @@ async function comeBack() {
 
 }
 
-const handleAddTask = async () => {
+const handleSubmitTask = async () => {
   if (submitDisabled.value) {
     message.warning('请选择任务并填写 Cron 表达式')
     return
   }
 
+  const editing = isEditing.value
   formLoading.value = true
   try {
     const payload = {
@@ -220,22 +233,42 @@ const handleAddTask = async () => {
       spec: formState.spec.trim(),
       data: formState.data?.trim() || ''
     }
-    const res = await apiMethods.addTaskCron(payload)
-    const msg = typeof res === 'string' ? res : '任务已添加'
+    let res
+    if (editing) {
+      res = await apiMethods.updateTaskCron({
+        id: editingTaskId.value,
+        ...payload
+      })
+    } else {
+      res = await apiMethods.addTaskCron(payload)
+    }
+    const msg = typeof res === 'string'
+      ? res
+      : editing
+        ? '任务已更新'
+        : '任务已添加'
     message.success(msg)
     resetForm()
     fetchTaskList()
   } catch (error) {
-    message.error('添加任务失败')
+    message.error(editing ? '修改任务失败' : '添加任务失败')
   } finally {
     formLoading.value = false
   }
 }
 
 const resetForm = () => {
+  editingTaskId.value = null
   formState.name = ''
   formState.spec = ''
   formState.data = ''
+}
+
+const startEdit = (record) => {
+  editingTaskId.value = record.id
+  formState.name = record.name
+  formState.spec = record.spec
+  formState.data = record.data || ''
 }
 
 const applyPreset = (spec) => {

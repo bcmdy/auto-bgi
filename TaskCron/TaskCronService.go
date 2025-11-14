@@ -53,3 +53,33 @@ func GetTask(context *gin.Context) {
 	}
 	context.JSON(200, taskList)
 }
+
+func Update(c *gin.Context) {
+	var req TaskCron
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.String(400, "参数错误: %v", err)
+		return
+	}
+
+	if req.ID == 0 {
+		c.String(400, "缺少任务 ID")
+		return
+	}
+	if req.Spec == "" {
+		c.String(400, "缺少 cron 表达式 spec")
+		return
+	}
+
+	newID, err := Tm.Update(cron.EntryID(req.ID), req.Spec, req.Data)
+	if err != nil {
+		c.String(500, "更新失败: %v", err)
+		return
+	}
+
+	// 返回新的 ID，前端可以据此刷新列表
+	c.JSON(200, gin.H{
+		"msg": "任务已更新",
+		"id":  newID,
+	})
+
+}

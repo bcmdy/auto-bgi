@@ -32,6 +32,7 @@ import (
 // 检查 程序 是否在运行
 func IsWechatRunning(name string) bool {
 	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq "+name)
+	//autoLog.Sugar.Infof("执行命令：%s", cmd.String())
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	output, err := cmd.Output()
 	if err != nil {

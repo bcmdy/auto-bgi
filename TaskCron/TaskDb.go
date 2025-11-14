@@ -113,3 +113,44 @@ func (tm *TaskManager) Add(spec, name, data string, fn func(string)) cron.EntryI
 	autoLog.Sugar.Infof("任务[%s] 已添加 (ID: %d)\n", name, id)
 	return id
 }
+
+// 修改任务（根据 EntryID 修改 Spec / Data，不改 Name）
+func (tm *TaskManager) Update(id cron.EntryID, spec, data string) (cron.EntryID, error) {
+	// 先找到旧任务
+	oldTask, ok := tm.jobs[id]
+	if !ok {
+		return 0, fmt.Errorf("任务不存在: id=%d", id)
+	}
+
+	// 根据旧任务的 Name 找到对应函数
+	fn, ok := task[oldTask.Name]
+	if !ok {
+		return 0, fmt.Errorf("任务函数不存在: name=%s", oldTask.Name)
+	}
+
+	// 先从调度器中移除旧任务
+	tm.c.Remove(id)
+	delete(tm.jobs, id)
+
+	// 重新注册新任务
+	d := data
+	f := fn
+	newID, err := tm.c.AddFunc(spec, func() { f(d) })
+	if err != nil {
+		fmt.Println("更新任务失败:", err)
+		return 0, err
+	}
+
+	// 更新内存中的任务信息
+	tm.jobs[newID] = TaskCron{
+		Name: oldTask.Name, // 名称保持不变
+		Spec: spec,
+		Data: data,
+	}
+
+	// 更新数据库
+	tm.saveToDB(oldTask.Name, spec, data)
+
+	autoLog.Sugar.Infof("任务[%s] 已更新 (旧ID: %d, 新ID: %d)\n", oldTask.Name, id, newID)
+	return newID, nil
+}

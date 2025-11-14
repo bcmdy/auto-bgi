@@ -253,7 +253,7 @@ func (m *LogMonitor) Monitor() {
 				if strings.Contains(line, "当前进度：") || strings.Contains(line, "当前次数：") || strings.Contains(line, ": 开始执行") {
 					BgiLogStatusInfo.JSProgress = line
 				}
-				YuanShenNum++
+
 				//原神闪退检测
 				if strings.Contains(line, "当前获取焦点的窗口不是原神，尝试恢复窗口") {
 					YuanShenNum++
@@ -272,8 +272,6 @@ func (m *LogMonitor) Monitor() {
 					//睡眠一秒
 					time.Sleep(1 * time.Second)
 					autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口%d次", YuanShenNum)
-				} else {
-					YuanShenNum = 0
 				}
 
 				lastLine = line
