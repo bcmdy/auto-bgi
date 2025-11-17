@@ -250,7 +250,7 @@ func (m *LogMonitor) Monitor() {
 				}
 
 				//js进度
-				if strings.Contains(line, "当前进度：") || strings.Contains(line, "当前次数：") || strings.Contains(line, ": 开始执行") {
+				if strings.Contains(line, "当前：") || strings.Contains(line, ": 开始执行") {
 					BgiLogStatusInfo.JSProgress = line
 				}
 

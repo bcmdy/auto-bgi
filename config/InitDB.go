@@ -43,12 +43,12 @@ func InitDB() {
 					material_name TEXT NOT NULL
 				);
 
-				CREATE TABLE IF NOT EXISTS tasks (
-						id INTEGER PRIMARY KEY AUTOINCREMENT,
-						name TEXT NOT NULL UNIQUE,
-						spec TEXT NOT NULL,
-				        data TEXT NOT NULL
-					);
+			 CREATE TABLE IF NOT EXISTS TaskCron (
+        id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        spec TEXT NOT NULL,
+        data TEXT NOT NULL DEFAULT ''
+    );
 `)
 	if err != nil {
 		panic("建表失败: " + err.Error())

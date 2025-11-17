@@ -70,7 +70,7 @@ func StartGroups(names []string) error {
 	}
 
 	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
-	cmdArgs := append([]string{"/C", "start", betterGIPath}, args...)
+	cmdArgs := append([]string{"/C", "start", "", betterGIPath}, args...)
 
 	exec.Command("cmd", cmdArgs...).Start()
 
@@ -95,9 +95,12 @@ func StartOneDragon(name string) {
 		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
 		return
 	}
-	exec.Command("cmd", "/C", "start", betterGIPath, "--startOneDragon", name).Start()
+	err := exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
+	if err != nil {
+		autoLog.Sugar.Errorf("启动失败: %v", err)
+	}
 
-	autoLog.Sugar.Infof("执行命令：cmd /C start %s %s %s", betterGIPath, "--startOneDragon", name)
+	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startOneDragon", name)
 
 }
 

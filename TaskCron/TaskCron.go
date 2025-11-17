@@ -16,11 +16,12 @@ import (
 )
 
 type TaskCron struct {
-	ID   int    `json:"id"`
+	ID   int    `json:"id"` // 对外展示的 ID：cron.EntryID
+	DBID int    `json:"-"`  // 数据库主键 id，只内部使用
 	Name string `json:"name"`
 	Spec string `json:"spec"`
 	Next string `json:"next"`
-	Data string `json:"data"` // NEW: 任务参数
+	Data string `json:"data"` // 任务参数
 }
 
 type TaskManager struct {
@@ -100,6 +101,28 @@ func InitTaskCron() {
 	task["电脑静音"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：电脑静音-现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
 		AudioService.Mute()
+	}
+	task["脚本自动更新"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：脚本自动更新-现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
+		if err := bgiStatus.BatchUpdateScript(); err != "" {
+			autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
+		} else {
+			autoLog.Sugar.Infof("批量更新脚本成功")
+		}
+	}
+	task["指定脚本更新"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：指定脚本更新-现在时间:%s 参数:%s", time.Now().Format("15:04:05"), data)
+		split := strings.Split(data, " ")
+		for i, name := range split {
+			autoLog.Sugar.Infof("第%d个更新脚本：%s", i, name)
+			_, err := bgiStatus.UpdateJs(name)
+			if err != nil {
+				autoLog.Sugar.Errorf("更新脚本失败: %v", err)
+				return
+			}
+			autoLog.Sugar.Infof("更新脚本成功")
+		}
+
 	}
 
 	Tm = NewTaskManager(config.DB)
