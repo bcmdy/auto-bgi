@@ -95,12 +95,23 @@ func StartOneDragon(name string) {
 		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
 		return
 	}
-	err := exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
-	if err != nil {
-		autoLog.Sugar.Errorf("启动失败: %v", err)
-	}
+	exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
 
 	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startOneDragon", name)
+
+}
+
+// 调用bat脚本
+func CallBat(batPath string) {
+	res := exec.Command("cmd", "/C", "", batPath)
+	out, err := res.CombinedOutput()
+	if err != nil {
+		autoLog.Sugar.Errorf("执行bat脚本失败：%v", err)
+		return
+	}
+	autoLog.Sugar.Infof("执行bat脚本成功：%s", string(out))
+
+	autoLog.Sugar.Infof("执行命令：cmd /C start   %s", batPath)
 
 }
 

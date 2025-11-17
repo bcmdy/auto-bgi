@@ -1147,8 +1147,8 @@ func main() {
 	taskCronController := ginServer.Group("/api/taskCron")
 	{
 		taskCronController.GET("/list", TaskCron.List)
-		taskCronController.POST("/add", TaskCron.Add)
-		taskCronController.POST("/remove", TaskCron.Remove)
+		taskCronController.POST("/add", TaskCron.CronAdd)
+		taskCronController.POST("/remove", TaskCron.CronRemove)
 		//查询可以设置的定时的任务
 		taskCronController.GET("/getTasks", TaskCron.GetTask)
 		//更新定时任务
