@@ -48,6 +48,43 @@ func ReadMd(filePath string) string {
 
 }
 
+// 指定脚本更新
+func SpecifyUpdateJs(subDirs []string) (string, error) {
+	GitPull()
+	time.Sleep(1)
+
+	// 获取本地所有订阅脚本目录
+	scriptDir := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript")
+
+	for _, name := range subDirs {
+
+		nowVersion, _ := GetJsNowVersion(scriptDir, name)
+		newVersion, chineseName, err := GetJsNewVersion(name)
+		if err != nil {
+			continue
+		}
+
+		if tools.CompareVersion(nowVersion, newVersion) == -1 {
+			if name == "CD-Aware-AutoGather" {
+				autoLog.Sugar.Infof("脚本更新：带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
+				Notice.SentText("带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
+				continue
+			}
+
+			// 开始更新
+			_, err := UpdateJs(name)
+			if err != nil {
+				autoLog.Sugar.Errorf("更新脚本失败: %v", err)
+				continue
+			}
+			autoLog.Sugar.Infof("更新脚本成功: %s", chineseName)
+			Notice.SentText(fmt.Sprintf("脚本 %s 已更新,版本号:%s @所有人", chineseName, newVersion))
+		}
+
+	}
+	return "全部更新成功", nil
+}
+
 // 批量更新脚本
 func BatchUpdateScript() string {
 	GitPull()
