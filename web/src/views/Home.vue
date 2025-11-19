@@ -87,9 +87,10 @@
   <!-- 查看桌面图片模态框 -->
   <a-modal
     v-model:open="screenshotModal.visible"
-    title="桌面图片"
+    title="桌面图片(3秒自动刷新一次)"
     :footer="null"
     :width="isMobile ? '96vw' : '90vw'"
+    :afterClose="closeScreenshot"
     centered
   >
     <div ref="screenshotContainer" style="text-align: center; overflow: auto; max-height: 80vh;">
@@ -151,13 +152,39 @@ const refreshScreenshot = () => {
   screenshotModal.url = `/api/aBgiJt?t=${ts}`
 }
 
+// 定义定时器相关变量
+let screenshotTimer = null
+const SCREENSHOT_INTERVAL = 3000 // 5秒刷新一次
+
 const openScreenshot = () => {
+    // 先停止可能存在的定时器
+  if (screenshotTimer) {
+    clearInterval(screenshotTimer)
+    screenshotTimer = null
+  }
   refreshScreenshot()
   screenshotModal.visible = true
+
+    // 启动定时器
+  screenshotTimer = setInterval(() => {
+    console.log('定时刷新截图...')
+    refreshScreenshot()
+  }, SCREENSHOT_INTERVAL)
 }
 
 const closeScreenshot = () => {
   screenshotModal.visible = false
+    // 停止定时器
+  stopScreenshotTimer()
+}
+
+// 单独定义停止定时器的函数
+const stopScreenshotTimer = () => {
+  if (screenshotTimer) {
+    clearInterval(screenshotTimer)
+    screenshotTimer = null
+    console.log('截图定时器已停止')
+  }
 }
 
 const onScreenshotLoad = () => {

@@ -1822,6 +1822,13 @@ type JsNamesInfoStruct struct {
 	LastUpdated string // 最后更新时间
 }
 
+type RepoStruct struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+	LastUpdated string `json:"lastUpdated"`
+}
+
 func JsNamesInfo() []JsNamesInfoStruct {
 
 	GitPull()
@@ -1875,20 +1882,22 @@ func JsNamesInfo() []JsNamesInfoStruct {
 		panic(err)
 	}
 	newData := repo
-	name := gjson.Get(string(newData), "indexes.1.children.#.name")
-
-	for i := range jsNamesInfoStructs {
-		if jsNamesInfoStructs[i].Mark == "未知" {
-			jsNamesInfoStructs[i].LastUpdated = "0001-01-01 01:01:01"
-		}
-		for _, name := range name.Array() {
-			if name.String() == jsNamesInfoStructs[i].Name {
-				result := gjson.Get(string(newData), "indexes.1.children."+fmt.Sprint(i)+".lastUpdated")
-				jsNamesInfoStructs[i].LastUpdated = result.String()
-			}
+	data := gjson.Get(string(newData), "indexes.1.children")
+	dataMap := make(map[string]RepoStruct)
+	for _, repo := range data.Array() {
+		dataMap[repo.Get("name").String()] = RepoStruct{
+			Name:        repo.Get("name").String(),
+			Version:     repo.Get("version").String(),
+			LastUpdated: repo.Get("lastUpdated").String(),
 		}
 
 	}
+	for i, jsNamesInfoStruct := range jsNamesInfoStructs {
+		if v, ok := dataMap[jsNamesInfoStruct.Name]; ok {
+			jsNamesInfoStructs[i].LastUpdated = v.LastUpdated
+		}
+	}
+
 	return jsNamesInfoStructs
 }
 
@@ -1913,6 +1922,14 @@ func GetJsNowVersion(basePath, jsName string) (string, string) {
 //}
 
 func readVersion(manifestPath string) (string, string) {
+	//捕获异常
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Warnf("捕获异常: %v", r)
+			return
+		}
+	}()
+
 	file, err := os.Open(manifestPath)
 	if err != nil {
 		autoLog.Sugar.Warnf("readVersion打开文件失败: %v", err)
@@ -2028,5 +2045,37 @@ func ArchiveConfig() []LogAnalysis2Struct {
 		autoLog.Sugar.Infof("归档配置组 %s", groupMap.GroupName)
 	}
 	return groupTime
+
+}
+
+// 查询今日执行配置组
+func TodayGroupsInfo() {
+	date := time.Now().Format("20060102")
+	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
+	//获取今日所有配置组
+	groupTime := GroupTime(filename)
+	NoticeData := "今日配置组执行情况\n"
+	sumExecuteTime, _ := time.ParseDuration("0s")
+	for _, groupMap := range groupTime {
+
+		executeTime, _ := time.ParseDuration("0s")
+		for _, segment := range groupMap.Segments {
+			if segment.Consuming != "" {
+				duration, err := time.ParseDuration(segment.Consuming)
+				if err != nil {
+					autoLog.Sugar.Errorf("解析时间失败: %v", err)
+					continue
+				}
+				executeTime += duration
+
+			}
+
+		}
+		NoticeData += fmt.Sprintf("【%s--%s】\n", groupMap.GroupName, executeTime)
+		sumExecuteTime += executeTime
+	}
+	NoticeData += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
+
+	Notice.SentText(NoticeData)
 
 }

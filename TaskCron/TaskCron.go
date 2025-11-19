@@ -126,6 +126,10 @@ func InitTaskCron() {
 		autoLog.Sugar.Infof("定时任务启动：启动bat脚本-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		taskTask.CallBat(data)
 	}
+	task["今日配置组执行情况通知"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：今日配置组执行情况通知-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		bgiStatus.TodayGroupsInfo()
+	}
 
 	Tm = NewTaskManager(config.DB)
 	// 从数据库恢复任务
