@@ -17,12 +17,13 @@ import (
 )
 
 type TaskCron struct {
-	ID   int    `json:"id"` // 对外展示的 ID：cron.EntryID
-	DBID int    `json:"-"`  // 数据库主键 id，只内部使用
-	Name string `json:"name"`
-	Spec string `json:"spec"`
-	Next string `json:"next"`
-	Data string `json:"data"` // 任务参数
+	ID     int    `json:"id"`   // 对外展示的 ID：cron.EntryID
+	DBID   int    `json:"DBID"` // 数据库主键 id，只内部使用
+	Name   string `json:"name"`
+	Spec   string `json:"spec"`
+	Next   string `json:"next"`
+	Data   string `json:"data"`   // 任务参数
+	Status int    `json:"status"` // 1=运行中, 0=暂停（持久化在 DB）
 }
 
 type TaskManager struct {

@@ -36,6 +36,8 @@ func CronAdd(c *gin.Context) {
 
 func CronRemove(c *gin.Context) {
 	data := c.Query("id")
+	dbid := c.Query("dbid")
+
 	if data == "" {
 		c.String(400, "缺少参数 id")
 		return
@@ -45,8 +47,17 @@ func CronRemove(c *gin.Context) {
 		c.String(400, "id 解析失败")
 		return
 	}
+	if dbid == "" {
+		c.String(400, "dbid 解析失败")
+		return
+	}
+	dbidint, err := strconv.ParseInt(dbid, 10, 64)
+	if err != nil {
+		c.String(400, "dbid 解析失败")
+		return
+	}
 
-	Tm.Remove(cron.EntryID(id))
+	Tm.Remove(cron.EntryID(id), int(dbidint))
 	c.String(200, "任务已删除")
 
 }
@@ -67,7 +78,7 @@ func Update(c *gin.Context) {
 	}
 
 	if req.ID == 0 {
-		c.String(400, "缺少任务 ID")
+		c.String(400, "只有启动的任务可以修改")
 		return
 	}
 	if req.Spec == "" {
@@ -87,4 +98,48 @@ func Update(c *gin.Context) {
 		"id":  newID,
 	})
 
+}
+
+func Pause(c *gin.Context) {
+	data := c.Query("dbid")
+	if data == "" {
+		c.String(400, "缺少参数 dbid")
+		return
+	}
+	dbid, err := strconv.Atoi(data)
+	if err != nil {
+		c.String(400, "dbid 解析失败")
+		return
+	}
+
+	if err := Tm.PauseByDBID(dbid); err != nil {
+		c.String(400, "暂停失败: %v", err)
+		return
+	}
+
+	c.String(200, "任务已暂停")
+}
+
+func Resume(c *gin.Context) {
+	data := c.Query("dbid")
+	if data == "" {
+		c.String(400, "缺少参数 dbid")
+		return
+	}
+	dbid, err := strconv.Atoi(data)
+	if err != nil {
+		c.String(400, "dbid 解析失败")
+		return
+	}
+
+	newID, err := Tm.ResumeByDBID(dbid)
+	if err != nil {
+		c.String(400, "恢复失败: %v", err)
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"msg": "任务已恢复",
+		"id":  newID, // 新的 EntryID（如果前端要展示的话）
+	})
 }

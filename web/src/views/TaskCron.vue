@@ -92,7 +92,7 @@
               <a-table
                 :data-source="taskCronList"
                 :columns="columns"
-                row-key="id"
+                :row-key="getRowKey"
                 :pagination="false"
                 size="middle"
                 bordered
@@ -119,10 +119,27 @@
                           删除
                         </a-button>
                       </a-tooltip>
+                      <a-tooltip :title="record.paused ? '恢复任务' : '暂停任务'">
+                        <a-popconfirm
+                          :title="record.paused ? '确认恢复该任务？' : '确认暂停该任务？'"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          @confirm="togglePause(record)"
+                        >
+                          <a-button type="text" size="small">
+                            {{ record.paused ? '恢复' : '暂停' }}
+                          </a-button>
+                        </a-popconfirm>
+                      </a-tooltip>
                     </a-space>
                   </template>
                   <template v-else-if="column.key === 'next'">
-                    <span>{{ record.next || '调度中...' }}</span>
+                    <span>{{ record.paused ? '已暂停' : (record.next || '调度中...') }}</span>
+                  </template>
+                  <template v-else-if="column.key === 'status'">
+                    <a-tag :color="record.paused ? 'orange' : 'green'">
+                      {{ record.paused ? '已暂停' : '运行中' }}
+                    </a-tag>
                   </template>
                   <template v-else>
                     <span>{{ record[column.dataIndex] }}</span>
@@ -156,6 +173,8 @@ import { message, Modal } from 'ant-design-vue'
 import { apiMethods } from '@/utils/api'
 
 const formState = reactive({
+  id: 0,
+  DBID: 0,
   name: '',
   spec: '',
   data: ''
@@ -181,7 +200,8 @@ const columns = [
   { title: 'Cron 表达式', dataIndex: 'spec', key: 'spec', width: 180 },
   { title: '下次执行时间', dataIndex: 'next', key: 'next', width: 200 },
   { title: '任务参数', dataIndex: 'data', key: 'data' },
-  { title: '操作', key: 'action', width: 150 }
+  { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
+  { title: '操作', key: 'action', width: 200 }
 ]
 
 const submitDisabled = computed(() => {
@@ -194,7 +214,9 @@ const fetchTaskList = async () => {
   tableLoading.value = true
   try {
     const list = await apiMethods.getTaskCronList()
-    taskCronList.value = Array.isArray(list) ? list : []
+    taskCronList.value = Array.isArray(list)
+      ? list.map(normalizeTaskCron)
+      : []
   } catch (error) {
     message.error('获取任务列表失败')
   } finally {
@@ -229,6 +251,8 @@ const handleSubmitTask = async () => {
   formLoading.value = true
   try {
     const payload = {
+      id:formState.id,
+      DBID:formState.DBID,
       name: formState.name,
       spec: formState.spec.trim(),
       data: formState.data?.trim() || ''
@@ -266,6 +290,8 @@ const resetForm = () => {
 
 const startEdit = (record) => {
   editingTaskId.value = record.id
+  formState.id = record.id
+  formState.DBID = record.DBID
   formState.name = record.name
   formState.spec = record.spec
   formState.data = record.data || ''
@@ -282,20 +308,69 @@ const confirmRemove = (record) => {
     okText: '确定',
     cancelText: '再想想',
     okButtonProps: { danger: true },
-    onOk: () => removeTask(record.id)
+    onOk: () => removeTask(record.id, record.dbid)
   })
 }
 
-const removeTask = async (id) => {
+const removeTask = async (id,dbid) => {
   try {
-    const res = await apiMethods.removeTaskCron(id)
-    const msg = typeof res === 'string' ? res : '任务已删除'
+    const res = await apiMethods.removeTaskCron(id,dbid)
+    const msg = typeof res === "string" ? res : "任务已删除"
     message.success(msg)
     fetchTaskList()
   } catch (error) {
     message.error('删除任务失败')
   }
 }
+
+const togglePause = async (record) => {
+  const paused = Boolean(record?.paused)
+  const dbid = record?.DBID ?? record?.dbid
+  if (!dbid) {
+    message.error('未找到任务 dbid，无法执行操作')
+    return
+  }
+  try {
+    let res
+    if (paused) {
+      res = await apiMethods.resumeTaskCron(dbid)
+    } else {
+      res = await apiMethods.pauseTaskCron(dbid)
+    }
+    const defaultMsg = paused ? '任务已恢复' : '任务已暂停'
+    const msg = typeof res === 'object' && res !== null && res.msg
+      ? res.msg
+      : typeof res === 'string'
+        ? res
+        : defaultMsg
+    message.success(msg)
+    if (paused && res?.id && editingTaskId.value === record.id) {
+      editingTaskId.value = res.id
+    } else if (!paused && editingTaskId.value === record.id) {
+      resetForm()
+    }
+    await fetchTaskList()
+  } catch (error) {
+    message.error(paused ? '恢复任务失败' : '暂停任务失败')
+  }
+}
+
+const normalizeTaskCron = (item) => {
+  const id = Number(item?.id) || 0
+  const dbid = item?.DBID ?? item?.dbid
+  const statusNum = Number(item?.status)
+  const paused = !(statusNum === 1 && id > 0)
+  return {
+    ...item,
+    id,
+    DBID: dbid,
+    dbid,
+    status: statusNum,
+    paused
+  }
+}
+
+const getRowKey = (record) => record?.id || record?.DBID || record?.dbid || record?.name
 
 onMounted(() => {
   fetchTaskList()

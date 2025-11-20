@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "modernc.org/sqlite"
+	"strings"
 )
 
 var DB *sql.DB
@@ -47,9 +48,19 @@ func InitDB() {
         id   INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         spec TEXT NOT NULL,
-        data TEXT NOT NULL DEFAULT ''
+        data TEXT NOT NULL DEFAULT '',
+        status INTEGER NOT NULL DEFAULT 1               
     );
 `)
+
+	// 2. 兼容已有老表：尝试补加 status 字段
+	if _, err := db.Exec(`ALTER TABLE TaskCron ADD COLUMN status INTEGER NOT NULL DEFAULT 1;`); err != nil {
+		// 如果字段已存在，会报 "duplicate column name" 类似错误，这个可以忽略
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			fmt.Println("duplicate column name")
+		}
+	}
+
 	if err != nil {
 		panic("建表失败: " + err.Error())
 	}
