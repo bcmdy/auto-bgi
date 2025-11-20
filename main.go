@@ -1153,6 +1153,10 @@ func main() {
 		taskCronController.GET("/getTasks", TaskCron.GetTask)
 		//更新定时任务
 		taskCronController.POST("/update", TaskCron.Update)
+		//暂停定时任务
+		taskCronController.POST("/pause", TaskCron.Pause)
+		//恢复定时任务
+		taskCronController.POST("/resume", TaskCron.Resume)
 	}
 
 	type bgiWebhook struct {
