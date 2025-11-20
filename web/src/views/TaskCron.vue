@@ -1,22 +1,16 @@
 <template>
   <div class="task-cron-page">
     <a-typography-title :level="2" class="page-title">
-      ⏰ 定时任务管理
+      定时任务管理
     </a-typography-title>
 
-    <a-row :gutter="24">
-      <a-col :xs="24" :md="10">
+    <a-row :gutter="[16, 16]" class="content-row">
+      <a-col :xs="24" :md="10" class="form-col">
         <a-card title="新增任务" bordered class="form-card">
           <a-alert
             type="info"
             show-icon
-            message="Cron表达式由6个必填字段和1个可选字段组成，格式为：秒 分 时 日 月 周 年（年份可省略）
-            各字段说明：秒、分：0-59,   
-            支持字符 * , - /小时：0-23，    
-            规则同上日期：1-31（需注意月份天数）
-               月份：1-12 或月份缩写
-            星期：1-7（1=周日，7=周六），可用?表示不指定
-            年份：1970-2099（可选）。在线生成器：https://cron.ciding.cc/"
+            :message="cronTip"
             class="cron-tip"
           />
 
@@ -41,7 +35,7 @@
             <a-form-item label="Cron 表达式">
               <a-input
                 v-model:value="formState.spec"
-                placeholder="例如：0 */5 * * * *（每 5 分钟执行）"
+                placeholder="例如：*/5 * * * *（每 5 分钟执行）"
                 allow-clear
               />
             </a-form-item>
@@ -59,11 +53,11 @@
               <a-button type="primary" :loading="formLoading" :disabled="submitDisabled" @click="handleSubmitTask">
                 {{ isEditing ? '保存修改' : '添加任务' }}
               </a-button>
-              <a-button style="margin-left: 8px" @click="resetForm">
+              <a-button class="ghost-button" @click="resetForm">
                 {{ isEditing ? '取消编辑' : '重置' }}
               </a-button>
 
-              <a-button style="margin-left: 10px;background-color: aquamarine;" @click="comeBack">
+              <a-button class="back-button" @click="comeBack">
                 返回首页
               </a-button>
             </div>
@@ -85,10 +79,10 @@
         </a-card>
       </a-col>
 
-      <a-col :xs="24" :md="14">
-        <a-card title="已配置任务" bordered>
+      <a-col :xs="24" :md="14" class="table-col">
+        <a-card title="已配置任务" bordered class="table-card">
           <a-spin :spinning="tableLoading">
-            <div v-if="taskCronList.length > 0">
+            <div v-if="taskCronList.length > 0" class="table-wrapper">
               <a-table
                 :data-source="taskCronList"
                 :columns="columns"
@@ -96,6 +90,7 @@
                 :pagination="false"
                 size="middle"
                 bordered
+                :scroll="{ x: 860 }"
               >
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'action'">
@@ -147,21 +142,33 @@
                 </template>
               </a-table>
             </div>
-         
 
             <a-empty v-else-if="!tableLoading" description="暂无任务" />
           </a-spin>
         </a-card>
-<div style="width: 115vh;  position:absolute; display: flex; flex-wrap: wrap; overflow: auto;">
-  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
-       src="https://upload-bbs.miyoushe.com/upload/2025/09/30/162891450/40ba73d1c8ce78112681a7ed7137dad1_6952277989857444872.jpg?x-oss-process=image/resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="">
-  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
-       src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/b5cc5bf0ded8b38e961ab8b077f1b1e3_2998161025089190383.jpg" alt="">
-  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
-       src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/0c50bf57fdf196423eeeff3c23a70b78_3217896051162954880.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="">
-  <img style="width: 45%; height: 345px; border-radius: 10px; margin: 5px; object-fit: cover;" 
-       src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/458f4678e4481f5e79bd25690adf4be1_6025800658609407775.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="">
-</div>
+
+        <div class="visual-gallery">
+          <img
+            class="gallery-img"
+            src="https://upload-bbs.miyoushe.com/upload/2025/09/30/162891450/40ba73d1c8ce78112681a7ed7137dad1_6952277989857444872.jpg?x-oss-process=image/resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
+            alt=""
+          />
+          <img
+            class="gallery-img"
+            src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/b5cc5bf0ded8b38e961ab8b077f1b1e3_2998161025089190383.jpg"
+            alt=""
+          />
+          <img
+            class="gallery-img"
+            src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/0c50bf57fdf196423eeeff3c23a70b78_3217896051162954880.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
+            alt=""
+          />
+          <img
+            class="gallery-img"
+            src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/458f4678e4481f5e79bd25690adf4be1_6025800658609407775.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
+            alt=""
+          />
+        </div>
       </a-col>
     </a-row>
   </div>
@@ -172,6 +179,12 @@ import { onMounted, reactive, ref, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { apiMethods } from '@/utils/api'
 
+const cronTip = [
+  'Cron 表达式由 6 个必填字段和 1 个可选字段组成，格式：秒 分 时 日 月 周 年（年份可省略）。',
+  '各字段范围：秒/分 0-59；时 0-23；日 1-31（注意大小月）；月 1-12 或英文缩写；周 0-7（0=周日，6=周六，可用 ? 表示不指定）；年 1970-2099（可选）。',
+  '在线生成器：https://cron.ciding.cc/'
+].join('\\n')
+
 const formState = reactive({
   id: 0,
   DBID: 0,
@@ -181,10 +194,10 @@ const formState = reactive({
 })
 
 const presetSpecs = [
-  { label: '每天4点5分', spec: '0 5 4 * * *' },
-  { label: '每周一四点运行', spec: '0 0 4 ? * MON' },
-  { label: '每天23点30分', spec: '0 30 23 * * *' },
-    { label: '除周一外其他天四点运行', spec: '0 0 4 ? * TUE,WED,THU,FRI,SAT,SUN' }
+  { label: '每天 4:05', spec: '0 5 4 * * *' },
+  { label: '每周一 4:00', spec: '0 0 4 ? * MON' },
+  { label: '每天 23:30', spec: '0 30 23 * * *' },
+  { label: '除周一外每天 4:00', spec: '0 0 4 ? * TUE,WED,THU,FRI,SAT,SUN' }
 ]
 
 const taskCronList = ref([])
@@ -201,7 +214,7 @@ const columns = [
   { title: '下次执行时间', dataIndex: 'next', key: 'next', width: 200 },
   { title: '任务参数', dataIndex: 'data', key: 'data' },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '操作', key: 'action', width: 200 }
+  { title: '操作', key: 'action', width: 220 }
 ]
 
 const submitDisabled = computed(() => {
@@ -236,9 +249,8 @@ const fetchTaskNameOptions = async () => {
   }
 }
 
-async function comeBack() {
+const comeBack = () => {
   window.location.href = '/'
-
 }
 
 const handleSubmitTask = async () => {
@@ -251,8 +263,8 @@ const handleSubmitTask = async () => {
   formLoading.value = true
   try {
     const payload = {
-      id:formState.id,
-      DBID:formState.DBID,
+      id: formState.id,
+      DBID: formState.DBID,
       name: formState.name,
       spec: formState.spec.trim(),
       data: formState.data?.trim() || ''
@@ -283,6 +295,8 @@ const handleSubmitTask = async () => {
 
 const resetForm = () => {
   editingTaskId.value = null
+  formState.id = 0
+  formState.DBID = 0
   formState.name = ''
   formState.spec = ''
   formState.data = ''
@@ -303,19 +317,19 @@ const applyPreset = (spec) => {
 
 const confirmRemove = (record) => {
   Modal.confirm({
-    title: `确认删除任务「${record.name}」?`,
+    title: `确认删除任务「${record.name}」？`,
     content: '删除后需要重新创建才能恢复。',
     okText: '确定',
     cancelText: '再想想',
     okButtonProps: { danger: true },
-    onOk: () => removeTask(record.id, record.dbid)
+    onOk: () => removeTask(record.id, record.DBID || record.dbid)
   })
 }
 
-const removeTask = async (id,dbid) => {
+const removeTask = async (id, dbid) => {
   try {
-    const res = await apiMethods.removeTaskCron(id,dbid)
-    const msg = typeof res === "string" ? res : "任务已删除"
+    const res = await apiMethods.removeTaskCron(id, dbid)
+    const msg = typeof res === 'string' ? res : '任务已删除'
     message.success(msg)
     fetchTaskList()
   } catch (error) {
@@ -391,17 +405,49 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
+.content-row {
+  align-items: stretch;
+}
+
+.form-col,
+.table-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .form-card {
-  margin-bottom: 24px;
+  flex: 1;
+}
+
+.table-card {
+  flex: 1;
 }
 
 .cron-tip {
   margin-bottom: 16px;
+  white-space: pre-line;
 }
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
+}
+
+.form-actions .ant-btn {
+  min-width: 110px;
+}
+
+.ghost-button {
+  margin-left: 8px;
+}
+
+.back-button {
+  margin-left: 8px;
+  background-color: aquamarine;
+  border-color: aquamarine;
 }
 
 .quick-presets {
@@ -423,14 +469,59 @@ onMounted(() => {
   cursor: pointer;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.table-wrapper :deep(.ant-table) {
+  min-width: 820px;
+}
+
+.visual-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.gallery-img {
+  width: 100%;
+  height: 190px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
 @media (max-width: 768px) {
+  .task-cron-page {
+    padding: 16px;
+  }
+
   .form-actions {
     flex-direction: column;
-    gap: 8px;
+    align-items: stretch;
   }
 
   .form-actions .ant-btn {
     width: 100%;
+  }
+
+  .table-wrapper :deep(.ant-table) {
+    min-width: 700px;
+  }
+
+  .gallery-img {
+    height: 160px;
+  }
+}
+
+@media (min-width: 992px) {
+  .visual-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gallery-img {
+    height: 220px;
   }
 }
 </style>
