@@ -145,6 +145,14 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				autoLog.Sugar.Infof("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum)
 				Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
 				continue
+			} else {
+				re2 := regexp.MustCompile(`狗粮经验NaN`)
+				newText := re2.ReplaceAllString(line, "狗粮经验"+num)
+				buf.WriteString(newText + "\n")
+				//批发和联机狗粮相加
+				autoLog.Sugar.Infof("批发:[%s]和联机狗粮:[%s]相加等于：%s", "识别错误", num, num)
+				Notice.SentText(fmt.Sprintf("批发:[%s]和联机狗粮:[%s]相加等于：%s", "识别错误", num, num))
+				continue
 			}
 		}
 		buf.WriteString(line + "\n")
