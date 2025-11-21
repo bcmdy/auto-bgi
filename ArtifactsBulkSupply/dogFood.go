@@ -1,6 +1,7 @@
 package ArtifactsBulkSupply
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"bufio"
@@ -142,7 +143,7 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				buf.WriteString(newText + "\n")
 				//批发和联机狗粮相加
 				autoLog.Sugar.Infof("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum)
-				//Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
+				Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
 				continue
 			}
 		}

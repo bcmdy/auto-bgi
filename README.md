@@ -298,10 +298,6 @@ auto-bgi.exe online
 
 
 
-## 相关项目
-
-ABGI & BGI 游戏录屏项目：https://github.com/wjdsg0327/bgiSRecording
-
 # 更新记录
 
 #### 3.2版本
