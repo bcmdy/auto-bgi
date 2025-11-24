@@ -57,7 +57,7 @@ func listGroups() ([]string, error) {
 // StartGroups 启动配置组
 func startGroups(names []string) error {
 	control.CloseSoftware()
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 

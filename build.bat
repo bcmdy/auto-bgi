@@ -6,9 +6,10 @@ echo.
 
 echo.
 echo ====== 前端打包开始 ======
-cd web
+cd menu/web
 call npm install
 call npm run build
+call cd ..
 call cd ..
 echo ====== 前端打包完成 ======
 

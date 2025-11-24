@@ -68,8 +68,8 @@ func InitTaskCron() {
 	}
 	task["关闭原神和关闭bgi"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：关闭原神和关闭bgi-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
-		control.CloseYuanShen()
 		control.CloseSoftware()
+		control.CloseYuanShen()
 
 	}
 	task["备份user"] = func(data string) {

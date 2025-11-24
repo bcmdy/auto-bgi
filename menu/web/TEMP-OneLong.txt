@@ -1,0 +1,828 @@
+<template>
+  <div class="one-long-page">
+    <a-card class="selector-card" :bordered="false">
+      <div class="selector-header">
+        <div class="selector-title">
+          <span class="page-title">一条龙配置管理</span>
+          <a-tag color="blue" v-if="currentConfig.Name">{{ currentConfig.Name }}</a-tag>
+        </div>
+        <a-space :size="12" class="selector-actions" wrap>
+          <a-button type="primary" :loading="loading" :disabled="!selectedConfig" @click="loadConfig">
+            加载配置
+          </a-button>
+          <a-button type="primary" ghost :loading="saving" :disabled="!currentConfig.Name" @click="saveConfig">
+            保存配置
+          </a-button>
+          <a-button :loading="listLoading" @click="fetchConfigList">
+            刷新列表
+          </a-button>
+        </a-space>
+      </div>
+
+      <a-row :gutter="[12, 12]" class="selector-controls">
+        <a-col :xs="24" :md="12">
+          <a-select
+            v-model:value="selectedConfig"
+            :options="configOptions"
+            show-search
+            allow-clear
+            placeholder="选择一条龙配置"
+            :filter-option="filterConfigOption"
+            :loading="listLoading"
+            @change="handleConfigChange"
+          />
+        </a-col>
+        <a-col :xs="24" :md="12">
+          <a-space :size="12" wrap>
+            <a-button :disabled="!currentConfig.Name" @click="syncJsonFromForm">同步�?JSON</a-button>
+            <a-button :disabled="!rawJsonText" @click="applyJsonToForm">应用 JSON</a-button>
+          </a-space>
+        </a-col>
+      </a-row>
+
+      <a-alert
+        v-if="jsonError"
+        type="error"
+        show-icon
+        :message="jsonError"
+        class="json-error"
+      />
+    </a-card>
+
+    <a-tabs v-model:activeKey="activeTab" class="editor-tabs">
+      <a-tab-pane key="form" tab="可视化编�?>
+        <div class="section-grid">
+          <a-card title="基础信息" size="small" class="section-card">
+            <a-row :gutter="[16, 16]">
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="Name">
+                  <a-input v-model:value="currentConfig.Name" placeholder="配置名称" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="UID">
+                  <a-input v-model:value="currentConfig.GenshinUid" placeholder="游戏UID" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="IndexId">
+                  <a-input-number v-model:value="currentConfig.IndexId" :min="0" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="版本">
+                  <a-input-number v-model:value="currentConfig.Version" :min="1" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="计划名称">
+                  <a-input v-model:value="currentConfig.ScheduleName" placeholder="默认计划�? />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="周期间隔">
+                  <a-select
+                    v-model:value="currentConfig.Period"
+                    :options="periodOptions"
+                    placeholder="请选择"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="下一任务索引">
+                  <a-input-number v-model:value="currentConfig.NextTaskIndex" :min="0" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="最小树脂保�?>
+                  <a-input-number v-model:value="currentConfig.MinResinToKeep" :min="0" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="Serenitea Tp 类型">
+                  <a-input v-model:value="currentConfig.SereniteaPotTpType" placeholder="地图传�? />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="SundayEverySelectedValue">
+                  <a-input v-model:value="currentConfig.SundayEverySelectedValue" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="SundaySelectedValue">
+                  <a-input v-model:value="currentConfig.SundaySelectedValue" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12" :lg="8">
+                <a-form-item label="AccountBindingCode">
+                  <a-input v-model:value="currentConfig.AccountBindingCode" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12">
+                <a-form-item label="EverySelectedValueListConverter">
+                  <a-input
+                    v-model:value="currentConfig.EverySelectedValueListConverter"
+                    placeholder="1/2/3/4/5/6/7"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <div class="switch-row">
+              <label>
+                <a-switch v-model:checked="currentConfig.AccountBinding" /> 绑定账号
+              </label>
+              <label>
+                <a-switch v-model:checked="currentConfig.NextConfiguration" /> 启用下一配置
+              </label>
+              <label>
+                <a-switch v-model:checked="currentConfig.WeeklyDomainEnabled" /> 周本副本
+              </label>
+              <label>
+                <a-switch v-model:checked="currentConfig.SpecifyResinUse" /> 指定树脂消�?              </label>
+            </div>
+          </a-card>
+
+          <a-card title="周期与日�? size="small" class="section-card">
+            <a-row :gutter="[16, 16]">
+              <a-col :xs="24" :lg="12">
+                <a-form-item label="PeriodList">
+                  <a-checkbox-group v-model:value="selectedPeriods" :options="periodCheckboxOptions" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :lg="12">
+                <a-form-item label="CompletionAction">
+                  <a-select
+                    v-model:value="currentConfig.CompletionAction"
+                    :options="completionOptions"
+                    placeholder="完成后的动作"
+                    allow-clear
+                  />
+                </a-form-item>
+                <a-form-item label="DailyRewardPartyName">
+                  <a-input v-model:value="currentConfig.DailyRewardPartyName" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-card>
+
+          <a-card title="地点与副�? size="small" class="section-card">
+            <a-row :gutter="[16, 16]">
+              <a-col :xs="24" :md="12">
+                <a-form-item label="CraftingBenchCountry">
+                  <a-input v-model:value="currentConfig.CraftingBenchCountry" placeholder="枫丹" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12">
+                <a-form-item label="AdventurersGuildCountry">
+                  <a-input v-model:value="currentConfig.AdventurersGuildCountry" placeholder="枫丹" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12">
+                <a-form-item label="PartyName">
+                  <a-input v-model:value="currentConfig.PartyName" />
+                </a-form-item>
+              </a-col>
+              <a-col :xs="24" :md="12">
+                <a-form-item label="DomainName">
+                  <a-input v-model:value="currentConfig.DomainName" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <div class="weekday-grid">
+              <div
+                v-for="weekday in weekdayFields"
+                :key="weekday.label"
+                class="weekday-item"
+              >
+                <p class="weekday-label">{{ weekday.label }}</p>
+                <a-input
+                  v-model:value="currentConfig[weekday.partyKey]"
+                  placeholder="队伍"
+                  size="small"
+                  class="weekday-input"
+                />
+                <a-input
+                  v-model:value="currentConfig[weekday.domainKey]"
+                  placeholder="副本"
+                  size="small"
+                  class="weekday-input"
+                />
+              </div>
+            </div>
+          </a-card>
+
+          <a-card title="树脂与掉�? size="small" class="section-card">
+            <a-row :gutter="[16, 16]">
+              <a-col
+                v-for="key in resinKeys"
+                :key="key"
+                :xs="12"
+                :md="6"
+                class="resin-item"
+              >
+                <label class="resin-label">{{ key }}</label>
+                <a-input-number
+                  :min="0"
+                  :parser="numberParser"
+                  v-model:value="currentConfig.ResinCount[key]"
+                  style="width: 100%"
+                />
+              </a-col>
+            </a-row>
+            <a-form-item label="SecretTreasureObjects">
+              <a-select
+                v-model:value="currentConfig.SecretTreasureObjects"
+                mode="tags"
+                placeholder="输入后回车添�?
+                :token-separators="[',', '�?, ' ']"
+              />
+            </a-form-item>
+            <a-form-item label="CustomDomainList">
+              <a-select
+                v-model:value="currentConfig.CustomDomainList"
+                mode="tags"
+                placeholder="添加自定义副�?
+                :token-separators="[',', '�?, ' ']"
+              />
+            </a-form-item>
+          </a-card>
+
+          <a-card title="任务开�? size="small" class="section-card">
+            <div class="task-summary">
+              <span>任务总数：{{ taskStats.total }}</span>
+              <span>已开启：{{ taskStats.enabled }}</span>
+            </div>
+            <a-empty v-if="taskRows.length === 0" description="暂无任务数据" />
+            <a-table
+              v-else
+              size="small"
+              :columns="taskColumns"
+              :data-source="taskRows"
+              :pagination="false"
+              :scroll="{ y: 360 }"
+              row-key="key"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.dataIndex === 'enabled'">
+                  <a-switch :checked="getTaskEnabled(record.key)" @change="setTaskEnabled(record.key, $event)" />
+                </template>
+                <template v-else-if="column.dataIndex === 'label'">
+                  <div class="task-label">{{ record.label }}</div>
+                </template>
+                <template v-else>
+                  {{ record[column.dataIndex] }}
+                </template>
+              </template>
+            </a-table>
+          </a-card>
+        </div>
+      </a-tab-pane>
+
+      <a-tab-pane key="json" tab="原始 JSON">
+        <div class="json-toolbar">
+          <a-space :size="12" wrap>
+            <a-button :disabled="!rawJsonText" @click="formatJsonText">格式�?/a-button>
+            <a-button :disabled="!rawJsonText" @click="minifyJsonText">压缩</a-button>
+            <a-button type="primary" ghost :disabled="!rawJsonText" @click="applyJsonToForm">
+              应用到表�?            </a-button>
+          </a-space>
+          <span v-if="rawJsonText" class="json-size">长度：{{ rawJsonText.length }} 字符</span>
+        </div>
+        <a-textarea
+          v-model:value="rawJsonText"
+          :rows="24"
+          spellcheck="false"
+          class="json-editor"
+          placeholder="这里会展示完整配�?JSON，支持直接编辑�?
+        />
+      </a-tab-pane>
+    </a-tabs>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
+
+const configList = ref([])
+const selectedConfig = ref('')
+const loading = ref(false)
+const listLoading = ref(false)
+const saving = ref(false)
+const activeTab = ref('form')
+const rawJsonText = ref('')
+const jsonError = ref('')
+
+const periodOptions = [
+  { label: '每日', value: '每日' },
+  { label: '周一', value: '周一' },
+  { label: '周二', value: '周二' },
+  { label: '周三', value: '周三' },
+  { label: '周四', value: '周四' },
+  { label: '周五', value: '周五' },
+  { label: '周六', value: '周六' },
+  { label: '周日', value: '周日' }
+]
+
+const completionOptions = [
+  { label: '�?, value: '�? },
+  { label: '关闭游戏和软�?, value: '关闭游戏和软�? },
+  { label: '关机', value: '关机' }
+]
+
+const resinKeys = ['浓缩树脂', '原粹树脂', '须臾树脂', '脆弱树脂']
+
+const weekdayFields = [
+  { label: '周一', partyKey: 'MondayPartyName', domainKey: 'MondayDomainName' },
+  { label: '周二', partyKey: 'TuesdayPartyName', domainKey: 'TuesdayDomainName' },
+  { label: '周三', partyKey: 'WednesdayPartyName', domainKey: 'WednesdayDomainName' },
+  { label: '周四', partyKey: 'ThursdayPartyName', domainKey: 'ThursdayDomainName' },
+  { label: '周五', partyKey: 'FridayPartyName', domainKey: 'FridayDomainName' },
+  { label: '周六', partyKey: 'SaturdayPartyName', domainKey: 'SaturdayDomainName' },
+  { label: '周日', partyKey: 'SundayPartyName', domainKey: 'SundayDomainName' }
+]
+
+const taskColumns = [
+  { title: '编号', dataIndex: 'key', width: 90 },
+  { title: '任务内容', dataIndex: 'label' },
+  { title: '启用', dataIndex: 'enabled', width: 120 }
+]
+
+const createDefaultPeriodList = () => ({
+  每日: false,
+  周一: false,
+  周二: false,
+  周三: false,
+  周四: false,
+  周五: false,
+  周六: false,
+  周日: false
+})
+
+const createDefaultResinCount = () => ({
+  浓缩树脂: 0,
+  原粹树脂: 0,
+  须臾树脂: 0,
+  脆弱树脂: 0
+})
+
+const createDefaultConfig = () => ({
+  EverySelectedValueListConverter: '',
+  TaskEnabledList: {},
+  GenshinUid: '',
+  AccountBinding: false,
+  Version: 1,
+  Name: '',
+  IndexId: 0,
+  NextConfiguration: false,
+  NextTaskIndex: 0,
+  Period: '每日',
+  PeriodList: createDefaultPeriodList(),
+  ScheduleName: '',
+  CustomDomainList: [],
+  CraftingBenchCountry: '',
+  AdventurersGuildCountry: '',
+  PartyName: '',
+  DomainName: '',
+  WeeklyDomainEnabled: false,
+  DailyRewardPartyName: '',
+  MinResinToKeep: 0,
+  SundayEverySelectedValue: '',
+  SundaySelectedValue: '',
+  SereniteaPotTpType: '',
+  SecretTreasureObjects: [],
+  ResinCount: createDefaultResinCount(),
+  SpecifyResinUse: false,
+  AccountBindingCode: '',
+  MondayPartyName: '',
+  MondayDomainName: '',
+  TuesdayPartyName: '',
+  TuesdayDomainName: '',
+  WednesdayPartyName: '',
+  WednesdayDomainName: '',
+  ThursdayPartyName: '',
+  ThursdayDomainName: '',
+  FridayPartyName: '',
+  FridayDomainName: '',
+  SaturdayPartyName: '',
+  SaturdayDomainName: '',
+  SundayPartyName: '',
+  SundayDomainName: '',
+  CompletionAction: ''
+})
+
+const currentConfig = reactive(createDefaultConfig())
+
+const periodCheckboxOptions = periodOptions.map(item => ({ label: item.label, value: item.value }))
+
+const selectedPeriods = computed({
+  get() {
+    const list = currentConfig.PeriodList || {}
+    return Object.keys(list).filter(key => list[key])
+  },
+  set(values) {
+    if (!currentConfig.PeriodList) {
+      currentConfig.PeriodList = createDefaultPeriodList()
+    }
+    Object.keys(currentConfig.PeriodList).forEach(key => {
+      currentConfig.PeriodList[key] = values.includes(key)
+    })
+    values.forEach(day => {
+      if (!(day in currentConfig.PeriodList)) {
+        currentConfig.PeriodList[day] = true
+      }
+    })
+  }
+})
+
+const numberParser = value => parseInt(value.replace(/[^\d]/g, ''), 10) || 0
+
+const configOptions = computed(() =>
+  configList.value.map(name => ({
+    label: name,
+    value: name
+  }))
+)
+
+const filterConfigOption = (input, option) => {
+  if (!option?.value) return false
+  return option.value.toLowerCase().includes(input.toLowerCase())
+}
+
+const getTaskEnabled = taskKey => {
+  const task = currentConfig.TaskEnabledList?.[taskKey]
+  if (!task || typeof task !== 'object') return false
+  if (typeof task.Item1 === 'boolean') return task.Item1
+  if (typeof task.item1 === 'boolean') return task.item1
+  return false
+}
+
+const setTaskEnabled = (taskKey, value) => {
+  if (!currentConfig.TaskEnabledList || typeof currentConfig.TaskEnabledList !== 'object') {
+    currentConfig.TaskEnabledList = {}
+  }
+  const task = currentConfig.TaskEnabledList[taskKey]
+  if (!task || typeof task !== 'object') {
+    currentConfig.TaskEnabledList[taskKey] = { Item1: value, Item2: '' }
+    return
+  }
+  if ('Item1' in task) {
+    task.Item1 = value
+  } else if ('item1' in task) {
+    task.item1 = value
+  } else {
+    task.Item1 = value
+  }
+}
+
+const taskRows = computed(() => {
+  const list = currentConfig.TaskEnabledList
+  if (!list || typeof list !== 'object') return []
+  return Object.entries(list)
+    .map(([key, value]) => ({
+      key,
+      label: value?.Item2 || value?.item2 || key,
+      enabled: getTaskEnabled(key)
+    }))
+    .sort((a, b) => {
+      const numA = Number(a.key)
+      const numB = Number(b.key)
+      if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+        return numA - numB
+      }
+      return a.key.localeCompare(b.key, 'zh-CN')
+    })
+})
+
+const taskStats = computed(() => {
+  const rows = taskRows.value
+  const enabled = rows.filter(item => item.enabled).length
+  return {
+    total: rows.length,
+    enabled
+  }
+})
+
+const sanitizeConfig = config => JSON.parse(JSON.stringify(config))
+
+const setConfigData = data => {
+  const defaults = createDefaultConfig()
+  const normalized = {
+    ...defaults,
+    ...data,
+    Name: data?.Name || selectedConfig.value || defaults.Name,
+    PeriodList: { ...defaults.PeriodList, ...(data?.PeriodList || {}) },
+    ResinCount: { ...defaults.ResinCount, ...(data?.ResinCount || {}) },
+    TaskEnabledList:
+      data?.TaskEnabledList && typeof data.TaskEnabledList === 'object'
+        ? data.TaskEnabledList
+        : {},
+    CustomDomainList: Array.isArray(data?.CustomDomainList) ? data.CustomDomainList : [],
+    SecretTreasureObjects: Array.isArray(data?.SecretTreasureObjects)
+      ? data.SecretTreasureObjects
+      : []
+  }
+
+  Object.keys(defaults).forEach(key => {
+    currentConfig[key] = normalized[key]
+  })
+
+  rawJsonText.value = JSON.stringify(normalized, null, 2)
+}
+
+const apiRequest = async (url, options = {}) => {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    },
+    ...options
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(text || `请求失败，状态码 ${response.status}`)
+  }
+
+  return response.json()
+}
+
+const fetchConfigList = async () => {
+  listLoading.value = true
+  try {
+    const res = await apiRequest('/api/oneLong/oneLongAllName')
+    configList.value = res?.data || []
+    if (!selectedConfig.value && configList.value.length > 0) {
+      selectedConfig.value = configList.value[0]
+      await loadConfig()
+    }
+  } catch (error) {
+    message.error(`加载配置列表失败�?{error.message}`)
+  } finally {
+    listLoading.value = false
+  }
+}
+
+const loadConfig = async () => {
+  if (!selectedConfig.value) {
+    message.warning('请先选择一个配�?)
+    return
+  }
+  loading.value = true
+  jsonError.value = ''
+  try {
+    const res = await apiRequest(`/api/oneLong/config?name=${encodeURIComponent(selectedConfig.value)}`)
+    const parsed = typeof res === 'string' ? JSON.parse(res) : res
+    setConfigData(parsed)
+    message.success('配置加载成功')
+  } catch (error) {
+    jsonError.value = `解析失败�?{error.message}`
+    message.error('加载配置失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const saveConfig = async () => {
+  if (!currentConfig.Name) {
+    message.warning('请填�?Name 字段后再保存')
+    return
+  }
+
+  saving.value = true
+  try {
+    const payload = sanitizeConfig(currentConfig)
+    const res = await apiRequest('/api/oneLong/saveConfig', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+
+    if (res?.status === 'success') {
+      message.success('保存成功')
+    } else {
+      message.error(res?.message || '保存失败')
+    }
+  } catch (error) {
+    message.error(`保存失败�?{error.message}`)
+  } finally {
+    saving.value = false
+  }
+}
+
+const syncJsonFromForm = () => {
+  rawJsonText.value = JSON.stringify(sanitizeConfig(currentConfig), null, 2)
+  message.success('已同步最新表单到 JSON')
+}
+
+const applyJsonToForm = () => {
+  if (!rawJsonText.value) {
+    message.warning('JSON 内容为空')
+    return
+  }
+  try {
+    const parsed = JSON.parse(rawJsonText.value)
+    setConfigData(parsed)
+    message.success('JSON 已应用到表单')
+    jsonError.value = ''
+  } catch (error) {
+    jsonError.value = `JSON 解析失败�?{error.message}`
+    message.error('JSON 解析失败')
+  }
+}
+
+const formatJsonText = () => {
+  if (!rawJsonText.value) return
+  try {
+    rawJsonText.value = JSON.stringify(JSON.parse(rawJsonText.value), null, 2)
+    message.success('已格式化 JSON')
+  } catch (error) {
+    jsonError.value = `JSON 解析失败�?{error.message}`
+    message.error('JSON 解析失败')
+  }
+}
+
+const minifyJsonText = () => {
+  if (!rawJsonText.value) return
+  try {
+    rawJsonText.value = JSON.stringify(JSON.parse(rawJsonText.value))
+    message.success('已压�?JSON')
+  } catch (error) {
+    jsonError.value = `JSON 解析失败�?{error.message}`
+    message.error('JSON 解析失败')
+  }
+}
+
+const handleConfigChange = value => {
+  if (value) {
+    loadConfig()
+  } else {
+    setConfigData(createDefaultConfig())
+    rawJsonText.value = ''
+  }
+}
+
+onMounted(() => {
+  fetchConfigList()
+})
+</script>
+
+<style scoped>
+.one-long-page {
+  padding: 24px;
+  min-height: 100vh;
+  background: linear-gradient(120deg, #f6f8ff 0%, #fef4ff 100%);
+}
+
+.selector-card {
+  margin-bottom: 16px;
+  box-shadow: 0 10px 30px rgba(82, 120, 255, 0.12);
+  border-radius: 18px;
+}
+
+.selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.selector-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.selector-controls {
+  margin-top: 4px;
+}
+
+.json-error {
+  margin-top: 12px;
+}
+
+.editor-tabs {
+  background: transparent;
+}
+
+.section-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(31, 38, 135, 0.08);
+}
+
+.switch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.switch-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555;
+}
+
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.weekday-item {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(245, 247, 255, 0.9);
+  border: 1px solid rgba(99, 123, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekday-label {
+  font-weight: 600;
+  margin: 0;
+  color: #5b6bff;
+}
+
+.weekday-input {
+  width: 100%;
+}
+
+.resin-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resin-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.task-summary {
+  display: flex;
+  justify-content: flex-start;
+  gap: 24px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.task-label {
+  font-weight: 500;
+  color: #303133;
+}
+
+.json-toolbar {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.json-editor {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.json-size {
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .one-long-page {
+    padding: 16px;
+  }
+
+  .selector-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .switch-row {
+    flex-direction: column;
+  }
+}
+</style>
