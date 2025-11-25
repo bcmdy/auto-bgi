@@ -256,22 +256,9 @@ func (m *LogMonitor) Monitor() {
 
 				//原神闪退检测
 				if strings.Contains(line, "当前获取焦点的窗口不是原神，尝试恢复窗口") {
-					YuanShenNum++
-					if YuanShenNum >= 30 {
-						YuanShenNum = 0
-						Notice.SentText("当前获取焦点的窗口不是原神，尝试恢复窗口超过一分钟")
-						autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口超过一分钟")
-						//判断原神是否启动
-						if !IsWechatRunning("YuanShen.exe") {
-							Notice.SentText("原神未启动，尝试启动原神")
-							autoLog.Sugar.Infof("原神未启动，尝试启动原神")
-							genShinExe := control.ReadGenShinExe()
-							control.OpenSoftware(genShinExe)
-						}
-					}
-					//睡眠一秒
-					time.Sleep(1 * time.Second)
-					autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口%d次", YuanShenNum)
+					Notice.SentText("当前获取焦点的窗口不是原神，尝试恢复窗口")
+					autoLog.Sugar.Infof("当前获取焦点的窗口不是原神，尝试恢复窗口")
+
 				}
 
 				lastLine = line
