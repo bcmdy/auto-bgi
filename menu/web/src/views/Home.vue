@@ -17,9 +17,17 @@
     <!-- 主容器 -->
     <div class="container">
       <!-- 状态卡片 -->
-      <div class="status-card">
-        <h2>执行配置组：🧩<span>{{ statusData.group }}</span></h2>
-        <pre class="ExpectedToEnd">{{ statusData.ExpectedToEnd }}</pre>
+      <div class="status-card ">
+        <h2 class="tooltip-wrapper">执行配置组：🧩<span>{{ statusData.group }}
+          <pre  class="tooltip-content">{{ statusData.ExpectedToEnd }}</pre>
+        </span>
+        
+        
+        </h2>
+        <!-- <div class="tooltip-wrapper">
+          详细
+          <pre  class="tooltip-content">{{ statusData.ExpectedToEnd }}</pre>
+        </div> -->
         <p><span>📜</span> 运行路线：<span>{{ statusData.line }}</span></p>
         <p><span>📜</span> 运行脚本：<span>{{ statusData.scriptName }}</span></p>
         <p><span>🗺️</span> 配置组进度：<span>{{ statusData.progress }}</span></p>
@@ -346,6 +354,8 @@ const initSakuraAnimation = () => {
   }
 }
 
+
+
 // 获取状态信息
 const refreshStatus = async () => {
   try {
@@ -492,7 +502,7 @@ const handleOneLongCancel = () => {
 const handleCloseBgi = () => {
   Modal.confirm({
     title: '确认关闭？',
-    content: '是否要关闭【BGI】？',
+    content: '是否要关闭【BGI和原神】？',
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
@@ -588,14 +598,14 @@ const mysSignIn = () => {
 // 自动化按钮配置
 const automationButtons = ref([
   { text: '一条龙启动', action: handleOneLong },
-  { text: '关闭BGI', action: handleCloseBgi },
+  { text: '关闭BGI和原神', action: handleCloseBgi },
   { text: '备份 user 文件', action: handleBackup },
   { text: '脚本更新列表', action: () => router.push('/jsNames') },
   { text: '地图追踪', action: () => router.push('/Pathing') },
   { text: '发送桌面截图', action: sendImage },
   { text: '查看桌面图片', action: openScreenshot },
   { text: '米游社手动签到', action: mysSignIn },
-   { text: '联机', action: () => router.push('/Online') }
+  { text: '联机管理', action: () => router.push('/Online') }
 
 ])
 
@@ -744,6 +754,29 @@ onMounted(() => {
   height: 100vh;
   z-index: 0;
   pointer-events: none;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip-content {
+  display: none;
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.tooltip-wrapper:hover .tooltip-content {
+  display: block;
 }
 
 /* ============ Header轮播图样式 ============ */

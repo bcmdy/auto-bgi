@@ -122,20 +122,25 @@ var imageListOnce sync.Once
 
 func loadImages() {
 	imageDir := "./img"
-	filepath.WalkDir(imageDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			ext := filepath.Ext(d.Name())
-			switch ext {
-			case ".jpg", ".jpeg", ".png", ".gif", ".webp":
-				imageList = append(imageList, "/img/"+d.Name())
-			}
+
+	entries, err := os.ReadDir(imageDir)
+	if err != nil {
+		autoLog.Sugar.Errorf("读取目录失败: %v", err)
+		return
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
 		}
 
-		return nil
-	})
+		ext := filepath.Ext(entry.Name())
+		switch ext {
+		case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+			imageList = append(imageList, "/img/"+entry.Name())
+		}
+	}
+
 	autoLog.Sugar.Infof("加载图片: %d", len(imageList))
 }
 
@@ -395,6 +400,8 @@ func StarGin() {
 	ginServer.POST("/api/closeBgi", func(context *gin.Context) {
 
 		control.CloseSoftware()
+
+		control.CloseYuanShen()
 
 		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "BGI关闭成功"})
 	})
@@ -1244,6 +1251,20 @@ func StarGin() {
 		//speech.Speak(payload.SendTo + "," + payload.Message)
 		//
 		//c.JSON(http.StatusOK, gin.H{"status": "success", "msg": payload})
+
+	})
+
+	ginServer.POST("/bot/bgiWebhook", func(c *gin.Context) {
+		var data map[string]interface{}
+
+		if err := c.ShouldBindJSON(&data); err != nil {
+			fmt.Println(err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+			return
+		}
+
+		fmt.Println(data)
+		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": data})
 
 	})
 

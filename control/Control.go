@@ -245,23 +245,6 @@ func HttpGet(url string) error {
 	return fmt.Errorf("状态码: %d", resp.StatusCode)
 }
 
-func StartRecord() {
-	//点击F12开始录屏
-	err := robotgo.KeyTap("f12")
-	if err != nil {
-		autoLog.Sugar.Errorf("开始录屏失败: %v", err)
-	}
-
-}
-
-func StopRecord() {
-	//点击F12结束录屏
-	err := robotgo.KeyTap("f12")
-	if err != nil {
-		autoLog.Sugar.Errorf("结束录屏失败: %v", err)
-	}
-}
-
 // 按键
 func mapHotkey(key string) string {
 	switch key {
@@ -352,6 +335,7 @@ func Test(key string) {
 
 // 读取原神exe文件路径
 func ReadGenShinExe() string {
+
 	configPath := config.Cfg.BetterGIAddress + "\\User\\Config.json"
 
 	configData, _ := os.ReadFile(configPath)

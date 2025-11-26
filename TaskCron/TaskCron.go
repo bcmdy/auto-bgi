@@ -100,6 +100,10 @@ func InitTaskCron() {
 		autoLog.Sugar.Infof("定时任务启动：联系上线-调试-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		abgiSSE.OnStartDebug()
 	}
+	task["联机下线"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：联机下线-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		abgiSSE.Close()
+	}
 	task["电脑静音"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：电脑静音-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		AudioService.Mute()
