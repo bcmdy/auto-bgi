@@ -2,11 +2,7 @@ package abgiSSE
 
 import (
 	"auto-bgi/config"
-	"crypto/aes"
-	"crypto/cipher"
 	"embed"
-	"encoding/base64"
-	"errors"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -20,35 +16,6 @@ import (
 
 //go:embed abgiFont
 var abgiFont embed.FS
-
-// 解密
-func Decrypt(encryptedText, key string) (string, error) {
-	block, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		return "", err
-	}
-
-	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return "", errors.New("key length must be 16, 24, or 32 bytes")
-	}
-
-	cipherText, err := base64.StdEncoding.DecodeString(encryptedText)
-	if err != nil {
-		return "", err
-	}
-
-	if len(cipherText) < aes.BlockSize {
-		return "", errors.New("ciphertext too short")
-	}
-
-	iv := cipherText[:aes.BlockSize]
-	cipherText = cipherText[aes.BlockSize:]
-
-	stream := cipher.NewCFBDecrypter(block, iv)
-	stream.XORKeyStream(cipherText, cipherText)
-
-	return string(cipherText), nil
-}
 
 //func NameToImage(name string) {
 //	// 读取 TTF 字体文件

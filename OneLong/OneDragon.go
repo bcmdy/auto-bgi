@@ -1,7 +1,6 @@
 package OneLong
 
 import (
-	"auto-bgi/ScriptGroup"
 	"auto-bgi/config"
 	"encoding/json"
 	"fmt"
@@ -88,19 +87,4 @@ func (oneDragon *OneDragon) ChangeTaskEnabledList(longName string) error {
 		return err
 	}
 	return nil
-}
-
-var ScriptGroupConfig ScriptGroup.ScriptGroupConfig
-
-// 公版获取所有的配置组任务
-func (oneDragon *OneDragon) getTaskList(longName string) {
-	err := oneDragon.ReadOneDragon(longName)
-	if err != nil {
-		return
-	}
-	for _, name := range oneDragon.TaskEnabledList.Keys() {
-
-		execute := ScriptGroupConfig.IsExecute(name)
-		fmt.Println(name, "=====", execute)
-	}
 }

@@ -4,9 +4,11 @@ import (
 	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/tools"
 	"bufio"
 	"bytes"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -144,6 +146,13 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				//批发和联机狗粮相加
 				autoLog.Sugar.Infof("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum)
 				Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
+
+				go func() {
+					if a+b <= 300000 {
+						UpdateRevenue(sum)
+					}
+				}()
+
 				continue
 			} else {
 				re2 := regexp.MustCompile(`狗粮经验NaN`)
@@ -152,6 +161,10 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				//批发和联机狗粮相加
 				autoLog.Sugar.Infof("批发:[%s]和联机狗粮:[%s]相加等于：%s", "识别错误", num, num)
 				Notice.SentText(fmt.Sprintf("批发:[%s]和联机狗粮:[%s]相加等于：%s", "识别错误", num, num))
+
+				go func() {
+					UpdateRevenue(num)
+				}()
 				continue
 			}
 		}
@@ -167,4 +180,19 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 		autoLog.Sugar.Errorf("狗粮批发txt写入失败，err:%v", err)
 	}
 	return ""
+}
+
+func UpdateRevenue(num string) {
+	decrypt, err2 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	if err2 != nil {
+		return
+	}
+
+	resp, err := http.Post(fmt.Sprintf("http://%s/api/updateRevenue/"+config.Cfg.Account.Uid+"/"+num, decrypt), "application/json", nil)
+	if err != nil {
+		autoLog.Sugar.Error("更新收益失败:", err)
+		return
+	}
+	defer resp.Body.Close()
+
 }

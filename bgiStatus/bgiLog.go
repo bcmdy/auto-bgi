@@ -64,8 +64,6 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 	return newLines, nil
 }
 
-var YuanShenNum int
-
 func (m *LogMonitor) Monitor() {
 
 	if f, err := os.Open(m.LogFile); err == nil {
@@ -164,7 +162,7 @@ func (m *LogMonitor) Monitor() {
 
 				if strings.HasPrefix(line, "通知发送成功：") && strings.Contains(line, "联机狗粮分解获得经验") {
 					//提取数字
-					re := regexp.MustCompile(`\d+`)
+					re := regexp.MustCompile(`(\d+)$`)
 					num := re.FindString(line)
 
 					abgiSSE.WriteDogFoodNum(num)

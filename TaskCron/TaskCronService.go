@@ -1,8 +1,8 @@
 package TaskCron
 
 import (
+	"auto-bgi/models"
 	"github.com/gin-gonic/gin"
-	"github.com/robfig/cron/v3"
 	"strconv"
 )
 
@@ -13,11 +13,11 @@ func List(c *gin.Context) {
 		c.JSON(200, list)
 		return
 	}
-	c.JSON(400, []TaskCron{})
+	c.JSON(400, []models.TaskCron{})
 }
 
 func CronAdd(c *gin.Context) {
-	var taskCron TaskCron
+	var taskCron models.TaskCron
 	if err := c.ShouldBindJSON(&taskCron); err != nil {
 		c.String(400, "参数错误: %v", err)
 		return
@@ -35,29 +35,14 @@ func CronAdd(c *gin.Context) {
 }
 
 func CronRemove(c *gin.Context) {
-	data := c.Query("id")
-	dbid := c.Query("dbid")
+	id := c.Query("id")
 
-	if data == "" {
+	if id == "" {
 		c.String(400, "缺少参数 id")
 		return
 	}
-	id, err := strconv.ParseInt(data, 10, 64)
-	if err != nil {
-		c.String(400, "id 解析失败")
-		return
-	}
-	if dbid == "" {
-		c.String(400, "dbid 解析失败")
-		return
-	}
-	dbidint, err := strconv.ParseInt(dbid, 10, 64)
-	if err != nil {
-		c.String(400, "dbid 解析失败")
-		return
-	}
 
-	Tm.Remove(cron.EntryID(id), int(dbidint))
+	Tm.Remove(id)
 	c.String(200, "任务已删除")
 
 }
@@ -71,13 +56,13 @@ func GetTask(context *gin.Context) {
 }
 
 func Update(c *gin.Context) {
-	var req TaskCron
+	var req models.TaskCron
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.String(400, "参数错误: %v", err)
 		return
 	}
 
-	if req.ID == 0 {
+	if req.Status == 0 {
 		c.String(400, "只有启动的任务可以修改")
 		return
 	}
@@ -86,7 +71,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	newID, err := Tm.Update(cron.EntryID(req.ID), req.Spec, req.Data)
+	newID, err := Tm.Update(req)
 	if err != nil {
 		c.String(500, "更新失败: %v", err)
 		return
@@ -101,18 +86,18 @@ func Update(c *gin.Context) {
 }
 
 func Pause(c *gin.Context) {
-	data := c.Query("dbid")
+	data := c.Query("id")
 	if data == "" {
-		c.String(400, "缺少参数 dbid")
+		c.String(400, "缺少参数 id")
 		return
 	}
-	dbid, err := strconv.Atoi(data)
+	id, err := strconv.Atoi(data)
 	if err != nil {
-		c.String(400, "dbid 解析失败")
+		c.String(400, "id 解析失败")
 		return
 	}
 
-	if err := Tm.PauseByDBID(dbid); err != nil {
+	if err := Tm.PauseByID(id); err != nil {
 		c.String(400, "暂停失败: %v", err)
 		return
 	}
@@ -121,18 +106,18 @@ func Pause(c *gin.Context) {
 }
 
 func Resume(c *gin.Context) {
-	data := c.Query("dbid")
+	data := c.Query("id")
 	if data == "" {
-		c.String(400, "缺少参数 dbid")
+		c.String(400, "缺少参数 id")
 		return
 	}
-	dbid, err := strconv.Atoi(data)
+	id, err := strconv.Atoi(data)
 	if err != nil {
-		c.String(400, "dbid 解析失败")
+		c.String(400, "id 解析失败")
 		return
 	}
 
-	newID, err := Tm.ResumeByDBID(dbid)
+	newID, err := Tm.ResumeByDBID(id)
 	if err != nil {
 		c.String(400, "恢复失败: %v", err)
 		return

@@ -145,9 +145,9 @@ export const apiMethods = {
   getAvailableTaskCronNames: () => api.get('/api/taskCron/getTasks'),
   addTaskCron: (payload) => api.post('/api/taskCron/add', payload),
   updateTaskCron: (payload) => api.post('/api/taskCron/update', payload),
-  pauseTaskCron: (dbid) => api.post(`/api/taskCron/pause?dbid=${dbid}`),
-  resumeTaskCron: (dbid) => api.post(`/api/taskCron/resume?dbid=${dbid}`),
-  removeTaskCron: (id,dbid) => api.post(`/api/taskCron/remove?id=${id}&dbid=${dbid}`)
+  pauseTaskCron: (id) => api.post(`/api/taskCron/pause?id=${id}`),
+  resumeTaskCron: (id) => api.post(`/api/taskCron/resume?id=${id}`),
+  removeTaskCron: (id,EntryID) => api.post(`/api/taskCron/remove?id=${id}&EntryID=${EntryID}`)
   
 }
 

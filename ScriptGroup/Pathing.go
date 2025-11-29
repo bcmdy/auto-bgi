@@ -34,7 +34,7 @@ func (s *ScriptGroupConfig) ReadConfig(name string) ScriptGroupConfig {
 
 	var scriptGroupConfig ScriptGroupConfig
 	if err := json.Unmarshal(file, &scriptGroupConfig); err != nil {
-		fmt.Println("解析 JSON 失败:", err)
+		fmt.Println("ReadConfig解析 JSON 失败:", err)
 		return ScriptGroupConfig{}
 	}
 

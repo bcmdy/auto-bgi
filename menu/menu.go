@@ -20,8 +20,10 @@ import (
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/models"
 	"auto-bgi/task"
 	"auto-bgi/tools"
+	"auto-bgi/warehouse"
 	"bufio"
 	"embed"
 	"encoding/json"
@@ -31,10 +33,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-toast/toast"
 	"github.com/gorilla/websocket"
-	"github.com/iancoleman/orderedmap"
 	"io"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -45,6 +47,8 @@ import (
 	"sync"
 	"time"
 )
+
+var userIP = "http://localhost" + config.Cfg.Post
 
 func OnReady() {
 	// 设置托盘图标
@@ -66,7 +70,7 @@ func OnReady() {
 			select {
 			case <-mHello.ClickedCh:
 				autoLog.Sugar.Infof("正在打开浏览器")
-				if err := tools.OpenBrowser("http://localhost" + config.Cfg.Post); err != nil {
+				if err := tools.OpenBrowser(userIP); err != nil {
 					autoLog.Sugar.Errorf("打开浏览器失败: %v", err)
 				}
 			case <-mQuit.ClickedCh:
@@ -90,7 +94,7 @@ var embeddedFiles embed.FS
 func init() {
 	// 初始化日志
 	autoLog.Init()
-	config.InitDB()
+	models.InitDB()
 	abgiFunction.InitFunction()
 	defer autoLog.Sync()
 	ips, err := tools.GetLocalIPs()
@@ -101,6 +105,7 @@ func init() {
 		for _, ip := range ips {
 			if strings.Contains(ip, "192.168") {
 				autoLog.Sugar.Infof("本机局域网IP: %s%s", ip, config.Cfg.Post)
+				userIP = fmt.Sprintf("http://%s%s", ip, config.Cfg.Post)
 			} else {
 				autoLog.Sugar.Infof("本机其他IP: %s%s", ip, config.Cfg.Post)
 			}
@@ -282,7 +287,7 @@ func StarGin() {
 				return
 			}
 			//解密
-			decryptedKey, err3 := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+			decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 			if err3 != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
 				return
@@ -377,7 +382,7 @@ func StarGin() {
 			return
 		}
 
-		_, err = config.DB.Exec("DELETE FROM archive_records WHERE id = ?", id)
+		err = models.DeleteArchiveRecord(id)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "删除失败")
 			return
@@ -388,13 +393,18 @@ func StarGin() {
 
 	// 删除全部归档记录
 	ginServer.DELETE("/api/allArchives", func(c *gin.Context) {
-		_, err := config.DB.Exec("DELETE FROM archive_records")
+		//_, err := config.DB.Exec("DELETE FROM archive_records")
+		//if err != nil {
+		//	c.String(http.StatusInternalServerError, "删除失败")
+		//	return
+		//}
+		err := models.DeleteAllArchiveRecords()
 		if err != nil {
-			c.String(http.StatusInternalServerError, "删除失败")
+			c.String(http.StatusInternalServerError, "全部删除失败")
 			return
 		}
 
-		c.String(http.StatusOK, "删除成功")
+		c.String(http.StatusOK, "全部删除成功")
 	})
 
 	ginServer.POST("/api/closeBgi", func(context *gin.Context) {
@@ -653,6 +663,9 @@ func StarGin() {
 		context.JSON(http.StatusOK, gin.H{"status": "success", "data": jsNamesInfo})
 	})
 
+	//重置仓库
+	ginServer.POST("/api/repo/resetRepo", warehouse.RepoReset)
+
 	//脚本Js更新
 	ginServer.POST("/api/updateJs/:name", func(context *gin.Context) {
 		name := context.Param("name")
@@ -735,146 +748,13 @@ func StarGin() {
 			c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
 		})
 
-		// 获取一条龙配置
-		oneLongController.GET("/config", func(c *gin.Context) {
-			name := c.Query("name")
-			if name == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
-				return
-			}
-
-			cfg := config.OneLongConfig(name)
-			//dragon := OneLong.ReadOneDragon(name)
-			c.JSON(http.StatusOK, cfg)
-		})
-
 		//读取所有一条龙配置
 		oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
 			oneLongInfo := OneLongService.OneLongAllName()
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
 		})
 
-		//保存一条龙配置
-		oneLongController.POST("/saveConfig", func(c *gin.Context) {
-			var newConfig orderedmap.OrderedMap
-			var OneLongConfigStruct config.OneLongConfigStruct
-
-			if err := c.ShouldBindJSON(&newConfig); err != nil {
-
-				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-				return
-			}
-			//获取一条龙名字
-			longName, _ := newConfig.Get("Name")
-
-			isChaBaoBgi := OneLongService.IsChaBaoBgi(longName.(string))
-			if isChaBaoBgi == "公版" {
-				// 保存配置
-				err := config.SaveOneLongConfig(OneLongConfigStruct)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"message": "保存失败", "error": err.Error()})
-					return
-				}
-			} else if isChaBaoBgi == "茶包s老师版本" {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "茶包s老师版本无法保存", "error": err.Error()})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
-		})
 	}
-
-	//查询所有天赋书
-	ginServer.GET("/api/talentBooks", func(context *gin.Context) {
-
-		td := &bgiStatus.TalentDomain{}
-		talents, _ := td.QueryAllTalents()
-
-		context.JSON(http.StatusOK, gin.H{"status": "success", "data": talents})
-	})
-
-	ginServer.GET("/api/talentBooks/search", func(c *gin.Context) {
-		name := c.Query("name")
-		if name == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "msg": "缺少参数 name"})
-			return
-		}
-
-		query := `SELECT domain_name, weekday, material_name FROM talent_domains WHERE material_name = ?`
-		rows, err := config.DB.Query(query, name)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-			return
-		}
-		defer rows.Close()
-
-		var results []bgiStatus.TalentDomain
-		for rows.Next() {
-			var td bgiStatus.TalentDomain
-			if err := rows.Scan(&td.DomainName, &td.Weekday, &td.MaterialName); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			results = append(results, td)
-		}
-
-		if len(results) == 0 {
-			c.JSON(http.StatusOK, gin.H{"status": "not_found"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status": "success",
-			"data":   results,
-		})
-	})
-
-	//武器材料
-
-	//查询所有武器升级材料
-	ginServer.GET("/api/WeaponDomain", func(context *gin.Context) {
-
-		td := &bgiStatus.WeaponDomain{}
-		talents, _ := td.QueryAllWeaponMaterials()
-
-		context.JSON(http.StatusOK, gin.H{"status": "success", "data": talents})
-	})
-
-	ginServer.GET("/api/WeaponDomain/search", func(c *gin.Context) {
-		name := c.Query("name")
-		if name == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "msg": "缺少参数 name"})
-			return
-		}
-
-		query := `SELECT domain_name, weekday, material_name FROM weapon_domains WHERE material_name = ?`
-		rows, err := config.DB.Query(query, name)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-			return
-		}
-		defer rows.Close()
-
-		var results []bgiStatus.TalentDomain
-		for rows.Next() {
-			var td bgiStatus.TalentDomain
-			if err := rows.Scan(&td.DomainName, &td.Weekday, &td.MaterialName); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			results = append(results, td)
-		}
-
-		if len(results) == 0 {
-			c.JSON(http.StatusOK, gin.H{"status": "not_found"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status": "success",
-			"data":   results,
-		})
-	})
 
 	//读取js的md文件
 	ginServer.GET("/api/md", func(c *gin.Context) {
@@ -1452,7 +1332,7 @@ func StarGin() {
 				return
 			}
 			//解密
-			decryptedKey, err3 := abgiSSE.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+			decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 			if err3 != nil {
 				fmt.Println("密钥错误")
 				return
@@ -1476,9 +1356,11 @@ func StarGin() {
 
 	//服务器端口
 	post := config.Cfg.Post
+
 	if post == "" || post == ":" {
 		post = ":8082"
 	}
+
 	err = ginServer.Run(post)
 
 	if err != nil {
@@ -1490,4 +1372,18 @@ func StarGin() {
 	//if err != nil {
 	//	autoLog.Sugar.Errorf("启动失败:%v", err)
 	//}
+}
+
+// 检查端口是否可用，不行就+1
+func getAvailablePort(start int) string {
+	port := start
+
+	for {
+		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+		if err == nil {
+			_ = ln.Close() // 关闭临时占用
+			return fmt.Sprintf("%d", port)
+		}
+		port++
+	}
 }

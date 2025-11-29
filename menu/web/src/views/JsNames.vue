@@ -18,7 +18,8 @@
         <h1 class="header-title">📜 脚本更新列表 📜</h1>
         <p class="header-subtitle">管理您的脚本，保持最新状态 ✨</p>
         <button class="btn home-btn" @click="goHome">返回首页</button>
-        <button class="btn home-btn" style="margin-left:150px;" @click="batchUpdate">批量更新</button>
+        <button class="btn home-btn"  @click="batchUpdate">批量更新</button>
+        <button class="btn home-btn" style="background-color:burlywood;" @click="resetRepo">重置仓库</button>
       </div>
     </header>
 
@@ -224,6 +225,16 @@ export default {
       }
     }
 
+    const resetRepo = async () => {
+      try {
+        const res = await fetch('/api/repo/resetRepo', { method: 'POST' })
+        alert('仓库重置已执行')
+        await loadPluginList()
+      } catch {
+        alert('仓库重置失败')
+      }
+    }
+
     const updatePlugin = async name => {
       if (!name) return
       isUpdating[name] = true
@@ -249,6 +260,7 @@ export default {
       getSortIcon,
       goHome,
       batchUpdate,
+      resetRepo,
       updatePlugin,
       headerCarouselImages,
       headerCurrentImageIndex
@@ -286,7 +298,7 @@ export default {
 .haveUpdate-btn {
   background-color: #c0ebff!important;
   color: #000!important;
-  width: 90px;
+  width: 100px;
   font-size: 20px;
 }
 
@@ -328,6 +340,13 @@ export default {
   padding: 0.75rem;
   text-align: center;
 }
+
+  .home-btn{
+     /* 居中 */
+    margin-left: 20px;
+    height: 40px;
+    margin-left: 30px;
+  }
 
 .sortable {
   cursor: pointer;
@@ -405,6 +424,11 @@ export default {
   }
   .highlight {
     background-color: #fff0f7 !important;
+  }
+  .home-btn{
+     /* 居中 */
+    margin-left: 20px;
+    height: 40px;
   }
 }
 </style>

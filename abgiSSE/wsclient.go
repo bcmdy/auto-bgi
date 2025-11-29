@@ -3,6 +3,7 @@ package abgiSSE
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -45,6 +46,10 @@ var RunDebug bool
 
 // Connect 连接 WebSocket 服务器
 func Connect(url string, runDebug bool, headers http.Header) error {
+
+	go func() {
+		IsNewestVersion()
+	}()
 
 	//如果已经在线，就不能请求
 	if abgiClient != nil {
@@ -137,7 +142,7 @@ type Members struct {
 
 // 获取在线人数
 func GroupsStatusHandler() interface{} {
-	decrypt, err2 := Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	decrypt, err2 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
 	if err2 != nil {
 		return 0
 	}

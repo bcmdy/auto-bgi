@@ -13,7 +13,6 @@
             :message="cronTip"
             class="cron-tip"
           />
-
           <a-form layout="vertical" @submit.prevent="handleSubmitTask">
             <a-form-item label="任务名称">
               <a-select
@@ -148,24 +147,24 @@
         </a-card>
 
         <div class="visual-gallery">
-          <img
+          <!-- <img
             class="gallery-img"
             src="https://upload-bbs.miyoushe.com/upload/2025/09/30/162891450/40ba73d1c8ce78112681a7ed7137dad1_6952277989857444872.jpg?x-oss-process=image/resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
             alt=""
           />
           <img
             class="gallery-img"
-            src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/b5cc5bf0ded8b38e961ab8b077f1b1e3_2998161025089190383.jpg"
+            src="https://t.alcy.cc/ysmp"
             alt=""
           />
           <img
             class="gallery-img"
-            src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/0c50bf57fdf196423eeeff3c23a70b78_3217896051162954880.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
+            src="https://t.alcy.cc/ysz"
             alt=""
-          />
+          /> -->
           <img
             class="gallery-img"
-            src="https://upload-bbs.miyoushe.com/upload/2022/11/28/17949827/458f4678e4481f5e79bd25690adf4be1_6025800658609407775.jpg?x-oss-process=image//resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
+            src="https://t.alcy.cc/ys"
             alt=""
           />
         </div>
@@ -180,17 +179,25 @@ import { message, Modal } from 'ant-design-vue'
 import { apiMethods } from '@/utils/api'
 
 const cronTip = [
-  'Cron 表达式由 6 个必填字段和 1 个可选字段组成，格式：秒 分 时 日 月 周 年（年份可省略）。',
-  '各字段范围：秒/分 0-59；时 0-23；日 1-31（注意大小月）；月 1-12 或英文缩写；周 0-7（0=周日，6=周六，可用 ? 表示不指定）；年 1970-2099（可选）。',
-  '在线生成器：https://cron.ciding.cc/'
+  `Cron 表达式由 6 个必填字段和 1 个可选字段组成，
+  格式：秒 分 时 日 月 周 年（年份可省略）。
+  各字段范围：秒/分 0-59；时 0-23；日 1-31（注意大小月）；
+  月 1-12 或英文缩写；
+  周 0-7（0=周日，6=周六，可用 ? 表示不指定）；
+  年 1970-2099（可选）。
+  在线生成器：
+  https://cron.ciding.cc/
+  https://www.toolsjy.com/cron/
+`
 ].join('\\n')
 
 const formState = reactive({
   id: 0,
-  DBID: 0,
+  entry_id: 0,
   name: '',
   spec: '',
-  data: ''
+  data: '',
+  status: 1
 })
 
 const presetSpecs = [
@@ -264,10 +271,11 @@ const handleSubmitTask = async () => {
   try {
     const payload = {
       id: formState.id,
-      DBID: formState.DBID,
+      entry_id: formState.entry_id,
       name: formState.name,
       spec: formState.spec.trim(),
-      data: formState.data?.trim() || ''
+      data: formState.data?.trim() || '',
+      status:formState.status
     }
     let res
     if (editing) {
@@ -296,19 +304,21 @@ const handleSubmitTask = async () => {
 const resetForm = () => {
   editingTaskId.value = null
   formState.id = 0
-  formState.DBID = 0
+  formState.entry_id = 0
   formState.name = ''
   formState.spec = ''
   formState.data = ''
+  formState.status = 0
 }
 
 const startEdit = (record) => {
   editingTaskId.value = record.id
   formState.id = record.id
-  formState.DBID = record.DBID
+  formState.entry_id = record.entry_id
   formState.name = record.name
   formState.spec = record.spec
   formState.data = record.data || ''
+  formState.status = record.status || 0
 }
 
 const applyPreset = (spec) => {
@@ -322,13 +332,13 @@ const confirmRemove = (record) => {
     okText: '确定',
     cancelText: '再想想',
     okButtonProps: { danger: true },
-    onOk: () => removeTask(record.id, record.DBID || record.dbid)
+    onOk: () => removeTask(record.id, record.entry_id)
   })
 }
 
-const removeTask = async (id, dbid) => {
+const removeTask = async (id, entry_id) => {
   try {
-    const res = await apiMethods.removeTaskCron(id, dbid)
+    const res = await apiMethods.removeTaskCron(id, entry_id)
     const msg = typeof res === 'string' ? res : '任务已删除'
     message.success(msg)
     fetchTaskList()
@@ -339,17 +349,17 @@ const removeTask = async (id, dbid) => {
 
 const togglePause = async (record) => {
   const paused = Boolean(record?.paused)
-  const dbid = record?.DBID ?? record?.dbid
-  if (!dbid) {
-    message.error('未找到任务 dbid，无法执行操作')
+  const id = record?.id ?? record?.id
+  if (!id) {
+    message.error('未找到任务 id，无法执行操作')
     return
   }
   try {
     let res
     if (paused) {
-      res = await apiMethods.resumeTaskCron(dbid)
+      res = await apiMethods.resumeTaskCron(id)
     } else {
-      res = await apiMethods.pauseTaskCron(dbid)
+      res = await apiMethods.pauseTaskCron(id)
     }
     const defaultMsg = paused ? '任务已恢复' : '任务已暂停'
     const msg = typeof res === 'object' && res !== null && res.msg
@@ -371,20 +381,20 @@ const togglePause = async (record) => {
 
 const normalizeTaskCron = (item) => {
   const id = Number(item?.id) || 0
-  const dbid = item?.DBID ?? item?.dbid
+  const entry_id = item?.entry_id ?? item?.entry_id
   const statusNum = Number(item?.status)
   const paused = !(statusNum === 1 && id > 0)
   return {
     ...item,
     id,
-    DBID: dbid,
-    dbid,
+    entry_id: entry_id,
+    entry_id,
     status: statusNum,
     paused
   }
 }
 
-const getRowKey = (record) => record?.id || record?.DBID || record?.dbid || record?.name
+const getRowKey = (record) => record?.id || record?.entry_id || record?.entry_id || record?.name
 
 onMounted(() => {
   fetchTaskList()
@@ -478,15 +488,16 @@ onMounted(() => {
 }
 
 .visual-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
+  /* display: grid; */
+  /* grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); */
+  /* gap: 12px;
+  margin-top: 12px; */
+  /* height: 300px; */
 }
 
 .gallery-img {
   width: 100%;
-  height: 190px;
+  height: 420px!important;
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);

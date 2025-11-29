@@ -8,6 +8,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/models"
 	"auto-bgi/tools"
 	"bufio"
 	"encoding/json"
@@ -1318,20 +1319,7 @@ func Archive(data LogAnalysis2Struct) string {
 		return "归档数据字段缺失或格式错误"
 	}
 
-	// 检查是否已经归档
-	stmt, err := config.DB.Prepare(`SELECT COUNT(*) FROM archive_records WHERE title = ?`)
-	if err != nil {
-		fmt.Println("预处理失败:", err)
-		return "预处理失败"
-	}
-	defer stmt.Close()
-
-	var count int
-	err = stmt.QueryRow(title).Scan(&count)
-	if err != nil {
-		fmt.Println("查询数据库失败:", err)
-		return "查询数据库失败"
-	}
+	count := models.DB.Where("title = ?", title).Find(&models.ArchiveRecords{}).RowsAffected
 
 	autoLog.Sugar.Infof("查询数据库是否存在归档记录：%d", count)
 
@@ -1339,17 +1327,24 @@ func Archive(data LogAnalysis2Struct) string {
 		autoLog.Sugar.Infof("存在归档记录，执行删除操作")
 
 		// 删除已存在的归档记录
-		delStmt, err := config.DB.Prepare(`DELETE FROM archive_records WHERE title = ?`)
-		if err != nil {
-			autoLog.Sugar.Errorf("删除预处理失败: %v", err)
-			return "删除预处理失败"
-		}
-		defer delStmt.Close()
+		//delStmt, err := models.DB.Prepare(`DELETE FROM archive_records WHERE title = ?`)
+		//if err != nil {
+		//	autoLog.Sugar.Errorf("删除预处理失败: %v", err)
+		//	return "删除预处理失败"
+		//}
+		//defer delStmt.Close()
+		//
+		//_, err = delStmt.Exec(title)
+		//if err != nil {
+		//	autoLog.Sugar.Errorf("删除数据库记录失败: %v", err)
+		//	return "删除数据库记录失败"
+		//}
 
-		_, err = delStmt.Exec(title)
+		// 删除已存在的归档记录
+		err := models.DeleteArchiveRecordByTitle(title)
 		if err != nil {
-			autoLog.Sugar.Errorf("删除数据库记录失败: %v", err)
-			return "删除数据库记录失败"
+			autoLog.Sugar.Errorf("删除归档记录失败: %v", err)
+			return "删除归档记录失败"
 		}
 
 		autoLog.Sugar.Infof("删除归档记录成功")
@@ -1357,29 +1352,13 @@ func Archive(data LogAnalysis2Struct) string {
 
 	autoLog.Sugar.Infof("执行新增归档记录")
 
-	// 插入新归档记录
-	insertStmt, err := config.DB.Prepare(`INSERT INTO archive_records(title, execute_time) VALUES (?, ?)`)
-	if err != nil {
-		fmt.Println("预处理失败:", err)
-		return "预处理失败"
-	}
-	defer insertStmt.Close()
-
-	_, err = insertStmt.Exec(title, executeTime.String())
+	err := models.InsertArchiveRecord(title, executeTime.String())
 	if err != nil {
 		autoLog.Sugar.Errorf("写入数据库失败: %v", err)
 		return "写入数据库失败"
 	}
-
 	autoLog.Sugar.Infof("成功归档：%s (%s)", title, executeTime)
 	return "归档成功"
-}
-
-type ArchiveRecords struct {
-	Id          int    `json:"id"`
-	Title       string `json:"title"`
-	ExecuteTime string `json:"execute_time"`
-	CreatedAt   string `json:"created_at"`
 }
 
 // 时间计算
@@ -1388,25 +1367,28 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 	fileDate := GetFileNameDate(filename)
 
 	// 查询数据库配置组时长
-	stmt, err := config.DB.Prepare(`SELECT execute_time FROM archive_records WHERE title = ?`)
-	if err != nil {
-		return "", err
-	}
-	defer stmt.Close()
+	//stmt, err := models.DB.Prepare(`SELECT execute_time FROM archive_records WHERE title = ?`)
+	//if err != nil {
+	//	return "", err
+	//}
+	//defer stmt.Close()
+	//
+	//rows, err := stmt.Query(groupName)
+	//if err != nil {
+	//	return "", err
+	//}
+	//defer rows.Close()
+	//
+	//var archiveRecords ArchiveRecords
+	//for rows.Next() {
+	//	err = rows.Scan(&archiveRecords.ExecuteTime)
+	//	if err != nil {
+	//		return "", err
+	//	}
+	//}
 
-	rows, err := stmt.Query(groupName)
-	if err != nil {
-		return "", err
-	}
-	defer rows.Close()
-
-	var archiveRecords ArchiveRecords
-	for rows.Next() {
-		err = rows.Scan(&archiveRecords.ExecuteTime)
-		if err != nil {
-			return "", err
-		}
-	}
+	//根据title查询数据库
+	archiveRecords := models.GetArchiveRecordByTitle(groupName)
 
 	// 解析起始时间，例如 09:06:24.391
 	start, err := time.Parse("2006-01-02 15:04:05", fileDate+" "+startTime)
@@ -1431,31 +1413,11 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 }
 
 // ListArchive 归档查询
-func ListArchive() []ArchiveRecords {
-	stmt, err := config.DB.Prepare(`SELECT id, title, execute_time, created_at FROM archive_records`)
-	if err != nil {
-		return []ArchiveRecords{}
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query()
-	if err != nil {
-		return []ArchiveRecords{}
-	}
-	defer rows.Close()
-
-	//var archiveRecords []ArchiveRecords
-	archiveRecords := make([]ArchiveRecords, 0)
-	for rows.Next() {
-		var record ArchiveRecords
-		err = rows.Scan(&record.Id, &record.Title, &record.ExecuteTime, &record.CreatedAt)
-		if err != nil {
-			continue // 或者记录日志
-		}
-		archiveRecords = append(archiveRecords, record)
-	}
-
+func ListArchive() []models.ArchiveRecords {
+	//查询所有归档
+	archiveRecords := models.ListArchiveRecords()
 	return archiveRecords
+	
 }
 
 // JsVersion 读取脚本的版本号

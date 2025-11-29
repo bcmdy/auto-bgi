@@ -8,34 +8,25 @@ import (
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/models"
 	taskTask "auto-bgi/task"
-	"database/sql"
 	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 	"os/exec"
 	"strings"
 	"time"
 )
 
-type TaskCron struct {
-	ID     int    `json:"id"`   // 对外展示的 ID：cron.EntryID
-	DBID   int    `json:"DBID"` // 数据库主键 id，只内部使用
-	Name   string `json:"name"`
-	Spec   string `json:"spec"`
-	Next   string `json:"next"`
-	Data   string `json:"data"`   // 任务参数
-	Status int    `json:"status"` // 1=运行中, 0=暂停（持久化在 DB）
-}
-
 type TaskManager struct {
 	c    *cron.Cron
-	jobs map[cron.EntryID]TaskCron
-	db   *sql.DB
+	jobs map[cron.EntryID]models.TaskCron
+	db   *gorm.DB
 }
 
-func NewTaskManager(db *sql.DB) *TaskManager {
+func NewTaskManager(db *gorm.DB) *TaskManager {
 	return &TaskManager{
 		c:    cron.New(cron.WithSeconds()),
-		jobs: make(map[cron.EntryID]TaskCron),
+		jobs: make(map[cron.EntryID]models.TaskCron),
 		db:   db,
 	}
 }
@@ -136,7 +127,7 @@ func InitTaskCron() {
 		bgiStatus.TodayGroupsInfo()
 	}
 
-	Tm = NewTaskManager(config.DB)
+	Tm = NewTaskManager(models.DB)
 	// 从数据库恢复任务
 	Tm.loadTasksFromDB()
 	Tm.Start()

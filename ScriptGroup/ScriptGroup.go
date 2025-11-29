@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 type ScriptGroupConfig struct {
@@ -19,36 +18,36 @@ type ScriptGroupConfig struct {
 }
 
 type Config struct {
-	PathingConfig     PathingConfig `json:"pathingConfig"`
-	ShellConfig       ShellConfig   `json:"shellConfig"`
-	EnableShellConfig bool          `json:"enableShellConfig"`
+	PathingConfig     map[string]interface{} `json:"pathingConfig"`
+	ShellConfig       ShellConfig            `json:"shellConfig"`
+	EnableShellConfig bool                   `json:"enableShellConfig"`
 }
 
-type PathingConfig struct {
-	Enabled                              bool                   `json:"enabled"`
-	AutoPickEnabled                      bool                   `json:"autoPickEnabled"`
-	PartyName                            string                 `json:"partyName"`
-	IsVisitStatueBeforeSwitchParty       bool                   `json:"isVisitStatueBeforeSwitchParty"`
-	MainAvatarIndex                      string                 `json:"mainAvatarIndex"`
-	GuardianAvatarIndex                  string                 `json:"guardianAvatarIndex"`
-	GuardianElementalSkillSecondInterval string                 `json:"guardianElementalSkillSecondInterval"`
-	GuardianElementalSkillLongPress      bool                   `json:"guardianElementalSkillLongPress"`
-	OnlyInTeleportRecover                bool                   `json:"onlyInTeleportRecover"`
-	JsScriptUseEnabled                   bool                   `json:"jsScriptUseEnabled"`
-	SoloTaskUseFightEnabled              bool                   `json:"soloTaskUseFightEnabled"`
-	SkipDuring                           string                 `json:"skipDuring"`
-	UseGadgetIntervalMs                  int                    `json:"useGadgetIntervalMs"`
-	AutoSkipEnabled                      bool                   `json:"autoSkipEnabled"`
-	AutoRunEnabled                       bool                   `json:"autoRunEnabled"`
-	AutoEatEnabled                       bool                   `json:"autoEatEnabled"`
-	AutoEatConfig                        AutoEatConfig          `json:"autoEatConfig"`
-	HideOnRepeat                         bool                   `json:"hideOnRepeat"`
-	TaskCycleConfig                      TaskCycleConfig        `json:"taskCycleConfig"`
-	TaskCompletionSkipRuleConfig         TaskCompletionSkipRule `json:"taskCompletionSkipRuleConfig"`
-	PreExecutionPriorityConfig           PreExecutionPriority   `json:"preExecutionPriorityConfig"`
-	AutoFightEnabled                     bool                   `json:"autoFightEnabled"`
-	AutoFightConfig                      AutoFightConfig        `json:"autoFightConfig"`
-}
+//type PathingConfig struct {
+//	Enabled                              bool                   `json:"enabled"`
+//	AutoPickEnabled                      bool                   `json:"autoPickEnabled"`
+//	PartyName                            string                 `json:"partyName"`
+//	IsVisitStatueBeforeSwitchParty       bool                   `json:"isVisitStatueBeforeSwitchParty"`
+//	MainAvatarIndex                      string                 `json:"mainAvatarIndex"`
+//	GuardianAvatarIndex                  string                 `json:"guardianAvatarIndex"`
+//	GuardianElementalSkillSecondInterval string                 `json:"guardianElementalSkillSecondInterval"`
+//	GuardianElementalSkillLongPress      bool                   `json:"guardianElementalSkillLongPress"`
+//	OnlyInTeleportRecover                bool                   `json:"onlyInTeleportRecover"`
+//	JsScriptUseEnabled                   bool                   `json:"jsScriptUseEnabled"`
+//	SoloTaskUseFightEnabled              bool                   `json:"soloTaskUseFightEnabled"`
+//	SkipDuring                           string                 `json:"skipDuring"`
+//	UseGadgetIntervalMs                  int                    `json:"useGadgetIntervalMs"`
+//	AutoSkipEnabled                      bool                   `json:"autoSkipEnabled"`
+//	AutoRunEnabled                       bool                   `json:"autoRunEnabled"`
+//	AutoEatEnabled                       bool                   `json:"autoEatEnabled"`
+//	AutoEatConfig                        AutoEatConfig          `json:"autoEatConfig"`
+//	HideOnRepeat                         bool                   `json:"hideOnRepeat"`
+//	TaskCycleConfig                      TaskCycleConfig        `json:"taskCycleConfig"`
+//	TaskCompletionSkipRuleConfig         TaskCompletionSkipRule `json:"taskCompletionSkipRuleConfig"`
+//	PreExecutionPriorityConfig           PreExecutionPriority   `json:"preExecutionPriorityConfig"`
+//	AutoFightEnabled                     bool                   `json:"autoFightEnabled"`
+//	AutoFightConfig                      AutoFightConfig        `json:"autoFightConfig"`
+//}
 
 type AutoEatConfig struct {
 	Enabled                    bool    `json:"enabled"`
@@ -216,16 +215,4 @@ func (s *ScriptGroupConfig) SaveConfig(name string, readConfig ScriptGroupConfig
 		return err
 	}
 	return nil
-}
-
-// 判断配置组今天是否执行
-func (s *ScriptGroupConfig) IsExecute(scriptGroupName string) string {
-
-	readConfig := s.ReadConfig(scriptGroupName)
-	taskCycleConfig := readConfig.Config.PathingConfig.TaskCycleConfig
-	if !taskCycleConfig.Enable {
-		return "✅ 今天要执行"
-	} else {
-		return IsTodayExecute(time.Now(), taskCycleConfig.BoundaryTime, taskCycleConfig.Cycle, 1, taskCycleConfig.Index)
-	}
 }

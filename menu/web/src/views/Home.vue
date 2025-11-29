@@ -773,6 +773,10 @@ onMounted(() => {
   padding: 8px 12px;
   border-radius: 6px;
   white-space: nowrap;
+
+    white-space: pre-wrap;   /* 保留换行，同时允许自动换行 */
+  word-wrap: break-word;   /* 长单词自动折行（兼容旧浏览器） */
+  word-break: break-all;   /* 超长内容也强制换行 */
 }
 
 .tooltip-wrapper:hover .tooltip-content {

@@ -89,7 +89,6 @@ type OneRemote struct {
 
 type Control struct {
 	IsCloseYuanShen  bool `json:"IsCloseYuanShen" comment:"bgi关闭需要是否关闭原神"`
-	BackupUsersHour  int  `json:"BackupUsersHour" comment:"每隔几个小时备份users文件夹"`
 	SendWeChatImage  bool `json:"SendWeChatImage" comment:"是否开启每隔一小时发送截图"`
 	StartOpenBrowser bool `json:"StartOpenBrowser" comment:"是否开启启动时打开浏览器"`
 	AbgiScreen       bool `json:"AbgiScreen" comment:"是否开启bgi实时屏幕"`
@@ -211,10 +210,6 @@ func DefaultConfig() {
 	}
 	if Cfg.Notice.Type == "" {
 		Cfg.Notice.Type = "Wechat"
-	}
-
-	if Cfg.Control.BackupUsersHour == 0 {
-		Cfg.Control.BackupUsersHour = 72
 	}
 
 	if Cfg.UpdatePath == nil {
