@@ -3,6 +3,7 @@ package TaskCron
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
+	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
@@ -125,6 +126,22 @@ func InitTaskCron() {
 	task["今日配置组执行情况通知"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：今日配置组执行情况通知-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		bgiStatus.TodayGroupsInfo()
+	}
+	task["开始obs录制"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：开始obs录制-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		err := abgiObs.StartRecording()
+		if err != nil {
+			autoLog.Sugar.Errorf("启动obs失败: %v", err)
+		}
+	}
+	task["结束obs录制"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：结束obs录制-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		err := abgiObs.StopRecording(bgiStatus.BgiLogStatusInfo.Group)
+		if err != nil {
+			autoLog.Sugar.Errorf("结束obs录制失败: %v", err)
+			return
+		}
+		autoLog.Sugar.Infof("结束obs录制成功,视频:" + bgiStatus.BgiLogStatusInfo.Group)
 	}
 
 	Tm = NewTaskManager(models.DB)
