@@ -6,6 +6,7 @@ import (
 	"auto-bgi/TaskCron"
 	"auto-bgi/abgiAi"
 	"auto-bgi/abgiObs"
+	"auto-bgi/auth"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -74,4 +75,8 @@ func InitFunction() {
 
 	//定时任务
 	TaskCron.InitTaskCron()
+
+	//登录验证
+	auth.InitAuth()
+
 }

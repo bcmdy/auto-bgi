@@ -1,4 +1,5 @@
 import axios from 'axios'
+import router from '../router'
 
 // 创建axios实例
 const api = axios.create({
@@ -15,6 +16,13 @@ api.interceptors.request.use(
     if (process.env.NODE_ENV !== 'production') {
       console.log('API请求:', config.method?.toUpperCase(), config.url)
     }
+    
+    // 从 localStorage 获取 token 并添加到 Authorization 头
+    const token = localStorage.getItem('aBgiToken')
+    if (token) {
+      config.headers.Authorization = `${token}`
+    }
+    
     return config
   },
   error => {
@@ -31,16 +39,28 @@ api.interceptors.response.use(
     return response.data
   },
   error => {
-    // if (process.env.NODE_ENV !== 'production') {
-    //   console.error('API请求错误:', error)
-    //   alert(error.response.data.msg)
-    // }
-    return error.response.data
+    // 处理 401 未授权错误
+    if (error.response && error.response.status === 401) {
+      // 清除存储的 token
+      localStorage.removeItem('aBgiToken')
+      // 显示错误提示
+      console.warn('认证已过期，请重新登录')
+      // 跳转到登录页面
+      router.push('/login')
+      return Promise.reject(error)
+    }
+    
+    // 其他错误情况
+    return error.response?.data || Promise.reject(error)
   }
 )
 
 // API方法定义
 export const apiMethods = {
+  // 认证相关
+  login: (username, password) => api.post('/api/auth/login', { username, password }),
+  getSystemConfig: () => api.get('/api/auth/getSystemConfig'),
+  
   // 获取系统状态
   getStatus: () => api.get('/api/index'),
   indexSX: () => api.get('/api/indexSX'),

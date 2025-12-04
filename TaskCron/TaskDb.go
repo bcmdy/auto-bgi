@@ -145,12 +145,6 @@ func (tm *TaskManager) Add(spec, name, data string, fn func(string)) (cron.Entry
 		Data:   data,
 	}
 
-	// 1. 先写入数据库，得到 DBID
-	if err := tm.saveToDB(&t); err != nil {
-		autoLog.Sugar.Errorf("保存任务到数据库失败: %v", err)
-		return 0, err
-	}
-
 	// 2. 再注册到调度器
 	d := data
 	f := fn
@@ -161,10 +155,16 @@ func (tm *TaskManager) Add(spec, name, data string, fn func(string)) (cron.Entry
 		tm.deleteFromDB(t.EntryID)
 		return 0, err
 	}
-
 	// 3. 完善任务信息并放入内存映射
-	t.ID = int(id)  // 对外展示使用调度器 EntryID
-	tm.jobs[id] = t // key 是 EntryID，value 里包含 DBID
+	//t.ID = int(id)  // 对外展示使用调度器 EntryID
+	t.EntryID = int(id) // 对内使用 DBID
+	tm.jobs[id] = t     // key 是 EntryID，value 里包含 DBID
+
+	// 1. 先写入数据库，得到 DBID
+	if err := tm.saveToDB(&t); err != nil {
+		autoLog.Sugar.Errorf("保存任务到数据库失败: %v", err)
+		return 0, err
+	}
 
 	autoLog.Sugar.Infof("任务[%s] 已添加 (EntryID: %d, DBID: %d)\n", name, id, t.EntryID)
 

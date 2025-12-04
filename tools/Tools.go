@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"archive/zip"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
@@ -385,4 +386,56 @@ func StringToInt(i string) int {
 	}
 	return atoi
 
+}
+
+// Unzip 解压 zip 文件到指定目录
+func Unzip(zipPath, destDir string) error {
+	r, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		// 构建解压后的完整路径
+		fpath := filepath.Join(destDir, f.Name)
+
+		// 判断是否是目录
+		if f.FileInfo().IsDir() {
+			// 创建目录
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		// 确保父目录存在
+		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return err
+		}
+
+		// 打开 zip 内文件
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		// 创建目标文件
+		outFile, err := os.Create(fpath)
+		if err != nil {
+			rc.Close()
+			return err
+		}
+
+		// 拷贝内容
+		_, err = io.Copy(outFile, rc)
+
+		// 关闭文件句柄
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -398,7 +398,7 @@ export default {
     },
 
     goBagStatisticsTrend() {
-      this.$router.push('/BagStatisticsTrend');
+      this.$router.push('/MaterialTrend');
     },
 
     //

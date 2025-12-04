@@ -1,69 +1,8 @@
 ﻿import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
 import Antd from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
-
-// 导入所有页面组�?
-import Home from './views/Home.vue'
-import Config from './views/Config.vue'
-import Log from './views/Log.vue'
-import LogAnalysis from './views/LogAnalysis.vue'
-import AutoLog from './views/AutoLog.vue'
-import Archive from './views/Archive.vue'
-import Other from './views/Other.vue'
-import JsNames from './views/JsNames.vue'
-import Pathing from './views/Pathing.vue'
-import ListGroups from './views/ListGroups.vue'
-import AutoArtifactsPro from './views/AutoArtifactsPro.vue'
-import AutoArtifactsPro2 from './views/AutoArtifactsPro2.vue'
-import Harvest from './views/Harvest.vue'
-import Bg from './views/Bg.vue'
-import OneLong from './views/OneLong.vue'
-import Error from './views/Error.vue'
-import CalculateTaskEnabledList from './views/CalculateTaskEnabledList.vue'
-import BagStatistics from './views/BagStatistics.vue'
-import MaterialTrend from './views/MaterialTrend.vue'
-import Gitlog from './views/Gitlog.vue'
-import Online from './views/online.vue'
-import CDAwareAutoGather from './views/CDAwareAutoGather.vue' 
-import screen from './views/screen.vue'
-import obsVideo from './views/obsVideo.vue'
-import TaskCron from './views/TaskCron.vue'
-
-// 路由配置
-const routes = [
-  { path: '/', component: Home },
-  { path: '/Config', component: Config },
-  { path: '/log', component: Log },
-  { path: '/logAnalysis', component: LogAnalysis },
-  { path: '/autoLog', component: AutoLog },
-  { path: '/archive', component: Archive },
-  { path: '/other', component: Other },
-  { path: '/jsNames', component: JsNames },
-  {path: '/Pathing', component: Pathing}, // 懒加�?
-  { path: '/listGroups', component: ListGroups },
-  { path: '/getAutoArtifactsPro', component: AutoArtifactsPro },
-  { path: '/getAutoArtifactsPro2', component: AutoArtifactsPro2 },
-  { path: '/harvest', component: Harvest },
-  { path: '/bg', component: Bg },
-  { path: '/onelong', component: OneLong },
-  { path: '/error', component: Error },
-  { path: '/CalculateTaskEnabledList', component: CalculateTaskEnabledList },
-  { path: '/BagStatistics', component: BagStatistics },
-  { path: '/BagStatisticsTrend', component: MaterialTrend },
-  { path: '/GitLog', component: Gitlog },
-  { path: '/Online', component: Online }, // 修正 component 名称
-  { path: '/CDAwareAutoGather', component: CDAwareAutoGather },
-  { path: '/screen', component: screen },
-  { path: '/obsVideo', component: obsVideo }, // 懒加�?04 页面
-  { path: '/taskCron', component: TaskCron }
-]
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-})
+import router from './router'
 
 const app = createApp(App)
 app.use(Antd)

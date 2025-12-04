@@ -78,22 +78,26 @@
       </div>
 
       <!-- 底部按钮 -->
-      <div class="footer">
+      <!-- <div class="footer">
         <router-link to="/" class="back-button">
           <span class="button-icon">🏠</span>
           返回主页
         </router-link>
-      </div>
-    </div>
+      </div> -->
     
     <!-- 背景装饰 -->
     <div class="bg-decoration">
       <div class="floating-particle" v-for="i in 12" :key="i" :style="getParticleStyle(i)"></div>
       <div class="floating-star" v-for="i in 6" :key="'star'+i" :style="getStarStyle(i)">★</div>
     </div>
+
+  </div>
+      <!-- 悬浮返回桌面按钮，放在container末尾，确保悬浮效果 -->
+    <router-link to="/" class="floating-back-btn" title="返回桌面">
+      <span class="floating-btn-icon">🏠</span>
+    </router-link>
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { apiMethods } from '../utils/api.js'
@@ -857,4 +861,34 @@ export default {
     font-size: 13px;
   }
 }
+
+
+/* 悬浮返回桌面按钮样式 */
+/* 悬浮返回桌面按钮样式（全局） */
+.floating-back-btn {
+  position: fixed !important;
+  right: 32px;
+  bottom: 32px;
+  z-index: 9999;
+  background: linear-gradient(135deg, #fffbe6 60%, #ffe0e0 100%);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: 1px solid #f5dada;
+}
+.floating-back-btn:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  transform: scale(1.08);
+}
+.floating-btn-icon {
+  font-size: 28px;
+  color: #e57373;
+}
+
 </style>

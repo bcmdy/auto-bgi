@@ -3,6 +3,7 @@ package TaskCron
 import (
 	"auto-bgi/models"
 	"github.com/gin-gonic/gin"
+	"sort"
 	"strconv"
 )
 
@@ -10,6 +11,15 @@ import (
 func List(c *gin.Context) {
 	list := Tm.List()
 	if list != nil {
+		//根据下次执行时间排序
+		sort.Slice(list, func(i, j int) bool {
+			//暂停靠后
+			if list[i].Status == 0 && list[j].Status == 1 {
+				return false
+			}
+			return list[i].Next < list[j].Next
+		})
+
 		c.JSON(200, list)
 		return
 	}

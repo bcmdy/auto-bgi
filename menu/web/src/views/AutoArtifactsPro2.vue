@@ -60,9 +60,15 @@ const fetchData = async () => {
     
     // 使用与原始HTML完全相同的API调用方式
     const url = `/api/getAutoArtifactsPro2?fileName=${fileName.value}&json=1`
-    console.log('请求URL:', url)
-    
-    const response = await fetch(url)
+    // 从 localStorage 读取 token 并加入请求头（与 api.js 保持一致的字段）
+    const token = localStorage.getItem('aBgiToken')
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = token
+    }
+    console.log('请求URL:', url, 'headers:', headers)
+
+    const response = await fetch(url, { headers })
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

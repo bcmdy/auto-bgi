@@ -711,7 +711,7 @@ func max(a, b int) int {
 	return b
 }
 
-func FindLogFiles(dirPath string) ([]string, error) {
+func findLogFiles(dirPath string) ([]string, error) {
 	pattern := filepath.Join(dirPath, "*.log")
 
 	files, err := filepath.Glob(pattern)
@@ -793,7 +793,7 @@ func FindLogFiles1Remote(dirPath string) ([]string, error) {
 }
 
 // 解压 zip 中 repo 文件夹的内容
-func unzipRepo(zipPath, outputDir, targetPrefix string) error {
+func UnzipRepo(zipPath, outputDir, targetPrefix string) error {
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return err
@@ -1327,20 +1327,6 @@ func Archive(data LogAnalysis2Struct) string {
 		autoLog.Sugar.Infof("存在归档记录，执行删除操作")
 
 		// 删除已存在的归档记录
-		//delStmt, err := models.DB.Prepare(`DELETE FROM archive_records WHERE title = ?`)
-		//if err != nil {
-		//	autoLog.Sugar.Errorf("删除预处理失败: %v", err)
-		//	return "删除预处理失败"
-		//}
-		//defer delStmt.Close()
-		//
-		//_, err = delStmt.Exec(title)
-		//if err != nil {
-		//	autoLog.Sugar.Errorf("删除数据库记录失败: %v", err)
-		//	return "删除数据库记录失败"
-		//}
-
-		// 删除已存在的归档记录
 		err := models.DeleteArchiveRecordByTitle(title)
 		if err != nil {
 			autoLog.Sugar.Errorf("删除归档记录失败: %v", err)
@@ -1365,27 +1351,6 @@ func Archive(data LogAnalysis2Struct) string {
 func CalculateTime(filename, groupName, startTime string) (string, error) {
 	// 解析文件名中的日期
 	fileDate := GetFileNameDate(filename)
-
-	// 查询数据库配置组时长
-	//stmt, err := models.DB.Prepare(`SELECT execute_time FROM archive_records WHERE title = ?`)
-	//if err != nil {
-	//	return "", err
-	//}
-	//defer stmt.Close()
-	//
-	//rows, err := stmt.Query(groupName)
-	//if err != nil {
-	//	return "", err
-	//}
-	//defer rows.Close()
-	//
-	//var archiveRecords ArchiveRecords
-	//for rows.Next() {
-	//	err = rows.Scan(&archiveRecords.ExecuteTime)
-	//	if err != nil {
-	//		return "", err
-	//	}
-	//}
 
 	//根据title查询数据库
 	archiveRecords := models.GetArchiveRecordByTitle(groupName)
@@ -1417,7 +1382,7 @@ func ListArchive() []models.ArchiveRecords {
 	//查询所有归档
 	archiveRecords := models.ListArchiveRecords()
 	return archiveRecords
-	
+
 }
 
 // JsVersion 读取脚本的版本号
@@ -1456,7 +1421,7 @@ var i int
 
 func ReadLog() {
 	filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
-	files, err := FindLogFiles(filePath)
+	files, err := findLogFiles(filePath)
 	if err != nil || len(files) == 0 {
 		fmt.Println("找不到日志文件")
 		return
@@ -1923,7 +1888,7 @@ func LogM() {
 	defer ticker.Stop()
 
 	for {
-		files, err := FindLogFiles(logDir)
+		files, err := findLogFiles(logDir)
 		if err != nil || len(files) == 0 {
 			fmt.Println("找不到日志文件")
 			<-ticker.C

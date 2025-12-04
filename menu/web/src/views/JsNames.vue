@@ -205,9 +205,17 @@ export default {
     }
     const getSortIcon = key => currentSort.value.key !== key ? 'sort-default' : (currentSort.value.asc ? 'sort-asc' : 'sort-desc')
 
+        const token = localStorage.getItem('aBgiToken')
+    console.log('获取到的 token:', token)
+
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `${token}`
+    }
+
     const loadPluginList = async () => {
       try {
-        const res = await fetch('/api/jsNames')
+        const res = await fetch('/api/jsNames',{headers})
         const json = await res.json()
         pluginData.value = json.data || []
       } catch {

@@ -33,7 +33,10 @@
         <p><span>🗺️</span> 配置组进度：<span>{{ statusData.progress }}</span></p>
         <p><span>🖥️</span> 软件状态：<span>{{ statusData.running }}</span></p>
         <p><span>✨</span><span>{{ statusData.jsProgress }}</span></p>
-        <p><span class="indexSX" @click="indexSXBtn">刷新</span></p>
+        <p>
+          <span class="indexSX" @click="indexSXBtn">刷新</span>
+ 
+        </p>
       </div>
 
       <!-- 数据分析按钮组 -->
@@ -160,6 +163,22 @@ const refreshScreenshot = () => {
   screenshotModal.url = `/api/aBgiJt?t=${ts}`
 }
 
+// 退出登录：清理本地 token 并跳转到登录页
+const handleLogout = () => {
+
+  try {
+
+
+  localStorage.removeItem('aBgiToken')
+  
+    // 跳转到登录页
+    router.push('/login')
+  } catch (err) {
+    console.error('logout error', err)
+    router.push('/login')
+  }
+}
+
 // 定义定时器相关变量
 let screenshotTimer = null
 const SCREENSHOT_INTERVAL = 3000 // 5秒刷新一次
@@ -276,6 +295,7 @@ let animationId = null
 const showScanModal = ref(false)
 const scanResult = ref('')
 
+
 // 樱花花瓣类
 class Petal {
   constructor(canvas) {
@@ -355,6 +375,8 @@ const initSakuraAnimation = () => {
 }
 
 
+
+// ...existing code... (keep the single, full handleLogout defined earlier)
 
 // 获取状态信息
 const refreshStatus = async () => {
@@ -470,7 +492,6 @@ const handleOneLong = async () => {
 
 
 
-// 处理一条龙启动确认
 const handleOneLongOk = async () => {
   if (!oneLongModal.selectedValue) {
     message.warning('请选择一条龙')
@@ -495,8 +516,6 @@ const handleOneLongCancel = () => {
   oneLongModal.visible = false
   oneLongModal.selectedValue = ''
 }
-
-
 
 
 const handleCloseBgi = () => {
@@ -595,7 +614,6 @@ const mysSignIn = () => {
 
 
 
-// 自动化按钮配置
 const automationButtons = ref([
   { text: '一条龙启动', action: handleOneLong },
   { text: '关闭BGI和原神', action: handleCloseBgi },
@@ -605,12 +623,10 @@ const automationButtons = ref([
   { text: '发送桌面截图', action: sendImage },
   { text: '查看桌面图片', action: openScreenshot },
   { text: '米游社手动签到', action: mysSignIn },
-  { text: '联机管理', action: () => router.push('/Online') }
+  { text: '联机管理', action: () => router.push('/Online') },
+    {text: '退出登录',action: handleLogout }
 
 ])
-
-
-
 
 // 生命周期
 onMounted(() => {
@@ -1157,5 +1173,11 @@ button:hover {
     font-size: 0.9rem;
   }
 }
+
+
+
+</style>
+
+<style scoped>
 
 </style>

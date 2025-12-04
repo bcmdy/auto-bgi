@@ -91,7 +91,7 @@
                 bordered
                 :scroll="{ x: 860 }"
               >
-                <template #bodyCell="{ column, record }">
+                <template #bodyCell="{ column, record, index, text }">
                   <template v-if="column.key === 'action'">
                     <a-space>
                       <a-tooltip title="编辑任务">
@@ -136,7 +136,10 @@
                     </a-tag>
                   </template>
                   <template v-else>
-                    <span>{{ record[column.dataIndex] }}</span>
+                    <span v-if="column && typeof column.customRender === 'function'">
+                      {{ column.customRender(text, record, index) }}
+                    </span>
+                    <span v-else>{{ record[column.dataIndex] }}</span>
                   </template>
                 </template>
               </a-table>
@@ -215,13 +218,18 @@ const dropdownLoading = ref(false)
 const editingTaskId = ref(null)
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
-  { title: '任务名称', dataIndex: 'name', key: 'name', width: 150 },
-  { title: 'Cron 表达式', dataIndex: 'spec', key: 'spec', width: 180 },
-  { title: '下次执行时间', dataIndex: 'next', key: 'next', width: 200 },
-  { title: '任务参数', dataIndex: 'data', key: 'data' },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '操作', key: 'action', width: 220 }
+  {
+    title: '序号',
+    align: 'center',
+    width: 50,
+    customRender: (text,record,index) => `${index+1}`,
+  },
+  { title: '任务名称', dataIndex: 'name', key: 'name',align: 'center', width: 150 },
+  { title: 'Cron 表达式', dataIndex: 'spec', key: 'spec',align: 'center', width: 90 },
+  { title: '下次执行时间', dataIndex: 'next', key: 'next',align: 'center', width: 160 },
+  { title: '任务参数', dataIndex: 'data',align: 'center', key: 'data' },
+  { title: '状态', dataIndex: 'status', key: 'status',align: 'center', width: 80 },
+  { title: '操作', key: 'action', align: 'center',width: 220 }
 ]
 
 const submitDisabled = computed(() => {

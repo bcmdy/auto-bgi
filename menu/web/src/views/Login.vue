@@ -15,7 +15,7 @@
     <!-- 登录卡片 -->
     <div class="login-card-wrapper">
       <div class="card-header">
-        <h1 class="system-title">❤️ {{ systemName }} ❤️</h1>
+        <h1 class="system-title">~~~{{ systemName }}~~~</h1>
         <p class="subtitle">欢迎回来~</p>
       </div>
 

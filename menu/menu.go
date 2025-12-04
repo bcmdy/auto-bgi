@@ -16,6 +16,7 @@ import (
 	"auto-bgi/abgiSSE"
 	"auto-bgi/abgiScreen"
 	"auto-bgi/abgiUpdate"
+	"auto-bgi/auth"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -198,27 +199,633 @@ func StarGin() {
 
 	})
 
-	//查询所有日志文件
-	ginServer.GET("/api/logFiles", func(c *gin.Context) {
-		filePath := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress)) // 本地日志路径
-		files, err := bgiStatus.FindLogFiles(filePath)
-		if err != nil {
-			return
+	authApi := ginServer.Group("/api/auth")
+	{
+		//登录
+		authApi.POST("/login", auth.LoginService)
+
+		//获取系统配置
+		authApi.GET("/getSystemConfig", auth.GetSystemConfig)
+
+	}
+
+	var dogFood = ArtifactsBulkSupply.DogFood{}
+
+	var OneLongService OneLong.OneLong
+
+	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
+
+	var CDAwareAutoGatherService CDAwareAutoGather.UidInfo
+
+	var pickBlackListsService BetterGI.PickBlackLists
+
+	needAuth := ginServer.Group("/api", auth.AuthMiddleware())
+	{
+		/**
+		 * 日志相关
+		 */
+		//查询所有日志文件
+		needAuth.GET("/logFiles", bgiStatus.GetLogFiles)
+		//读取日志
+		ginServer.GET("/logInfo", bgiStatus.GetLogFileContent)
+
+		/**
+		 * 联机相关
+		 */
+		abgiWs := needAuth.Group("abgiSSE")
+		{
+			//上线
+			abgiWs.POST("/connect/:typeKey", abgiSSE.Online)
+
+			//下线
+			abgiWs.POST("/disconnect", func(c *gin.Context) {
+				abgiSSE.Close()
+			})
+
+			//获取在线人员
+			abgiWs.GET("/getOnlineUser", func(context *gin.Context) {
+				onlineUser := abgiSSE.GroupsStatusHandler()
+				context.JSON(http.StatusOK, onlineUser)
+			})
+
 		}
-		c.JSON(http.StatusOK, gin.H{"files": files})
-	})
 
-	//读取日志
-	ginServer.GET("/api/logInfo", func(c *gin.Context) {
+		needAuth.GET("/index", bgiStatus.GetIndex)
 
-		filePath := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, time.Now().Format("20060102"))) // 本地日志路径
-		logInfo, err := bgiStatus.GetLogInfo(filePath)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "读取日志失败")
+		//首页刷新
+		needAuth.GET("/indexSX", func(c *gin.Context) {
+			bgiStatus.InitBgiLogStatus()
+			c.JSON(http.StatusOK, "刷新成功")
+		})
+
+		//查询归档列表查询
+		needAuth.GET("/archiveList", func(c *gin.Context) {
+			// 调用函数获取数据
+			archive := bgiStatus.ListArchive()
+
+			c.JSON(http.StatusOK, archive)
+		})
+
+		// 删除归档记录
+		needAuth.DELETE("/archive", func(c *gin.Context) {
+			idStr := c.Query("id")
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				c.String(http.StatusBadRequest, "无效的ID")
+				return
+			}
+
+			err = models.DeleteArchiveRecord(id)
+			if err != nil {
+				c.String(http.StatusInternalServerError, "删除失败")
+				return
+			}
+
+			c.String(http.StatusOK, "删除成功")
+		})
+
+		// 删除全部归档记录
+		needAuth.DELETE("/allArchives", func(c *gin.Context) {
+
+			err := models.DeleteAllArchiveRecords()
+			if err != nil {
+				c.String(http.StatusInternalServerError, "全部删除失败")
+				return
+			}
+
+			c.String(http.StatusOK, "全部删除成功")
+		})
+
+		needAuth.POST("/closeBgi", func(context *gin.Context) {
+
+			control.CloseSoftware()
+
+			control.CloseYuanShen()
+
+			context.JSON(http.StatusOK, gin.H{"status": "received", "data": "BGI关闭成功"})
+		})
+
+		needAuth.POST("/closeYuanShen", func(context *gin.Context) {
+
+			control.CloseYuanShen()
+
+			context.JSON(http.StatusOK, gin.H{"status": "received", "data": "原神关闭成功"})
+		})
+
+		//发送截图
+		needAuth.POST("/sendImage", func(c *gin.Context) {
+
+			err := control.ScreenShot("jt.jpg")
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
+				return
+			} else {
+				err2 := Notice.SentImage("jt.jpg")
+				if err2 != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err2})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{"status": "received", "data": "发送成功"})
+				return
+			}
+
+		})
+
+		//背包统计
+		needAuth.GET("/BagStatistics", func(context *gin.Context) {
+			statistics, _ := bgiStatus.BagStatistics()
+
+			// 按材料名称排序，再按日期排序
+			sort.Slice(statistics, func(i, j int) bool {
+				// 首先按材料名称排序
+				if statistics[i].Cl != statistics[j].Cl {
+					return statistics[i].Cl < statistics[j].Cl
+				}
+				// 如果材料名称相同，则按日期排序
+				layout := "2006/1/2 15:04:05"
+				ti, _ := time.Parse(layout, statistics[i].Data)
+				tj, _ := time.Parse(layout, statistics[j].Data)
+				return ti.Before(tj)
+			})
+
+			context.JSON(http.StatusOK, statistics)
+
+		})
+
+		//检查背包材料是否超过8000
+		needAuth.GET("/checkBag", func(context *gin.Context) {
+			checkBag := bgiStatus.CheckBag()
+			context.JSON(http.StatusOK, checkBag)
+		})
+
+		//删除背包统计记录
+		needAuth.POST("/deleteBag", func(context *gin.Context) {
+			isOk := bgiStatus.DeleteBagStatistics()
+
+			data := gin.H{
+				"message": isOk,
+			}
+
+			context.JSON(http.StatusOK, data)
+		})
+
+		//启动配置组
+		needAuth.POST("/startGroups", func(context *gin.Context) {
+
+			var data []string
+			err := context.BindJSON(&data)
+			if err != nil {
+				fmt.Println("err:", err)
+				return
+			}
+
+			err = task.StartGroups(data)
+			if err != nil {
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"message": "Success"})
+		})
+
+		//查询狗粮日志
+		needAuth.GET("/getAutoArtifactsPro", func(context *gin.Context) {
+
+			pro, err := bgiStatus.GetAutoArtifactsPro()
+			autoLog.Sugar.Infof("狗粮记录:%s", pro)
+
+			//获取版本号
+			version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply", config.Cfg.BetterGIAddress))
+
+			//查询更新状态
+			jsVersion := bgiStatus.JsVersion("AAA-Artifacts-Bulk-Supply", version)
+
+			if err != nil {
+				// 传递给模板
+				context.JSON(http.StatusInternalServerError, gin.H{
+					"title":     "狗粮批发-联机收益查询" + "【" + version + "】",
+					"JsVersion": jsVersion,
+					"items":     nil,
+				})
+
+				return
+			}
+
+			context.JSON(http.StatusOK, gin.H{
+				"title":     "狗粮批发-联机收益查询" + "【" + version + "】",
+				"JsVersion": jsVersion,
+				"items":     pro,
+			})
+
+		})
+
+		//查询狗粮日志
+		needAuth.GET("/getAutoArtifactsPro2", func(context *gin.Context) {
+
+			fileName := context.Query("fileName")
+			if fileName == "" {
+				context.JSON(http.StatusBadRequest, gin.H{"error": "fileName不能为空"})
+				return
+			}
+			data, err := bgiStatus.GetAutoArtifactsPro2(fileName)
+
+			// 判断是否请求 JSON 数据
+			fmt.Println("=============", context.Query("json"))
+			if context.Query("json") == "1" {
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"error": "读取失败"})
+					return
+				}
+				context.JSON(http.StatusOK, data)
+				return
+			}
+
+			context.JSON(http.StatusOK, gin.H{
+				"items": data,
+			})
+
+		})
+
+		//查询收获前10的材料
+		needAuth.GET("/logAnalysis", func(context *gin.Context) {
+			fileName := context.Query("file")
+
+			res := bgiStatus.LogAnalysis(fileName)
+
+			context.JSON(200, res)
+
+		})
+
+		//备份文件
+		needAuth.POST("/backup", func(context *gin.Context) {
+			err := bgiStatus.Backup()
+			if err != nil {
+				context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
+				return
+			}
+			context.JSON(http.StatusOK, gin.H{"status": "received", "data": "备份成功"})
+		})
+
+		//获取仓库提交记录
+		needAuth.GET("/gitLog", func(context *gin.Context) {
+
+			gitLog := ScriptRepo.Read()
+			context.JSON(http.StatusOK, gin.H{
+				"gitLog": gitLog,
+			})
+		})
+
+		// 统计配置组执行时间 - 返回JSON
+		needAuth.GET("/other", func(context *gin.Context) {
+			var otherGroup sync.WaitGroup
+			otherGroup.Add(2)
+			fileName := context.Query("file")
+
+			var (
+				GroupTime  []bgiStatus.LogAnalysis2Struct
+				signLog    string
+				groupPInfo string
+			)
+
+			//获取配置组执行时长
+			go func() {
+				defer otherGroup.Done()
+				GroupTime = bgiStatus.GroupTime(fileName)
+			}()
+
+			//获取今天执行配置组
+			go func() {
+				defer otherGroup.Done()
+				groupPInfo = bgiStatus.GetGroupPInfo()
+			}()
+
+			otherGroup.Wait() // 等待所有 goroutine 完成
+
+			context.JSON(http.StatusOK, gin.H{
+				"GroupTime":  GroupTime,
+				"signLog":    signLog,
+				"groupPInfo": groupPInfo,
+			})
+		})
+
+		needAuth.POST("/archive", func(c *gin.Context) {
+			var req bgiStatus.LogAnalysis2Struct
+			if err := c.ShouldBindJSON(&req); err != nil {
+				c.JSON(400, gin.H{"error": "参数解析失败: " + err.Error()})
+				return
+			}
+			bgiStatus.Archive(req)
+
+			bgiStatus.InitBgiLogStatus()
+
+			c.String(200, fmt.Sprintf("成功归档"))
+		})
+
+		//日志分析
+		needAuth.GET("/LogAnalysis2Page", func(context *gin.Context) {
+			fileName := context.Query("file")
+			if fileName == "" {
+				context.String(http.StatusBadRequest, "缺少 file 参数")
+				return
+			}
+
+			results := bgiStatus.LogAnalysis2(fileName)
+
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
+		})
+
+		//查询脚本情况
+		needAuth.GET("/jsNames", func(context *gin.Context) {
+
+			jsNamesInfo := bgiStatus.JsNamesInfo()
+
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": jsNamesInfo})
+		})
+
+		//重置仓库
+		needAuth.POST("/repo/resetRepo", warehouse.RepoReset)
+
+		//脚本Js更新
+		needAuth.POST("/updateJs/:name", func(context *gin.Context) {
+			name := context.Param("name")
+
+			autoLog.Sugar.Infof("更新插件:%s", name)
+			_, err := bgiStatus.UpdateJs(name)
+			if err != nil {
+				// 成功返回
+				context.JSON(400, gin.H{"err": err})
+				return
+			}
+
+			// 成功返回
+			context.JSON(200, gin.H{"success": true})
+
+		})
+
+		//查询配置文件
+		needAuth.GET("/config", func(context *gin.Context) {
+			cfg := config.Cfg
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": cfg})
+		})
+
+		//abgi配置保存
+		needAuth.POST("/saveConfig", func(c *gin.Context) {
+			var newConfig config.Config
+
+			if err := c.ShouldBindJSON(&newConfig); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				return
+			}
+
+			// 序列化为JSON字符串，格式化输出
+			data, err := json.MarshalIndent(newConfig, "", "  ")
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "序列化失败", "error": err.Error()})
+				return
+			}
+
+			// 写入 main.json，路径可以自定义，这里示例写当前运行目录
+			filePath := filepath.Join(".", "main.json")
+			err = os.WriteFile(filePath, data, 0644)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "写文件失败", "error": err.Error()})
+				return
+			}
+
+			fmt.Println("配置保存成功:", newConfig)
+
+			//重新加载配置文件
+			_ = config.ReloadConfig()
+			time.Sleep(1 * time.Second)
+			//
+			//// 调用重启脚本
+			//cmd := exec.Command("cmd", "/c", "restart.bat")
+			//err2 := cmd.Start()
+			//if err2 != nil {
+			//	c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err2.Error()})
+			//	return
+			//}
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "重启命令已执行"})
+
+		})
+
+		oneLongController := needAuth.Group("/oneLong")
+		{
+			//启动一条龙
+			oneLongController.POST("/startOneLong", func(c *gin.Context) {
+
+				var name string
+				if err := c.ShouldBindJSON(&name); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
+					return
+				}
+
+				OneLongService.StartOneLong(name)
+
+				c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
+			})
+
+			//读取所有一条龙配置
+			oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
+				oneLongInfo := OneLongService.OneLongAllName()
+				context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
+			})
+
 		}
 
-		c.String(http.StatusOK, logInfo)
-	})
+		//读取js的md文件
+		needAuth.GET("/md", func(c *gin.Context) {
+			filePath := c.Query("filePath")
+
+			jsMd := bgiStatus.ReadMd(filePath)
+			c.JSON(http.StatusOK, gin.H{"status": "success", "data": jsMd})
+
+		})
+
+		//批量更新仓库
+		needAuth.POST("/batchUpdate", func(c *gin.Context) {
+			script := bgiStatus.BatchUpdateScript()
+			if script != "" {
+				c.JSON(http.StatusOK, gin.H{"status": "success", "message": script})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功"})
+		})
+
+		//米游社手动签到
+		needAuth.POST("/mysSignIn", func(c *gin.Context) {
+
+			task.MiYouSheSign()
+
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "签到成功"})
+
+		})
+
+		//定时任务
+		taskCronController := needAuth.Group("/taskCron")
+		{
+			taskCronController.GET("/list", TaskCron.List)
+			taskCronController.POST("/add", TaskCron.CronAdd)
+			taskCronController.POST("/remove", TaskCron.CronRemove)
+			//查询可以设置的定时的任务
+			taskCronController.GET("/getTasks", TaskCron.GetTask)
+			//更新定时任务
+			taskCronController.POST("/update", TaskCron.Update)
+			//暂停定时任务
+			taskCronController.POST("/pause", TaskCron.Pause)
+			//恢复定时任务
+			taskCronController.POST("/resume", TaskCron.Resume)
+		}
+
+		//更新bgi
+		updateBgi := needAuth.Group("/UpdateBgi")
+		{
+			updateBgi.POST("/Upload", BetterGI.UploadBgi)
+		}
+
+		//配置组api
+		scriptGroup := needAuth.Group("/scriptGroup")
+		{
+			//读取配置组配置
+			scriptGroup.POST("/UpdatePathing", func(c *gin.Context) {
+				var updatePath config.UpdatePathing
+				if err := c.ShouldBindJSON(&updatePath); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+					return
+				}
+
+				res, err := scriptGroupConfig.UpdatePathing(updatePath)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+
+				c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
+			})
+
+			//地图追踪更新，无配置组
+			scriptGroup.POST("/UpdatePathingNoConfig", scriptGroupConfig.UpdatePathingNoConfig)
+
+			//查询地图追踪配置
+			scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
+
+				scriptGroupConfig.ListPathingUpdatePaths()
+
+				UpdatePathData := config.Cfg.UpdatePath
+
+				c.JSON(http.StatusOK, gin.H{"status": "success", "data": UpdatePathData})
+			})
+
+			//保存配置
+			scriptGroup.POST("/savePathing", func(c *gin.Context) {
+				var updatePath []config.UpdatePathing
+				if err := c.ShouldBindJSON(&updatePath); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+					return
+				}
+				err := scriptGroupConfig.SavePathing(updatePath)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
+			})
+
+			//查询所有配置组
+			scriptGroup.GET("/listGroups", func(context *gin.Context) {
+				groups, err := task.ListGroups()
+				if err != nil {
+					return
+				}
+
+				context.JSON(http.StatusOK, groups)
+			})
+
+			//查询所有地图追踪文件
+			scriptGroup.GET("/listAllGroups", func(context *gin.Context) {
+				listAllPathing, err := scriptGroupConfig.ListAllPathing()
+				if err != nil {
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "data": listAllPathing})
+			})
+
+			//清理地图追踪文件
+			scriptGroup.POST("/cleanAllPathing", scriptGroupConfig.CleanAllPathing)
+
+			//读取配置组所有的地图追踪
+			scriptGroup.GET("/listPathingUpdatePaths", scriptGroupConfig.UpdatePaths)
+
+		}
+
+		//CD-Aware-AutoGather - 带CD管理的自动采集
+		CDAwareAutoGatherController := needAuth.Group("/CD-Aware-AutoGather")
+		{
+			CDAwareAutoGatherController.GET("/ReadInfo", func(context *gin.Context) {
+				//状态
+				status := context.Query("status")
+				readInfo := CDAwareAutoGatherService.ReadInfo(status)
+				context.JSON(http.StatusOK, readInfo)
+			})
+			CDAwareAutoGatherController.POST("/CDAllMaterial", func(context *gin.Context) {
+				material := CDAwareAutoGatherService.CDAllMaterial()
+				context.JSON(http.StatusOK, material)
+			})
+
+			//更新所有cd管理材料
+			CDAwareAutoGatherController.POST("/UpdateAllCD", func(context *gin.Context) {
+				CDAwareAutoGatherService.UpdateAllCD()
+				context.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功,具体请看日志:logs/"})
+			})
+		}
+
+		bgiController := needAuth.Group("/betterGi")
+		{
+			//读取黑名单
+			bgiController.GET("/blackList", func(c *gin.Context) {
+				lists, err2 := pickBlackListsService.ReadPickBlackLists()
+				if err2 != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{"status": "success", "data": lists})
+			})
+			//添加黑名单
+			bgiController.POST("/addBlackList", func(c *gin.Context) {
+				var blackList []string
+				if err := c.ShouldBindJSON(&blackList); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+					return
+				}
+
+				err := pickBlackListsService.AddPickBlackLists(blackList)
+				if err != nil {
+					autoLog.Sugar.Infof("添加黑名单失败:%s", err.Error())
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{"status": "success", "message": "添加成功"})
+
+			})
+
+			//删除某一个黑名单
+			bgiController.POST("/deleteBlackList", func(c *gin.Context) {
+				var blackName string
+				if err := c.ShouldBindJSON(&blackName); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+					return
+				}
+				err := pickBlackListsService.DeletePickBlackLists(blackName)
+				if err != nil {
+					autoLog.Sugar.Infof("删除黑名单失败:%s", err.Error())
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+
+			})
+
+		}
+
+	}
 
 	// WebSocket 处理器
 	ginServer.GET("/ws/:name", func(c *gin.Context) {
@@ -268,669 +875,6 @@ func StarGin() {
 			}
 		}
 	})
-
-	var dogFood = ArtifactsBulkSupply.DogFood{}
-	abgiWs := ginServer.Group("/api/abgiSSE")
-	{
-		//上线
-		abgiWs.POST("/connect/:typeKey", func(c *gin.Context) {
-			if config.Cfg.Account.Uid == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "账号配置错误"})
-				return
-			}
-			if config.Cfg.Account.Name == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "账号配置错误"})
-				return
-			}
-			if config.Cfg.Account.SecretKey == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
-				return
-			}
-			//解密
-			decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
-			if err3 != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
-				return
-			}
-
-			//读取联机文件
-			num := abgiSSE.ReadFile("dogFoodNum.txt")
-
-			runDebug := c.Query("runDebug") == "true"
-			abgiType := "noDebug"
-			//查询今天狗粮批发是什么线路
-			dogFoodLine := dogFood.DogFoodIsAOrB()
-			if dogFoodLine == "" {
-				autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
-				runDebug = true
-				abgiType = "debug"
-			} else if dogFoodLine == "B" {
-				runDebug = true
-				abgiType = "debug"
-			} else if num >= 100 {
-				autoLog.Sugar.Infof("今天狗粮已经跑完，无需再跑")
-				runDebug = true
-				abgiType = "debug"
-			} else if runDebug {
-				abgiType = "debug"
-			}
-
-			autoLog.Sugar.Infof("当前狗粮批发线路为：%s，是否调试：%t，手动上线类型：%s", dogFoodLine, runDebug, abgiType)
-
-			err := abgiSSE.Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decryptedKey, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
-			if err != nil {
-				autoLog.Sugar.Errorf("连接失败")
-				c.String(http.StatusBadRequest, err.Error())
-				return
-
-			}
-			c.String(http.StatusOK, "连接成功")
-		})
-
-		//下线
-		abgiWs.POST("/disconnect", func(c *gin.Context) {
-			abgiSSE.Close()
-		})
-
-		//获取在线人员
-		abgiWs.GET("/getOnlineUser", func(context *gin.Context) {
-			onlineUser := abgiSSE.GroupsStatusHandler()
-			context.JSON(http.StatusOK, onlineUser)
-		})
-	}
-
-	//日志查询
-	ginServer.GET("/api/index", func(c *gin.Context) {
-
-		info := bgiStatus.BgiLogStatusInfo
-
-		data := make(map[string]interface{})
-		data["group"] = info.Group + " [" + info.GroupProgress + "]"
-		data["ExpectedToEnd"] = info.Timestamp
-		data["line"] = info.MapTrackingLine
-		data["scriptName"] = info.ScriptName
-		data["progress"] = info.ConfigurationGroupExecutionProgress
-		data["running"] = info.Running
-		data["jsProgress"] = info.JSProgress
-		//data["version"] = Version
-		//data["isUpdate"] = Version != ABgi.GetCurrentVersion()
-
-		c.JSON(http.StatusOK, data)
-
-	})
-
-	//首页刷新
-	ginServer.GET("/api/indexSX", func(c *gin.Context) {
-		bgiStatus.InitBgiLogStatus()
-		c.JSON(http.StatusOK, "刷新成功")
-	})
-
-	//查询归档列表查询
-	ginServer.GET("/api/archiveList", func(c *gin.Context) {
-		// 调用函数获取数据
-		archive := bgiStatus.ListArchive()
-
-		c.JSON(http.StatusOK, archive)
-	})
-
-	// 删除归档记录
-	ginServer.DELETE("/api/archive", func(c *gin.Context) {
-		idStr := c.Query("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			c.String(http.StatusBadRequest, "无效的ID")
-			return
-		}
-
-		err = models.DeleteArchiveRecord(id)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "删除失败")
-			return
-		}
-
-		c.String(http.StatusOK, "删除成功")
-	})
-
-	// 删除全部归档记录
-	ginServer.DELETE("/api/allArchives", func(c *gin.Context) {
-		//_, err := config.DB.Exec("DELETE FROM archive_records")
-		//if err != nil {
-		//	c.String(http.StatusInternalServerError, "删除失败")
-		//	return
-		//}
-		err := models.DeleteAllArchiveRecords()
-		if err != nil {
-			c.String(http.StatusInternalServerError, "全部删除失败")
-			return
-		}
-
-		c.String(http.StatusOK, "全部删除成功")
-	})
-
-	ginServer.POST("/api/closeBgi", func(context *gin.Context) {
-
-		control.CloseSoftware()
-
-		control.CloseYuanShen()
-
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "BGI关闭成功"})
-	})
-
-	ginServer.POST("/api/closeYuanShen", func(context *gin.Context) {
-
-		control.CloseYuanShen()
-
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "原神关闭成功"})
-	})
-
-	//发送截图
-	ginServer.POST("/api/sendImage", func(c *gin.Context) {
-
-		err := control.ScreenShot("jt.jpg")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": "截图失败"})
-			return
-		} else {
-			err2 := Notice.SentImage("jt.jpg")
-			if err2 != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err2})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{"status": "received", "data": "发送成功"})
-			return
-		}
-
-	})
-
-	//背包统计
-	ginServer.GET("/api/BagStatistics", func(context *gin.Context) {
-		statistics, _ := bgiStatus.BagStatistics()
-
-		// 按材料名称排序，再按日期排序
-		sort.Slice(statistics, func(i, j int) bool {
-			// 首先按材料名称排序
-			if statistics[i].Cl != statistics[j].Cl {
-				return statistics[i].Cl < statistics[j].Cl
-			}
-			// 如果材料名称相同，则按日期排序
-			layout := "2006/1/2 15:04:05"
-			ti, _ := time.Parse(layout, statistics[i].Data)
-			tj, _ := time.Parse(layout, statistics[j].Data)
-			return ti.Before(tj)
-		})
-
-		context.JSON(http.StatusOK, statistics)
-
-	})
-
-	//检查背包材料是否超过8000
-	ginServer.GET("/api/checkBag", func(context *gin.Context) {
-		checkBag := bgiStatus.CheckBag()
-		context.JSON(http.StatusOK, checkBag)
-	})
-
-	//删除背包统计记录
-	ginServer.POST("/deleteBag", func(context *gin.Context) {
-		isOk := bgiStatus.DeleteBagStatistics()
-
-		data := gin.H{
-			"message": isOk,
-		}
-
-		context.JSON(http.StatusOK, data)
-	})
-
-	//删除背包统计记录
-	ginServer.GET("/abc", func(context *gin.Context) {
-		statistics, _ := bgiStatus.MorasStatistics()
-
-		data := gin.H{
-			"message": statistics,
-		}
-
-		context.JSON(http.StatusOK, data)
-	})
-
-	//启动配置组
-	ginServer.POST("/api/startGroups", func(context *gin.Context) {
-
-		var data []string
-		err := context.BindJSON(&data)
-		if err != nil {
-			fmt.Println("err:", err)
-			return
-		}
-
-		err = task.StartGroups(data)
-		if err != nil {
-			return
-		}
-		context.JSON(http.StatusOK, gin.H{"message": "Success"})
-	})
-
-	//查询狗粮日志
-	ginServer.GET("/api/getAutoArtifactsPro", func(context *gin.Context) {
-
-		pro, err := bgiStatus.GetAutoArtifactsPro()
-		autoLog.Sugar.Infof("狗粮记录:%s", pro)
-
-		//获取版本号
-		version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply", config.Cfg.BetterGIAddress))
-
-		//查询更新状态
-		jsVersion := bgiStatus.JsVersion("AAA-Artifacts-Bulk-Supply", version)
-
-		if err != nil {
-			// 传递给模板
-
-			context.JSON(http.StatusInternalServerError, gin.H{
-				"title":     "狗粮批发-联机收益查询" + "【" + version + "】",
-				"JsVersion": jsVersion,
-				"items":     nil,
-			})
-
-			return
-		}
-
-		context.JSON(http.StatusOK, gin.H{
-			"title":     "狗粮批发-联机收益查询" + "【" + version + "】",
-			"JsVersion": jsVersion,
-			"items":     pro,
-		})
-
-	})
-
-	//查询狗粮日志
-	ginServer.GET("/api/getAutoArtifactsPro2", func(context *gin.Context) {
-
-		fileName := context.Query("fileName")
-		if fileName == "" {
-			context.JSON(http.StatusBadRequest, gin.H{"error": "fileName不能为空"})
-			return
-		}
-		data, err := bgiStatus.GetAutoArtifactsPro2(fileName)
-
-		// 判断是否请求 JSON 数据
-		fmt.Println("=============", context.Query("json"))
-		if context.Query("json") == "1" {
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"error": "读取失败"})
-				return
-			}
-			context.JSON(http.StatusOK, data)
-			return
-		}
-
-		context.JSON(http.StatusOK, gin.H{
-			"items": data,
-		})
-
-	})
-
-	//查询收获前10的材料
-	ginServer.GET("/api/logAnalysis", func(context *gin.Context) {
-		fileName := context.Query("file")
-
-		res := bgiStatus.LogAnalysis(fileName)
-
-		context.JSON(200, res)
-
-	})
-
-	//备份文件
-	ginServer.POST("/api/backup", func(context *gin.Context) {
-		err := bgiStatus.Backup()
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err})
-			return
-		}
-		context.JSON(http.StatusOK, gin.H{"status": "received", "data": "备份成功"})
-	})
-
-	//获取仓库提交记录
-	ginServer.GET("/api/gitLog", func(context *gin.Context) {
-
-		gitLog := ScriptRepo.Read()
-		context.JSON(http.StatusOK, gin.H{
-			"gitLog": gitLog,
-		})
-	})
-
-	// 统计配置组执行时间 - 返回JSON
-	ginServer.GET("/api/other", func(context *gin.Context) {
-		var otherGroup sync.WaitGroup
-		otherGroup.Add(2)
-		fileName := context.Query("file")
-
-		var (
-			GroupTime  []bgiStatus.LogAnalysis2Struct
-			signLog    string
-			groupPInfo string
-		)
-
-		//获取配置组执行时长
-		go func() {
-			defer otherGroup.Done()
-			GroupTime = bgiStatus.GroupTime(fileName)
-		}()
-
-		//获取今天执行配置组
-		go func() {
-			defer otherGroup.Done()
-			groupPInfo = bgiStatus.GetGroupPInfo()
-		}()
-
-		otherGroup.Wait() // 等待所有 goroutine 完成
-
-		context.JSON(http.StatusOK, gin.H{
-			"GroupTime":  GroupTime,
-			"signLog":    signLog,
-			"groupPInfo": groupPInfo,
-		})
-	})
-
-	ginServer.POST("/api/archive", func(c *gin.Context) {
-		var req bgiStatus.LogAnalysis2Struct
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(400, gin.H{"error": "参数解析失败: " + err.Error()})
-			return
-		}
-		bgiStatus.Archive(req)
-
-		bgiStatus.InitBgiLogStatus()
-
-		c.String(200, fmt.Sprintf("成功归档"))
-	})
-
-	//日志分析
-	ginServer.GET("/api/LogAnalysis2Page", func(context *gin.Context) {
-		fileName := context.Query("file")
-		if fileName == "" {
-			context.String(http.StatusBadRequest, "缺少 file 参数")
-			return
-		}
-
-		results := bgiStatus.LogAnalysis2(fileName)
-
-		context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
-	})
-
-	//查询脚本情况
-	ginServer.GET("/api/jsNames", func(context *gin.Context) {
-
-		jsNamesInfo := bgiStatus.JsNamesInfo()
-
-		context.JSON(http.StatusOK, gin.H{"status": "success", "data": jsNamesInfo})
-	})
-
-	//重置仓库
-	ginServer.POST("/api/repo/resetRepo", warehouse.RepoReset)
-
-	//脚本Js更新
-	ginServer.POST("/api/updateJs/:name", func(context *gin.Context) {
-		name := context.Param("name")
-
-		autoLog.Sugar.Infof("更新插件:%s", name)
-		_, err := bgiStatus.UpdateJs(name)
-		if err != nil {
-			// 成功返回
-			context.JSON(400, gin.H{"err": err})
-			return
-		}
-
-		// 成功返回
-		context.JSON(200, gin.H{"success": true})
-
-	})
-
-	//查询配置文件
-	ginServer.GET("/api/config", func(context *gin.Context) {
-		cfg := config.Cfg
-		context.JSON(http.StatusOK, gin.H{"status": "success", "data": cfg})
-	})
-
-	//abgi配置保存
-	ginServer.POST("/api/saveConfig", func(c *gin.Context) {
-		var newConfig config.Config
-
-		if err := c.ShouldBindJSON(&newConfig); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-			return
-		}
-
-		// 序列化为JSON字符串，格式化输出
-		data, err := json.MarshalIndent(newConfig, "", "  ")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "序列化失败", "error": err.Error()})
-			return
-		}
-
-		// 写入 main.json，路径可以自定义，这里示例写当前运行目录
-		filePath := filepath.Join(".", "main.json")
-		err = os.WriteFile(filePath, data, 0644)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "写文件失败", "error": err.Error()})
-			return
-		}
-
-		fmt.Println("配置保存成功:", newConfig)
-
-		//重新加载配置文件
-		_ = config.ReloadConfig()
-		time.Sleep(1 * time.Second)
-		//
-		//// 调用重启脚本
-		//cmd := exec.Command("cmd", "/c", "restart.bat")
-		//err2 := cmd.Start()
-		//if err2 != nil {
-		//	c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err2.Error()})
-		//	return
-		//}
-
-		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "重启命令已执行"})
-
-	})
-
-	var OneLongService OneLong.OneLong
-	oneLongController := ginServer.Group("/api/oneLong")
-	{
-		//启动一条龙
-		oneLongController.POST("/startOneLong", func(c *gin.Context) {
-
-			var name string
-			if err := c.ShouldBindJSON(&name); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "缺少参数 name"})
-				return
-			}
-
-			OneLongService.StartOneLong(name)
-
-			c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
-		})
-
-		//读取所有一条龙配置
-		oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
-			oneLongInfo := OneLongService.OneLongAllName()
-			context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
-		})
-
-	}
-
-	//读取js的md文件
-	ginServer.GET("/api/md", func(c *gin.Context) {
-		filePath := c.Query("filePath")
-
-		jsMd := bgiStatus.ReadMd(filePath)
-		c.JSON(http.StatusOK, gin.H{"status": "success", "data": jsMd})
-
-	})
-
-	//批量更新仓库
-	ginServer.POST("/api/batchUpdate", func(c *gin.Context) {
-		script := bgiStatus.BatchUpdateScript()
-		if script != "" {
-			c.JSON(http.StatusOK, gin.H{"status": "success", "message": script})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功"})
-	})
-
-	//米游社手动签到
-	ginServer.POST("/api/mysSignIn", func(c *gin.Context) {
-
-		task.MiYouSheSign()
-
-		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "签到成功"})
-
-	})
-
-	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
-
-	//配置组api
-	scriptGroup := ginServer.Group("/api/scriptGroup")
-	{
-		//读取配置组配置
-		scriptGroup.POST("/UpdatePathing", func(c *gin.Context) {
-			var updatePath config.UpdatePathing
-			if err := c.ShouldBindJSON(&updatePath); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-				return
-			}
-
-			res, err := scriptGroupConfig.UpdatePathing(updatePath)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
-		})
-
-		//地图追踪更新，无配置组
-		scriptGroup.POST("/UpdatePathingNoConfig", scriptGroupConfig.UpdatePathingNoConfig)
-
-		//查询地图追踪配置
-		scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
-
-			scriptGroupConfig.ListPathingUpdatePaths()
-
-			UpdatePathData := config.Cfg.UpdatePath
-
-			c.JSON(http.StatusOK, gin.H{"status": "success", "data": UpdatePathData})
-		})
-
-		//保存配置
-		scriptGroup.POST("/savePathing", func(c *gin.Context) {
-			var updatePath []config.UpdatePathing
-			if err := c.ShouldBindJSON(&updatePath); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-				return
-			}
-			err := scriptGroupConfig.SavePathing(updatePath)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "保存成功"})
-		})
-
-		//查询所有配置组
-		scriptGroup.GET("/listGroups", func(context *gin.Context) {
-			groups, err := task.ListGroups()
-			if err != nil {
-				return
-			}
-
-			context.JSON(http.StatusOK, groups)
-		})
-
-		//查询所有地图追踪文件
-		scriptGroup.GET("/listAllGroups", func(context *gin.Context) {
-			listAllPathing, err := scriptGroupConfig.ListAllPathing()
-			if err != nil {
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "data": listAllPathing})
-		})
-
-		//清理地图追踪文件
-		scriptGroup.POST("/cleanAllPathing", scriptGroupConfig.CleanAllPathing)
-
-		//读取配置组所有的地图追踪
-		scriptGroup.GET("/listPathingUpdatePaths", scriptGroupConfig.UpdatePaths)
-
-	}
-
-	var CDAwareAutoGatherService CDAwareAutoGather.UidInfo
-	//CD-Aware-AutoGather - 带CD管理的自动采集
-	CDAwareAutoGatherController := ginServer.Group("/api/CD-Aware-AutoGather")
-	{
-		CDAwareAutoGatherController.GET("/ReadInfo", func(context *gin.Context) {
-			//状态
-			status := context.Query("status")
-			readInfo := CDAwareAutoGatherService.ReadInfo(status)
-			context.JSON(http.StatusOK, readInfo)
-		})
-		CDAwareAutoGatherController.POST("/CDAllMaterial", func(context *gin.Context) {
-			material := CDAwareAutoGatherService.CDAllMaterial()
-			context.JSON(http.StatusOK, material)
-		})
-
-		//更新所有cd管理材料
-		CDAwareAutoGatherController.POST("/UpdateAllCD", func(context *gin.Context) {
-			CDAwareAutoGatherService.UpdateAllCD()
-			context.JSON(http.StatusOK, gin.H{"status": "success", "message": "更新成功,具体请看日志:logs/"})
-		})
-	}
-
-	//BetterGI
-	var pickBlackListsService BetterGI.PickBlackLists
-	bgiController := ginServer.Group("/api/betterGi")
-	{
-		//读取黑名单
-		bgiController.GET("/blackList", func(c *gin.Context) {
-			lists, err2 := pickBlackListsService.ReadPickBlackLists()
-			if err2 != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{"status": "success", "data": lists})
-		})
-		//添加黑名单
-		bgiController.POST("/addBlackList", func(c *gin.Context) {
-			var blackList []string
-			if err := c.ShouldBindJSON(&blackList); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-				return
-			}
-
-			err := pickBlackListsService.AddPickBlackLists(blackList)
-			if err != nil {
-				autoLog.Sugar.Infof("添加黑名单失败:%s", err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "添加成功"})
-
-		})
-
-		//删除某一个黑名单
-		bgiController.POST("/deleteBlackList", func(c *gin.Context) {
-			var blackName string
-			if err := c.ShouldBindJSON(&blackName); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-				return
-			}
-			err := pickBlackListsService.DeletePickBlackLists(blackName)
-			if err != nil {
-				autoLog.Sugar.Infof("删除黑名单失败:%s", err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-
-		})
-
-	}
 
 	var videoInfoService abgiObs.VideoInfo
 
@@ -1066,22 +1010,6 @@ func StarGin() {
 			}
 			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始流"})
 		})
-	}
-
-	//定时任务
-	taskCronController := ginServer.Group("/api/taskCron")
-	{
-		taskCronController.GET("/list", TaskCron.List)
-		taskCronController.POST("/add", TaskCron.CronAdd)
-		taskCronController.POST("/remove", TaskCron.CronRemove)
-		//查询可以设置的定时的任务
-		taskCronController.GET("/getTasks", TaskCron.GetTask)
-		//更新定时任务
-		taskCronController.POST("/update", TaskCron.Update)
-		//暂停定时任务
-		taskCronController.POST("/pause", TaskCron.Pause)
-		//恢复定时任务
-		taskCronController.POST("/resume", TaskCron.Resume)
 	}
 
 	type bgiWebhook struct {

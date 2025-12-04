@@ -241,7 +241,30 @@ const connectWebSocket = (name) => {
 // 加载日志文件列表
 const loadLogFiles = async () => {
   try {
-    const res = await fetch('/api/logFiles')
+    // 尝试从 localStorage 或 sessionStorage 获取 token
+    const token = localStorage.getItem('aBgiToken')
+    console.log('获取到的 token:', token)
+
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `${token}`
+    }
+
+    const res = await fetch('/api/logFiles', { headers })
+
+    if (!res.ok) {
+      // 处理未授权或其他非 2xx 状态
+      if (res.status === 401) {
+        logContent.value = '未授权 (401)，请先登录并确保 token 可用。'
+      } else {
+        // 尽量读取后端返回的文本以便调试
+        let txt = ''
+        try { txt = await res.text() } catch (e) { txt = '' }
+        logContent.value = `加载日志列表失败：${res.status} ${res.statusText}\n${txt}`
+      }
+      return
+    }
+
     const data = await res.json()
     if (data.files?.length) {
       logFiles.value = data.files
@@ -251,7 +274,7 @@ const loadLogFiles = async () => {
       logContent.value = "未找到日志文件。"
     }
   } catch (err) {
-    logContent.value = "加载日志列表失败。\n" + err
+    logContent.value = "加载日志列表失败。\n" + (err && err.message ? err.message : String(err))
   }
 }
 

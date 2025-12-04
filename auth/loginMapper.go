@@ -52,6 +52,9 @@ sysConfig:
 		panic(err)
 	}
 
+	//注册jwt
+	SetSecret(User.Auth.Password)
+
 }
 
 // 登录获取token
@@ -74,7 +77,7 @@ func GetSystemConfig(context *gin.Context) {
 	systemName := viper.GetString("sysConfig.systemName")
 	context.JSON(200, gin.H{
 		"code":       200,
-		"systemName": systemName + "-aBgi",
+		"systemName": systemName + "のABGI",
 	})
 
 }

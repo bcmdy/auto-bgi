@@ -242,6 +242,7 @@ export default {
           try {
             await apiMethods.deleteAllArchive()
             message.success('全部归档记录已删除！')
+            archiveData.value = []
           } catch (error) {
             console.log('删除失败:', error)
             message.error('删除失败，请稍后重试')

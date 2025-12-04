@@ -1,6 +1,9 @@
 package models
 
-import "strings"
+import (
+	"auto-bgi/autoLog"
+	"strings"
+)
 
 // DeleteArchiveRecord 用于删除档案记录
 // 参数:
@@ -23,19 +26,16 @@ func DeleteArchiveRecord(id int) error {
 }
 
 // DeleteAllArchiveRecords 删除所有归档记录的函数
-// 返回值: interface{} - 成功时返回nil，失败时返回错误信息
-func DeleteAllArchiveRecords() interface{} {
-	// 使用Unscoped()进行软删除，彻底删除所有记录
-	// 删除ArchiveRecords表中的所有记录
-	db := DB.Unscoped().Delete(&ArchiveRecords{})
-	// 检查操作是否出错
+func DeleteAllArchiveRecords() error {
+	db := DB.Unscoped().
+		Where("1 = 1").
+		Delete(&ArchiveRecords{})
+
 	if db.Error != nil {
-		// 如果出错，返回错误信息
+		autoLog.Sugar.Error(db.Error)
 		return db.Error
 	}
-	// 操作成功，返回nil
 	return nil
-
 }
 
 /**
@@ -58,17 +58,17 @@ func DeleteArchiveRecordByTitle(title string) interface{} {
 }
 
 func InsertArchiveRecord(title string, s string) interface{} {
-	// 使用Unscoped()进行软删除，彻底删除所有记录
-	// 删除ArchiveRecords表中的所有记录
-	db := DB.Unscoped().Where("title = ?", title).Delete(&ArchiveRecords{})
-	// 检查操作是否出错
+
+	// 创建一个新的ArchiveRecords对象，并设置其title和content字段
+	archiveRecord := ArchiveRecords{Title: title, ExecuteTime: s}
+	// 使用config.DB执行插入操作
+	db := DB.Create(&archiveRecord)
+	// 检查插入操作是否出错
 	if db.Error != nil {
-		// 如果出错，返回错误信息
 		return db.Error
 	}
-	// 操作成功，返回nil
+	// 插入成功，返回nil
 	return nil
-
 }
 
 func GetArchiveRecordByTitle(name string) ArchiveRecords {
