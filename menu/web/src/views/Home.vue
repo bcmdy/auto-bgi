@@ -353,57 +353,60 @@ const handleUploadBgiOk = async () => {
     return
   }
 
+  uploadBgiModal.loading = true
+  uploadBgiModal.uploadProgress = 0
+
+  // 创建FormData并上传
+  const formData = new FormData()
+  formData.append('file', uploadBgiModal.selectedFile)
+
+  // 使用XMLHttpRequest以支持上传进度
+  const xhr = new XMLHttpRequest()
+
+  // 监听上传进度
+  xhr.upload.addEventListener('progress', (event) => {
+    if (event.lengthComputable) {
+      const percentComplete = (event.loaded / event.total) * 100
+      uploadBgiModal.uploadProgress = Math.round(percentComplete)
+    }
+  })
+
+  // 设置请求完成处理
+  xhr.addEventListener('load', () => {
+    uploadBgiModal.loading = false
+    if (xhr.status === 200) {
+      try {
+        const response = JSON.parse(xhr.responseText)
+        message.success('BGI 更新成功！请重启软件')
+        uploadBgiModal.visible = false
+        uploadBgiModal.selectedFile = null
+        uploadBgiModal.uploadProgress = 0
+      } catch (e) {
+        message.error('响应解析失败')
+      }
+    } else {
+      try {
+        const response = JSON.parse(xhr.responseText)
+        message.error(response.error || 'BGI 更新失败，请重试')
+      } catch (e) {
+        message.error('BGI 更新失败，请重试')
+      }
+    }
+  })
+
+  // 设置错误处理
+  xhr.addEventListener('error', () => {
+    uploadBgiModal.loading = false
+    message.error('上传失败，请检查网络连接')
+  })
+
+  // 设置中止处理
+  xhr.addEventListener('abort', () => {
+    uploadBgiModal.loading = false
+    message.warning('上传已取消')
+  })
+
   try {
-    uploadBgiModal.loading = true
-    uploadBgiModal.uploadProgress = 0
-
-    // 创建FormData并上传
-    const formData = new FormData()
-    formData.append('file', uploadBgiModal.selectedFile)
-
-    // 使用XMLHttpRequest以支持上传进度
-    const xhr = new XMLHttpRequest()
-
-    // 监听上传进度
-    xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) {
-        const percentComplete = (event.loaded / event.total) * 100
-        uploadBgiModal.uploadProgress = Math.round(percentComplete)
-      }
-    })
-
-    // 设置请求完成处理
-    xhr.addEventListener('load', () => {
-      if (xhr.status === 200) {
-        try {
-          const response = JSON.parse(xhr.responseText)
-          message.success('BGI 更新成功！')
-          uploadBgiModal.visible = false
-          uploadBgiModal.selectedFile = null
-          uploadBgiModal.uploadProgress = 0
-        } catch (e) {
-          message.error('响应解析失败')
-        }
-      } else {
-        try {
-          const response = JSON.parse(xhr.responseText)
-          message.error(response.error || 'BGI 更新失败，请重试')
-        } catch (e) {
-          message.error('BGI 更新失败，请重试')
-        }
-      }
-    })
-
-    // 设置错误处理
-    xhr.addEventListener('error', () => {
-      message.error('上传失败，请检查网络连接')
-    })
-
-    // 设置中止处理
-    xhr.addEventListener('abort', () => {
-      message.warning('上传已取消')
-    })
-
     // 设置token到请求头
     const token = localStorage.getItem('aBgiToken')
     xhr.open('POST', '/api/UpdateBgi/Upload')
@@ -414,10 +417,9 @@ const handleUploadBgiOk = async () => {
     // 发送请求
     xhr.send(formData)
   } catch (error) {
+    uploadBgiModal.loading = false
     console.error('上传失败:', error)
     message.error('上传失败：' + (error.message || '未知错误'))
-  } finally {
-    uploadBgiModal.loading = false
   }
 }
 

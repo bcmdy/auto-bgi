@@ -73,6 +73,9 @@ func InitFunction() {
 		go abgiAi.InitAi()
 	}
 
+	//读取bgi配置
+	config.ReadBgiConfig()
+
 	//定时任务
 	TaskCron.InitTaskCron()
 

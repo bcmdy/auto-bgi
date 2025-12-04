@@ -10,6 +10,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	otiai10Copy "github.com/otiai10/copy"
+	"golang.org/x/term"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -25,88 +27,142 @@ func init() {
 
 }
 
-// UpdateCenterRepoByGit 强制同步 main 分支并标记更新
+// UpdateCenterRepoByGit 克隆或同步仓库到本地路径，并返回本地路径与是否更新过的标志。
+// 注意：依赖外部变量 proxyOptions, myConfig等（与原实现一致）。
 func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
 	if repoUrl == "" {
-		return "", false, errors.New("仓库URL不能为空")
+		return "", false, errors.New("仓库 URL 不能为空")
 	}
 
 	reposPath := filepath.Join(myConfig.Cfg.BetterGIAddress, "Repos")
 	repoPath := filepath.Join(reposPath, "bettergi-scripts-list-git")
 	updated := false
 
+	// 确保父目录存在
+	if err := os.MkdirAll(reposPath, 0o755); err != nil {
+		return "", false, fmt.Errorf("创建目录失败: %w", err)
+	}
+
+	// 决定是否把 Stdout 作为 Progress 写入目标（仅当 Stdout 是交互式终端时）
+	var progress io.Writer = nil
+	// 如果你更愿意在非交互时丢弃而不是 nil，可以设为 io.Discard
+	if term.IsTerminal(int(os.Stdout.Fd())) {
+		// 只有在真实终端才传 os.Stdout，防止在 Windows 服务或 CI 中出现 "The handle is invalid" 错误
+		progress = os.Stdout
+	} else {
+		// 非交互时不输出进度，nil 更加保守（不会写入）
+		progress = nil
+	}
+
 	// 仓库不存在 -> 完整克隆
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		log.Printf("完整克隆仓库: %s 到 %s", repoUrl, repoPath)
 		_, err := git.PlainClone(repoPath, false, &git.CloneOptions{
 			URL:          repoUrl,
-			SingleBranch: false, // 拉所有分支，避免缺分支
-			Progress:     os.Stdout,
+			SingleBranch: false, // 拉取所有分支，避免缺分支
+			Progress:     progress,
 			ProxyOptions: proxyOptions,
 		})
 		if err != nil {
-
 			return "", false, fmt.Errorf("克隆仓库失败: %w", err)
 		}
-		updated = true
-	} else {
-		// 打开仓库
-		r, err := git.PlainOpen(repoPath)
-		if err != nil {
-			return "", false, fmt.Errorf("打开仓库失败: %w", err)
-		}
+		return repoPath, true, nil
+	} else if err != nil {
+		// 其它 Stat 错误
+		return "", false, fmt.Errorf("检查仓库路径失败: %w", err)
+	}
 
-		// 确保远程 URL 正确
-		remote, err := r.Remote("origin")
-		if err != nil {
-			return "", false, fmt.Errorf("获取远程失败: %w", err)
-		}
-		if remote.Config().URLs[0] != repoUrl {
-			log.Printf("更新远程URL: 从 %s 到 %s", remote.Config().URLs[0], repoUrl)
-			_ = r.DeleteRemote("origin")
-			_, _ = r.CreateRemote(&config.RemoteConfig{
+	// 打开已有仓库
+	r, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return "", false, fmt.Errorf("打开仓库失败: %w", err)
+	}
+
+	// 确保远程 origin 存在并且 URL 正确
+	remote, err := r.Remote("origin")
+	if err != nil {
+		if err == git.ErrRemoteNotFound {
+			_, err = r.CreateRemote(&config.RemoteConfig{
 				Name: "origin",
 				URLs: []string{repoUrl},
 			})
-		}
-
-		// 强制 fetch 更新远程引用
-		err = r.Fetch(&git.FetchOptions{
-			RemoteName:   "origin",
-			Progress:     os.Stdout,
-			Force:        true,
-			ProxyOptions: proxyOptions,
-		})
-		if err != nil && err != git.NoErrAlreadyUpToDate {
-			return "", false, fmt.Errorf("fetch 失败: %w", err)
-		}
-
-		// 优先尝试 main，不存在就用 release
-		var remoteRef *plumbing.Reference
-		remoteBranch := plumbing.NewRemoteReferenceName("origin", "main")
-		remoteRef, err = r.Reference(remoteBranch, true)
-		if err != nil {
-			log.Printf("未找到 main 分支，尝试使用 release 分支")
-			remoteBranch = plumbing.NewRemoteReferenceName("origin", "release")
-			remoteRef, err = r.Reference(remoteBranch, true)
 			if err != nil {
-				return "", false, fmt.Errorf("获取远程 main/release 分支引用失败: %w", err)
+				return "", false, fmt.Errorf("创建远程 origin 失败: %w", err)
 			}
+			remote, _ = r.Remote("origin")
+		} else {
+			return "", false, fmt.Errorf("获取远程失败: %w", err)
 		}
-
-		// 强制 reset --hard 到目标分支
-		worktree, _ := r.Worktree()
-		err = worktree.Reset(&git.ResetOptions{
-			Mode:   git.HardReset,
-			Commit: remoteRef.Hash(),
-		})
-		if err != nil {
-			return "", false, fmt.Errorf("强制 reset 到 %s 失败: %w", remoteBranch.Short(), err)
-		}
-
-		updated = true
-		log.Printf("同步到远程 %s: %s", remoteBranch.Short(), remoteRef.Hash().String())
 	}
+
+	remoteURLs := remote.Config().URLs
+	if len(remoteURLs) == 0 || remoteURLs[0] != repoUrl {
+		log.Printf("更新远程 URL: 从 %v 到 %s", remoteURLs, repoUrl)
+		if err := r.DeleteRemote("origin"); err != nil {
+			log.Printf("删除远程 origin 失败（继续尝试创建新 remote）: %v", err)
+		}
+		if _, err := r.CreateRemote(&config.RemoteConfig{
+			Name: "origin",
+			URLs: []string{repoUrl},
+		}); err != nil {
+			return "", false, fmt.Errorf("创建/更新远程 origin 失败: %w", err)
+		}
+	}
+
+	// Fetch 更新远程引用
+	fetchErr := r.Fetch(&git.FetchOptions{
+		RemoteName:   "origin",
+		Progress:     progress,
+		Force:        true,
+		Prune:        true,
+		ProxyOptions: proxyOptions,
+	})
+	if fetchErr != nil && fetchErr != git.NoErrAlreadyUpToDate {
+		return "", false, fmt.Errorf("fetch 失败: %w", fetchErr)
+	}
+
+	// 优先尝试 origin/main，然后 origin/release
+	tryBranches := []string{"main", "release"}
+	var remoteRef *plumbing.Reference
+	var chosenRemoteRefName string
+	for _, b := range tryBranches {
+		remoteBranch := plumbing.NewRemoteReferenceName("origin", b)
+		ref, err := r.Reference(remoteBranch, true)
+		if err == nil {
+			remoteRef = ref
+			chosenRemoteRefName = remoteBranch.String()
+			break
+		}
+	}
+	if remoteRef == nil {
+		return "", false, errors.New("获取远程 main/release 分支引用失败（远程不存在这些分支）")
+	}
+
+	// 比较当前 HEAD 与 remoteRef：相同则无需 reset，从而 updated=false
+	headRef, err := r.Head()
+	if err != nil {
+		log.Printf("获取本地 HEAD 失败（将继续 reset）: %v", err)
+	} else {
+		if headRef.Hash() == remoteRef.Hash() {
+			log.Printf("本地已与 %s 同步，无需更新。hash=%s", chosenRemoteRefName, remoteRef.Hash().String())
+			return repoPath, false, nil
+		}
+	}
+
+	// 执行硬 reset 到远程引用
+	worktree, err := r.Worktree()
+	if err != nil {
+		return "", false, fmt.Errorf("获取工作树失败: %w", err)
+	}
+	if err := worktree.Reset(&git.ResetOptions{
+		Mode:   git.HardReset,
+		Commit: remoteRef.Hash(),
+	}); err != nil {
+		return "", false, fmt.Errorf("强制 reset 到 %s(%s) 失败: %w", chosenRemoteRefName, remoteRef.Hash().String(), err)
+	}
+
+	updated = true
+	log.Printf("同步到远程 %s: %s", chosenRemoteRefName, remoteRef.Hash().String())
 
 	return repoPath, updated, nil
 }

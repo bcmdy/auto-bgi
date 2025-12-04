@@ -73,6 +73,7 @@
 
       <div class="card-footer">
         <p class="footer-text">嘿~这是一个神秘的地方呢🎀</p>
+        <p class="footer-text">qq群：215053644</p>
       </div>
     </div>
   </div>

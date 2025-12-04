@@ -332,18 +332,3 @@ func Test(key string) {
 	time.Sleep(time.Second * 5)
 	pressKey(key)
 }
-
-// 读取原神exe文件路径
-func ReadGenShinExe() string {
-
-	configPath := config.Cfg.BetterGIAddress + "\\User\\Config.json"
-
-	configData, _ := os.ReadFile(configPath)
-
-	value := gjson.Get(string(configData), "genshinStartConfig.installPath")
-
-	autoLog.Sugar.Infof("原神exe文件路径: %s", value.String())
-
-	return value.String()
-
-}

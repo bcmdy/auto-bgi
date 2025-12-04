@@ -2,92 +2,10 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/iancoleman/orderedmap"
+	"github.com/tidwall/gjson"
 	"os"
 	"path/filepath"
 )
-
-type OneLongConfigStruct struct {
-	TaskEnabledList          *orderedmap.OrderedMap `json:"TaskEnabledList"`
-	Name                     string                 `json:"Name"`
-	CraftingBenchCountry     string                 `json:"CraftingBenchCountry"`
-	AdventurersGuildCountry  string                 `json:"AdventurersGuildCountry"`
-	PartyName                string                 `json:"PartyName"`
-	DomainName               string                 `json:"DomainName"`
-	WeeklyDomainEnabled      bool                   `json:"WeeklyDomainEnabled"`
-	DailyRewardPartyName     string                 `json:"DailyRewardPartyName"`
-	MinResinToKeep           int                    `json:"MinResinToKeep"`
-	SundayEverySelectedValue string                 `json:"SundayEverySelectedValue"`
-	SundaySelectedValue      string                 `json:"SundaySelectedValue"`
-	SereniteaPotTpType       string                 `json:"SereniteaPotTpType"`
-	SecretTreasureObjects    []string               `json:"SecretTreasureObjects"`
-	MondayPartyName          string                 `json:"MondayPartyName"`
-	MondayDomainName         string                 `json:"MondayDomainName"`
-	TuesdayPartyName         string                 `json:"TuesdayPartyName"`
-	TuesdayDomainName        string                 `json:"TuesdayDomainName"`
-
-	WednesdayPartyName  string `json:"WednesdayPartyName"`
-	WednesdayDomainName string `json:"WednesdayDomainName"`
-	ThursdayPartyName   string `json:"ThursdayPartyName"`
-	ThursdayDomainName  string `json:"ThursdayDomainName"`
-	FridayPartyName     string `json:"FridayPartyName"`
-	FridayDomainName    string `json:"FridayDomainName"`
-	SaturdayPartyName   string `json:"SaturdayPartyName"`
-	SaturdayDomainName  string `json:"SaturdayDomainName"`
-	SundayPartyName     string `json:"SundayPartyName"`
-	SundayDomainName    string `json:"SundayDomainName"`
-
-	CompletionAction string `json:"CompletionAction"`
-}
-
-type TaskItem struct {
-	Name    string `json:"Name"`
-	Enabled bool   `json:"Enabled"`
-}
-
-// 读取一条龙配置
-func OneLongConfig(name string) OneLongConfigStruct {
-	filename := Cfg.BetterGIAddress + "\\User\\OneDragon\\" + name + ".json"
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		fmt.Println("读取文件失败:", err)
-		return OneLongConfigStruct{}
-	}
-
-	var oneLongConfigStruct OneLongConfigStruct
-	if err := json.Unmarshal(file, &oneLongConfigStruct); err != nil {
-		fmt.Println("解析 JSON 失败:", err)
-		return OneLongConfigStruct{}
-	}
-
-	return oneLongConfigStruct
-}
-
-// 保存一条龙配置（保持 TaskEnabledList 顺序）
-func SaveOneLongConfig(cfg OneLongConfigStruct) error {
-	// 目标路径
-	filename := filepath.Join(Cfg.BetterGIAddress, "User", "OneDragon", cfg.Name+".json")
-
-	// 确保目录存在
-	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-		return fmt.Errorf("创建目录失败: %w", err)
-	}
-
-	// ✅ 使用 json.MarshalIndent 保证 JSON 格式美观
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return fmt.Errorf("序列化 JSON 失败: %w", err)
-	}
-
-	// 写入文件
-	if err := os.WriteFile(filename, data, 0644); err != nil {
-		return fmt.Errorf("写入文件失败: %w", err)
-	}
-
-	fmt.Println("配置已保存到:", filename)
-	return nil
-}
 
 type ManifestStruct struct {
 	ManifestVersion int      `json:"manifest_version" comment:"版本"`
@@ -117,4 +35,34 @@ func ReadManifest(jsName string) (ManifestStruct, error) {
 		return ManifestStruct{}, err
 	}
 	return manifest, nil
+}
+
+type BgiConfig struct {
+	CancelTaskHotkey              string `json:"cancelTaskHotkey"`               // 取消任务的快捷键值
+	GenShinStartConfigInstallPath string `json:"genshinStartConfig.installPath"` // 原神安装目录
+	Version                       string `json:"version"`                        // bgi版本号
+	SelectedChannelName           string `json:"selectedChannelName"`            // selectedChannelName：仓库
+}
+
+var BgiCfg BgiConfig
+
+func ReadBgiConfig() {
+
+	configPath := Cfg.BetterGIAddress + "\\User\\Config.json"
+	// 读取配置文件内容，忽略可能出现的错误
+	configData, _ := os.ReadFile(configPath)
+
+	data := string(configData)
+	// 从配置文件中获取取消任务的快捷键值
+	BgiCfg.CancelTaskHotkey = gjson.Get(data, "hotKeyConfig.cancelTaskHotkey").String()
+
+	//原神安装目录
+	BgiCfg.GenShinStartConfigInstallPath = gjson.Get(data, "genshinStartConfig.installPath").String()
+
+	//bgi版本号
+	BgiCfg.Version = gjson.Get(data, "commonConfig.runForVersion").String()
+
+	//selectedChannelName：仓库
+	BgiCfg.SelectedChannelName = gjson.Get(data, "scriptConfig.selectedChannelName").String()
+
 }

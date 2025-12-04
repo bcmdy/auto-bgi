@@ -254,7 +254,7 @@ func StarGin() {
 
 		//首页刷新
 		needAuth.GET("/indexSX", func(c *gin.Context) {
-			bgiStatus.InitBgiLogStatus()
+			bgiStatus.LogM()
 			c.JSON(http.StatusOK, "刷新成功")
 		})
 
