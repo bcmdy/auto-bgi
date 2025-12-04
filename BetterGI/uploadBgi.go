@@ -6,6 +6,7 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/tools"
 	"github.com/gin-gonic/gin"
+	abgiCopy "github.com/otiai10/copy"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -86,7 +87,7 @@ func UpdateBgi() {
 	autoLog.Sugar.Infof("删除user文件夹")
 
 	//5、复制压缩包到User
-	err3 := os.Rename("./Users/User"+now+".zip", config.Cfg.BetterGIAddress+"\\User.zip")
+	err3 := abgiCopy.Copy("./Users/User"+now+".zip", config.Cfg.BetterGIAddress+"\\User.zip")
 	if err3 != nil {
 		autoLog.Sugar.Errorf("复制压缩包到User失败: %v", err3)
 		return

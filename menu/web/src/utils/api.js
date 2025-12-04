@@ -167,7 +167,18 @@ export const apiMethods = {
   updateTaskCron: (payload) => api.post('/api/taskCron/update', payload),
   pauseTaskCron: (id) => api.post(`/api/taskCron/pause?id=${id}`),
   resumeTaskCron: (id) => api.post(`/api/taskCron/resume?id=${id}`),
-  removeTaskCron: (id,EntryID) => api.post(`/api/taskCron/remove?id=${id}&EntryID=${EntryID}`)
+  removeTaskCron: (id,EntryID) => api.post(`/api/taskCron/remove?id=${id}&EntryID=${EntryID}`),
+
+  // BGI更新
+  uploadBgi: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/uploadBgi', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  }
   
 }
 

@@ -59,7 +59,7 @@
       <!-- BGI相关按钮组 -->
       <div class="button-group">
         <h2>🧭 BGI相关</h2>
-        <button v-for="(button, index) in bgiButtons" :key="index" @click="$router.push(button.route)">
+        <button v-for="(button, index) in bgiButtons" :key="index" @click="button.action ? button.action() : $router.push(button.route)">
           {{ button.text }}
         </button>
       </div>
@@ -127,6 +127,45 @@
       <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="fitImage">适应</a-button>
       <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" @click="resetZoom">1:1</a-button>
       <a-button :size="isMobile ? 'small' : 'middle'" :block="isMobile" type="primary" @click="closeScreenshot">关闭</a-button>
+    </div>
+  </a-modal>
+
+  <!-- BGI更新上传文件模态框 -->
+  <a-modal
+    v-model:open="uploadBgiModal.visible"
+    title="上传BGI压缩包"
+    :confirm-loading="uploadBgiModal.loading"
+    @ok="handleUploadBgiOk"
+    @cancel="handleUploadBgiCancel"
+    ok-text="上传"
+    cancel-text="取消"
+  >
+    <div style="padding: 20px 0;">
+      <p style="margin-bottom: 16px; color: #ff6699; font-weight: bold;">
+        请选择BGI的压缩包文件（.zip .7z）
+      </p>
+      <input
+        ref="bgiFileInput"
+        type="file"
+        accept=".zip, .7z"
+        style="display: none;"
+        @change="handleBgiFileSelect"
+      />
+      <a-button type="primary" block @click="bgiFileInput?.click()" style="height: 100px;">
+        选择文件
+      </a-button>
+      <div v-if="uploadBgiModal.selectedFile" style="margin-top: 16px; padding: 12px; background: #fff0f5; border-radius: 8px; border-left: 4px solid #ff66a3;">
+        <p style="margin: 0; color: #d9006c;">
+          <span>📦 已选择: </span>
+          <span style="font-weight: bold;">{{ uploadBgiModal.selectedFile.name }}</span>
+        </p>
+        <p style="margin: 8px 0 0; color: #ff99cc;">
+          <span>大小: {{ (uploadBgiModal.selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
+        </p>
+      </div>
+      <div v-if="uploadBgiModal.uploadProgress > 0 && uploadBgiModal.uploadProgress < 100" style="margin-top: 16px;">
+        <a-progress :percent="uploadBgiModal.uploadProgress" status="active" />
+      </div>
     </div>
   </a-modal>
 
@@ -279,6 +318,116 @@ const dataAnalysisButtons = ref([
 ])
 
 
+// BGI更新 - 打开上传Modal
+const handleUploadBgiClick = () => {
+  uploadBgiModal.selectedFile = null
+  uploadBgiModal.uploadProgress = 0
+  uploadBgiModal.visible = true
+}
+
+// BGI更新 - 选择文件
+const handleBgiFileSelect = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.name.endsWith('.zip') && !file.name.endsWith('.7z')) {
+    message.error('只能选择 .zip 或 .7z 压缩包文件！')
+    return
+  }
+
+  // 验证文件大小（限制为500MB）
+  const maxSize = 500 * 1024 * 1024
+  if (file.size > maxSize) {
+    message.error('文件大小不能超过 500MB！')
+    return
+  }
+
+  uploadBgiModal.selectedFile = file
+}
+
+// BGI更新 - 确认上传
+const handleUploadBgiOk = async () => {
+  if (!uploadBgiModal.selectedFile) {
+    message.warning('请先选择文件')
+    return
+  }
+
+  try {
+    uploadBgiModal.loading = true
+    uploadBgiModal.uploadProgress = 0
+
+    // 创建FormData并上传
+    const formData = new FormData()
+    formData.append('file', uploadBgiModal.selectedFile)
+
+    // 使用XMLHttpRequest以支持上传进度
+    const xhr = new XMLHttpRequest()
+
+    // 监听上传进度
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = (event.loaded / event.total) * 100
+        uploadBgiModal.uploadProgress = Math.round(percentComplete)
+      }
+    })
+
+    // 设置请求完成处理
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          message.success('BGI 更新成功！')
+          uploadBgiModal.visible = false
+          uploadBgiModal.selectedFile = null
+          uploadBgiModal.uploadProgress = 0
+        } catch (e) {
+          message.error('响应解析失败')
+        }
+      } else {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          message.error(response.error || 'BGI 更新失败，请重试')
+        } catch (e) {
+          message.error('BGI 更新失败，请重试')
+        }
+      }
+    })
+
+    // 设置错误处理
+    xhr.addEventListener('error', () => {
+      message.error('上传失败，请检查网络连接')
+    })
+
+    // 设置中止处理
+    xhr.addEventListener('abort', () => {
+      message.warning('上传已取消')
+    })
+
+    // 设置token到请求头
+    const token = localStorage.getItem('aBgiToken')
+    xhr.open('POST', '/api/UpdateBgi/Upload')
+    if (token) {
+      xhr.setRequestHeader('Authorization', token)
+    }
+
+    // 发送请求
+    xhr.send(formData)
+  } catch (error) {
+    console.error('上传失败:', error)
+    message.error('上传失败：' + (error.message || '未知错误'))
+  } finally {
+    uploadBgiModal.loading = false
+  }
+}
+
+// BGI更新 - 取消上传
+const handleUploadBgiCancel = () => {
+  uploadBgiModal.visible = false
+  uploadBgiModal.selectedFile = null
+  uploadBgiModal.uploadProgress = 0
+}
+
 const bgiButtons = ref([
     { text: '仓库提交记录', route: '/GitLog' },
   { text: '调度器', route: '/listGroups' },
@@ -286,7 +435,8 @@ const bgiButtons = ref([
     {text: '实时屏幕',route: '/screen'} ,
   { text: '录屏管理', route: '/obsVideo' },
   { text: 'autobgi配置文件', route: '/Config' },
-  { text: 'bgi一条龙配置', route: '/onelong' }
+  { text: 'bgi一条龙配置', route: '/onelong' },
+  { text: '更新BGI', action: handleUploadBgiClick }
 ])
 
 let statusInterval = null
@@ -465,6 +615,16 @@ const oneLongModal = reactive({
   options: [],
   selectedValue: ''
 })
+
+// BGI上传相关的响应式数据
+const uploadBgiModal = reactive({
+  visible: false,
+  loading: false,
+  selectedFile: null,
+  uploadProgress: 0
+})
+
+const bgiFileInput = ref(null)
 
 // 按钮事件处理
 const handleOneLong = async () => {
