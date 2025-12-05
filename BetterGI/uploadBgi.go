@@ -133,10 +133,10 @@ func UpdateBgi() {
 	autoLog.Sugar.Infof("删除BetterGI压缩包")
 
 	//删除log
-	err5 = os.RemoveAll("backups\\log\\")
-	if err5 != nil {
-		autoLog.Sugar.Errorf("删除log失败: %v", err5)
-	}
-	autoLog.Sugar.Infof("删除log")
+	//err5 = os.RemoveAll("backups\\log\\")
+	//if err5 != nil {
+	//	autoLog.Sugar.Errorf("删除log失败: %v", err5)
+	//}
+	//autoLog.Sugar.Infof("删除log")
 
 }

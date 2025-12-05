@@ -48,7 +48,7 @@ type Repo struct {
 
 func Read() []Repos {
 
-	_, _, err := UpdateCenterRepoByGit("https://gitcode.com/huiyadanli/bettergi-scripts-list.git")
+	_, _, err := UpdateRepoGit()
 	if err != nil {
 		if strings.Contains(err.Error(), "worktree contains unstaged changes") {
 			autoLog.Sugar.Info("仓库没有更新")

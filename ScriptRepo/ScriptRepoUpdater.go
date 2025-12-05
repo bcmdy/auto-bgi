@@ -27,9 +27,16 @@ func init() {
 
 }
 
+func UpdateRepoGit() (string, bool, error) {
+
+	repoUrl := myConfig.BgiCfg.RepoUrl
+	return updateCenterRepoByGit(repoUrl)
+
+}
+
 // UpdateCenterRepoByGit 克隆或同步仓库到本地路径，并返回本地路径与是否更新过的标志。
 // 注意：依赖外部变量 proxyOptions, myConfig等（与原实现一致）。
-func UpdateCenterRepoByGit(repoUrl string) (string, bool, error) {
+func updateCenterRepoByGit(repoUrl string) (string, bool, error) {
 	if repoUrl == "" {
 		return "", false, errors.New("仓库 URL 不能为空")
 	}

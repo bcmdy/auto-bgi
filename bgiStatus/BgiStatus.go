@@ -1137,12 +1137,8 @@ type GitLogStruct struct {
 // git拉取代码
 func GitPull() {
 	// 从配置文件中获取仓库URL
-	repoUrl := config.Cfg.RepoUrl
-	if repoUrl == "" {
-		repoUrl = "https://gitcode.com/huiyadanli/bettergi-scripts-list.git"
-	}
 	//_, _, err := ScriptRepo.UpdateCenterRepoByGit("https://github.com/babalae/bettergi-scripts-list.git")
-	_, _, err := ScriptRepo.UpdateCenterRepoByGit(repoUrl)
+	_, _, err := ScriptRepo.UpdateRepoGit()
 	if err != nil {
 		if strings.Contains(err.Error(), "worktree contains unstaged changes") {
 			autoLog.Sugar.Info("仓库没有更新")

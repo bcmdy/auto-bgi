@@ -42,6 +42,7 @@ type BgiConfig struct {
 	GenShinStartConfigInstallPath string `json:"genshinStartConfig.installPath"` // 原神安装目录
 	Version                       string `json:"version"`                        // bgi版本号
 	SelectedChannelName           string `json:"selectedChannelName"`            // selectedChannelName：仓库
+	RepoUrl                       string `json:"repoUrl"`                        // 仓库地址
 }
 
 var BgiCfg BgiConfig
@@ -64,5 +65,15 @@ func ReadBgiConfig() {
 
 	//selectedChannelName：仓库
 	BgiCfg.SelectedChannelName = gjson.Get(data, "scriptConfig.selectedChannelName").String()
+
+	if BgiCfg.SelectedChannelName == "GitHub" {
+		BgiCfg.RepoUrl = "https://github.com/babalae/bettergi-scripts-list.git"
+	} else if BgiCfg.SelectedChannelName == "GitCode" {
+		BgiCfg.RepoUrl = "https://gitcode.com/huiyadanli/bettergi-scripts-list.git"
+	} else if BgiCfg.SelectedChannelName == "" {
+		BgiCfg.RepoUrl = "https://cnb.cool/bettergi/bettergi-scripts-list.git"
+	} else {
+		BgiCfg.RepoUrl = "https://cnb.cool/bettergi/bettergi-scripts-list.git"
+	}
 
 }
