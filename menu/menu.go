@@ -154,7 +154,7 @@ func StarGin() {
 	gin.SetMode(gin.ReleaseMode)
 
 	//创建一个服务
-	ginServer := gin.Default()
+	ginServer := gin.New()
 
 	// 创建嵌入的文件系统
 	distFS, err := fs.Sub(embeddedFiles, "web/dist")
@@ -218,6 +218,8 @@ func StarGin() {
 	var CDAwareAutoGatherService CDAwareAutoGather.UidInfo
 
 	var pickBlackListsService BetterGI.PickBlackLists
+
+	var videoInfoService abgiObs.VideoInfo
 
 	needAuth := ginServer.Group("/api", auth.AuthMiddleware())
 	{
@@ -390,7 +392,7 @@ func StarGin() {
 		needAuth.GET("/getAutoArtifactsPro", func(context *gin.Context) {
 
 			pro, err := bgiStatus.GetAutoArtifactsPro()
-			autoLog.Sugar.Infof("狗粮记录:%s", pro)
+			//autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
 			//获取版本号
 			version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply", config.Cfg.BetterGIAddress))
@@ -825,7 +827,211 @@ func StarGin() {
 
 		}
 
+		//obs
+		abgiObsController := needAuth.Group("/abgiObs")
+		{
+			abgiObsController.POST("/StartRecording", func(context *gin.Context) {
+				err := abgiObs.StartRecording()
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始录制"})
+			})
+			//结束录制
+			abgiObsController.POST("/StopRecording", func(context *gin.Context) {
+				videoName := context.Query("videoName")
+				err2 := abgiObs.StopRecording(videoName)
+				if err2 != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "结束录制"})
+			})
+			//查询录制状态
+			abgiObsController.GET("/IsRecording", func(context *gin.Context) {
+				time.Sleep(3 * time.Second)
+				isRecording, err3 := abgiObs.GetRecordingStatus()
+				if err3 != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err3.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": isRecording})
+			})
+
+			//开启回放缓存
+			abgiObsController.POST("/StartReplayBuffer", func(context *gin.Context) {
+
+				err := abgiObs.StartReplayBuffer()
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始回放缓冲区"})
+			})
+
+			//停止回放缓存
+			abgiObsController.POST("/StopReplayBuffer", func(context *gin.Context) {
+				err := abgiObs.StopReplayBuffer()
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "停止回放缓冲区"})
+			})
+
+			////获取重放缓冲区状态
+			abgiObsController.GET("/GetReplayBufferStatus", func(context *gin.Context) {
+				time.Sleep(3 * time.Second)
+				status, err := abgiObs.GetReplayBufferStatus()
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": status})
+			})
+
+			//保存重放缓冲区
+			abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
+
+				_, err2 := abgiObs.SaveReplayBuffer("手动保存")
+				if err2 != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "保存成功"})
+			})
+
+			//获取指定目录下的视频信息列表
+			abgiObsController.GET("/GetVideoInfo", func(context *gin.Context) {
+				// 获取目录路径参数
+				time.Sleep(3 * time.Second)
+				info, err := videoInfoService.GetAllRecordingsInfo(config.Cfg.ScreenRecord.ObsSavePath)
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": info})
+			})
+
+			//删除视频
+			abgiObsController.POST("/DeleteVideo", func(context *gin.Context) {
+				videoPath := context.Query("videoName") // 视频文件名
+				if videoPath == "" {
+					context.JSON(400, gin.H{"status": "error", "msg": "缺少视频文件名"})
+					return
+				}
+
+				err := videoInfoService.DeleteVideo(videoPath)
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "删除成功"})
+			})
+
+			//启动流
+			abgiObsController.GET("/StartStream", func(context *gin.Context) {
+				err := abgiObs.StartStream()
+				if err != nil {
+					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始流"})
+			})
+		}
+
+		//查看日志
+		needAuth.GET("/autoLog", func(c *gin.Context) {
+
+			data := c.Query("data")
+
+			logs, err2 := autoLog.QueryLogs(data)
+			if err2 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "success", "msg": logs})
+		})
+
+		ocrController := needAuth.Group("/ocr")
+		{
+			ocrController.POST("/dogFood", func(c *gin.Context) {
+
+				var data map[string]string
+				if err := c.ShouldBindJSON(&data); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
+				}
+
+				ocr, err2 := Ocr.BaiDuOcr(data["apiKey"], data["secretKey"])
+				if err2 != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+					return
+				}
+				dogFood.WriteDogFoodNum(ocr)
+				c.JSON(http.StatusOK, gin.H{"status": "success", "data": ocr})
+
+			})
+		}
+
+		//js-API
+		jsController := needAuth.Group("/js")
+		{
+			//发送今日收获前10
+			jsController.GET("/logAnalysis", JsAPI.SendLogAnalysis)
+			//给指定区域截图
+			jsController.POST("/screenShot", JsAPI.ScreenShot)
+			//ai
+			jsController.POST("/abgiAiConversation", JsAPI.AbgiAiConversation)
+		}
 	}
+
+	ginServer.GET("/api/abgiObs/PlayVideoStream", func(c *gin.Context) {
+		token := c.Query("tk")
+		_, err2 := auth.ParseToken(token)
+		if err2 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+			return
+		}
+
+		video := config.Cfg.ScreenRecord.ObsSavePath + "/" + c.Query("path")
+
+		if video == "" {
+			c.JSON(400, gin.H{"status": "error", "msg": "缺少视频路径"})
+			return
+		}
+
+		// 检查文件是否存在
+		if _, err := os.Stat(video); err != nil {
+			c.JSON(404, gin.H{"status": "error", "msg": "视频不存在"})
+			return
+		}
+
+		// 设置浏览器可以播放视频的 Header
+		c.Header("Content-Type", "video/mkv") // 根据视频类型修改，如 .mkv/.flv
+		c.Header("Content-Disposition", "inline; filename="+filepath.Base(video))
+		c.File(video) // 返回视频文件流
+	})
+
+	//桌面图片
+	ginServer.GET("/api/aBgiJt", func(c *gin.Context) {
+		token := c.Query("tk")
+		_, err2 := auth.ParseToken(token)
+		if err2 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
+			return
+		}
+
+		//截图
+		err := control.ScreenShot("./img/abgi/jt.jpg")
+		if err != nil {
+			c.JSON(400, "截图失败")
+		}
+		////睡眠500毫秒
+		//time.Sleep(1000 * time.Millisecond)
+
+		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
+	})
 
 	// WebSocket 处理器
 	ginServer.GET("/ws/:name", func(c *gin.Context) {
@@ -875,142 +1081,6 @@ func StarGin() {
 			}
 		}
 	})
-
-	var videoInfoService abgiObs.VideoInfo
-
-	//obs
-	abgiObsController := ginServer.Group("/api/abgiObs")
-	{
-		abgiObsController.POST("/StartRecording", func(context *gin.Context) {
-			err := abgiObs.StartRecording()
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始录制"})
-		})
-		//结束录制
-		abgiObsController.POST("/StopRecording", func(context *gin.Context) {
-			videoName := context.Query("videoName")
-			err2 := abgiObs.StopRecording(videoName)
-			if err2 != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "结束录制"})
-		})
-		//查询录制状态
-		abgiObsController.GET("/IsRecording", func(context *gin.Context) {
-			time.Sleep(3 * time.Second)
-			isRecording, err3 := abgiObs.GetRecordingStatus()
-			if err3 != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err3.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": isRecording})
-		})
-
-		//开启回放缓存
-		abgiObsController.POST("/StartReplayBuffer", func(context *gin.Context) {
-
-			err := abgiObs.StartReplayBuffer()
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始回放缓冲区"})
-		})
-
-		//停止回放缓存
-		abgiObsController.POST("/StopReplayBuffer", func(context *gin.Context) {
-			err := abgiObs.StopReplayBuffer()
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "停止回放缓冲区"})
-		})
-
-		////获取重放缓冲区状态
-		abgiObsController.GET("/GetReplayBufferStatus", func(context *gin.Context) {
-			time.Sleep(3 * time.Second)
-			status, err := abgiObs.GetReplayBufferStatus()
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": status})
-		})
-
-		//保存重放缓冲区
-		abgiObsController.POST("/SaveReplayBuffer", func(context *gin.Context) {
-
-			_, err2 := abgiObs.SaveReplayBuffer("手动保存")
-			if err2 != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "保存成功"})
-		})
-
-		//获取指定目录下的视频信息列表
-		abgiObsController.GET("/GetVideoInfo", func(context *gin.Context) {
-			// 获取目录路径参数
-			time.Sleep(3 * time.Second)
-			info, err := videoInfoService.GetAllRecordingsInfo(config.Cfg.ScreenRecord.ObsSavePath)
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": info})
-		})
-
-		//删除视频
-		abgiObsController.POST("/DeleteVideo", func(context *gin.Context) {
-			videoPath := context.Query("videoName") // 视频文件名
-			if videoPath == "" {
-				context.JSON(400, gin.H{"status": "error", "msg": "缺少视频文件名"})
-				return
-			}
-
-			err := videoInfoService.DeleteVideo(videoPath)
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "删除成功"})
-		})
-
-		abgiObsController.GET("/PlayVideoStream", func(c *gin.Context) {
-			video := config.Cfg.ScreenRecord.ObsSavePath + "/" + c.Query("path")
-
-			if video == "" {
-				c.JSON(400, gin.H{"status": "error", "msg": "缺少视频路径"})
-				return
-			}
-
-			// 检查文件是否存在
-			if _, err := os.Stat(video); err != nil {
-				c.JSON(404, gin.H{"status": "error", "msg": "视频不存在"})
-				return
-			}
-
-			// 设置浏览器可以播放视频的 Header
-			c.Header("Content-Type", "video/mkv") // 根据视频类型修改，如 .mkv/.flv
-			c.Header("Content-Disposition", "inline; filename="+filepath.Base(video))
-			c.File(video) // 返回视频文件流
-		})
-
-		//启动流
-		abgiObsController.GET("/StartStream", func(context *gin.Context) {
-			err := abgiObs.StartStream()
-			if err != nil {
-				context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err.Error()})
-				return
-			}
-			context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "开始流"})
-		})
-	}
 
 	type bgiWebhook struct {
 		Event      string `json:"event" comment:"事件"`
@@ -1076,19 +1146,6 @@ func StarGin() {
 
 	})
 
-	//查看日志
-	ginServer.GET("/api/autoLog", func(c *gin.Context) {
-
-		data := c.Query("data")
-
-		logs, err2 := autoLog.QueryLogs(data)
-		if err2 != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "success", "msg": logs})
-	})
-
 	// 1. 静态资源挂载（直接让前端可以访问图片）
 	ginServer.Static("/img", "./img")
 
@@ -1101,50 +1158,6 @@ func StarGin() {
 		c.JSON(200, gin.H{"images": imageList})
 
 	})
-
-	//桌面图片
-	ginServer.GET("/api/aBgiJt", func(c *gin.Context) {
-		//截图
-		err := control.ScreenShot("./img/abgi/jt.jpg")
-		if err != nil {
-			c.JSON(400, "截图失败")
-		}
-		////睡眠500毫秒
-		//time.Sleep(1000 * time.Millisecond)
-
-		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
-	})
-
-	ocrController := ginServer.Group("/api/ocr")
-	{
-		ocrController.POST("/dogFood", func(c *gin.Context) {
-
-			var data map[string]string
-			if err := c.ShouldBindJSON(&data); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "参数格式错误", "error": err.Error()})
-			}
-
-			ocr, err2 := Ocr.BaiDuOcr(data["apiKey"], data["secretKey"])
-			if err2 != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
-				return
-			}
-			dogFood.WriteDogFoodNum(ocr)
-			c.JSON(http.StatusOK, gin.H{"status": "success", "data": ocr})
-
-		})
-	}
-
-	//js-API
-	jsController := ginServer.Group("/api/js")
-	{
-		//发送今日收获前10
-		jsController.GET("/logAnalysis", JsAPI.SendLogAnalysis)
-		//给指定区域截图
-		jsController.POST("/screenShot", JsAPI.ScreenShot)
-		//ai
-		jsController.POST("/abgiAiConversation", JsAPI.AbgiAiConversation)
-	}
 
 	if config.Cfg.Control.AbgiScreen {
 		autoLog.Sugar.Infof("屏幕捕获开启状态")

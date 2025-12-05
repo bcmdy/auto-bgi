@@ -5,6 +5,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"gorm.io/driver/sqlite" // 显式别名，避免冲突
 	"gorm.io/gorm"          // 显式别名，避免本地包名冲突
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -23,6 +24,8 @@ func InitDB() error {
 	var err error
 	DB, err = gorm.Open(sqlite.Open("./archive.db"), &gorm.Config{
 		//Logger: newLogger, // !!! 把 logger 加进去
+		//Logger: logger.Default.LogMode(logger.Error),
+		Logger: logger.Default.LogMode(logger.Silent), // 不打印任何日志
 	})
 	if err != nil {
 		return fmt.Errorf("打开数据库失败: %v", err)

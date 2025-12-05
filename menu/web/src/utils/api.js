@@ -72,6 +72,9 @@ export const apiMethods = {
   // 发送桌面截图
   sendImage: () => api.post('/api/sendImage'),
 
+  //查看桌面图片
+  viewImage: () => api.get('/api/aBgiJt?t=' + new Date().getTime()),
+
   // 米游社手动签到
   mysSignIn: () => api.post('/api/mysSignIn'),
   
@@ -107,7 +110,7 @@ export const apiMethods = {
   
   // 其他功能
   getOther: () => api.get('/other'),
-  getJsNames: () => api.get('/api/jsNames'),
+
   getListGroups: () => api.get('/api/scriptGroup/listGroups'),
   // 读取配置组所有的地图追踪
   listPathingUpdatePaths: () => api.get('/api/scriptGroup/listPathingUpdatePaths'),
@@ -130,6 +133,16 @@ export const apiMethods = {
     const payload = Array.isArray(names) ? names : [names]
     return api.post('/api/startGroups', payload)
   },
+
+  //脚本组管理
+  //批量更新脚本
+  batchUpdate: () => api.post('/api/batchUpdate'),
+  //更新指定脚本
+  updateJs: (name) => api.post(`/api/updateJs/${name}`),
+  //获取脚本列表
+  getJsNames: () => api.get('/api/jsNames'),
+  //重置仓库
+  resetRepo: () => api.post('/api/resetRepo'),
 
   // 狗粮联机
   StartOnline: (typeKey,runDebug) => api.post('/api/abgiSSE/connect/'+typeKey+"?runDebug="+runDebug),

@@ -155,6 +155,7 @@
 <script>
 import { ref, computed, onMounted, reactive, h } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiMethods } from '@/utils/api'
 
 export default {
   name: 'JsNames',
@@ -170,8 +171,7 @@ export default {
 
     const getHeaderImages = async () => {
       try {
-        const res = await fetch('/api/images')
-        const data = await res.json()
+        const data = await apiMethods.getImages()
         headerCarouselImages.value = data.images || []
       } catch {
         headerCarouselImages.value = ['/img/bd.jpg', '/img/ff.png', '/img/ng.jpg', '/img/sh.jpg']
@@ -208,16 +208,10 @@ export default {
         const token = localStorage.getItem('aBgiToken')
     console.log('获取到的 token:', token)
 
-    const headers = {}
-    if (token) {
-      headers['Authorization'] = `${token}`
-    }
-
     const loadPluginList = async () => {
       try {
-        const res = await fetch('/api/jsNames',{headers})
-        const json = await res.json()
-        pluginData.value = json.data || []
+        const data = await apiMethods.getJsNames()
+        pluginData.value = data.data || []
       } catch {
         pluginData.value = []
       }
@@ -225,7 +219,8 @@ export default {
 
     const batchUpdate = async () => {
       try {
-        const res = await fetch('/api/batchUpdate', { method: 'POST' })
+        const data = await apiMethods.batchUpdate()
+        console.log('批量更新返回数据:', data)
         alert('批量更新已执行')
         await loadPluginList()
       } catch {
@@ -235,7 +230,8 @@ export default {
 
     const resetRepo = async () => {
       try {
-        const res = await fetch('/api/repo/resetRepo', { method: 'POST' })
+        const data = await apiMethods.resetRepo()
+        console.log('重置仓库返回数据:', data)
         alert('仓库重置已执行')
         await loadPluginList()
       } catch {
@@ -247,7 +243,8 @@ export default {
       if (!name) return
       isUpdating[name] = true
       try {
-        await fetch(`/api/updateJs/${name}`, { method: 'POST' })
+        const data = await apiMethods.updateJs(name)
+        console.log(`更新脚本 ${name} 返回数据:`, data)
         await loadPluginList()
       } finally {
         isUpdating[name] = false

@@ -197,9 +197,13 @@ const screenshotImage = ref(null)
 const isZoomed = ref(false)
 const zoomScale = ref(1)
 
+//获取token
+const token = localStorage.getItem('aBgiToken')
+
 const refreshScreenshot = () => {
   const ts = Date.now()
-  screenshotModal.url = `/api/aBgiJt?t=${ts}`
+
+  screenshotModal.url = `/api/aBgiJt?t=${ts}&tk=${token}`
 }
 
 // 退出登录：清理本地 token 并跳转到登录页

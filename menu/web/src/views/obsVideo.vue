@@ -167,7 +167,7 @@
                 <video
                   ref="videoRef"
                   class="main-video"
-                  :src="`/api/abgiObs/PlayVideoStream?path=${encodeURIComponent(currentVideo)}`"
+                  :src="getVideoStreamUrl(currentVideo)"
                   controls
                   autoplay
                   playsinline
@@ -270,6 +270,17 @@
 </template>
 
 <script setup>
+// 获取本地 token（假设存储在 localStorage，或根据实际情况调整）
+function getToken() {
+  return localStorage.getItem('aBgiToken') || ''
+}
+
+// 拼接带 token 的视频流 URL
+function getVideoStreamUrl(path) {
+  const token = getToken()
+  const url = `/api/abgiObs/PlayVideoStream?path=${encodeURIComponent(path)}${token ? `&tk=${encodeURIComponent(token)}` : ''}`
+  return url
+}
 import { ref, onMounted, reactive } from 'vue'
 import { apiMethods } from '@/utils/api'
 
