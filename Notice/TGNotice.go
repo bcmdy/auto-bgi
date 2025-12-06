@@ -34,6 +34,7 @@ func InitTG(token, proxy string) error {
 	}
 
 	log.Printf("[TG] bot authorized: @%s", bot.Self.UserName)
+
 	return nil
 }
 

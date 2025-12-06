@@ -20,14 +20,17 @@ import (
 
 var proxyOptions = transport.ProxyOptions{}
 
-func init() {
-	if myConfig.Cfg.Notice.TGNotice.Proxy != "" {
+func proxyInit() {
+	if myConfig.Cfg.Notice.TGNotice.Proxy != "" && myConfig.BgiCfg.SelectedChannelName == "GitHub" {
 		proxyOptions.URL = myConfig.Cfg.Notice.TGNotice.Proxy
+	} else {
+		proxyOptions = transport.ProxyOptions{}
 	}
 
 }
 
 func UpdateRepoGit() (string, bool, error) {
+	proxyInit()
 
 	repoUrl := myConfig.BgiCfg.RepoUrl
 	return updateCenterRepoByGit(repoUrl)
