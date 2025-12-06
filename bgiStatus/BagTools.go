@@ -85,7 +85,7 @@ func DeleteBag() {
 		panic(err)
 	}
 
-	fmt.Printf("成功：已将 %s 更新为仅包含 %s 的数据。\n", filePath, latestDate)
+	autoLog.Sugar.Infof("成功：已将 %s 更新为仅包含 %s 的数据。\n", filePath, latestDate)
 
 }
 
@@ -129,9 +129,10 @@ func DeleteMoLa() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)
+		autoLog.Sugar.Infof("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)
 	} else {
-		fmt.Println("未找到匹配的记录")
+		//fmt.Println("未找到匹配的记录")
+		autoLog.Sugar.Infof("未找到匹配的记录")
 	}
 
 }
@@ -174,9 +175,11 @@ func DeleteYuanShi() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)
+		//fmt.Printf("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)
+		autoLog.Sugar.Infof("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)
 	} else {
-		fmt.Println("未找到匹配的记录")
+		//fmt.Println("未找到匹配的记录")
+		autoLog.Sugar.Infof("未找到匹配的记录")
 	}
 }
 

@@ -471,7 +471,7 @@ export default {
       }
       
       try {
-        const data = await api.post('/deleteBag');
+        const data = await api.post('/api/deleteBag');
         alert(data.message || '操作成功！已清理统计数据');
         await this.loadData(); // 重新加载数据
       } catch (error) {
