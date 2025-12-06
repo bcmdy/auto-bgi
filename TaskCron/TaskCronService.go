@@ -138,3 +138,19 @@ func Resume(c *gin.Context) {
 		"id":  newID, // 新的 EntryID（如果前端要展示的话）
 	})
 }
+
+// 立即执行
+func AtOnceRun(c *gin.Context) {
+	typeName := c.Query("type")
+	data := c.Query("data")
+
+	if typeName == "" {
+		c.String(400, "缺少参数 typeName")
+		return
+	}
+
+	f := task[typeName]
+	f(data)
+
+	c.String(200, "任务已执行")
+}

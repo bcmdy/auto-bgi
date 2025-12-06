@@ -181,6 +181,7 @@ export const apiMethods = {
   pauseTaskCron: (id) => api.post(`/api/taskCron/pause?id=${id}`),
   resumeTaskCron: (id) => api.post(`/api/taskCron/resume?id=${id}`),
   removeTaskCron: (id,EntryID) => api.post(`/api/taskCron/remove?id=${id}&EntryID=${EntryID}`),
+  AtOnceRunTaskCron: (type,data) => api.post(`/api/taskCron/AtOnceRun?type=${type}&data=${data}`),
 
   // BGI更新
   uploadBgi: (file) => {

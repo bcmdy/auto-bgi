@@ -5,7 +5,7 @@
     </a-typography-title>
 
     <a-row :gutter="[16, 16]" class="content-row">
-      <a-col :xs="24" :md="10" class="form-col">
+      <a-col :xs="24" :md="9" class="form-col">
         <a-card title="新增任务" bordered class="form-card">
           <a-alert
             type="info"
@@ -78,7 +78,7 @@
         </a-card>
       </a-col>
 
-      <a-col :xs="24" :md="14" class="table-col">
+      <a-col :xs="24" :md="15" class="table-col">
         <a-card title="已配置任务" bordered class="table-card">
           <a-spin :spinning="tableLoading">
             <div v-if="taskCronList.length > 0" class="table-wrapper">
@@ -113,6 +113,18 @@
                           删除
                         </a-button>
                       </a-tooltip>
+
+                      <a-tooltip title="立即执行任务">
+                        <a-button
+                          type="text"
+                          danger
+                          size="small"
+                          @click="AtOnceRunTask(record.name,record.data)"
+                        >
+                          执行
+                        </a-button>
+                      </a-tooltip>
+
                       <a-tooltip :title="record.paused ? '恢复任务' : '暂停任务'">
                         <a-popconfirm
                           :title="record.paused ? '确认恢复该任务？' : '确认暂停该任务？'"
@@ -342,6 +354,18 @@ const confirmRemove = (record) => {
     okButtonProps: { danger: true },
     onOk: () => removeTask(record.id, record.entry_id)
   })
+}
+
+//立即执行
+const AtOnceRunTask = async (type,data) => {
+  try {
+    const res = await apiMethods.AtOnceRunTaskCron(type, data)
+    const msg = typeof res === 'string' ? res : '任务已执行'
+    message.success(msg)
+    fetchTaskList()
+  } catch (error) {
+    message.error('执行任务失败')
+  }
 }
 
 const removeTask = async (id, entry_id) => {

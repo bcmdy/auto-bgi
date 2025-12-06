@@ -676,6 +676,8 @@ func StarGin() {
 			taskCronController.POST("/pause", TaskCron.Pause)
 			//恢复定时任务
 			taskCronController.POST("/resume", TaskCron.Resume)
+			//立即执行任务
+			taskCronController.POST("/AtOnceRun", TaskCron.AtOnceRun)
 		}
 
 		//更新bgi
