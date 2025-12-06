@@ -105,7 +105,7 @@ func login(username string, password string) (string, error) {
 
 func GetSystemConfig(context *gin.Context) {
 
-	systemName := viper.GetString("sysConfig.systemName")
+	systemName := viper.GetString("sys_config.system_name")
 	context.JSON(200, gin.H{
 		"code":       200,
 		"systemName": systemName + "のABGI",
