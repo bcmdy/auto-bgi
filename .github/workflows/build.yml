@@ -1,0 +1,227 @@
+name: 🔄 Auto-BGI Daily Sync & Build
+
+on:
+  schedule:
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+env:
+  UPSTREAM_REPO: 'https://gitee.com/wangjian0327/auto-bgi.git'
+  UPSTREAM_BRANCH: 'ginVue'
+  LOCAL_BRANCH: 'main'
+
+jobs:
+  sync-build-release:
+    runs-on: windows-latest
+    steps:
+      # 1. 检出本仓库
+      - name: 🧾 Checkout self
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # 2. 配置 Git
+      - name: ⚙️ Configure Git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      # 3. 检测上游更新
+      - name: 🔍 Check upstream changes
+        id: upstream
+        shell: bash
+        run: |
+          git remote add upstream ${{ env.UPSTREAM_REPO }} || true
+          git fetch upstream ${{ env.UPSTREAM_BRANCH }} --quiet
+          UPSTREAM_HASH=$(git rev-parse upstream/${{ env.UPSTREAM_BRANCH }})
+          LOCAL_HASH=$(git rev-parse HEAD)
+          echo "upstream_hash=$UPSTREAM_HASH" >> $GITHUB_OUTPUT
+          echo "local_hash=$LOCAL_HASH" >> $GITHUB_OUTPUT
+          echo "changed=$([ \"$UPSTREAM_HASH\" != \"$LOCAL_HASH\" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      # 4. 同步并强制保留 workflows
+      - name: ⬇️⬆️ Sync & force-push
+        if: steps.upstream.outputs.changed == 'true'
+        shell: bash
+        env:
+          BACKUP_DIR: "${{ runner.temp }}/workflows-backup"
+        run: |
+          mkdir -p "$BACKUP_DIR"
+          if [ -d ".github/workflows" ] && [ -n "$(ls -A .github/workflows 2>/dev/null)" ]; then
+            echo "✅ Found workflows, backing up to $BACKUP_DIR..."
+            cp -r .github/workflows/* "$BACKUP_DIR/"
+            echo "WORKFLOWS_BACKED_UP=true" >> $GITHUB_ENV
+            if [ ! -f "$BACKUP_DIR/$(ls .github/workflows | head -1)" ]; then
+              echo "❌ Backup verification failed"
+              exit 1
+            fi
+          else
+            echo "❌ CRITICAL: No workflows found to backup!"
+            exit 1
+          fi
+          
+          echo "🔄 Resetting to upstream..."
+          git reset --hard upstream/${{ env.UPSTREAM_BRANCH }}
+          
+          if [ -d ".github" ]; then
+            echo "⚠️ 上游有 .github 目录，可能需要检查冲突"
+          else
+            echo "✅ .github 已按预期被删除"
+          fi
+          
+          echo "📁 Restoring workflows..."
+          mkdir -p .github/workflows
+          cp -r "$BACKUP_DIR"/* .github/workflows/
+          
+          if [ -n "$(ls -A .github/workflows 2>/dev/null)" ]; then
+            echo "✅ Workflows restored successfully"
+            ls -la .github/workflows/
+          else
+            echo "❌ Failed to restore workflows"
+            exit 1
+          fi
+          
+          git add .github/workflows
+          git -c user.name='github-actions[bot]' \
+              -c user.email='github-actions[bot]@users.noreply.github.com' \
+              commit -m "chore: sync upstream and restore workflows" || true
+          git push --force-with-lease origin ${{ env.LOCAL_BRANCH }}
+
+      # 5. 安装 Node.js
+      - name: 🧰 Setup Node
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.13.1'
+
+      # 6. 安装 Go
+      - name: 🐹 Setup Go
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24.0'
+
+      # 7. 安装 UPX
+      - name: 📦 Install UPX
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: choco install upx -y
+
+      # 8. 构建（前端 + 后端 + UPX + ZIP）
+      - name: 🏗 Build frontend & backend
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          # 前端构建
+          Set-Location menu/web
+          Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
+          npm install --silent --no-audit --no-fund
+          if (-not (Test-Path node_modules/.bin/vite.cmd)) {
+            npm install --save-dev vite --silent --no-audit --no-fund
+          }
+          npm run build
+          if (-not (Test-Path dist)) { throw "❌ Frontend build failed" }
+          
+          # 返回项目根目录
+          Set-Location ../..
+          
+          # 后端构建：命令行版本
+          Write-Host "====== Building CLI version ======"
+          go mod tidy
+          go build -ldflags="-s -w" -o auto-bgi.exe
+          if (-not (Test-Path auto-bgi.exe)) { throw "❌ CLI build failed" }
+          
+          # 后端构建：GUI版本
+          Write-Host "====== Building GUI version ======"
+          go build -ldflags="-s -w -H=windowsgui" -o auto-bgi-GUI.exe
+          if (-not (Test-Path auto-bgi-GUI.exe)) { throw "❌ GUI build failed" }
+          
+          # UPX 压缩
+          Write-Host "====== UPX compressing ======"
+          upx --best -o auto-bgi-upx.exe auto-bgi.exe
+          upx --best -o auto-bgi-GUI-upx.exe auto-bgi-GUI.exe
+          if (-not (Test-Path auto-bgi-upx.exe)) { throw "❌ UPX CLI compression failed" }
+          if (-not (Test-Path auto-bgi-GUI-upx.exe)) { throw "❌ UPX GUI compression failed" }
+          
+          # 创建 ZIP 压缩包（4个文件）
+          Write-Host "====== Creating ZIP archives ======"
+          Compress-Archive -Path auto-bgi.exe -DestinationPath auto-bgi.exe.zip -Force
+          Compress-Archive -Path auto-bgi-GUI.exe -DestinationPath auto-bgi-GUI.exe.zip -Force
+          Compress-Archive -Path auto-bgi-upx.exe -DestinationPath auto-bgi-upx.exe.zip -Force
+          Compress-Archive -Path auto-bgi-GUI-upx.exe -DestinationPath auto-bgi-GUI-upx.exe.zip -Force
+          
+          Write-Host "✅ Build completed. Files:"
+          Get-ChildItem *.zip | Select-Object Name, Length
+
+      # 9. 生成发布信息
+      - name: 🏷️ Prepare release info
+        if: steps.upstream.outputs.changed == 'true' && success()
+        id: release_info
+        shell: bash
+        run: |
+          BUILD_DATE=$(date +%Y%m%d)
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "version=autobuild-${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      # 10. 上传产物（4个ZIP）
+      - name: 📤 Upload CLI ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-CLI-${{ github.run_number }}
+          path: auto-bgi.exe.zip
+          retention-days: 30
+
+      - name: 📤 Upload GUI ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-GUI-${{ github.run_number }}
+          path: auto-bgi-GUI.exe.zip
+          retention-days: 30
+
+      - name: 📤 Upload CLI-UPX ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-CLI-UPX-${{ github.run_number }}
+          path: auto-bgi-upx.exe.zip
+          retention-days: 30
+
+      - name: 📤 Upload GUI-UPX ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-GUI-UPX-${{ github.run_number }}
+          path: auto-bgi-GUI-upx.exe.zip
+          retention-days: 30
+
+      # 11. 发布正式版 Release（4个ZIP）
+      - name: 🚀 Create Release
+        if: steps.upstream.outputs.changed == 'true' && success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.version }}
+          name: 每日编译-${{ steps.release_info.outputs.build_date }}-${{ github.run_number }}
+          body: |
+            🗓 **Build Date**: ${{ github.event.repository.updated_at }}  
+            🔖 **Version**: `${{ steps.release_info.outputs.version }}`
+            
+            ## 📦 Downloads
+            - `auto-bgi.exe.zip` - 命令行版本
+            - `auto-bgi-GUI.exe.zip` - GUI版本
+            - `auto-bgi-upx.exe.zip` - UPX压缩后的命令行版本（体积更小）
+            - `auto-bgi-GUI-upx.exe.zip` - UPX压缩后的GUI版本（体积更小）
+          files: |
+            auto-bgi.exe.zip
+            auto-bgi-GUI.exe.zip
+            auto-bgi-upx.exe.zip
+            auto-bgi-GUI-upx.exe.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
