@@ -1,0 +1,86 @@
+name: 🏗 Manual Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '要编译的分支'
+        required: true
+        default: 'main'
+        type: choice
+        options:
+          - main
+
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # 1. 检出指定分支
+      - name: 🧾 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      # 2. 安装 Node
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.13.1'
+
+      # 3. 安装 Go
+      - name: 🐹 Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24.0'
+
+      # 4. 构建（适配上游目录结构，双版本输出）
+      - name: 🏗 Build frontend & backend
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          # 前端构建
+          Set-Location menu/web
+          Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
+          
+          npm install --silent --no-audit --no-fund
+          
+          if (-not (Test-Path node_modules/.bin/vite.cmd)) {
+            npm install --save-dev vite --silent --no-audit --no-fund
+          }
+          
+          npm run build
+          if (-not (Test-Path dist)) { throw "❌ Frontend build failed" }
+          
+          # 返回项目根目录（从 menu/web 返回两级）
+          Set-Location ../..
+          
+          # 后端构建：命令行版本
+          Write-Host "====== Building CLI version ======"
+          go mod tidy
+          go build -ldflags="-s -w"
+          if (-not (Test-Path auto-bgi.exe)) { throw "❌ CLI build failed" }
+          
+          # 后端构建：GUI版本（无控制台窗口）
+          Write-Host "====== Building GUI version ======"
+          go build -ldflags="-s -w -H=windowsgui" -o auto-bgi-GUI.exe
+          if (-not (Test-Path auto-bgi-GUI.exe)) { throw "❌ GUI build failed" }
+
+      # 5. 上传产物（两个版本）
+      - name: 📤 Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-CLI-${{ github.event.inputs.branch }}-${{ github.run_number }}
+          path: auto-bgi.exe
+          retention-days: 30
+
+      - name: 📤 Upload GUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-GUI-${{ github.event.inputs.branch }}-${{ github.run_number }}
+          path: auto-bgi-GUI.exe
+          retention-days: 30
