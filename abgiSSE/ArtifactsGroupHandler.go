@@ -128,7 +128,8 @@ func IsNewestVersion() (is bool, newV, nowV string) {
 	//读取公版版本号:https://cnb.cool/bettergi/bettergi-scripts-list/-/git/raw/main/repo/js/ArtifactsGroupPurchasing/manifest.json
 	resp, err := http.Get("https://cnb.cool/bettergi/bettergi-scripts-list/-/git/raw/main/repo/js/ArtifactsGroupPurchasing/manifest.json")
 	if err != nil {
-		autoLog.Sugar.Errorf("读取公版版本号失败：%s", err)
+		autoLog.Sugar.Errorf("读取版本号失败：%s", err)
+		return false, "未知", "未知"
 	}
 	defer resp.Body.Close()
 
