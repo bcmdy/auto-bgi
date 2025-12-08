@@ -378,3 +378,27 @@ func StartStream() error {
 	autoLog.Sugar.Infof("🔴 已启动流")
 	return nil
 }
+
+// 关闭obs
+func Shutdown() {
+	if client == nil {
+		return
+	}
+	// 停止录制
+	_, err := client.Record.StopRecord(&record.StopRecordParams{})
+	if err != nil {
+		autoLog.Sugar.Errorf("停止录制失败: %v", err)
+	}
+	// 停止流
+	_, err = client.Stream.StopStream(&stream.StopStreamParams{})
+	if err != nil {
+		autoLog.Sugar.Errorf("停止流失败: %v", err)
+	}
+
+	//关闭回放缓存
+	_, err = client.Outputs.StopReplayBuffer(&outputs.StopReplayBufferParams{})
+	if err != nil {
+		autoLog.Sugar.Errorf("关闭回放缓冲区失败: %v", err)
+	}
+	autoLog.Sugar.Infof("obs关闭成功")
+}

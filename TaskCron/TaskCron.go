@@ -74,6 +74,7 @@ func InitTaskCron() {
 		autoLog.Sugar.Info("备份成功")
 	}
 	task["定时关机"] = func(data string) {
+		abgiObs.Shutdown()
 		autoLog.Sugar.Infof("定时任务启动：定时关机-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		cmd := exec.Command("shutdown", "/s", "/t", "60")
 		err := cmd.Run()
