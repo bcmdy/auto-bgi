@@ -6,9 +6,14 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/tools"
+	"context"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	abgiCopy "github.com/otiai10/copy"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,7 +40,16 @@ func UploadBgi(c *gin.Context) {
 	}
 	time.Sleep(1 * time.Second)
 
-	UpdateBgi()
+	err = UpdateBgi()
+	if err != nil {
+		autoLog.Sugar.Error("更新失败:", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message":  err,
+			"filename": file.Filename,
+			"size":     file.Size,
+		})
+		return
+	}
 
 	//更新仓库
 	go func() {
@@ -49,8 +63,144 @@ func UploadBgi(c *gin.Context) {
 	})
 }
 
+// DownloadBgi 是 Gin handler：从请求中读取 url（form/json/query），下载压缩包并替换到 ./uploads/BetterGI.zip
+func DownloadBgi(c *gin.Context) {
+	// 从多种来源读取 url：JSON body, form, query
+	reqURL := c.PostForm("url")
+	if reqURL == "" {
+		// try JSON body
+		var body struct {
+			URL string `json:"url"`
+		}
+		if err := c.BindJSON(&body); err == nil {
+			reqURL = body.URL
+		}
+	}
+	if reqURL == "" {
+		// try query param
+		reqURL = c.Query("url")
+	}
+	if reqURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'url' parameter"})
+		return
+	}
+
+	// 关闭软件（和上传逻辑一致）
+	control.CloseSoftware()
+
+	// 下载并保存
+	dst := filepath.Join("./uploads", "BetterGI.zip")
+	// ctx with timeout for the whole download operation
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	if err := downloadFileFromURL(ctx, reqURL, dst); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 小延时确保文件系统稳定（保持与 UploadBgi 一致）
+	time.Sleep(1 * time.Second)
+
+	//// 更新 bgi（和 upload 的行为一致）
+	//UpdateBgi()
+	//
+	//// 更新仓库（异步）
+	//go func() {
+	//	bgiStatus.GitPull()
+	//}()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "下载并更新成功",
+		"url":     reqURL,
+		"path":    dst,
+	})
+}
+
+// downloadFileFromURL 从给定 URL 下载文件并原子写入到 dst（覆盖）。
+// ctx: 下载超时/取消上下文。
+// reqURL: 要下载的文件 URL。
+// dst: 最终目标文件路径（会先写入临时文件再重命名）。
+func downloadFileFromURL(ctx context.Context, reqURL string, dst string) error {
+	// 验证 URL
+	parsed, err := url.ParseRequestURI(reqURL)
+	if err != nil {
+		return fmt.Errorf("invalid url: %w", err)
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return errors.New("url scheme must be http or https")
+	}
+
+	// 确保目标目录存在
+	dir := filepath.Dir(dst)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create dir %s: %w", dir, err)
+	}
+
+	// HTTP 请求（使用自定义 client 以便设置超时）
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	client := &http.Client{
+		// 不在这里设置 Timeout，因为我们使用 ctx 带超时；但为了保险可以设置一个大超时
+		Timeout: 0,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("download request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("download failed: server returned status %s", resp.Status)
+	}
+
+	// 写入临时文件
+	tmpFile, err := os.CreateTemp(dir, "bettergi-*.zip.tmp")
+	if err != nil {
+		return fmt.Errorf("create temp file failed: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+	// 确保临时文件在出错时被移除
+	cleanup := func() {
+		tmpFile.Close()
+		os.Remove(tmpPath)
+	}
+	defer func() {
+		// 如果已经重命名成功则 tmpPath 不存在，不过 Remove 不会报错
+		_ = tmpFile.Close()
+	}()
+
+	// 流式拷贝（不把文件全部读入内存）
+	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		cleanup()
+		return fmt.Errorf("writing to temp file failed: %w", err)
+	}
+
+	// 确保写入磁盘
+	if err := tmpFile.Sync(); err != nil {
+		cleanup()
+		return fmt.Errorf("sync temp file failed: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		cleanup()
+		return fmt.Errorf("close temp file failed: %w", err)
+	}
+
+	// 原子替换目标文件（在同一文件系统上，os.Rename 是原子的）
+	if err := os.Rename(tmpPath, dst); err != nil {
+		// 若 Rename 失败，尝试删除临时文件
+		_ = os.Remove(tmpPath)
+		return fmt.Errorf("rename temp to dst failed: %w", err)
+	}
+
+	return nil
+}
+
 // 更新bgi
-func UpdateBgi() {
+func UpdateBgi() error {
 
 	now := time.Now().Format("2006-01-02-15-04-05")
 
@@ -58,7 +208,7 @@ func UpdateBgi() {
 	err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+now+".zip", true)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("备份失败: %v", err4)
-		return
+		return fmt.Errorf("备份失败: %v", err4)
 	}
 	autoLog.Sugar.Infof("备份user文件")
 
@@ -66,7 +216,7 @@ func UpdateBgi() {
 	err2 := abgiCopy.Copy(config.Cfg.BetterGIAddress+"\\log\\", "backups\\log\\")
 	if err2 != nil {
 		autoLog.Sugar.Errorf("备份log失败: %v", err2)
-		return
+		return fmt.Errorf("备份log失败: %v", err2)
 	}
 	autoLog.Sugar.Infof("备份log")
 
@@ -74,7 +224,7 @@ func UpdateBgi() {
 	err := os.RemoveAll(config.Cfg.BetterGIAddress)
 	if err != nil {
 		autoLog.Sugar.Errorf("删除bgi文件夹失败: %v", err)
-		return
+		return fmt.Errorf("删除bgi文件夹失败: %v", err)
 	}
 	autoLog.Sugar.Infof("删除bgi文件夹")
 
@@ -84,7 +234,7 @@ func UpdateBgi() {
 	err4 = tools.Un7z("./uploads/BetterGI.zip", path)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("解压bgi压缩包失败: %v", err)
-		return
+		return fmt.Errorf("解压bgi压缩包失败: %v", err)
 	}
 
 	autoLog.Sugar.Infof("解压bgi压缩包")
@@ -93,7 +243,7 @@ func UpdateBgi() {
 	err2 = os.RemoveAll(config.Cfg.BetterGIAddress + "\\User\\")
 	if err2 != nil {
 		autoLog.Sugar.Errorf("删除user文件夹失败: %v", err2)
-		return
+		return fmt.Errorf("删除user文件夹失败: %v", err2)
 	}
 	autoLog.Sugar.Infof("删除user文件夹")
 
@@ -101,7 +251,7 @@ func UpdateBgi() {
 	err3 := abgiCopy.Copy("./Users/User"+now+".zip", config.Cfg.BetterGIAddress+"\\User.zip")
 	if err3 != nil {
 		autoLog.Sugar.Errorf("复制压缩包到User失败: %v", err3)
-		return
+		return fmt.Errorf("复制压缩包到User失败: %v", err3)
 	}
 	autoLog.Sugar.Infof("复制压缩包到User")
 
@@ -109,7 +259,7 @@ func UpdateBgi() {
 	err4 = tools.Unzip(config.Cfg.BetterGIAddress+"\\User.zip", config.Cfg.BetterGIAddress)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("解压user压缩包失败: %v", err4)
-		return
+		return fmt.Errorf("解压user压缩包失败: %v", err4)
 	}
 	autoLog.Sugar.Infof("解压user压缩包")
 
@@ -131,6 +281,7 @@ func UpdateBgi() {
 		autoLog.Sugar.Errorf("删除BetterGI压缩包失败: %v", err5)
 	}
 	autoLog.Sugar.Infof("删除BetterGI压缩包")
+	return nil
 
 	//删除log
 	//err5 = os.RemoveAll("backups\\log\\")

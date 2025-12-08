@@ -224,7 +224,7 @@ const handleLogout = () => {
 
 // 定义定时器相关变量
 let screenshotTimer = null
-const SCREENSHOT_INTERVAL = 3000 // 5秒刷新一次
+const SCREENSHOT_INTERVAL = 5000 // 5秒刷新一次
 
 const openScreenshot = () => {
     // 先停止可能存在的定时器

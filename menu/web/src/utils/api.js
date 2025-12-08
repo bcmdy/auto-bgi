@@ -179,8 +179,11 @@ export const apiMethods = {
   addTaskCron: (payload) => api.post('/api/taskCron/add', payload),
   updateTaskCron: (payload) => api.post('/api/taskCron/update', payload),
   pauseTaskCron: (id) => api.post(`/api/taskCron/pause?id=${id}`),
+  
   resumeTaskCron: (id) => api.post(`/api/taskCron/resume?id=${id}`),
+  // 删除定时任务
   removeTaskCron: (id,EntryID) => api.post(`/api/taskCron/remove?id=${id}&EntryID=${EntryID}`),
+  // 立即执行定时任务
   AtOnceRunTaskCron: (type,data) => api.post(`/api/taskCron/AtOnceRun?type=${type}&data=${data}`),
 
   // BGI更新
