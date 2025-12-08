@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -193,6 +194,13 @@ func UpdateRevenue(num string) {
 		autoLog.Sugar.Error("更新收益失败:", err)
 		return
 	}
+	//读取返回
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		autoLog.Sugar.Error("更新收益失败:", err)
+	}
+	autoLog.Sugar.Infof("更新收益:%s", string(body))
+
 	defer resp.Body.Close()
 
 }
