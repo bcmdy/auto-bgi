@@ -441,7 +441,7 @@ const bgiButtons = ref([
     {text: '实时屏幕',route: '/screen'} ,
   { text: '录屏管理', route: '/obsVideo' },
   { text: 'autobgi配置文件', route: '/Config' },
-  { text: 'bgi一条龙配置', route: '/onelong' },
+  { text: 'bgi一条龙配置', route: '/BgiConfig' },
   { text: '更新BGI', action: handleUploadBgiClick }
 ])
 

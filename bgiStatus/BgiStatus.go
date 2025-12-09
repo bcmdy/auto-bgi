@@ -372,9 +372,10 @@ func DeleteBagStatistics() string {
 }
 
 type DogFood struct {
-	FileName string
-	Mark     string
-	Detail   []string
+	FileName     string
+	Mark         string
+	ActivateTime string
+	Detail       []string
 }
 
 // 获取当前配置组
@@ -499,11 +500,19 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 
 		for scanner.Scan() {
 			line := scanner.Text()
+			if strings.Contains(line, "上次激活收尾路线时间: ") {
+				timeStr := strings.ReplaceAll(line, "上次激活收尾路线时间: ", "")
+				parsedTime, err := time.Parse(time.RFC3339, timeStr)
+				if err != nil {
+					fmt.Println("Error parsing time:", err)
+				}
+				dogFood.ActivateTime = "上次激活收尾路线时间: " + parsedTime.Format("2006-01-02 15:04:05")
+			}
+
 			if !inHistory {
 				if strings.Contains(line, "上次运行收尾路线") {
 					replace := strings.ReplaceAll(line, "上次运行收尾路线：", "")
 					dogFood.Mark = replace
-
 					inHistory = true
 				}
 				continue

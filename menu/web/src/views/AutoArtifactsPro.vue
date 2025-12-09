@@ -41,6 +41,9 @@
         <h4 style="margin-bottom: 10px">
           {{ item.Mark }}
         </h4>
+          <h4 style="margin-bottom: 10px">
+          {{ item.ActivateTime }}
+        </h4>
 
         <div class="file-details">
           <div class="detail-item" v-for="(detail, detailIndex) in item.Detail" :key="detailIndex">

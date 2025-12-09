@@ -89,6 +89,10 @@ export const apiMethods = {
   getConfig: () => api.get('/api/config'),
   updateConfig: (data) => api.post('/api/saveConfig', data),
   getOneLongAllName: () => api.get('/api/oneLong/oneLongAllName'),
+  // BGI 配置相关
+  getBgiConfigAll: () => api.get('/api/bgiConfig/allConfig'),
+  findBgiConfig: (configName) => api.get('/api/bgiConfig/findConfig', { params: { configName } }),
+  saveBgiConfig: (data) => api.post('/api/bgiConfig/saveConfig', data),
   
   // 日志相关
   getLog: () => api.get('/api/gitLog'),

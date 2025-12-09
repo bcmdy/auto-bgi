@@ -15,7 +15,6 @@ import AutoArtifactsPro from '../views/AutoArtifactsPro.vue'
 import AutoArtifactsPro2 from '../views/AutoArtifactsPro2.vue'
 import Harvest from '../views/Harvest.vue'
 import Bg from '../views/Bg.vue'
-import OneLong from '../views/OneLong.vue'
 import Error from '../views/Error.vue'
 import CalculateTaskEnabledList from '../views/CalculateTaskEnabledList.vue'
 import BagStatistics from '../views/BagStatistics.vue'
@@ -27,6 +26,7 @@ import screen from '../views/screen.vue'
 import obsVideo from '../views/obsVideo.vue'
 import TaskCron from '../views/TaskCron.vue'
 import Login from '../views/Login.vue'
+import BgiConfig from '../views/BgiConfig.vue'
 
 // 路由配置
 const routes = [
@@ -45,7 +45,6 @@ const routes = [
   { path: '/getAutoArtifactsPro2', component: AutoArtifactsPro2, meta: { requiresAuth: true } },
   { path: '/harvest', component: Harvest, meta: { requiresAuth: true } },
   { path: '/bg', component: Bg, meta: { requiresAuth: true } },
-  { path: '/onelong', component: OneLong, meta: { requiresAuth: true } },
   { path: '/error', component: Error, meta: { requiresAuth: true } },
   { path: '/CalculateTaskEnabledList', component: CalculateTaskEnabledList, meta: { requiresAuth: true } },
   { path: '/BagStatistics', component: BagStatistics, meta: { requiresAuth: true } },
@@ -56,6 +55,7 @@ const routes = [
   { path: '/screen', component: screen, meta: { requiresAuth: true } },
   { path: '/obsVideo', component: obsVideo, meta: { requiresAuth: true } },
   { path: '/TaskCron', component: TaskCron, meta: { requiresAuth: true } }
+  ,{ path: '/BgiConfig', component: BgiConfig, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({
