@@ -175,6 +175,7 @@ import DOMPurify from 'dompurify'
 import { useRouter } from 'vue-router'
 import { apiMethods } from '../utils/api'
 import '../assets/markdown.css'
+import api from '@/utils/api'
 
 export default {
   name: 'JsNames',
@@ -408,8 +409,10 @@ export default {
       jsDetailHtml.value = ''
 
       try {
-        const response = await fetch(`/api/md?filePath=${filePath}`)
-        const result = await response.json()
+      //获取abgiToken
+
+        const result = await api.get(`/api/md?filePath=${filePath}`)
+        // const result = await response.json()
 
         if (result.status === 'success') {
           jsDetailContent.value = result.data || ''

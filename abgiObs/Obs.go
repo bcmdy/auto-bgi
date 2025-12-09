@@ -379,7 +379,8 @@ func StartStream() error {
 	return nil
 }
 
-// 关闭obs
+//-portable --disable-shutdown-check
+
 func Shutdown() {
 	if client == nil {
 		return
@@ -400,5 +401,13 @@ func Shutdown() {
 	if err != nil {
 		autoLog.Sugar.Errorf("关闭回放缓冲区失败: %v", err)
 	}
+
+	time.Sleep(5 * time.Second)
+
+	err = client.Disconnect()
+	if err != nil {
+		autoLog.Sugar.Errorf("关闭obs失败: %v", err)
+	}
 	autoLog.Sugar.Infof("obs关闭成功")
+
 }

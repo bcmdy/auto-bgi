@@ -12,6 +12,7 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/task"
+	"os"
 )
 
 var OneLongService OneLong.OneLong
@@ -71,6 +72,17 @@ func InitFunction() {
 	if config.Cfg.AbgiAiConfig.IsAbgiAi {
 		autoLog.Sugar.Infof("AI开启状态")
 		go abgiAi.InitAi()
+	}
+
+	// 检查目标目录是否存在，若不存在则创建
+	if _, err := os.Stat("Users"); os.IsNotExist(err) {
+		autoLog.Sugar.Infof("目录不存在，正在创建：%s", "Users")
+		err := os.MkdirAll("Users", os.ModePerm) // 创建多级目录
+		if err != nil {
+			autoLog.Sugar.Errorf("创建Users失败: %v", err)
+
+		}
+		autoLog.Sugar.Infof("目录Users成功：%s", "Users")
 	}
 
 	//读取bgi配置

@@ -562,6 +562,18 @@ func StarGin() {
 
 		})
 
+		//bgi配置
+		bgiConfigCotroller := needAuth.Group("/bgiConfig")
+		{
+			//查询所有配置文件
+			bgiConfigCotroller.GET("/allConfig", BetterGI.ReadBgiConfigAll)
+			//查询配置文件
+			bgiConfigCotroller.GET("/findConfig", BetterGI.ReadBgiConfig)
+			//保存配置文件
+			bgiConfigCotroller.POST("/saveConfig", BetterGI.ModifyBgiConfig)
+
+		}
+
 		//查询配置文件
 		needAuth.GET("/config", func(context *gin.Context) {
 			cfg := config.Cfg
@@ -624,12 +636,6 @@ func StarGin() {
 				OneLongService.StartOneLong(name)
 
 				c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
-			})
-
-			//读取所有一条龙配置
-			oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
-				oneLongInfo := OneLongService.OneLongAllName()
-				context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
 			})
 
 		}

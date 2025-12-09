@@ -144,7 +144,10 @@ func InitTaskCron() {
 		}
 		autoLog.Sugar.Infof("结束obs录制成功,视频:" + bgiStatus.BgiLogStatusInfo.Group)
 	}
-
+	task["关闭obs"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：关闭obs-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		abgiObs.Shutdown()
+	}
 	Tm = NewTaskManager(models.DB)
 	// 从数据库恢复任务
 	Tm.loadTasksFromDB()

@@ -109,6 +109,58 @@ func (m *LogMonitor) Monitor() {
 
 					}
 				}
+
+				//js日志调用abgi启动一条龙
+				if strings.Contains(line, "ABGI启动一条龙：") {
+					Notice.SentText("js启动一条龙")
+					autoLog.Sugar.Infof("js日志调用abgi启动一条龙")
+					oneLongName := strings.ReplaceAll(line, "abgi启动一条龙：", "")
+					task.StartOneDragon(oneLongName)
+				}
+				//js日志调用abgi启动配置组
+				if strings.Contains(line, "ABGI启动配置组：") {
+					Notice.SentText("js启动配置组")
+					autoLog.Sugar.Infof("js日志调用abgi启动配置组")
+					groupName := strings.ReplaceAll(line, "abgi启动配置组：", "")
+					split := strings.Split(groupName, " ")
+					err := task.StartGroups(split)
+					if err != nil {
+						autoLog.Sugar.Errorf("js日志调用abgi启动配置组失败: %v", err)
+					}
+				}
+				//js日志调用abgi联机上线
+				if strings.Contains(line, "ABGI启动联机上线：") {
+					Notice.SentText("js日志调用abgi联机上线")
+					autoLog.Sugar.Infof("js日志调用abgi联机上线")
+					abgiSSE.OnStart()
+				}
+
+				//js日志调用abgi联机下线
+				if strings.Contains(line, "ABGI启动联机下线：") {
+					Notice.SentText("js日志调用abgi联机下线")
+					autoLog.Sugar.Infof("js日志调用abgi联机下线")
+					abgiSSE.Close()
+				}
+
+				//js日志调用abgi启动关闭obs
+				if strings.Contains(line, "ABGI启动obs：") {
+					Notice.SentText("js日志调用abgi启动关闭obs")
+					autoLog.Sugar.Infof("js日志调用abgi启动关闭obs")
+					data := strings.ReplaceAll(line, "ABGI启动关闭obs：", "")
+					if data == "启动" {
+						err := abgiObs.StartRecording()
+						if err != nil {
+							autoLog.Sugar.Errorf("js日志调用abgi启动obs失败: %v", err)
+						}
+					} else if data == "关闭" {
+						err := abgiObs.StopRecording(BgiLogStatusInfo.Group)
+						if err != nil {
+							autoLog.Sugar.Errorf("js日志调用abgi关闭obs失败: %v", err)
+						}
+					}
+
+				}
+
 				//一条龙结束操作
 				if strings.Contains(line, "一条龙和配置组任务结束") {
 					archiveConfig := ArchiveConfig()

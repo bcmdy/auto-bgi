@@ -40,7 +40,7 @@ func ReadManifest(jsName string) (ManifestStruct, error) {
 type BgiConfig struct {
 	CancelTaskHotkey              string `json:"cancelTaskHotkey"`               // 取消任务的快捷键值
 	GenShinStartConfigInstallPath string `json:"genshinStartConfig.installPath"` // 原神安装目录
-	Version                       string `json:"version"`                        // bgi版本号
+	RunForVersion                 string `json:"runForVersion"`                  // bgi版本号
 	SelectedChannelName           string `json:"selectedChannelName"`            // selectedChannelName：仓库
 	RepoUrl                       string `json:"repoUrl"`                        // 仓库地址
 }
@@ -61,7 +61,7 @@ func ReadBgiConfig() {
 	BgiCfg.GenShinStartConfigInstallPath = gjson.Get(data, "genshinStartConfig.installPath").String()
 
 	//bgi版本号
-	BgiCfg.Version = gjson.Get(data, "commonConfig.runForVersion").String()
+	BgiCfg.RunForVersion = gjson.Get(data, "commonConfig.runForVersion").String()
 
 	//selectedChannelName：仓库
 	BgiCfg.SelectedChannelName = gjson.Get(data, "scriptConfig.selectedChannelName").String()
