@@ -392,7 +392,6 @@ func StarGin() {
 		needAuth.GET("/getAutoArtifactsPro", func(context *gin.Context) {
 
 			pro, err := bgiStatus.GetAutoArtifactsPro()
-			//autoLog.Sugar.Infof("狗粮记录:%s", pro)
 
 			//获取版本号
 			version := bgiStatus.ReadVersion(fmt.Sprintf("%s\\User\\JsScript\\AAA-Artifacts-Bulk-Supply", config.Cfg.BetterGIAddress))

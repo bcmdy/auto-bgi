@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+var AudioService control.Audio
+
 type LogMonitor struct {
 	LogFile      string
 	Keywords     []string
@@ -111,17 +113,17 @@ func (m *LogMonitor) Monitor() {
 				}
 
 				//js日志调用abgi启动一条龙
-				if strings.Contains(line, "ABGI启动一条龙：") {
-					Notice.SentText("js启动一条龙")
-					autoLog.Sugar.Infof("js日志调用abgi启动一条龙")
-					oneLongName := strings.ReplaceAll(line, "abgi启动一条龙：", "")
+				if strings.HasPrefix(line, "ABGI启动一条龙：") {
+
+					oneLongName := strings.ReplaceAll(line, "ABGI启动一条龙：", "")
+					autoLog.Sugar.Infof("js日志调用abgi启动一条龙" + oneLongName)
 					task.StartOneDragon(oneLongName)
 				}
 				//js日志调用abgi启动配置组
-				if strings.Contains(line, "ABGI启动配置组：") {
-					Notice.SentText("js启动配置组")
+				if strings.HasPrefix(line, "ABGI启动配置组：") {
+
 					autoLog.Sugar.Infof("js日志调用abgi启动配置组")
-					groupName := strings.ReplaceAll(line, "abgi启动配置组：", "")
+					groupName := strings.ReplaceAll(line, "ABGI启动配置组：", "")
 					split := strings.Split(groupName, " ")
 					err := task.StartGroups(split)
 					if err != nil {
@@ -129,24 +131,61 @@ func (m *LogMonitor) Monitor() {
 					}
 				}
 				//js日志调用abgi联机上线
-				if strings.Contains(line, "ABGI启动联机上线：") {
-					Notice.SentText("js日志调用abgi联机上线")
+				if strings.HasPrefix(line, "ABGI启动联机上线：") {
+
 					autoLog.Sugar.Infof("js日志调用abgi联机上线")
 					abgiSSE.OnStart()
 				}
 
 				//js日志调用abgi联机下线
-				if strings.Contains(line, "ABGI启动联机下线：") {
-					Notice.SentText("js日志调用abgi联机下线")
+				if strings.HasPrefix(line, "ABGI启动联机下线：") {
 					autoLog.Sugar.Infof("js日志调用abgi联机下线")
 					abgiSSE.Close()
 				}
 
+				//ABGI启动联机调试：
+				if strings.HasPrefix(line, "ABGI启动联机调试：") {
+					abgiSSE.OnStartDebug()
+					autoLog.Sugar.Infof("js日志调用ABGI启动联机调试")
+				}
+
+				//ABGI启动脚本更新
+				if strings.HasPrefix(line, "ABGI启动脚本更新：") {
+					names := strings.ReplaceAll(line, "ABGI启动脚本更新：", "")
+					split := strings.Split(names, " ")
+
+					js, err := SpecifyUpdateJs(split)
+					if err != nil {
+						autoLog.Sugar.Errorf("指定脚本更新失败: %v", err)
+					}
+					autoLog.Sugar.Infof("指定脚本更新成功: %s", js)
+					Notice.SentText("指定脚本更新成功: " + js)
+				}
+
+				//ABGI启动今日配置组执行情况通知
+				if strings.HasPrefix(line, "ABGI启动今日配置组执行情况通知：") {
+					TodayGroupsInfo()
+					autoLog.Sugar.Infof("js日志调用ABGI启动今日配置组执行情况通知")
+				}
+
+				//ABGI启动关闭原神和关闭bgi：
+				if strings.HasPrefix(line, "ABGI启动关闭原神和关闭bgi：") {
+					control.CloseSoftware()
+					control.CloseYuanShen()
+					autoLog.Sugar.Infof("js日志调用ABGI启动关闭原神和关闭bgi")
+				}
+
+				//ABGI启动电脑静音：
+				if strings.HasPrefix(line, "ABGI启动电脑静音：") {
+					AudioService.Mute()
+					autoLog.Sugar.Infof("js日志调用ABGI启动电脑静音")
+				}
+
 				//js日志调用abgi启动关闭obs
-				if strings.Contains(line, "ABGI启动obs：") {
-					Notice.SentText("js日志调用abgi启动关闭obs")
-					autoLog.Sugar.Infof("js日志调用abgi启动关闭obs")
-					data := strings.ReplaceAll(line, "ABGI启动关闭obs：", "")
+				if strings.HasPrefix(line, "ABGI启动obs：") {
+
+					autoLog.Sugar.Infof("ABGI启动obs")
+					data := strings.ReplaceAll(line, "ABGI启动obs：", "")
 					if data == "启动" {
 						err := abgiObs.StartRecording()
 						if err != nil {
@@ -159,6 +198,12 @@ func (m *LogMonitor) Monitor() {
 						}
 					}
 
+				}
+
+				//ABGI启动电脑静音
+				if strings.HasPrefix(line, "ABGI启动电脑静音：") {
+					TodayGroupsInfo()
+					autoLog.Sugar.Infof("js日志调用ABGI启动电脑静音")
 				}
 
 				//一条龙结束操作

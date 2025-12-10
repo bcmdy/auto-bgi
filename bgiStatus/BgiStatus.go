@@ -506,6 +506,8 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 				if err != nil {
 					fmt.Println("Error parsing time:", err)
 				}
+				//加8小时
+				parsedTime = parsedTime.Add(8 * time.Hour)
 				dogFood.ActivateTime = "上次激活收尾路线时间: " + parsedTime.Format("2006-01-02 15:04:05")
 			}
 
