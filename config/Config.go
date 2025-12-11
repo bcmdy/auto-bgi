@@ -40,7 +40,6 @@ type Account struct {
 	OnlineAfterKeyword string `json:"OnlineAfterKeyword" comment:"联机之后关键词"`
 	OnlineAfterOneLong string `json:"OnlineAfterOneLong" comment:"联机之后一条龙"`
 	SecretKey          string `json:"SecretKey" comment:"加密密钥"`
-	AccountKey         string `json:"AccountKey" comment:"密钥"`
 }
 type UpdatePathing struct {
 	Name       string `json:"name" comment:"配置组"`

@@ -639,6 +639,12 @@ func StarGin() {
 
 		}
 
+		//读取所有一条龙配置
+		oneLongController.GET("/oneLongAllName", func(context *gin.Context) {
+			oneLongInfo := OneLongService.OneLongAllName()
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
+		})
+
 		//读取js的md文件
 		needAuth.GET("/md", func(c *gin.Context) {
 			filePath := c.Query("filePath")
@@ -661,7 +667,11 @@ func StarGin() {
 		//米游社手动签到
 		needAuth.POST("/mysSignIn", func(c *gin.Context) {
 
-			task.MiYouSheSign()
+			//task.MiYouSheSign()
+
+			go func() {
+				control.CallPython()
+			}()
 
 			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "签到成功"})
 
@@ -1280,7 +1290,7 @@ func StarGin() {
 				return
 			}
 			//解密
-			decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+			decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey)
 			if err3 != nil {
 				fmt.Println("密钥错误")
 				return

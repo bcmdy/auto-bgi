@@ -300,35 +300,27 @@ func pressKey(key string) {
 	robotgo.KeyTap(hotkey)
 }
 
-//func pressKey(key string) {
-//	// 去掉空格并转小写
-//	keys := strings.Split(strings.ReplaceAll(strings.ToLower(key), " ", ""), "+")
-//
-//	mainKey := keys[len(keys)-1]
-//	var modifiers []string
-//	if len(keys) > 1 {
-//		modifiers = keys[:len(keys)-1]
-//	}
-//
-//	if len(modifiers) > 0 {
-//		// 转换 []string -> []interface{}
-//		args := make([]interface{}, len(modifiers))
-//		for i, v := range modifiers {
-//			args[i] = v
-//		}
-//		err := robotgo.KeyTap(mainKey, args...)
-//		if err != nil {
-//			autoLog.Sugar.Errorf("按键失败: %v", err)
-//		}
-//	} else {
-//		err := robotgo.KeyTap(mainKey)
-//		if err != nil {
-//			autoLog.Sugar.Errorf("按键失败: %v", err)
-//		}
-//	}
-//}
+// 调用Python
+func CallPython() {
+	//捕获异常
+	defer func() {
+		if err := recover(); err != nil {
+			autoLog.Sugar.Errorf("捕获异常: %v", err)
+		}
+	}()
 
-func Test(key string) {
-	time.Sleep(time.Second * 5)
-	pressKey(key)
+	cmd := exec.Command("MihoyoBBSTools\\venv\\python.exe", "MihoyoBBSTools\\main.py")
+	stdout, _ := cmd.StdoutPipe()
+	cmd.Start()
+
+	buf := make([]byte, 1024)
+	for {
+		n, _ := stdout.Read(buf)
+		if n == 0 {
+			break
+		}
+		fmt.Print(string(buf[:n]))
+	}
+
+	cmd.Wait()
 }

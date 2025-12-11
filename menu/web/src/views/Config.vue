@@ -647,16 +647,7 @@
               </div>
             </a-form-item>
 
-          <a-form-item label="联机Key" name="联机Key" class="form-item-enhanced">
-              <div class="input-wrapper">
-                <span class="input-icon">🔑</span>
-                <a-input-password
-                  v-model:value="formData.Account.AccountKey" 
-                  placeholder="联机Key"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
+      
 
 
                 
@@ -761,7 +752,6 @@ const formData = reactive({
     GouLangGroupName: "",
     OnlineKeyword: "",
     SecretKey: "",
-    AccountKey: "",
     OnlineAfterKeyword:"",
     OnlineAfterOneLong:""
   },

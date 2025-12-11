@@ -34,20 +34,25 @@
       <a-card :title="currentName ? `配置：${currentName}` : '请选择一个配置'" class="card-detail">
         <div v-if="!currentName" class="placeholder">请选择上方配置名以查看详情</div>
         <div v-else>
-          <div class="task-scroll">
-            <a-list :dataSource="taskList" bordered>
-              <template #renderItem="{ item }">
-                <a-list-item style="border: 1px solid burlywood;">
-                  <div class="task-item">
-                    <div class="task-name">{{ item.Name }}</div>
-                    <div class="task-switch">
-                      <a-switch v-model:checked="item.Enabled" size="small" />
-                    </div>
-                  </div>
-                </a-list-item>
-              </template>
-            </a-list>
-          </div>
+                <div class="task-scroll">
+                  <a-list :dataSource="visibleTasks" bordered>
+                    <template #renderItem="{ item, index }">
+                      <a-list-item style="border: 1px solid burlywood; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                          <div class="task-name">{{ `${index + 1}. ${item.Name}` }}</div>
+                          <div class="task-switch">
+                            <!-- 控制显示副本的开关，不直接修改原始 taskList 引用 -->
+                            <a-switch v-model:checked="visibleEnabled[index]" size="small" />
+                          </div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                          <a-button size="small" @click="moveUp(index)" :disabled="index===0">上移</a-button>
+                          <a-button size="small" @click="moveDown(index)" :disabled="index===visibleTasks.length-1">下移</a-button>
+                        </div>
+                      </a-list-item>
+                    </template>
+                  </a-list>
+                </div>
           <div class="detail-actions">
             <a-button type="primary" @click="saveConfig" :loading="saving" block>保存配置</a-button>
           </div>
@@ -66,6 +71,10 @@ import { useRouter } from 'vue-router'
 const configList = ref([])
 const currentName = ref('')
 const taskList = ref([])
+// visibleTasks 用于展示和调序（为不修改原始 taskList，使用副本）
+const visibleTasks = ref([])
+// visibleEnabled 保存每一项的启用状态的副本
+const visibleEnabled = ref([])
 const saving = ref(false)
 const router = useRouter()
 
@@ -84,7 +93,12 @@ const selectConfig = async (name) => {
   try {
     const res = await apiMethods.findBgiConfig(name)
     const data = res.msg || {}
+    // 原始数据保留到 taskList
     taskList.value = Array.isArray(data.TaskEnabledList) ? data.TaskEnabledList.map(t => ({ ...t })) : []
+    // visibleTasks 作为展示副本，初始顺序与 taskList 相同
+    visibleTasks.value = taskList.value.map(t => ({ ...t }))
+    // visibleEnabled 作为启用状态副本，避免直接修改 taskList
+    visibleEnabled.value = visibleTasks.value.map(t => !!t.Enabled)
   } catch (err) {
     console.error(err)
     message.error('读取配置失败')
@@ -98,9 +112,22 @@ const saveConfig = async () => {
   }
   saving.value = true
   try {
+    // 构造按当前 visibleTasks 顺序的 TaskEnabledList，但不修改原始 taskList
+    const orderedList = visibleTasks.value.map((t, idx) => {
+      const item = {
+        Name: t.Name,
+        Enabled: !!visibleEnabled.value[idx]
+      }
+      // 只有当原始条目包含 Index（非空）时，才更新 Index 为新的顺序值；否则不发送 Index 字段
+      if (t.Index !== undefined && t.Index !== null && t.Index !== '') {
+        // 后端接收字符串类型的 Index，使用 1-based 的序号并转为字符串
+        item.Index = String(idx + 1)
+      }
+      return item
+    })
     const payload = {
       Name: currentName.value,
-      TaskEnabledList: taskList.value.map(t => ({ Name: t.Name, Enabled: !!t.Enabled, Index: t.Index || '' }))
+      TaskEnabledList: orderedList
     }
     await apiMethods.saveBgiConfig(payload)
     message.success('保存成功')
@@ -110,6 +137,32 @@ const saveConfig = async () => {
   } finally {
     saving.value = false
   }
+}
+
+// 上移
+const moveUp = (index) => {
+  if (index <= 0) return
+  const vt = visibleTasks.value
+  const ve = visibleEnabled.value
+  const tmp = vt[index - 1]
+  vt[index - 1] = vt[index]
+  vt[index] = tmp
+  const tmpE = ve[index - 1]
+  ve[index - 1] = ve[index]
+  ve[index] = tmpE
+}
+
+// 下移
+const moveDown = (index) => {
+  if (index >= visibleTasks.value.length - 1) return
+  const vt = visibleTasks.value
+  const ve = visibleEnabled.value
+  const tmp = vt[index + 1]
+  vt[index + 1] = vt[index]
+  vt[index] = tmp
+  const tmpE = ve[index + 1]
+  ve[index + 1] = ve[index]
+  ve[index] = tmpE
 }
 
 onMounted(() => {

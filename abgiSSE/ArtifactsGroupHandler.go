@@ -22,7 +22,7 @@ var dogFood = ArtifactsBulkSupply.DogFood{}
 
 func OnStart() {
 
-	decrypt, err := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	decrypt, err := tools.Decrypt(config.Cfg.Account.SecretKey)
 	if err != nil {
 		autoLog.Sugar.Infof("密钥错误")
 		return
@@ -61,7 +61,7 @@ func OnStart() {
 
 // 调试上线
 func OnStartDebug() {
-	decrypt, err := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	decrypt, err := tools.Decrypt(config.Cfg.Account.SecretKey)
 	if err != nil {
 		autoLog.Sugar.Infof("密钥错误")
 		return

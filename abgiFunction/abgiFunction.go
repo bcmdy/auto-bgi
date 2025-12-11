@@ -94,4 +94,7 @@ func InitFunction() {
 	//登录验证
 	auth.InitAuth()
 
+	//go func() {
+	//	control.CallPython()
+	//}()
 }

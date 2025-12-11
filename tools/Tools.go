@@ -348,15 +348,13 @@ func hashFileMD5(filePath string) ([16]byte, error) {
 	return result, nil
 }
 
+var aBgiKey = "xxxxxxxxxxxxxx"
+
 // 解密
-func Decrypt(encryptedText, key string) (string, error) {
-	block, err := aes.NewCipher([]byte(key))
+func Decrypt(encryptedText string) (string, error) {
+	block, err := aes.NewCipher([]byte(aBgiKey))
 	if err != nil {
 		return "", err
-	}
-
-	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return "", errors.New("key length must be 16, 24, or 32 bytes")
 	}
 
 	cipherText, err := base64.StdEncoding.DecodeString(encryptedText)

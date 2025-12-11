@@ -200,10 +200,9 @@ func (m *LogMonitor) Monitor() {
 
 				}
 
-				//ABGI启动电脑静音
-				if strings.HasPrefix(line, "ABGI启动电脑静音：") {
-					TodayGroupsInfo()
-					autoLog.Sugar.Infof("js日志调用ABGI启动电脑静音")
+				//js日志调用abgi米游社签到
+				if strings.HasPrefix(line, "ABGI启动米游社签到：") {
+					autoLog.Sugar.Infof("ABGI启动米游社签到")
 				}
 
 				//一条龙结束操作

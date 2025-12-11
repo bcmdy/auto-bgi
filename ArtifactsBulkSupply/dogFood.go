@@ -184,7 +184,7 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 }
 
 func UpdateRevenue(num string) {
-	decrypt, err2 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	decrypt, err2 := tools.Decrypt(config.Cfg.Account.SecretKey)
 	if err2 != nil {
 		return
 	}

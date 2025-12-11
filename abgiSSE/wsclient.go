@@ -142,7 +142,7 @@ type Members struct {
 
 // 获取在线人数
 func GroupsStatusHandler() interface{} {
-	decrypt, err2 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	decrypt, err2 := tools.Decrypt(config.Cfg.Account.SecretKey)
 	if err2 != nil {
 		return 0
 	}

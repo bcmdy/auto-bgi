@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"unicode"
 )
 
@@ -39,6 +40,24 @@ func (o *OneLong) IsChaBaoBgi(longName string) string {
 		return ""
 	}
 	return typ
+}
+
+// OneLongAllName 读取所有一条龙配置
+func (o *OneLong) OneLongAllName() []string {
+	entries, err := os.ReadDir(config.Cfg.BetterGIAddress + "\\User\\OneDragon")
+	if err != nil {
+		return []string{}
+	}
+	var oneLongInfo []string
+	for _, entry := range entries {
+
+		//去除后缀：.json
+		name := strings.ReplaceAll(entry.Name(), ".json", "")
+
+		oneLongInfo = append(oneLongInfo, name)
+
+	}
+	return oneLongInfo
 }
 
 // 判断任务列表是数字键还是中文名键

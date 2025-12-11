@@ -24,7 +24,7 @@ func Online(c *gin.Context) {
 		return
 	}
 	//解密
-	decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey, config.Cfg.Account.AccountKey)
+	decryptedKey, err3 := tools.Decrypt(config.Cfg.Account.SecretKey)
 	if err3 != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "密钥错误"})
 		return
