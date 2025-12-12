@@ -200,6 +200,14 @@ export const apiMethods = {
       }
     })
   }
+  ,
+  // 版本检查相关
+  aBgiGetCurrentVersion: () => api.get('/api/aBgiUpdate/version'),
+  aBgiGetLastVersion: () => api.post('/api/aBgiUpdate/GetLastVersion'),
+  aBgiUpdate: () => api.post('/api/aBgiUpdate/Update')
+  ,
+  // 通过 URL 下载并更新 BGI
+  downloadBgi: (url) => api.post('/api/UpdateBgi/Download', { url })
   
 }
 

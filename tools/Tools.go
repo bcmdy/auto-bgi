@@ -2,6 +2,7 @@ package tools
 
 import (
 	"archive/zip"
+	"auto-bgi/abgiConstant"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
@@ -348,11 +349,9 @@ func hashFileMD5(filePath string) ([16]byte, error) {
 	return result, nil
 }
 
-var aBgiKey = "xxxxxxxxxxxxxx"
-
 // 解密
 func Decrypt(encryptedText string) (string, error) {
-	block, err := aes.NewCipher([]byte(aBgiKey))
+	block, err := aes.NewCipher([]byte(abgiConstant.ABgiKey))
 	if err != nil {
 		return "", err
 	}

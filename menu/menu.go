@@ -15,7 +15,6 @@ import (
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/abgiScreen"
-	"auto-bgi/abgiUpdate"
 	"auto-bgi/auth"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
@@ -183,21 +182,6 @@ func StarGin() {
 
 	ginServer.SetTrustedProxies(nil)
 	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
-
-	var ABgi abgiUpdate.ABgi
-	//Version, _ = ABgi.GetVersion()
-
-	ginServer.POST("/api/updateABgi", func(context *gin.Context) {
-		err := ABgi.Update()
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"message": "更新失败"})
-			return
-		}
-		context.JSON(http.StatusOK, gin.H{"message": "更新成功"})
-		time.Sleep(3)
-		os.Exit(0)
-
-	})
 
 	authApi := ginServer.Group("/api/auth")
 	{
@@ -699,6 +683,19 @@ func StarGin() {
 		updateBgi := needAuth.Group("/UpdateBgi")
 		{
 			updateBgi.POST("/Upload", BetterGI.UploadBgi)
+			//通过url下载
+			updateBgi.POST("/Download", BetterGI.DownloadBgi)
+		}
+
+		aBgiUpdate := needAuth.Group("/aBgiUpdate")
+		{
+			//查询当前版本
+			aBgiUpdate.GET("/version", GetCurrentVersion)
+			//获取最新版
+			aBgiUpdate.POST("/GetLastVersion", GetLastVersion)
+			//更新abgi
+			aBgiUpdate.POST("/Update", UpdateABgi)
+
 		}
 
 		//配置组api
@@ -1302,13 +1299,6 @@ func StarGin() {
 				return
 
 			}
-		} else if os.Args[1] == "updateABgi" {
-
-			err := ABgi.Update()
-			if err != nil {
-				autoLog.Sugar.Errorf("更新ABGI失败: %v", err)
-			}
-			os.Exit(1)
 		}
 	}
 

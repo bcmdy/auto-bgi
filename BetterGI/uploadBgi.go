@@ -102,13 +102,19 @@ func DownloadBgi(c *gin.Context) {
 	// 小延时确保文件系统稳定（保持与 UploadBgi 一致）
 	time.Sleep(1 * time.Second)
 
-	//// 更新 bgi（和 upload 的行为一致）
-	//UpdateBgi()
-	//
-	//// 更新仓库（异步）
-	//go func() {
-	//	bgiStatus.GitPull()
-	//}()
+	// 更新 bgi（和 upload 的行为一致）
+	err := UpdateBgi()
+	if err != nil {
+		autoLog.Sugar.Error("更新失败:", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": err,
+		})
+		return
+	}
+	// 更新仓库（异步）
+	go func() {
+		bgiStatus.GitPull()
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "下载并更新成功",

@@ -442,7 +442,8 @@ const bgiButtons = ref([
   { text: '录屏管理', route: '/obsVideo' },
   { text: 'autobgi配置文件', route: '/Config' },
   { text: 'bgi一条龙配置', route: '/BgiConfig' },
-  { text: '更新BGI', action: handleUploadBgiClick }
+  { text: '更新BGI', action: handleUploadBgiClick },
+  { text: '检查更新', action: () => router.push('/Update') }
 ])
 
 let statusInterval = null
