@@ -98,7 +98,7 @@
   <!-- 查看桌面图片模态框 -->
   <a-modal
     v-model:open="screenshotModal.visible"
-    title="桌面图片(3秒自动刷新一次)"
+    title="桌面图片(5秒自动刷新一次)"
     :footer="null"
     :width="isMobile ? '96vw' : '90vw'"
     :afterClose="closeScreenshot"

@@ -21,7 +21,7 @@
     </div>
 
    <h2 style="margin-top: 100px;">BGI远程更新</h2>
-    <!-- <div class="download-by-url">
+    <div class="download-by-url">
       <div style="margin-top:18px; display:flex; gap:8px; align-items:center;">
         <a-input v-model:value="downloadUrl" placeholder="粘贴 BGI zip 下载地址（支持 http(s)）" />
         <a-button type="primary" @click="downloadByUrl" :loading="downloading" :disabled="!downloadUrl">通过 URL 更新</a-button>
@@ -29,7 +29,7 @@
       <div style="margin-top:8px;color:#666;font-size:12px">注意：请输入可直接下载的压缩包链接；解压直接是文件才行，二次压缩不行</div>
     </div>
 
-    <div class="note" v-if="note">{{ note }}</div> -->
+    <div class="note" v-if="note">{{ note }}</div>
   </div>
 </template>
 

@@ -1,6 +1,7 @@
 package BetterGI
 
 import (
+	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
@@ -19,6 +20,44 @@ import (
 	"strings"
 	"time"
 )
+
+func GetVersion() (string, error) {
+
+	// 创建请求
+	req, err := http.NewRequest("GET", abgiConstant.BgiRunForVersion, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// 添加请求头，比如 User-Agent
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "application/json")
+
+	// 发送请求
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	// 检查状态码
+	if resp.StatusCode != http.StatusOK {
+		// 读取简短的 body 用于诊断（限长）
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return "", fmt.Errorf("http status %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
+	}
+
+	// 读取为纯文本
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	release := strings.TrimSpace(string(b))
+
+	autoLog.Sugar.Infof("当前BGI版本: %s", release)
+	return release, nil
+}
 
 // 上传bgi压缩包
 func UploadBgi(c *gin.Context) {
@@ -65,6 +104,21 @@ func UploadBgi(c *gin.Context) {
 
 // DownloadBgi 是 Gin handler：从请求中读取 url（form/json/query），下载压缩包并替换到 ./uploads/BetterGI.zip
 func DownloadBgi(c *gin.Context) {
+
+	//判断是否需要更新
+	version, err := GetVersion()
+	if err != nil {
+		autoLog.Sugar.Error("获取版本失败:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	autoLog.Sugar.Infof("最新BGI版本: %s", version)
+	if version == config.BgiCfg.RunForVersion {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "当前版本已经是最新版本",
+		})
+	}
+
 	// 从多种来源读取 url：JSON body, form, query
 	reqURL := c.PostForm("url")
 	if reqURL == "" {
@@ -103,7 +157,7 @@ func DownloadBgi(c *gin.Context) {
 	time.Sleep(1 * time.Second)
 
 	// 更新 bgi（和 upload 的行为一致）
-	err := UpdateBgi()
+	err = UpdateBgi()
 	if err != nil {
 		autoLog.Sugar.Error("更新失败:", err)
 		c.JSON(http.StatusBadRequest, gin.H{
