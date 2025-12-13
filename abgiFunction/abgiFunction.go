@@ -10,6 +10,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
+	"auto-bgi/frpc"
 	"auto-bgi/internal/mysConfig"
 	"auto-bgi/task"
 	"os"
@@ -93,5 +94,12 @@ func InitFunction() {
 
 	//登录验证
 	auth.InitAuth()
+
+	//判断根目录也没有frpc_user.toml
+	if _, err := os.Stat("frpc_user.toml"); os.IsNotExist(err) {
+		autoLog.Sugar.Infof("===启动成功===")
+	} else {
+		go frpc.InitFrp()
+	}
 
 }
