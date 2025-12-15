@@ -55,7 +55,7 @@ func GetVersion() (string, error) {
 	}
 	release := strings.TrimSpace(string(b))
 
-	autoLog.Sugar.Infof("当前BGI版本: %s", release)
+	autoLog.Sugar.Infof("BGI最新版本: %s", release)
 	return release, nil
 }
 
@@ -103,16 +103,21 @@ func UploadBgi(c *gin.Context) {
 }
 
 // DownloadBgi 是 Gin handler：从请求中读取 url（form/json/query），下载压缩包并替换到 ./uploads/BetterGI.zip
+// DownloadBgi 处理下载BGI的请求函数
 func DownloadBgi(c *gin.Context) {
 
 	//判断是否需要更新
+	// 获取最新版本信息
 	version, err := GetVersion()
 	if err != nil {
+		// 记录错误日志并返回错误响应
 		autoLog.Sugar.Error("获取版本失败:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// 记录最新版本信息
 	autoLog.Sugar.Infof("最新BGI版本: %s", version)
+	// 检查当前版本是否为最新版本
 	if version == config.BgiCfg.RunForVersion {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "当前版本已经是最新版本",
@@ -120,6 +125,7 @@ func DownloadBgi(c *gin.Context) {
 	}
 
 	// 从多种来源读取 url：JSON body, form, query
+	// 首先尝试从POST表单中获取URL
 	reqURL := c.PostForm("url")
 	if reqURL == "" {
 		// try JSON body

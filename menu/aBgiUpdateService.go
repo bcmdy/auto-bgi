@@ -1,7 +1,9 @@
 package menu
 
 import (
+	"auto-bgi/BetterGI"
 	"auto-bgi/autoLog"
+	"auto-bgi/config"
 	"github.com/gin-gonic/gin"
 	"os"
 	"strings"
@@ -43,4 +45,18 @@ func UpdateABgi(c *gin.Context) {
 		//关闭程序
 		os.Exit(0)
 	}()
+}
+
+// GetBgiVersion 获取当前bgi版本和最新的bgi版本
+func GetBgiVersion(c *gin.Context) {
+	//获取当前bgi版本
+	LastBgiVersion, err := BetterGI.GetVersion()
+	if err != nil {
+		autoLog.Sugar.Error(err.Error())
+		c.JSON(200, gin.H{"msg": "获取版本失败"})
+		return
+	}
+	autoLog.Sugar.Infof("当前bgi版本: %s", LastBgiVersion)
+	c.JSON(200, gin.H{"currentVersion": config.BgiCfg.RunForVersion, "lastVersion": LastBgiVersion, "msg": "获取版本成功"})
+
 }

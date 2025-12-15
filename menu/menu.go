@@ -695,6 +695,8 @@ func StarGin() {
 			aBgiUpdate.POST("/GetLastVersion", GetLastVersion)
 			//更新abgi
 			aBgiUpdate.POST("/Update", UpdateABgi)
+			// GetBgiVersion 获取当前bgi版本和最新的bgi版本
+			aBgiUpdate.GET("/GetBgiVersion", GetBgiVersion)
 
 		}
 

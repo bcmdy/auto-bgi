@@ -204,6 +204,8 @@ export const apiMethods = {
   // 版本检查相关
   aBgiGetCurrentVersion: () => api.get('/api/aBgiUpdate/version'),
   aBgiGetLastVersion: () => api.post('/api/aBgiUpdate/GetLastVersion'),
+  // 新的合并接口：获取当前和最新版本并返回 canUpdate
+  aBgiGetVersions: () => api.get('/api/aBgiUpdate/GetBgiVersion'),
   aBgiUpdate: () => api.post('/api/aBgiUpdate/Update')
   ,
   // 通过 URL 下载并更新 BGI
