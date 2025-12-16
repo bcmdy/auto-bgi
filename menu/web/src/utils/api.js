@@ -209,7 +209,15 @@ export const apiMethods = {
   aBgiUpdate: () => api.post('/api/aBgiUpdate/Update')
   ,
   // 通过 URL 下载并更新 BGI
-  downloadBgi: (url) => api.post('/api/UpdateBgi/Download', { url })
+// 通过 URL 下载并更新 BGI（单独超时）
+  downloadBgi: () =>
+    api.post(
+      '/api/UpdateBgi/Download',
+      {},
+      {
+        timeout: 10 * 60 * 1000 // 10 分钟
+      }
+    )
   
 }
 
