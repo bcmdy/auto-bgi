@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,7 +25,8 @@ import (
 func GetVersion() (string, error) {
 
 	// 创建请求
-	req, err := http.NewRequest("GET", abgiConstant.BgiRunForVersion, nil)
+	unix := time.Now().Unix()
+	req, err := http.NewRequest("GET", abgiConstant.BgiRunForVersion+strconv.FormatInt(unix, 10), nil)
 	if err != nil {
 		panic(err)
 	}
@@ -32,6 +34,7 @@ func GetVersion() (string, error) {
 	// 添加请求头，比如 User-Agent
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Cache-Control", "no-cache")
 
 	// 发送请求
 	client := &http.Client{}
@@ -55,7 +58,6 @@ func GetVersion() (string, error) {
 	}
 	release := strings.TrimSpace(string(b))
 
-	autoLog.Sugar.Infof("BGI最新版本: %s", release)
 	return release, nil
 }
 
@@ -106,6 +108,14 @@ func UploadBgi(c *gin.Context) {
 // DownloadBgi 处理下载BGI的请求函数
 func DownloadBgi(c *gin.Context) {
 
+	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
+		autoLog.Sugar.Error("当前版本不是lcb版本，无法更新")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "当前版本不是lcb版本，无法更新",
+		})
+		return
+	}
+
 	//判断是否需要更新
 	// 获取最新版本信息
 	version, err := GetVersion()
@@ -116,32 +126,14 @@ func DownloadBgi(c *gin.Context) {
 		return
 	}
 	// 记录最新版本信息
+	autoLog.Sugar.Infof("当前BGI版本: %s", config.BgiCfg.RunForVersion)
 	autoLog.Sugar.Infof("最新BGI版本: %s", version)
+
 	// 检查当前版本是否为最新版本
 	if version == config.BgiCfg.RunForVersion {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "当前版本已经是最新版本",
 		})
-	}
-
-	// 从多种来源读取 url：JSON body, form, query
-	// 首先尝试从POST表单中获取URL
-	reqURL := c.PostForm("url")
-	if reqURL == "" {
-		// try JSON body
-		var body struct {
-			URL string `json:"url"`
-		}
-		if err := c.BindJSON(&body); err == nil {
-			reqURL = body.URL
-		}
-	}
-	if reqURL == "" {
-		// try query param
-		reqURL = c.Query("url")
-	}
-	if reqURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'url' parameter"})
 		return
 	}
 
@@ -154,7 +146,7 @@ func DownloadBgi(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	if err := downloadFileFromURL(ctx, reqURL, dst); err != nil {
+	if err := downloadFileFromURL(ctx, abgiConstant.BgiUpdateUrl, dst); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -176,9 +168,10 @@ func DownloadBgi(c *gin.Context) {
 		bgiStatus.GitPull()
 	}()
 
+	config.BgiCfg.RunForVersion = version
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "下载并更新成功",
-		"url":     reqURL,
+		"message": "下载并更新成功,请自启bgi,更新版本",
 		"path":    dst,
 	})
 }

@@ -203,6 +203,9 @@ func (m *LogMonitor) Monitor() {
 				//js日志调用abgi米游社签到
 				if strings.HasPrefix(line, "ABGI启动米游社签到：") {
 					autoLog.Sugar.Infof("ABGI启动米游社签到")
+					go func() {
+						control.CallPython()
+					}()
 				}
 
 				//一条龙结束操作
@@ -238,22 +241,6 @@ func (m *LogMonitor) Monitor() {
 					Notice.SentText("RDP 客户端断开连接")
 					autoLog.Sugar.Infof("RDP 客户端断开连接")
 					aaa()
-				}
-
-				//关键字触发执行一条龙
-				if config.Cfg.Account.OnlineAfterKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineAfterKeyword) {
-					Notice.SentText("关键词触发执行一条龙:" + config.Cfg.Account.OnlineAfterKeyword)
-					if config.Cfg.Account.OnlineAfterOneLong == "" {
-						Notice.SentText("关键词触发执行一条龙，但是没有配置OnlineAfterOneLong")
-					} else {
-						task.StartOneDragon(config.Cfg.Account.OnlineAfterOneLong)
-					}
-
-				}
-
-				//上线操作
-				if config.Cfg.Account.OnlineKeyword != "" && strings.Contains(line, config.Cfg.Account.OnlineKeyword) {
-					abgiSSE.OnStart()
 				}
 
 				if strings.HasPrefix(line, "通知发送成功：") && strings.Contains(line, "联机狗粮分解获得经验") {

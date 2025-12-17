@@ -102,4 +102,7 @@ func InitFunction() {
 		go frpc.InitFrp()
 	}
 
+	//检查重启文件
+	check()
+
 }

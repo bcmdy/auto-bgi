@@ -39,6 +39,14 @@
         </p>
       </div>
 
+      <!-- 实时监测 -->
+      <div class="button-group">
+        <h2>🔍 实时监测</h2>
+        <button @click="openScreenshot">查看桌面图片</button>
+        <button @click="sendImage">发送桌面截图</button>
+        <button @click="$router.push('/log')">实时日志</button>
+      </div>
+
       <!-- 数据分析按钮组 -->
       <div class="button-group">
         <h2>📊 数据分析</h2>
@@ -310,14 +318,14 @@ const currentImage = computed(() => {
 
 // 按钮配置数据
 const dataAnalysisButtons = ref([
-  { text: '查看收获超过10', route: '/logAnalysis' },
-  { text: '背包统计', route: '/BagStatistics' },
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
-  { text: '归档查询', route: '/archive' },
+  { text: '采集数据', route: '/logAnalysis' },
+    { text: '归档查询', route: '/archive' },
+  { text: '背包统计', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },
   { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
-  { text: '日志查询', route: '/autoLog' },
-  { text: '定时任务', route: '/TaskCron' }
+  { text: 'ABGI日志查询', route: '/autoLog' },
+  { text: 'ABGI定时任务', route: '/TaskCron' }
 
 ])
 
@@ -434,16 +442,39 @@ const handleUploadBgiCancel = () => {
   uploadBgiModal.uploadProgress = 0
 }
 
+const mysSignIn = () => {
+  Modal.confirm({
+    title: '确认签到？',
+    content: '是否要米游社签到？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const response = await apiMethods.mysSignIn()
+        scanResult.value = response.message || '发送成功！'
+        Modal.info({
+          title: '发送结果',
+          content: scanResult.value,
+          okText: '关闭'
+        })
+      } catch (error) {
+        message.error('发送失败！')
+      }
+    }
+  })
+
+}
+
+
 const bgiButtons = ref([
-    { text: '仓库提交记录', route: '/GitLog' },
-  { text: '调度器', route: '/listGroups' },
-  { text: '实时日志', route: '/log' },
-    {text: '实时屏幕',route: '/screen'} ,
+
   { text: '录屏管理', route: '/obsVideo' },
-  { text: 'autobgi配置文件', route: '/Config' },
-  { text: 'bgi一条龙配置', route: '/BgiConfig' },
-  { text: '更新BGI', action: handleUploadBgiClick },
-  { text: '检查更新', action: () => router.push('/Update') }
+  { text: '仓库管理', route: '/GitLog' },
+  { text: '手动更新BGI', action: handleUploadBgiClick },
+    { text: '米游社签到', action: mysSignIn },
+  { text: '检查更新', action: () => router.push('/Update') },
+  { text: 'ABGI设置', route: '/Config' },
+  {text: '退出登录',action: handleLogout }
 ])
 
 let statusInterval = null
@@ -743,56 +774,16 @@ const indexSXBtn = () => {
   message.success('刷新成功！')
 }
 
-//更新updateABgi
-const updateABgi = async () => {
-  const response = await apiMethods.updateABgi()
-  console.log("===============",response)
-  if(response.code!=200){
-      message.success('更新成功！请重启软件！')
-    return
-  }
- message.error('更新失败！请稍后再试！')
-
-}
-
-const mysSignIn = () => {
-  Modal.confirm({
-    title: '确认签到？',
-    content: '是否要米游社签到？',
-    okText: '确定',
-    cancelText: '取消',
-    onOk: async () => {
-      try {
-        const response = await apiMethods.mysSignIn()
-        scanResult.value = response.message || '发送成功！'
-        Modal.info({
-          title: '发送结果',
-          content: scanResult.value,
-          okText: '关闭'
-        })
-      } catch (error) {
-        message.error('发送失败！')
-      }
-    }
-  })
-
-}
-
-
-
 
 const automationButtons = ref([
   { text: '一条龙启动', action: handleOneLong },
   { text: '关闭BGI和原神', action: handleCloseBgi },
-  { text: '备份 user 文件', action: handleBackup },
-  { text: '脚本更新列表', action: () => router.push('/jsNames') },
+  { text: '启动调度器', route: '/listGroups' },
+  { text: '备份 USER 文件', action: handleBackup },
+  { text: '脚本更新', action: () => router.push('/jsNames') },
   { text: '地图追踪', action: () => router.push('/Pathing') },
-  { text: '发送桌面截图', action: sendImage },
-  { text: '查看桌面图片', action: openScreenshot },
-  { text: '米游社手动签到', action: mysSignIn },
   { text: '联机管理', action: () => router.push('/Online') },
-    {text: '退出登录',action: handleLogout }
-
+  { text: 'BGI一条龙配置', route: '/BgiConfig' },
 ])
 
 // 生命周期

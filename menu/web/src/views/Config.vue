@@ -602,39 +602,7 @@
               </div>
             </a-form-item>
 
-          <a-form-item label="狗粮上线联机关键字" name="狗粮上线联机关键字" class="form-item-enhanced">
-              <div class="input-wrapper">
-                <span class="input-icon">🐶</span>
-                <a-input
-                  v-model:value="formData.Account.OnlineKeyword" 
-                  placeholder="狗粮上线联机关键字"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
 
-
-            <a-form-item label="联机之后关键词" name="联机之后关键词" class="form-item-enhanced">
-              <div class="input-wrapper">
-                <span class="input-icon">🔑</span>
-                <a-input
-                  v-model:value="formData.Account.OnlineAfterKeyword" 
-                  placeholder="联机之后关键词"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
-
-            <a-form-item label="联机之后一条龙" name="联机之后一条龙" class="form-item-enhanced">
-              <div class="input-wrapper">
-                <span class="input-icon">🔑</span>
-                <a-input
-                  v-model:value="formData.Account.OnlineAfterOneLong" 
-                  placeholder="联机之后一条龙"
-                  class="enhanced-input"
-                />
-              </div>
-            </a-form-item>
 
           <a-form-item label="联机SecretKey" name="联机SecretKey" class="form-item-enhanced">
               <div class="input-wrapper">
@@ -750,10 +718,7 @@ const formData = reactive({
     Name: "",
     IsMultiUser: false,
     GouLangGroupName: "",
-    OnlineKeyword: "",
     SecretKey: "",
-    OnlineAfterKeyword:"",
-    OnlineAfterOneLong:""
   },
   CommandBot: {
     TgBOT: false,

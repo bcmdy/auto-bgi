@@ -34,7 +34,7 @@
 
       <div style="margin-top:18px; display:flex; gap:8px; align-items:center;">
         <!-- <a-input v-model:value="downloadUrl" placeholder="粘贴 BGI zip 下载地址（支持 http(s)）" /> -->
-          <a-button type="primary" @click="downloadByUrl" :loading="downloading" !bgiCanUpdate>在线更新</a-button>
+        <a-button type="primary" @click="downloadByUrl" :loading="downloading" :disabled="!bgiIsDifferent || !bgiCanUpdate">在线更新</a-button>
       </div>
       <!-- <div style="margin-top:8px;color:#666;font-size:12px">注意：请输入可直接下载的压缩包链接；解压直接是文件才行，二次压缩不行</div> -->
     </div>
@@ -53,7 +53,6 @@ const latestVersion = ref('加载中...')
 const loading = ref(false)
 const checking = ref(false)
 const note = ref('')
-const downloadUrl = ref('')
 const downloading = ref(false)
 // BGI 远程更新的版本信息
 const bgiCurrentVersion = ref('加载中...')
@@ -64,6 +63,11 @@ const normalize = (v) => (v == null ? '' : String(v).trim())
 
 const isDifferent = computed(() => {
   return normalize(currentVersion.value) !== normalize(latestVersion.value) && latestVersion.value !== ''
+})
+
+// BGI 远程更新是否有版本差异
+const bgiIsDifferent = computed(() => {
+  return normalize(bgiCurrentVersion.value) !== normalize(bgiLatestVersion.value) && bgiLatestVersion.value !== ''
 })
 
 const refresh = async () => {
@@ -91,15 +95,14 @@ const doUpdate = async () => {
   note.value = ''
   try {
     const res = await apiMethods.aBgiUpdate()
-    // 根据后端返回的结构显示结果
+  
     if (res && (res.code === 200 || res.msg === '更新成功' || res.success === true || res.message === '更新成功')) {
       message.success('更新已触发，可能需要重启软件')
     } else {
-      // 有时后端直接返回字符串或对象
+
       message.success((res && (res.msg || res.message)) || '更新请求已发送（请检查服务端日志）')
     }
 
-    // 刷新版本信息
     await refresh()
   } catch (err) {
     console.error(err)
@@ -115,29 +118,35 @@ onMounted(() => {
   refreshBgiVersions()
 })
 
-// 刷新 BGI 远程更新的版本信息（后端接口: /api/UpdateBgi/Version 或 /api/UpdateBgi/GetLatestVersion 等，兼容多形态）
+
 const refreshBgiVersions = async () => {
   bgiCurrentVersion.value = '加载中...'
   bgiLatestVersion.value = '加载中...'
   bgiCanUpdate.value = false
   try {
-    // 试探性调用已有的下载接口返回的版本或专门接口（这里使用 /api/UpdateBgi/Version 作尝试）
-    // 如果后端没有该接口，请替换为正确的 BGI 版本接口
+   
     const res = await apiMethods.aBgiGetVersions()
-    // 期待后端返回 { currentVersion, latestVersion, canUpdate }
     if (res && typeof res === 'object') {
+      console.debug('aBgiGetVersions response:', res)
       bgiCurrentVersion.value = res.currentVersion ?? res.current ?? bgiCurrentVersion.value
-      bgiLatestVersion.value = res.lastVersion ?? res.latest ?? lastVersion.value
-      if (typeof res.canUpdate === 'boolean') bgiCanUpdate.value = res.canUpdate
-      else if (typeof res.canUpdate === 'string') bgiCanUpdate.value = res.canUpdate === 'true'
+      bgiLatestVersion.value = res.lastVersion ?? res.latest ?? bgiLatestVersion.value
+
+      
+      if (Object.prototype.hasOwnProperty.call(res, 'canUpdate')) {
+        if (typeof res.canUpdate === 'boolean') bgiCanUpdate.value = res.canUpdate
+        else if (typeof res.canUpdate === 'string') bgiCanUpdate.value = res.canUpdate === 'true'
+        else bgiCanUpdate.value = Boolean(res.canUpdate)
+      } else {
+
+        bgiCanUpdate.value = normalize(bgiCurrentVersion.value) !== normalize(bgiLatestVersion.value) && bgiLatestVersion.value !== ''
+      }
     } else {
-      // 如果后端没有返回版本信息，尝试从别的接口或标记为不可更新
+
       bgiCurrentVersion.value = '未知'
       bgiLatestVersion.value = ''
       bgiCanUpdate.value = false
     }
   } catch (err) {
-    // 不阻塞主逻辑：只显示错误信息
     console.warn('刷新 BGI 版本失败', err)
     bgiCurrentVersion.value = '获取失败'
     bgiLatestVersion.value = ''
@@ -150,7 +159,6 @@ const downloadByUrl = async () => {
   try {
     const res = await apiMethods.downloadBgi()
     message.success((res && (res.message || res.msg)) || '下载更新请求已发送')
-    // 尝试刷新版本信息
     await refreshBgiVersions()
   } catch (err) {
     console.error(err)

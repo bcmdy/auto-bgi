@@ -14,7 +14,6 @@ import (
 	"auto-bgi/abgiFunction"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
-	"auto-bgi/abgiScreen"
 	"auto-bgi/auth"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
@@ -33,6 +32,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-toast/toast"
 	"github.com/gorilla/websocket"
+	"golang.org/x/sys/windows"
 	"io"
 	"io/fs"
 	"log"
@@ -46,13 +46,20 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 var userIP = "http://localhost" + config.Cfg.Post
 
+//go:embed favicon.ico
+var favicon embed.FS
+
+var iconData []byte
+
 func OnReady() {
 	// 设置托盘图标
-	iconData, err := os.ReadFile("favicon.ico")
+	var err error
+	iconData, err = favicon.ReadFile("favicon.ico") // 这里使用 embed.FS 的 ReadFile 方法
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,7 +156,48 @@ func loadImages() {
 	autoLog.Sugar.Infof("加载图片: %d", len(imageList))
 }
 
+func isSandbox() bool {
+	if runtime.NumCPU() <= 1 {
+		return true
+	}
+
+	return false
+}
+
+func isDebugged() bool {
+	kernel32 := windows.NewLazySystemDLL("kernel32.dll")
+
+	// IsDebuggerPresent
+	isDebuggerPresent := kernel32.NewProc("IsDebuggerPresent")
+	ret, _, _ := isDebuggerPresent.Call()
+	if ret != 0 {
+		return true
+	}
+
+	// CheckRemoteDebuggerPresent
+	checkRemoteDebuggerPresent := kernel32.NewProc("CheckRemoteDebuggerPresent")
+
+	hProcess := windows.CurrentProcess()
+	var debug uint32
+
+	r1, _, _ := checkRemoteDebuggerPresent.Call(
+		uintptr(hProcess),
+		uintptr(unsafe.Pointer(&debug)),
+	)
+
+	if r1 != 0 && debug != 0 {
+		return true
+	}
+
+	return false
+}
+
 func StarGin() {
+
+	//if isDebugged() {
+	//	os.Exit(0)
+	//}
+
 	gin.SetMode(gin.ReleaseMode)
 
 	//创建一个服务
@@ -1175,26 +1223,26 @@ func StarGin() {
 
 	})
 
-	if config.Cfg.Control.AbgiScreen {
-		autoLog.Sugar.Infof("屏幕捕获开启状态")
-		// 设置最大CPU使用
-		runtime.GOMAXPROCS(runtime.NumCPU())
-
-		// 启动屏幕捕获协程
-		go abgiScreen.CaptureScreen()
-
-		// 启动广播协程
-		go abgiScreen.BroadcastFrames()
-
-		abgiScreenController := ginServer.Group("/api/abgiScreen")
-		{
-			abgiScreenController.GET("/ws", abgiScreen.HandleWebSocket)
-
-		}
-
-	} else {
-		autoLog.Sugar.Infof("屏幕捕获关闭状态")
-	}
+	//if config.Cfg.Control.AbgiScreen {
+	//	autoLog.Sugar.Infof("屏幕捕获开启状态")
+	//	// 设置最大CPU使用
+	//	runtime.GOMAXPROCS(runtime.NumCPU())
+	//
+	//	// 启动屏幕捕获协程
+	//	go abgiScreen.CaptureScreen()
+	//
+	//	// 启动广播协程
+	//	go abgiScreen.BroadcastFrames()
+	//
+	//	abgiScreenController := ginServer.Group("/api/abgiScreen")
+	//	{
+	//		abgiScreenController.GET("/ws", abgiScreen.HandleWebSocket)
+	//
+	//	}
+	//
+	//} else {
+	//	autoLog.Sugar.Infof("屏幕捕获关闭状态")
+	//}
 
 	// 静态文件服务（放在所有API路由之后）
 	ginServer.StaticFS("/assets", http.FS(distFS))
@@ -1256,6 +1304,8 @@ func StarGin() {
 			contentType = "image/jpeg"
 		} else if strings.HasSuffix(requestPath, ".ico") {
 			contentType = "image/x-icon"
+			c.Data(http.StatusOK, contentType, iconData)
+			return
 		}
 
 		c.Data(http.StatusOK, contentType, content)

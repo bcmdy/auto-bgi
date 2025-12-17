@@ -5,9 +5,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"github.com/gin-gonic/gin"
-	"os"
 	"strings"
-	"time"
 )
 
 func GetCurrentVersion(c *gin.Context) {
@@ -36,15 +34,10 @@ func UpdateABgi(c *gin.Context) {
 	if err != nil {
 		autoLog.Sugar.Error(err.Error())
 		c.JSON(200, gin.H{"msg": "更新失败"})
+		return
 	}
 	c.JSON(200, gin.H{"msg": "更新成功！请重新启动abgi，5秒后自动退出"})
 
-	go func() {
-		//等待5秒后关闭程序
-		<-time.After(5 * time.Second)
-		//关闭程序
-		os.Exit(0)
-	}()
 }
 
 // GetBgiVersion 获取当前bgi版本和最新的bgi版本
@@ -56,7 +49,7 @@ func GetBgiVersion(c *gin.Context) {
 		c.JSON(200, gin.H{"msg": "获取版本失败"})
 		return
 	}
-	autoLog.Sugar.Infof("当前bgi版本: %s", LastBgiVersion)
+	autoLog.Sugar.Infof("最新的bgi版本: %s", LastBgiVersion)
 	c.JSON(200, gin.H{"currentVersion": config.BgiCfg.RunForVersion, "lastVersion": LastBgiVersion, "msg": "获取版本成功"})
 
 }

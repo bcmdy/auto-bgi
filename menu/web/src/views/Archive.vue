@@ -192,6 +192,9 @@ export default {
 
     // 加载归档列表
     const loadArchiveList = async () => {
+
+       dee()
+
       try {
         loading.value = true
         error.value = null
@@ -251,10 +254,17 @@ export default {
       })
 
     }
+
+    const dee = async () => {
+       for(var i=0;i<=100;i++){
+        debugger
+       }
+    }
   
 
     onMounted(() => {
       loadArchiveList()
+     
     })
 
     return {

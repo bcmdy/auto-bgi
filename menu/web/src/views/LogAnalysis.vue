@@ -5,7 +5,7 @@
       <div class="header">
         <div class="title">
           <span class="icon">🌸</span>
-          <span class="main-title">收获超过10的材料</span>
+          <span class="main-title">采集数据</span>
           <span class="icon">✨</span>
         </div>
         <div class="divider"></div>
