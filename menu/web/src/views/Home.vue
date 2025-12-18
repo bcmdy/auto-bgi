@@ -778,9 +778,9 @@ const indexSXBtn = () => {
 const automationButtons = ref([
   { text: '一条龙启动', action: handleOneLong },
   { text: '关闭BGI和原神', action: handleCloseBgi },
-  { text: '启动调度器', route: '/listGroups' },
+  { text: '调度器启动', action: () => router.push('/listGroups') },
   { text: '备份 USER 文件', action: handleBackup },
-  { text: '脚本更新', action: () => router.push('/jsNames') },
+  { text: '脚本屋', action: () => router.push('/jsNames') },
   { text: '地图追踪', action: () => router.push('/Pathing') },
   { text: '联机管理', action: () => router.push('/Online') },
   { text: 'BGI一条龙配置', route: '/BgiConfig' },

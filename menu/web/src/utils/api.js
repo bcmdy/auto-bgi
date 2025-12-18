@@ -39,18 +39,30 @@ api.interceptors.response.use(
     return response.data
   },
   error => {
-    // 处理 401 未授权错误
-    if (error.response && error.response.status === 401) {
-      // 清除存储的 token
+    // 1. 处理 401 未授权错误
+    if (error.response && error.response.status === 401 || error.response.status === 500) {
       localStorage.removeItem('aBgiToken')
-      // 显示错误提示
       console.warn('认证已过期，请重新登录')
-      // 跳转到登录页面
       router.push('/login')
       return Promise.reject(error)
     }
+
+    // 2. 【新增】处理网络错误、后端未启动、连接超时等情况
+    // 如果 error.response 不存在，说明根本没有收到后端的响应
+    if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || error.message.includes('Network Error')) {
+      console.error('连接失败：后端未启动或网络异常', error.message)
+      
+      // 可选：清除 token，防止死循环
+      // localStorage.removeItem('aBgiToken') 
+      
+      // 只有当前不在登录页时才跳转，防止重复跳转报错
+      if (router.currentRoute.path !== '/login') {
+         router.push('/login')
+      }
+      return Promise.reject(error)
+    }
     
-    // 其他错误情况
+    // 3. 其他业务错误情况
     return error.response?.data || Promise.reject(error)
   }
 )
@@ -148,6 +160,16 @@ export const apiMethods = {
   //重置仓库
   resetRepo: () => api.post('/api/resetRepo'),
 
+  // 在你的 api.js 或 api定义文件中添加：
+subscribeScript: (scriptName) => {
+    return api.post('/api/repo/subscribe?ScriptName=' + scriptName, null, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      timeout: 10 * 60 * 1000 // 10 分钟
+    })
+},
+
   // 狗粮联机
   StartOnline: (typeKey,runDebug) => api.post('/api/abgiSSE/connect/'+typeKey+"?runDebug="+runDebug),
   offline:() => api.post('/api/abgiSSE/disconnect'),
@@ -197,7 +219,8 @@ export const apiMethods = {
     return api.post('/api/uploadBgi', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      }
+      },
+      timeout: 10 * 60 * 1000 // 10 分钟
     })
   }
   ,
@@ -206,7 +229,9 @@ export const apiMethods = {
   aBgiGetLastVersion: () => api.post('/api/aBgiUpdate/GetLastVersion'),
   // 新的合并接口：获取当前和最新版本并返回 canUpdate
   aBgiGetVersions: () => api.get('/api/aBgiUpdate/GetBgiVersion'),
-  aBgiUpdate: () => api.post('/api/aBgiUpdate/Update')
+  aBgiUpdate: () => api.post('/api/aBgiUpdate/Update', {}, {
+    timeout: 10 * 60 * 1000 // 10 分钟
+  })
   ,
   // 通过 URL 下载并更新 BGI
 // 通过 URL 下载并更新 BGI（单独超时）

@@ -576,6 +576,9 @@ func StarGin() {
 		//重置仓库
 		needAuth.POST("/repo/resetRepo", warehouse.RepoReset)
 
+		//订阅脚本
+		needAuth.POST("/repo/subscribe", warehouse.SubscribeScript)
+
 		//脚本Js更新
 		needAuth.POST("/updateJs/:name", func(context *gin.Context) {
 			name := context.Param("name")

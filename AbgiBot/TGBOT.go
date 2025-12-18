@@ -174,8 +174,8 @@ func BotCommand(command string) string {
 			return fmt.Sprintf("启动失败：%v", err.Error())
 		}
 		return "启动配置组成功"
-	} else if strings.Contains(command, "订阅配置组") {
-		ScriptName := strings.Replace(command, "订阅配置组", "", -1)
+	} else if strings.Contains(command, "订阅脚本") {
+		ScriptName := strings.Replace(command, "订阅脚本", "", -1)
 		script, err := ScriptRepo.SubscribeScript(ScriptName)
 		if err != nil {
 			return fmt.Sprintf("订阅失败：%v", err.Error())
