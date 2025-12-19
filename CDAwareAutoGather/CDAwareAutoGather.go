@@ -44,7 +44,9 @@ func (u *UidInfo) ReadInfo(status string) []UidInfo {
 	// 遍历 record 目录下的所有子文件夹（账号）
 	subDirs, err := os.ReadDir(baseDir)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		autoLog.Sugar.Errorf("读取目录失败:%s", err)
+		return nil
 	}
 
 	for _, sub := range subDirs {

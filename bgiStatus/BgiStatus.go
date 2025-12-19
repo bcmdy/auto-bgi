@@ -497,6 +497,7 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 
 		scanner := bufio.NewScanner(file)
 		inHistory := false
+		Asum := 0
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -519,9 +520,19 @@ func GetAutoArtifactsPro() ([]DogFood, error) {
 				}
 				continue
 			}
+
 			dogFood.Detail = append(dogFood.Detail, line)
 
 		}
+
+		for _, s := range dogFood.Detail {
+			if strings.Contains(s, "额外A") {
+				Asum++
+			} else {
+				break
+			}
+		}
+		dogFood.Mark = dogFood.Mark + fmt.Sprintf("(连续%d个A)", Asum)
 
 		data = append(data, dogFood)
 

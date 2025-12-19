@@ -148,6 +148,16 @@ func (m *LogMonitor) Monitor() {
 					abgiSSE.OnStartDebug()
 					autoLog.Sugar.Infof("js日志调用ABGI启动联机调试")
 				}
+				//ABGI启动BAT脚本：
+				if strings.HasPrefix(line, "ABGI启动BAT脚本：") {
+					data := strings.ReplaceAll(line, "ABGI启动BAT脚本：", "")
+					task.CallBat(data)
+					if err != nil {
+						autoLog.Sugar.Errorf("js日志调用ABGI启动BAT脚本失败: %v", err)
+					} else {
+						autoLog.Sugar.Infof("js日志调用ABGI启动BAT脚本成功: %s", data)
+					}
+				}
 
 				//ABGI启动脚本更新
 				if strings.HasPrefix(line, "ABGI启动脚本更新：") {

@@ -40,7 +40,7 @@ api.interceptors.response.use(
   },
   error => {
     // 1. 处理 401 未授权错误
-    if (error.response && error.response.status === 401 || error.response.status === 500) {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('aBgiToken')
       console.warn('认证已过期，请重新登录')
       router.push('/login')

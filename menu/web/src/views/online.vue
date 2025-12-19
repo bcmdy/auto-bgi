@@ -1,80 +1,99 @@
 <template>
-  <div class="online-container">
-    <div class="header">
-      <h1>在线联机管理</h1>
-    </div>
+  <div class="anime-container">
+    <div class="layout-wrapper">
+      
+      <aside class="control-panel">
+        <div class="panel-header">
+          <h1>🌸 联机管理</h1>
+          <p class="subtitle">Online Center</p>
+        </div>
 
-    <div class="main-content">
-      <!-- 左侧操作卡片 -->
-      <div class="card">
-        <!-- 是否调机模式选择 -->
-        <div class="refresh-wrap switch-wrap">
-          <span class="switch-label">调机模式</span>
-          <div class="switch" :class="{ 'switch-on': isDebugMode }" @click="isDebugMode = !isDebugMode">
+        <div class="control-group switch-group">
+          <div class="switch-label">
+            <span>🔧 调机模式</span>
+            <span class="status-text" :class="{ active: isDebugMode }">
+              {{ isDebugMode ? 'ON' : 'OFF' }}
+            </span>
+          </div>
+          <div class="sakura-switch" :class="{ active: isDebugMode }" @click="isDebugMode = !isDebugMode">
             <div class="switch-handle"></div>
-            <span class="switch-text">{{ isDebugMode ? '开' : '关' }}</span>
           </div>
         </div>
 
-        <!-- 上线（通用按钮） -->
-        <div class="refresh-wrap">
-          <button @click="StartOnline()">🐶 上线</button>
+        <div class="action-buttons">
+          <button class="anime-btn btn-online" @click="StartOnline(null)">
+            <span class="icon">🐶</span> 
+            <span>一键上线</span>
+          </button>
+          
+          <button class="anime-btn btn-refresh" @click="fetchOnlineDetail">
+            <span class="icon">🔄</span> 
+            <span>刷新详情</span>
+          </button>
+          
+          <button class="anime-btn btn-offline" @click="offline(null)">
+            <span class="icon">💤</span> 
+            <span>一键下线</span>
+          </button>
+          
+          <button class="anime-btn btn-home" @click="goHome">
+            <span class="icon">🏠</span> 
+            <span>返回主页</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="content-area">
+        <div v-if="detailList.length === 0" class="empty-state">
+          <div class="empty-icon">🍃</div>
+          <p>暂无房间数据，请点击刷新...</p>
         </div>
 
-        <!-- 刷新按钮 -->
-        <div class="refresh-wrap">
-          <button @click="fetchOnlineDetail">🔄 刷新详情</button>
-        </div>
-
-        <!-- 下线（通用按钮） -->
-        <div class="refresh-wrap">
-          <button @click="offline()">下线</button>
-        </div>
-
-        <!-- 返回主页 -->
-        <div class="refresh-wrap">
-          <button @click="goHome">返回主页</button>
-        </div>
-      </div>
-
-      <!-- 右侧详情面板 -->
-      <div class="details-wrap">
-        <div class="detail-panel" v-for="item in detailList" :key="item.key">
-          <h2>{{ item.title }}</h2>
-          <div style="color:#FF66A3; font-weight:600; margin-bottom:10px;font-size: 13px;border: 1px solid #FF66A3;border-radius: 5px;padding:5px;">
-              {{ item.description }}
-          </div>
-
-          <div class="detail-content">
-            <div class="status-row" v-if="item.members && item.members.length > 0">
-              <span class="label">在线人员：</span>
-              <span>
-                <span v-for="member in item.members" :key="member.name" class="member-name">
-                  {{ member.name }}
-                 
-                    <span >
-                        ({{ member.abgi_type === 'noDebug' ? '正常跑' : member.abgi_type === 'debug' ? '调试':member.abgi_type}})
-              
-                    </span>
-                 
-                </span>
-              
+        <div class="room-grid" v-else>
+          <div 
+            v-for="(item, index) in detailList" 
+            :key="item.key || index" 
+            class="room-card"
+          >
+            <div class="card-header">
+              <h3 class="room-title">{{ item.title }}</h3>
+              <span class="room-count" :class="{ 'has-people': item.count > 0 }">
+                {{ item.count }} 人在线
               </span>
             </div>
-            <div v-else class="status-row">
-              <span class="label">在线人员：</span>
-              <span class="status offline">暂无</span>
+            
+            <p class="room-desc">{{ item.description || '暂无描述' }}</p>
+
+            <div class="divider"></div>
+
+            <div class="member-area">
+              <div v-if="item.members && item.members.length > 0" class="member-list">
+                <div 
+                  v-for="(member, mIndex) in item.members" 
+                  :key="mIndex" 
+                  class="member-pill"
+                >
+                  <span class="avatar">👤</span>
+                  <span class="name">{{ member.name }}</span>
+                  <span class="status-tag" :class="member.abgi_type === 'debug' ? 'tag-debug' : 'tag-run'">
+                    {{ member.abgi_type === 'noDebug' ? '正常跑' : (member.abgi_type === 'debug' ? '调试中' : member.abgi_type) }}
+                  </span>
+                </div>
+              </div>
+              <div v-else class="no-member">
+                (｡•́︿•̀｡) 暂无人员
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { message, Modal } from 'ant-design-vue' // 保留消息弹窗
+import { message, Modal } from 'ant-design-vue'
 import api, { apiMethods } from '@/utils/api'
 import { useRouter } from 'vue-router'
 
@@ -102,17 +121,19 @@ const fetchOnlineDetail = async () => {
 const offline = (typeKey) => {
   Modal.confirm({
     title: '确认下线吗？',
-    content: typeKey ? `下线【${typeKey}】？` : '确认下线？',
+    content: typeKey ? `下线【${typeKey}】？` : '确认全部下线？',
     okText: '确定',
     cancelText: '取消',
+    centered: true,
+    class: 'anime-modal',
     async onOk() {
       try {
         await apiMethods.offline(typeKey || 'all')
         Modal.destroyAll()
-        Modal.info({ title: '下线结果', content: '下线成功', okText: '关闭' })
+        Modal.info({ title: '下线结果', content: '下线成功', okText: '关闭', centered: true })
         fetchOnlineDetail()
       } catch (e) {
-        message.error(e)
+        message.error(e.message || '操作失败')
       }
     }
   })
@@ -121,19 +142,22 @@ const offline = (typeKey) => {
 const StartOnline = (typeKey) => {
   Modal.confirm({
     title: '确认上线吗？',
-    content: typeKey ? `上线【${typeKey}】？` : '确认上线？',
+    content: typeKey ? `上线【${typeKey}】？` : '确认一键上线？',
     okText: '确定',
     cancelText: '取消',
+    centered: true,
+    class: 'anime-modal',
     async onOk() {
       try {
         const response = await apiMethods.StartOnline(typeKey || 'noDebug', isDebugMode.value)
         console.log(response)
         Modal.destroyAll()
-        Modal.info({ title: '上线结果', content: response, okText: '关闭' })
+        Modal.info({ title: '上线结果', content: response, okText: '关闭', centered: true })
         fetchOnlineDetail()
       } catch (e) {
-        console.log("=========",e)
-        message.error(e.response.data)
+        console.log("=====", e)
+        const errorMsg = e.response && e.response.data ? e.response.data : '上线失败';
+        message.error(errorMsg)
       }
     }
   })
@@ -146,223 +170,360 @@ const goHome = () => {
 onMounted(() => fetchOnlineDetail())
 </script>
 
-
 <style scoped>
-.online-container {
+/* 引入可爱字体 (如果系统没有则回退) */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap');
+
+/* 全局容器：樱花背景 */
+.anime-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #ffe6f3 0%, #e8f0ff 100%);
-  font-family: "Poppins", "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(135deg, #fff0f5 0%, #e6f7ff 100%);
+  background-image: 
+    radial-gradient(#ffc0cb 15%, transparent 16%),
+    radial-gradient(#87ceeb 15%, transparent 16%);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  font-family: 'Nunito', 'Fredoka', 'Microsoft YaHei', sans-serif;
+  color: #555;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* 布局包装 */
+.layout-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+/* === 左侧控制面板 === */
+.control-panel {
+  width: 300px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 30px 20px;
+  box-shadow: 0 8px 32px rgba(255, 182, 193, 0.3);
+  border: 2px solid #fff;
+  position: sticky;
+  top: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 50px 0;
+  gap: 20px;
 }
 
-/* ===== 标题区 ===== */
-.header {
+.panel-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 10px;
 }
-.header h1 {
-  font-size: 36px;
+
+.panel-header h1 {
+  font-size: 26px;
+  color: #ff69b4;
+  margin: 0;
   font-weight: 800;
-  color: #ff66a3;
-  text-shadow: 0 3px 10px rgba(255, 102, 163, 0.3);
   letter-spacing: 1px;
 }
 
-/* ===== 主体布局 ===== */
-.main-content {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 40px;
-  width: 90%;
-  max-width: 1200px;
+.subtitle {
+  font-size: 14px;
+  color: #aab;
+  margin: 5px 0 0;
 }
 
-/* ===== 左侧控制卡片 ===== */
-.card {
-  width: 320px;
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: inset 0 2px 8px rgba(255,255,255,0.8),
-              0 8px 25px rgba(255, 182, 193, 0.3);
-  padding: 30px 24px;
+/* 开关组 */
+.switch-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fdfdfd;
+  padding: 15px;
+  border-radius: 16px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.switch-label {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  transition: all .3s;
-}
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(255, 105, 180, 0.25);
+  font-weight: 700;
+  color: #666;
 }
 
-/* ===== 调机模式开关 ===== */
-.switch-wrap {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
+.status-text {
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 2px;
 }
-.switch-label {
-  font-size: 18px;
-  color: #444;
-  font-weight: 600;
-}
-.switch {
-  width: 80px;
-  height: 36px;
+.status-text.active { color: #ff69b4; }
+
+/* 自定义樱花开关 */
+.sakura-switch {
+  width: 56px;
+  height: 28px;
   background: #eee;
-  border-radius: 20px;
+  border-radius: 14px;
   position: relative;
   cursor: pointer;
-  transition: 0.3s;
-}
-.switch-on {
-  background: linear-gradient(90deg, #89f7fe, #66a6ff);
-  box-shadow: 0 0 10px rgba(102,166,255,0.4);
-}
-.switch-handle {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #fff;
-  top: 3px;
-  left: 4px;
-  transition: all 0.3s;
-}
-.switch-on .switch-handle {
-  transform: translateX(42px);
-}
-.switch-text {
-  position: absolute;
-  width: 100%;
-  text-align: center;
-  color: #555;
-  font-weight: 600;
-  top: 6px;
-  font-size: 14px;
-}
-.switch-on .switch-text {
-  color: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-/* ===== 操作按钮 ===== */
-.refresh-wrap {
-  width: 100%;
-  margin-top: 14px;
+.sakura-switch.active {
+  background: #ff9ebb;
+  box-shadow: 0 0 10px rgba(255, 158, 187, 0.5);
 }
-button {
+
+.switch-handle {
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.sakura-switch.active .switch-handle {
+  transform: translateX(28px);
+}
+
+/* 按钮组 */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.anime-btn {
   width: 100%;
   border: none;
-  border-radius: 14px;
-  font-size: 16px;
+  padding: 14px;
+  border-radius: 18px;
   font-weight: 700;
-  color: white;
-  padding: 12px 0;
+  font-size: 16px;
+  color: #130202;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: 0.25s;
-}
-button:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-}
-.refresh-wrap:nth-child(2) button {
-  background: linear-gradient(135deg, #6ea8ff 0%, #409eff 100%);
-}
-.refresh-wrap:nth-child(3) button {
-  background: linear-gradient(135deg, #5ee65e 0%, #36b64f 100%);
-}
-.refresh-wrap:nth-child(4) button {
-  background: linear-gradient(135deg, #ff6b81 0%, #ff416c 100%);
-}
-.refresh-wrap:nth-child(5) button {
-  background: linear-gradient(135deg, #ffb347 0%, #ffcc33 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  position: relative;
+  overflow: hidden;
 }
 
-/* ===== 右侧详情卡片 ===== */
-.details-wrap {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 30px;
+.anime-btn:active {
+  transform: scale(0.96);
+}
+
+.anime-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.05);
+}
+
+.btn-online {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+  box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+}
+
+.btn-refresh {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+  box-shadow: 0 4px 15px rgba(161, 140, 209, 0.4);
+}
+
+.btn-offline {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  box-shadow: 0 4px 15px rgba(132, 250, 176, 0.4);
+}
+
+.btn-home {
+  background: #fff;
+  color: #888;
+  border: 2px solid #eee;
+  box-shadow: none;
+}
+.btn-home:hover {
+  background: #f8f8f8;
+  border-color: #ddd;
+}
+
+/* === 右侧详情内容 === */
+.content-area {
   flex: 1;
 }
 
-.detail-panel {
-  background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 6px 20px rgba(102,166,255,0.12);
-  padding: 26px 22px;
-  transition: all .3s;
-  border: 1px solid rgba(255,255,255,0.6);
-}
-.detail-panel:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(64,158,255,0.18);
-}
-.detail-panel h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #409eff;
-  text-align: center;
-  margin-bottom: 12px;
-  border-bottom: 1px dashed #dce8ff;
-  padding-bottom: 6px;
-}
-.detail-content {
+.empty-state {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 20px;
+  color: #aaa;
+}
+.empty-icon { font-size: 48px; margin-bottom: 10px; opacity: 0.5; }
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 15px;
+/* 房间卡片 */
+.room-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid #fff;
+  box-shadow: 0 6px 20px rgba(176, 196, 222, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
-.label {
-  color: #777;
+
+.room-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(255, 182, 193, 0.35);
+  border-color: #ffe6ea;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.room-title {
+  margin: 0;
+  font-size: 18px;
+  color: #444;
+  font-weight: 700;
+}
+
+.room-count {
+  font-size: 12px;
+  background: #eee;
+  padding: 4px 10px;
+  border-radius: 10px;
+  color: #999;
+}
+.room-count.has-people {
+  background: #e6f7ff;
+  color: #1890ff;
   font-weight: 600;
 }
 
-/* ===== 在线人员标签 ===== */
-.member-name {
-  display: inline-block;
-  background: #e8f0ff;
-  color: #409eff;
-  padding: 4px 10px;
-  margin: 4px 5px 0 0;
-  border-radius: 12px;
-  font-size: 14px;
-  transition: 0.2s;
-}
-.member-name:hover {
-  background: #d2e3ff;
-  transform: scale(1.05);
+.room-desc {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 15px;
 }
 
-/* 暂无状态 */
-.status.offline {
-  background: #f5f5f5;
-  color: #bbb;
-  padding: 4px 10px;
-  border-radius: 12px;
+.divider {
+  height: 1px;
+  background: repeating-linear-gradient(to right, #eee 0, #eee 5px, transparent 5px, transparent 10px);
+  margin-bottom: 15px;
 }
 
-/* ===== 响应式优化 ===== */
-@media (max-width: 1200px) {
-  .main-content { flex-direction: column; align-items: center; }
-  .card { width: 90%; }
-  .details-wrap { width: 100%; grid-template-columns: 1fr 1fr; }
+/* 成员列表 */
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-@media (max-width: 768px) {
-  .details-wrap { grid-template-columns: 1fr; }
+
+.member-pill {
+  display: flex;
+  align-items: center;
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: background 0.2s;
+}
+
+.member-pill:hover {
+  background: #fff0f5; /* 浅粉色 hover */
+}
+
+.avatar { margin-right: 8px; font-size: 14px; }
+.name { flex: 1; font-size: 14px; color: #555; font-weight: 600; }
+
+.status-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.tag-run {
+  background: #e6ffec;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.tag-debug {
+  background: #fffbe6;
+  color: #faad14;
+  border: 1px solid #ffe58f;
+}
+
+.no-member {
+  text-align: center;
+  color: #ccc;
+  font-size: 13px;
+  padding: 10px 0;
+}
+
+/* === 移动端适配 === */
+@media (max-width: 900px) {
+  .layout-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .control-panel {
+    width: 100%;
+    position: relative;
+    top: 0;
+    margin-bottom: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .anime-btn {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .anime-container {
+    padding: 10px;
+  }
+  
+  .panel-header h1 {
+    font-size: 22px;
+  }
+  
+  /* 手机端按钮两行排列 */
+  .action-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .room-grid {
+    grid-template-columns: 1fr; /* 手机端单列 */
+  }
 }
 </style>
-

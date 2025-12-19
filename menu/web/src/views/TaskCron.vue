@@ -1,210 +1,240 @@
 <template>
   <div class="task-cron-page">
-    <a-typography-title :level="2" class="page-title">
-      定时任务管理
-    </a-typography-title>
+    <div class="bg-circle circle-1"></div>
+    <div class="bg-circle circle-2"></div>
 
-    <a-row :gutter="[16, 16]" class="content-row">
-      <a-col :xs="24" :md="9" class="form-col">
-        <a-card title="新增任务" bordered class="form-card">
-          <a-alert
-            type="info"
-            show-icon
-            :message="cronTip"
-            class="cron-tip"
-          />
-          <a-form layout="vertical" @submit.prevent="handleSubmitTask">
-            <a-form-item label="任务名称">
-              <a-select
-                v-model:value="formState.name"
-                placeholder="请选择后端已注册的任务"
-                :loading="dropdownLoading"
-                allow-clear
+    <div class="main-container">
+      <a-typography-title :level="2" class="page-title">
+        <span>✨ 定时任务管理 ✨</span>
+      </a-typography-title>
+
+      <a-row :gutter="[24, 24]" class="content-row">
+        <a-col :xs="24" :lg="8" :xl="6" class="form-col">
+          <div class="sticky-wrapper">
+            <a-card :bordered="false" class="pink-card form-card hover-effect">
+              <template #title>
+                <div class="card-header-title">
+                  <plus-circle-outlined />
+                  <span>{{ isEditing ? '编辑任务' : '新增任务' }}</span>
+                </div>
+              </template>
+              
+              <a-alert
+                type="info"
+                show-icon
+                class="cron-tip"
               >
-                <a-select-option
-                  v-for="taskName in availableTaskNames"
-                  :key="taskName"
-                  :value="taskName"
-                >
-                  {{ taskName }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-
-            <a-form-item label="Cron 表达式">
-              <a-input
-                v-model:value="formState.spec"
-                placeholder="例如：*/5 * * * *（每 5 分钟执行）"
-                allow-clear
-              />
-            </a-form-item>
-
-            <a-form-item label="任务参数（可选）">
-              <a-textarea
-                v-model:value="formState.data"
-                :auto-size="{ minRows: 3, maxRows: 6 }"
-                placeholder="一条龙名字或者配置组名字，多个配置组用空格分隔"
-                allow-clear
-              />
-            </a-form-item>
-
-            <div class="form-actions">
-              <a-button type="primary" :loading="formLoading" :disabled="submitDisabled" @click="handleSubmitTask">
-                {{ isEditing ? '保存修改' : '添加任务' }}
-              </a-button>
-              <a-button class="ghost-button" @click="resetForm">
-                {{ isEditing ? '取消编辑' : '重置' }}
-              </a-button>
-
-              <a-button class="back-button" @click="comeBack">
-                返回首页
-              </a-button>
-            </div>
-          </a-form>
-
-          <div class="quick-presets">
-            <h4>常用 Cron 示例</h4>
-            <div class="preset-group">
-              <a-tag
-                v-for="item in presetSpecs"
-                :key="item.spec"
-                color="pink"
-                @click="applyPreset(item.spec)"
-              >
-                {{ item.label }}
-              </a-tag>
-            </div>
-          </div>
-        </a-card>
-      </a-col>
-
-      <a-col :xs="24" :md="15" class="table-col">
-        <a-card title="已配置任务" bordered class="table-card">
-          <a-spin :spinning="tableLoading">
-            <div v-if="taskCronList.length > 0" class="table-wrapper">
-              <a-table
-                :data-source="taskCronList"
-                :columns="columns"
-                :row-key="getRowKey"
-                :pagination="false"
-                size="middle"
-                bordered
-                :scroll="{ x: 860 }"
-              >
-                <template #bodyCell="{ column, record, index, text }">
-                  <template v-if="column.key === 'action'">
-                    <a-space>
-                      <a-tooltip title="编辑任务">
-                        <a-button
-                          type="text"
-                          size="small"
-                          @click="startEdit(record)"
-                        >
-                          编辑
-                        </a-button>
-                      </a-tooltip>
-                      <a-tooltip title="删除任务">
-                        <a-button
-                          type="text"
-                          danger
-                          size="small"
-                          @click="confirmRemove(record)"
-                        >
-                          删除
-                        </a-button>
-                      </a-tooltip>
-
-                      <a-tooltip title="立即执行任务">
-                        <a-button
-                          type="text"
-                          danger
-                          size="small"
-                          @click="AtOnceRunTask(record.name,record.data)"
-                        >
-                          执行
-                        </a-button>
-                      </a-tooltip>
-
-                      <a-tooltip :title="record.paused ? '恢复任务' : '暂停任务'">
-                        <a-popconfirm
-                          :title="record.paused ? '确认恢复该任务？' : '确认暂停该任务？'"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="togglePause(record)"
-                        >
-                          <a-button type="text" size="small">
-                            {{ record.paused ? '恢复' : '暂停' }}
-                          </a-button>
-                        </a-popconfirm>
-                      </a-tooltip>
-                    </a-space>
-                  </template>
-                  <template v-else-if="column.key === 'next'">
-                    <span>{{ record.paused ? '已暂停' : (record.next || '调度中...') }}</span>
-                  </template>
-                  <template v-else-if="column.key === 'status'">
-                    <a-tag :color="record.paused ? 'orange' : 'green'">
-                      {{ record.paused ? '已暂停' : '运行中' }}
-                    </a-tag>
-                  </template>
-                  <template v-else>
-                    <span v-if="column && typeof column.customRender === 'function'">
-                      {{ column.customRender(text, record, index) }}
-                    </span>
-                    <span v-else>{{ record[column.dataIndex] }}</span>
-                  </template>
+                <template #message>
+                  <span style="font-size: 12px; color: #666;">
+                    Cron: 秒 分 时 日 月 周 (年)<br/>
+                    示例: */5 * * * * (每5分)
+                  </span>
                 </template>
-              </a-table>
-            </div>
+              </a-alert>
 
-            <a-empty v-else-if="!tableLoading" description="暂无任务" />
+              <a-form layout="vertical" class="custom-form">
+                <a-form-item label="任务名称">
+                  <a-select
+                    v-model:value="formState.name"
+                    placeholder="选择后端注册任务"
+                    :loading="dropdownLoading"
+                    allow-clear
+                    class="pink-input"
+                  >
+                    <a-select-option
+                      v-for="taskName in availableTaskNames"
+                      :key="taskName"
+                      :value="taskName"
+                    >
+                      {{ taskName }}
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+
+                <a-form-item label="Cron 表达式">
+                  <a-input
+                    v-model:value="formState.spec"
+                    placeholder="例如：0 0 12 * * ?"
+                    allow-clear
+                    class="pink-input"
+                  >
+                    <template #suffix>
+                      <a-tooltip title="点击查看在线生成器">
+                        <question-circle-outlined style="color: #ff85c0; cursor: pointer" @click="openCronTool"/>
+                      </a-tooltip>
+                    </template>
+                  </a-input>
+                  <div class="preset-tags">
+                    <a-tag 
+                      v-for="item in presetSpecs" 
+                      :key="item.label" 
+                      color="pink" 
+                      @click="applyPreset(item.spec)"
+                    >
+                      {{ item.label }}
+                    </a-tag>
+                  </div>
+                </a-form-item>
+
+                <a-form-item label="任务参数 (可选)">
+                  <a-textarea
+                    v-model:value="formState.data"
+                    :auto-size="{ minRows: 3, maxRows: 5 }"
+                    placeholder="配置组名称等..."
+                    allow-clear
+                    class="pink-input"
+                  />
+                </a-form-item>
+
+                <div class="form-actions">
+                  <a-button 
+                    type="primary" 
+                    class="pink-btn submit-btn" 
+                    :loading="formLoading"
+                    @click="handleSubmitTask"
+                    :disabled="submitDisabled"
+                  >
+                    {{ isEditing ? '保存修改' : '立即添加' }}
+                  </a-button>
+                  
+                  <a-button 
+                    v-if="isEditing" 
+                    class="pink-btn ghost-btn" 
+                    @click="resetForm"
+                  >
+                    取消
+                  </a-button>
+
+                  <a-button class="pink-btn text-btn" type="text" @click="comeBack">
+                    返回首页
+                  </a-button>
+                </div>
+              </a-form>
+            </a-card>
+          </div>
+        </a-col>
+
+        <a-col :xs="24" :lg="16" :xl="18" class="list-col">
+          <a-spin :spinning="tableLoading">
+            <template v-if="taskCronList.length > 0">
+              <a-list
+                :grid="{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 3, xl: 3, xxl: 3 }"
+                :data-source="taskCronList"
+              >
+                <template #renderItem="{ item }">
+                  <a-list-item class="full-height-item">
+                    <a-card :bordered="false" class="task-item-card hover-effect">
+                      
+                      <div class="task-header">
+                        <div class="task-name-wrapper">
+                          <span class="task-name" :title="item.name">{{ item.name }}</span>
+                        </div>
+                        <a-tag :color="item.paused ? 'orange' : '#87d068'" class="status-tag">
+                          {{ item.paused ? '已暂停' : '运行中' }}
+                        </a-tag>
+                      </div>
+
+                      <div class="task-body">
+                        <div class="info-block">
+                          <div class="info-label">
+                            <clock-circle-outlined /> Cron 表达式
+                          </div>
+                          <div class="cron-box" :title="item.spec">
+                            {{ item.spec }}
+                          </div>
+                        </div>
+
+                        <div class="info-row">
+                          <field-time-outlined class="icon" />
+                          <span class="sub-text">下次: {{ item.paused ? '-' : (item.next || '计算中...') }}</span>
+                        </div>
+
+                        <div class="info-row data-row" v-if="item.data">
+                          <code-outlined class="icon" />
+                          <span class="sub-text text-truncate" :title="item.data">{{ item.data }}</span>
+                        </div>
+                      </div>
+
+                      <div class="task-actions">
+                        <a-tooltip title="立即运行一次">
+                          <a-button 
+                            shape="circle" size="small" 
+                            class="action-btn run-btn"
+                            @click="AtOnceRunTask(item.name, item.data)"
+                          >
+                            <caret-right-outlined />
+                          </a-button>
+                        </a-tooltip>
+
+                        <a-tooltip title="编辑配置">
+                          <a-button 
+                            shape="circle" size="small" 
+                            class="action-btn edit-btn"
+                            @click="startEdit(item)"
+                          >
+                            <edit-outlined />
+                          </a-button>
+                        </a-tooltip>
+
+                         <a-popconfirm
+                                    :title="item.paused ? '恢复这个任务？' : '暂停这个任务？'"
+                                    ok-text="确定"
+                                    cancel-text="取消"
+                                    @confirm="togglePause(item)"
+                                  >
+                                    <a-tooltip :title="item.paused ? '恢复' : '暂停'">
+                                      <a-button 
+                                        shape="circle" 
+                                        size="small" 
+                                        class="action-btn"
+                                        :class="item.paused ? 'resume-btn' : 'pause-btn'"
+                                      >
+                                        <play-circle-outlined v-if="item.paused" />
+                                        <pause-circle-outlined v-else />
+                                        </a-button>
+                                    </a-tooltip>
+                                  </a-popconfirm>
+
+                        <a-button 
+                          shape="circle" size="small" 
+                          class="action-btn delete-btn"
+                          @click="confirmRemove(item)"
+                        >
+                          <delete-outlined />
+                        </a-button>
+                      </div>
+                    </a-card>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </template>
+            
+       
           </a-spin>
-        </a-card>
-
-        <div class="visual-gallery">
-          <!-- <img
-            class="gallery-img"
-            src="https://upload-bbs.miyoushe.com/upload/2025/09/30/162891450/40ba73d1c8ce78112681a7ed7137dad1_6952277989857444872.jpg?x-oss-process=image/resize,s_600/quality,q_80/auto-orient,0/interlace,1/format,jpg"
-            alt=""
-          />
-          <img
-            class="gallery-img"
-            src="https://t.alcy.cc/ysmp"
-            alt=""
-          />
-          <img
-            class="gallery-img"
-            src="https://t.alcy.cc/ysz"
-            alt=""
-          /> -->
-          <img
-            class="gallery-img"
-            src="https://t.alcy.cc/ys"
-            alt=""
-          />
-        </div>
-      </a-col>
-    </a-row>
+        </a-col>
+      </a-row>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { 
+  PlusCircleOutlined, 
+  QuestionCircleOutlined, 
+  ClockCircleOutlined, 
+  FieldTimeOutlined,
+  CodeOutlined,
+  CaretRightOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined
+} from '@ant-design/icons-vue'
 import { apiMethods } from '@/utils/api'
 
-const cronTip = [
-  `Cron 表达式由 6 个必填字段和 1 个可选字段组成，
-  格式：秒 分 时 日 月 周 年（年份可省略）。
-  各字段范围：秒/分 0-59；时 0-23；日 1-31（注意大小月）；
-  月 1-12 或英文缩写；
-  周 0-7（0=周日，6=周六，可用 ? 表示不指定）；
-  年 1970-2099（可选）。
-  在线生成器：
-  https://cron.ciding.cc/
-  https://www.toolsjy.com/cron/
-`
-].join('\\n')
+// --- 逻辑部分保持原样 ---
 
 const formState = reactive({
   id: 0,
@@ -219,7 +249,7 @@ const presetSpecs = [
   { label: '每天 4:05', spec: '0 5 4 * * *' },
   { label: '每周一 4:00', spec: '0 0 4 ? * MON' },
   { label: '每天 23:30', spec: '0 30 23 * * *' },
-  { label: '除周一外每天 4:00', spec: '0 0 4 ? * TUE,WED,THU,FRI,SAT,SUN' }
+  { label: '每5分钟', spec: '0 */5 * * * ?' }
 ]
 
 const taskCronList = ref([])
@@ -228,21 +258,6 @@ const tableLoading = ref(false)
 const formLoading = ref(false)
 const dropdownLoading = ref(false)
 const editingTaskId = ref(null)
-
-const columns = [
-  {
-    title: '序号',
-    align: 'center',
-    width: 50,
-    customRender: (text,record,index) => `${index+1}`,
-  },
-  { title: '任务名称', dataIndex: 'name', key: 'name',align: 'center', width: 150 },
-  { title: 'Cron 表达式', dataIndex: 'spec', key: 'spec',align: 'center', width: 90 },
-  { title: '下次执行时间', dataIndex: 'next', key: 'next',align: 'center', width: 160 },
-  { title: '任务参数', dataIndex: 'data',align: 'center', key: 'data' },
-  { title: '状态', dataIndex: 'status', key: 'status',align: 'center', width: 80 },
-  { title: '操作', key: 'action', align: 'center',width: 220 }
-]
 
 const submitDisabled = computed(() => {
   return !formState.name || !formState.spec.trim()
@@ -280,6 +295,10 @@ const comeBack = () => {
   window.location.href = '/'
 }
 
+const openCronTool = () => {
+    window.open('https://cron.ciding.cc/', '_blank')
+}
+
 const handleSubmitTask = async () => {
   if (submitDisabled.value) {
     message.warning('请选择任务并填写 Cron 表达式')
@@ -295,7 +314,7 @@ const handleSubmitTask = async () => {
       name: formState.name,
       spec: formState.spec.trim(),
       data: formState.data?.trim() || '',
-      status:formState.status
+      status: formState.status
     }
     let res
     if (editing) {
@@ -339,6 +358,7 @@ const startEdit = (record) => {
   formState.spec = record.spec
   formState.data = record.data || ''
   formState.status = record.status || 0
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const applyPreset = (spec) => {
@@ -349,18 +369,18 @@ const confirmRemove = (record) => {
   Modal.confirm({
     title: `确认删除任务「${record.name}」？`,
     content: '删除后需要重新创建才能恢复。',
-    okText: '确定',
+    okText: '狠狠删除',
     cancelText: '再想想',
     okButtonProps: { danger: true },
+    centered: true,
     onOk: () => removeTask(record.id, record.entry_id)
   })
 }
 
-//立即执行
-const AtOnceRunTask = async (type,data) => {
+const AtOnceRunTask = async (type, data) => {
   try {
     const res = await apiMethods.AtOnceRunTaskCron(type, data)
-    const msg = typeof res === 'string' ? res : '任务已执行'
+    const msg = typeof res === 'string' ? res : '任务指令已发送'
     message.success(msg)
     fetchTaskList()
   } catch (error) {
@@ -381,7 +401,7 @@ const removeTask = async (id, entry_id) => {
 
 const togglePause = async (record) => {
   const paused = Boolean(record?.paused)
-  const id = record?.id ?? record?.id
+  const id = record?.id
   if (!id) {
     message.error('未找到任务 id，无法执行操作')
     return
@@ -413,20 +433,17 @@ const togglePause = async (record) => {
 
 const normalizeTaskCron = (item) => {
   const id = Number(item?.id) || 0
-  const entry_id = item?.entry_id ?? item?.entry_id
+  const entry_id = item?.entry_id
   const statusNum = Number(item?.status)
   const paused = !(statusNum === 1 && id > 0)
   return {
     ...item,
     id,
-    entry_id: entry_id,
     entry_id,
     status: statusNum,
     paused
   }
 }
-
-const getRowKey = (record) => record?.id || record?.entry_id || record?.entry_id || record?.name
 
 onMounted(() => {
   fetchTaskList()
@@ -435,136 +452,334 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 全局布局变量 */
+:deep(*) {
+  box-sizing: border-box;
+}
+
 .task-cron-page {
+  position: relative;
   padding: 24px;
-  background: #fff0f6;
+  background: #fff0f6; /* 浅粉色背景 */
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* 装饰性背景球 */
+.bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.5;
+}
+.circle-1 {
+  top: -60px;
+  left: -60px;
+  width: 300px;
+  height: 300px;
+  background: #ffadd2;
+}
+.circle-2 {
+  bottom: 50px;
+  right: -50px;
+  width: 400px;
+  height: 400px;
+  background: #bae7ff;
+}
+
+.main-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1600px; /* 加宽容器适配三列 */
+  margin: 0 auto;
 }
 
 .page-title {
-  color: #ff5c8d !important;
+  color: #eb2f96 !important;
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  font-weight: 700;
+  text-shadow: 2px 2px 0px #fff;
+  letter-spacing: 2px;
 }
 
-.content-row {
-  align-items: stretch;
+/* 卡片通用样式 */
+.pink-card {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 20px rgba(235, 47, 150, 0.08);
+  border: 1px solid rgba(255, 240, 246, 0.8);
+  transition: all 0.3s ease;
 }
 
-.form-col,
-.table-col {
+.hover-effect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(235, 47, 150, 0.15);
+}
+
+.card-header-title {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 8px;
+  color: #ff4d4f;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.form-card {
+/* 左侧表单样式 */
+.sticky-wrapper {
+  position: sticky;
+  top: 24px;
+}
+
+.custom-form :deep(.ant-form-item-label > label) {
+  color: #555;
+  font-weight: 600;
+}
+
+.pink-input :deep(.ant-input),
+.pink-input :deep(.ant-select-selector) {
+  border-radius: 8px;
+  border-color: #ffd6e7;
+  background: #fff;
+}
+
+.pink-input :deep(.ant-input):focus,
+.pink-input :deep(.ant-select-selector-focused) {
+  border-color: #ffadd2;
+  box-shadow: 0 0 0 2px rgba(255, 173, 210, 0.2);
+}
+
+.preset-tags {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preset-tags :deep(.ant-tag) {
+  cursor: pointer;
+  border-radius: 6px;
+  border: none;
+  background: #fff0f6;
+  color: #eb2f96;
+  padding: 2px 10px;
+  transition: all 0.2s;
+}
+.preset-tags :deep(.ant-tag):hover {
+  background: #eb2f96;
+  color: white;
+}
+
+/* 按钮样式 */
+.pink-btn {
+  border-radius: 20px;
+  height: 38px;
+  font-weight: 600;
+}
+.submit-btn {
   flex: 1;
+  background: linear-gradient(135deg, #ff85c0 0%, #ff4d4f 100%);
+  border: none;
+  box-shadow: 0 4px 10px rgba(255, 77, 79, 0.3);
 }
-
-.table-card {
-  flex: 1;
+.submit-btn:hover {
+  background: linear-gradient(135deg, #ffadd2 0%, #ff7875 100%);
+  transform: scale(1.02);
 }
-
-.cron-tip {
-  margin-bottom: 16px;
-  white-space: pre-line;
+.ghost-btn {
+  border: 1px solid #ffadd2;
+  color: #eb2f96;
+}
+.text-btn {
+  color: #999;
 }
 
 .form-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.form-actions .ant-btn {
-  min-width: 110px;
-}
-
-.ghost-button {
-  margin-left: 8px;
-}
-
-.back-button {
-  margin-left: 8px;
-  background-color: aquamarine;
-  border-color: aquamarine;
-}
-
-.quick-presets {
+  gap: 12px;
   margin-top: 24px;
-}
-
-.quick-presets h4 {
-  margin-bottom: 8px;
-  color: #ff6699;
-}
-
-.preset-group {
-  display: flex;
   flex-wrap: wrap;
+}
+
+/* 右侧列表布局关键样式 */
+.full-height-item {
+  height: 100%;
+}
+
+.task-item-card {
+  border-radius: 16px;
+  background: rgb(182, 224, 221);
+  border: 1px solid #fff0f6;
+  /* 关键：使用 Flex 布局让卡片内容垂直分布，实现底部对齐 */
+  display: flex;
+  flex-direction: column;
+  height: 100%; 
+}
+
+/* 覆盖 Ant Design Card body 默认 padding，并设为 flex */
+.task-item-card :deep(.ant-card-body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.task-name-wrapper {
+  flex: 1;
+  margin-right: 12px;
+}
+
+.task-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  word-break: break-all;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.status-tag {
+  border-radius: 6px;
+  border: none;
+  padding: 0 8px;
+  font-size: 12px;
+  height: 22px;
+  line-height: 22px;
+}
+
+/* 任务主体内容：占据剩余空间，将底部按钮推下去 */
+.task-body {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.info-block {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Cron 表达式美化与适配 */
+.cron-box {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  color: #eb2f96;
+  font-weight: 600;
+  font-size: 14px;
+  /* 关键：允许在任意字符间换行 */
+  word-break: break-all; 
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  color: #160808;
+  font-size: 13px;
+}
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-row .icon {
+  margin-right: 8px;
+  color: #ff85c0;
+}
+
+.sub-text {
+  color: #0c0505;
+}
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* 卡片底部按钮 */
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
   gap: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed #f0f0f0;
+  margin-top: auto; /* 辅助 flex 布局 */
 }
 
-.preset-group :deep(.ant-tag) {
-  cursor: pointer;
+.action-btn {
+  border: none;
+  background: #f1e8ec;
+  color: #eb2f96;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-btn:hover {
+  background: #eb2f96;
+  color: white;
+  transform: scale(1.1);
 }
 
-.table-wrapper {
-  overflow-x: auto;
+.run-btn:hover { background: #52c41a; }
+.pause-btn:hover { background: #faad14; }
+.resume-btn:hover { background: #52c41a; }
+.delete-btn:hover { background: #ff4d4f; }
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.table-wrapper :deep(.ant-table) {
-  min-width: 820px;
-}
-
-.visual-gallery {
-  /* display: grid; */
-  /* grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); */
-  /* gap: 12px;
-  margin-top: 12px; */
-  /* height: 300px; */
-}
-
-.gallery-img {
-  width: 100%;
-  height: 420px!important;
-  border-radius: 12px;
-  object-fit: cover;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+/* 移动端适配 */
+@media (max-width: 992px) {
+  .list-col {
+    margin-top: 24px;
+  }
 }
 
 @media (max-width: 768px) {
   .task-cron-page {
     padding: 16px;
   }
-
   .form-actions {
     flex-direction: column;
-    align-items: stretch;
   }
-
-  .form-actions .ant-btn {
+  .submit-btn {
     width: 100%;
   }
-
-  .table-wrapper :deep(.ant-table) {
-    min-width: 700px;
-  }
-
-  .gallery-img {
-    height: 160px;
-  }
-}
-
-@media (min-width: 992px) {
-  .visual-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .gallery-img {
-    height: 220px;
+  .sticky-wrapper {
+    position: static;
   }
 }
 </style>

@@ -122,6 +122,7 @@ func MouseClick(x, y int, key string, DoubleClick bool) {
 // ScreenShot 截图
 func ScreenShot(imgName string) error {
 	screenWidth, screenHeight := robotgo.GetScreenSize()
+	//autoLog.Sugar.Infof("屏幕尺寸: %d x %d", screenWidth, screenHeight)
 	imgScreen := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
 	if imgScreen == nil {
 		return fmt.Errorf("截图失败: 无法获取屏幕图像")

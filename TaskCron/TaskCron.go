@@ -84,6 +84,16 @@ func InitTaskCron() {
 			autoLog.Sugar.Infof("定时任务启动：定时关机成功:[%s]", err)
 		}
 	}
+	task["定时重启"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：定时重启-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		cmd := exec.Command("shutdown", "/r", "/t", "60")
+		err := cmd.Run()
+		if err != nil {
+			autoLog.Sugar.Errorf("定时任务启动：定时重启失败:[%s]", err)
+		} else {
+			autoLog.Sugar.Infof("定时任务启动：定时重启成功:[%s]", err)
+		}
+	}
 	task["狗粮联机上线"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：联系上线-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		abgiSSE.OnStart()
