@@ -740,14 +740,11 @@ func StarGin() {
 
 		aBgiUpdate := needAuth.Group("/aBgiUpdate")
 		{
-			//查询当前版本
-			aBgiUpdate.GET("/version", GetCurrentVersion)
+
 			//获取最新版
 			aBgiUpdate.POST("/GetLastVersion", GetLastVersion)
 			//更新abgi
 			aBgiUpdate.POST("/Update", UpdateABgi)
-			// GetBgiVersion 获取当前bgi版本和最新的bgi版本
-			aBgiUpdate.GET("/GetBgiVersion", GetBgiVersion)
 
 		}
 
@@ -825,6 +822,11 @@ func StarGin() {
 			scriptGroup.GET("/listPathingUpdatePaths", scriptGroupConfig.UpdatePaths)
 
 		}
+
+		//查询当前版本
+		ginServer.GET("/api/aBgiUpdate/version", GetCurrentVersion)
+		// GetBgiVersion 获取当前bgi版本和最新的bgi版本
+		ginServer.GET("/api/aBgiUpdate/GetBgiVersion", GetBgiVersion)
 
 		//CD-Aware-AutoGather - 带CD管理的自动采集
 		CDAwareAutoGatherController := needAuth.Group("/CD-Aware-AutoGather")

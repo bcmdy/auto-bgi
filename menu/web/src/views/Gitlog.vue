@@ -15,10 +15,12 @@
         <div class="carousel-overlay"></div>
       </div>
 
+      <button class="btn home-btn" @click="goHome">
+        <span class="icon">🏠</span> 
+        <span class="text">返回首页</span>
+      </button>
+
       <div class="header-content">
-        <button class="btn home-btn" @click="goHome">
-          <span class="icon">🏠</span> 返回首页
-        </button>
         <div class="title-section">
           <h1 class="main-title">✨ 仓库提交记录 ✨</h1>
           <p class="sub-title">追踪最新的脚本与策略更新</p>
@@ -84,7 +86,7 @@
                   <tr v-for="(item, index) in sortedGitLogs" :key="index">
                     <td><span class="tag-badge">{{ item.TypeName }}</span></td>
                     <td class="col-path" :title="item.FilePath">{{ item.FilePath }}</td>
-                    <td>{{ item.Authors }}</td>
+                    <td><span class="author-tag">{{ item.Authors }}</span></td>
                     <td class="col-date">{{ item.LastUpdated }}</td>
                     <td>{{ item.Tags }}</td>
                     <td><span class="version-badge">{{ item.Version }}</span></td>
@@ -107,7 +109,7 @@
           </div>
 
           <div class="card-view hidden-desktop">
-            <div class="mobile-card" v-for="(item, index) in sortedGitLogs" :key="index">
+            <div class="mobile-card" v-for="(item, index) in sortedGitLogs" :key="index" :style="{ '--delay': index * 0.1 + 's' }">
               <div class="card-header">
                 <span class="tag-badge">{{ item.TypeName }}</span>
                 <span class="version-badge">{{ item.Version }}</span>
@@ -151,7 +153,7 @@
           <h3>📖 {{ currentJsName }} - 详情</h3>
           <button class="close-btn" @click="closeDetailModal">✕</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body custom-scrollbar">
           <div v-if="!jsDetailContent" class="loading-state small">
             <div class="spinner"></div>
             <p>正在读取卷轴...</p>
@@ -179,7 +181,7 @@ export default {
     const pluginData = ref([])
     const gitLogs = ref([])
     const gitLogLoading = ref(true)
-    const currentSort = ref({ key: 'ChineseName', asc: true })
+    const currentSort = ref({ key: 'LastUpdated', asc: false }) // 默认按时间倒序
     const isUpdating = reactive({})
 
     // 详情模态框相关
@@ -203,28 +205,20 @@ export default {
     const headerCurrentImageIndex = ref(0)
     let headerCarouselInterval = null
 
-    // 获取header轮播图图片
     const getHeaderImages = async () => {
       try {
         const response = await fetch('/api/images')
-        if (!response.ok) {
-          throw new Error('Failed to fetch header images')
-        }
+        if (!response.ok) throw new Error('Failed')
         const data = await response.json()
         headerCarouselImages.value = data.images || []
-        
-        // 启动header轮播
-        if (headerCarouselImages.value.length > 0) {
-          startHeaderCarousel()
-        }
+        if (headerCarouselImages.value.length > 0) startHeaderCarousel()
       } catch (error) {
-        console.error('获取Header轮播图失败:', error)
-        headerCarouselImages.value = ['/img/bd.jpg', '/img/ff.png', '/img/ng.jpg', '/img/sh.jpg']
+        // 默认图片回退
+        headerCarouselImages.value = ['/img/bd.jpg', '/img/ff.png']
         startHeaderCarousel()
       }
     }
 
-    // 启动header轮播
     const startHeaderCarousel = () => {
       if (headerCarouselImages.value.length > 1) {
         if(headerCarouselInterval) clearInterval(headerCarouselInterval)
@@ -248,9 +242,7 @@ export default {
     }
 
     const getSortIcon = (key) => {
-      if (currentSort.value.key !== key) {
-        return 'sort-default'
-      }
+      if (currentSort.value.key !== key) return 'sort-default'
       return currentSort.value.asc ? 'sort-asc' : 'sort-desc'
     }
 
@@ -271,18 +263,14 @@ export default {
       return arr
     })
 
-    // 分组筛选相关
     const groupOptions = [
       { value: 'pathing', label: '地图追踪' },
       { value: 'js', label: '脚本' },
       { value: 'combat', label: '战斗策略' }
     ]
     const selectedGroup = ref('')
-
-    // 作者筛选相关
     const selectedAuthor = ref('')
 
-    // 计算所有可用的作者列表
     const authorOptions = computed(() => {
       if (!gitLogs.value || !Array.isArray(gitLogs.value)) return []
       const authorsSet = new Set()
@@ -291,9 +279,7 @@ export default {
           for (const file of group.Repo) {
             if (file.Authors) {
               const authors = file.Authors.split(',').map(author => author.trim())
-              authors.forEach(author => {
-                if (author) authorsSet.add(author)
-              })
+              authors.forEach(author => { if (author) authorsSet.add(author) })
             }
           }
         }
@@ -301,11 +287,9 @@ export default {
       return Array.from(authorsSet).sort()
     })
 
-    // 排序和筛选逻辑
     const sortedGitLogs = computed(() => {
       let logs = flatGitLogs.value
       
-      // 分组筛选
       if (selectedGroup.value) {
         logs = logs.filter(item => {
           if (selectedGroup.value == 'pathing') return item.TypeName?.toLowerCase().includes('pathing')
@@ -315,7 +299,6 @@ export default {
         })
       }
       
-      // 作者筛选
       if (selectedAuthor.value) {
         logs = logs.filter(item => {
           if (!item.Authors) return false
@@ -324,11 +307,19 @@ export default {
         })
       }
       
-      // 按最后更新时间排序（降序）
       return [...logs].sort((a, b) => {
-        const timeA = a.LastUpdated ? new Date(a.LastUpdated).getTime() : 0
-        const timeB = b.LastUpdated ? new Date(b.LastUpdated).getTime() : 0
-        return timeB - timeA
+        let valA = a[currentSort.value.key]
+        let valB = b[currentSort.value.key]
+
+        // 特殊处理日期
+        if(currentSort.value.key === 'LastUpdated') {
+           valA = new Date(valA).getTime()
+           valB = new Date(valB).getTime()
+        }
+
+        if (valA < valB) return currentSort.value.asc ? -1 : 1
+        if (valA > valB) return currentSort.value.asc ? 1 : -1
+        return 0
       })
     });
 
@@ -336,7 +327,6 @@ export default {
       try {
         gitLogLoading.value = true
         const response = await apiMethods.getLog()
-        console.log('gitLog接口返回:', response)
         gitLogs.value = response.gitLog || []
       } catch (error) {
         console.error('加载提交记录失败：', error)
@@ -346,9 +336,7 @@ export default {
       }
     }
 
-    const isRepoTriplePath = (filePath) => {
-      return true
-    }
+    const isRepoTriplePath = (filePath) => true // 简化判断
 
     const getRepoSegments = (filePath) => {
       const match = filePath.match(/^repo\/(\/+)\/(\/+)\//)
@@ -356,34 +344,32 @@ export default {
       return { group: match[1], name: match[2] }
     }
 
-    const getRepoKey = (filePath) => {
-      const { group, name } = getRepoSegments(filePath)
-      return group && name ? `${group}/${name}` : filePath
-    }
+    const getRepoKey = (filePath) => filePath
 
     const openDetailFromFile = async (filePath) => {
-      if (!isRepoTriplePath(filePath)) return
-      const { group, name } = getRepoSegments(filePath)
-      const key = `${group}/${name}`
+      // 提取文件名作为标题
+      const parts = filePath.split('/')
+      const name = parts[parts.length - 1] || filePath
+      const key = filePath
 
       currentJsName.value = name
       showDetailModal.value = true
       isLoadingDetail[key] = true
       jsDetailContent.value = ''
-      jsDetailHtml.value = ''
-
+      
       try {
-        const result = await api.get(`/api/md?filePath=${filePath}`)
-        if (result.status === 'success') {
-          jsDetailContent.value = result.data || ''
+        // 注意：这里需要根据实际后端API路径调整
+        const result = await api.get(`/api/md?filePath=${encodeURIComponent(filePath)}`)
+        if (result && (result.data || result.content)) {
+          jsDetailContent.value = result.data || result.content
           jsDetailHtml.value = renderMarkdownToHtml(jsDetailContent.value)
         } else {
-          jsDetailContent.value = '获取README内容失败'
+          jsDetailContent.value = '# 暂无详情\n无法读取该文件的说明文档。'
+          jsDetailHtml.value = renderMarkdownToHtml(jsDetailContent.value)
         }
       } catch (error) {
-        console.error('获取README失败：', error)
-        jsDetailContent.value = '获取README内容失败：' + error.message
-        jsDetailHtml.value = ''
+        jsDetailContent.value = '获取README失败：' + error.message
+        jsDetailHtml.value = renderMarkdownToHtml(jsDetailContent.value)
       } finally {
         isLoadingDetail[key] = false
       }
@@ -391,9 +377,6 @@ export default {
 
     const closeDetailModal = () => {
       showDetailModal.value = false
-      currentJsName.value = ''
-      jsDetailContent.value = ''
-      jsDetailHtml.value = ''
     }
 
     onMounted(() => {
@@ -402,8 +385,6 @@ export default {
     })
 
     return {
-      pluginData,
-      gitLogs,
       gitLogLoading,
       goHome,
       sortTable,
@@ -415,12 +396,9 @@ export default {
       jsDetailContent,
       jsDetailHtml,
       isLoadingDetail,
-      isRepoTriplePath,
-      getRepoSegments,
       getRepoKey,
       openDetailFromFile,
       closeDetailModal,
-      flatGitLogs,
       sortedGitLogs,
       groupOptions,
       selectedGroup,
@@ -431,58 +409,68 @@ export default {
 }
 </script>
 
-<style scoped>
-/* ================= 全局变量 ================= */
+<style>
+/* ================= 全局 & 滚动条 ================= */
 :root {
   --primary-pink: #ff9ecd;
   --dark-pink: #ff6eb4;
   --light-pink: #fff0f6;
-  --accent-blue: #87ceeb;
   --text-main: #5a5a5a;
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.6);
-  --shadow-soft: 0 8px 32px rgba(255, 158, 205, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --shadow-soft: 0 8px 32px rgba(255, 158, 205, 0.15);
   --radius-lg: 24px;
-  --radius-md: 16px;
-  --radius-sm: 8px;
+}
+
+/* 全局滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #fff5f9;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-pink);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dark-pink);
 }
 
 .js-names-page {
   min-height: 100vh;
-  /* 可爱的背景纹理 */
   background-color: #fffafc;
+  /* 更细腻的背景网格 */
   background-image: 
-    radial-gradient(#ffdef0 2px, transparent 2px), 
-    radial-gradient(#ffdef0 2px, transparent 2px);
-  background-size: 40px 40px;
-  background-position: 0 0, 20px 20px;
+    linear-gradient(rgba(255, 158, 205, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 158, 205, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px;
   color: var(--text-main);
-  font-family: 'Varela Round', 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Varela Round', sans-serif;
   padding-bottom: 60px;
 }
 
-/* ================= Header 样式 ================= */
+/* ================= Header 区域 ================= */
 .page-header {
   position: relative;
-  height: 280px;
-  border-bottom-left-radius: var(--radius-lg);
-  border-bottom-right-radius: var(--radius-lg);
+  height: 260px;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
   overflow: hidden;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 10px 40px rgba(255, 110, 180, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 30px;
-  background: linear-gradient(135deg, #ffcce6, #d4f0ff);
+  /* 确保按钮可以定位 */
+  z-index: 1; 
 }
 
 .header-carousel {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  inset: 0;
+  z-index: -1;
 }
 
 .carousel-slide {
@@ -490,91 +478,79 @@ export default {
   width: 100%;
   height: 100%;
   opacity: 0;
-  transition: opacity 1s ease-in-out;
+  transition: opacity 1s ease;
+  transform: scale(1.05); /* 轻微放大效果 */
 }
-
-.carousel-slide.active {
-  opacity: 1;
-}
-
-.carousel-slide img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+.carousel-slide.active { opacity: 1; transform: scale(1); transition: opacity 1s, transform 6s; }
+.carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
 
 .carousel-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,240,246,0.9));
-  backdrop-filter: blur(2px);
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(255,240,246,0.95));
+  backdrop-filter: blur(1px);
+}
+
+/* 修复后的按钮样式：绝对定位在Header左上角 */
+.home-btn {
+  position: absolute;
+  z-index: 1000; /* 确保在最上层 */
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 2px solid #fff;
+  color: var(--dark-pink);
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.home-btn:hover {
+  background: #fff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 110, 180, 0.4);
+  color: #ff4081;
 }
 
 .header-content {
   position: relative;
   z-index: 2;
   text-align: center;
-  width: 100%;
-  max-width: 1200px;
-}
-
-.title-section {
-  animation: float 3s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 .main-title {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   color: var(--dark-pink);
   margin: 0;
-  text-shadow: 2px 2px 0px #fff, 4px 4px 0px rgba(255, 158, 205, 0.3);
-  font-weight: 800;
-  letter-spacing: 1px;
+  text-shadow: 3px 3px 0px #fff;
+  font-weight: 900;
+  letter-spacing: 2px;
 }
 
 .sub-title {
-  font-size: 1.1rem;
-  color: #888;
-  margin-top: 10px;
-  background: rgba(255,255,255,0.6);
-  display: inline-block;
+  font-size: 1rem;
+  color: #777;
+  margin-top: 8px;
+  background: rgba(255,255,255,0.7);
   padding: 4px 16px;
   border-radius: 20px;
+  border: 1px solid #fff;
 }
 
-.home-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: var(--glass-bg);
-  border: var(--glass-border);
-  color: var(--dark-pink);
-  padding: 10px 20px;
-  border-radius: 30px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.home-btn:hover {
-  transform: translateY(-2px);
-  background: #fff;
-  box-shadow: 0 6px 16px rgba(255, 110, 180, 0.2);
-}
-
-/* ================= 容器与筛选 ================= */
+/* ================= 筛选栏 ================= */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -586,316 +562,199 @@ export default {
   flex-wrap: wrap;
   gap: 20px;
   background: var(--glass-bg);
-  padding: 20px;
-  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  border-radius: 20px;
   box-shadow: var(--shadow-soft);
   margin-bottom: 24px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
 }
 
-.filter-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.filter-label {
-  font-weight: bold;
-  color: var(--dark-pink);
-}
+.filter-label { color: var(--dark-pink); font-weight: 700; }
 
 .custom-select {
   padding: 8px 16px;
-  border-radius: 20px;
-  border: 2px solid #ffdef0;
+  border-radius: 12px;
+  border: 1px solid #ffcce6;
   background: #fff;
-  color: var(--text-main);
+  color: #666;
   outline: none;
   cursor: pointer;
-  transition: border-color 0.3s;
+  transition: all 0.3s;
 }
-
-.custom-select:focus {
+.custom-select:hover, .custom-select:focus {
   border-color: var(--dark-pink);
+  box-shadow: 0 0 0 3px rgba(255, 110, 180, 0.1);
 }
 
-/* ================= 表格样式 (PC) ================= */
+/* ================= 表格 (PC) ================= */
 .table-view {
-  background: var(--glass-bg);
-  border-radius: var(--radius-md);
-  padding: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  padding: 12px;
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(10px);
-  overflow: hidden;
-  width: 100%; /* 确保宽度撑开 */
+  border: 1px solid #fff;
 }
 
-.table-wrapper {
-  overflow-x: auto;
-  width: 100%;
-}
-
-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 800px; /* 防止表格过分压缩 */
-}
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 900px; }
 
 th {
-  background: rgba(255, 158, 205, 0.1);
+  background: rgba(255, 225, 239, 0.5);
   color: var(--dark-pink);
-  padding: 16px;
+  padding: 18px;
   text-align: left;
-  font-weight: bold;
-  white-space: nowrap;
+  font-weight: 800;
+  border-bottom: 2px solid #fff;
 }
-
-th:first-child { border-top-left-radius: var(--radius-sm); }
-th:last-child { border-top-right-radius: var(--radius-sm); }
 
 td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #ffeef6;
-  font-size: 0.95rem;
+  padding: 16px;
+  border-bottom: 1px solid #fff0f6;
   color: #666;
-  vertical-align: middle;
+  font-size: 0.95rem;
+  transition: background 0.2s;
 }
 
-tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255, 240, 248, 0.6); }
 
-tr:hover td {
-  background-color: rgba(255, 239, 247, 0.5);
-}
-
+/* 徽章样式 */
 .tag-badge {
-  background: #ffe0f0;
-  color: var(--dark-pink);
-  padding: 4px 10px;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #ffcce6, #ffdef0);
+  color: #d63384;
+  padding: 4px 12px;
+  border-radius: 20px;
   font-size: 0.8rem;
   font-weight: bold;
-  display: inline-block;
+}
+
+.author-tag {
+  color: #444;
+  font-weight: 500;
 }
 
 .version-badge {
-  background: #e0f7fa;
-  color: #00bcd4;
-  padding: 2px 8px;
-  border-radius: 8px;
+  background: #e3f2fd;
+  color: #0288d1;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-family: monospace;
+  font-size: 0.85rem;
 }
-
-.col-path {
-  font-family: 'Consolas', monospace;
-  color: #888;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.col-desc {
-  max-width: 250px;
-  color: #777;
-}
-
-.sortable { cursor: pointer; user-select: none; }
-.sort-icon::after { content: ' ↕'; opacity: 0.3; }
-.sort-asc::after { content: ' ↑'; opacity: 1; }
-.sort-desc::after { content: ' ↓'; opacity: 1; }
 
 .btn-action {
   background: linear-gradient(135deg, #ff9ecd, #ff6eb4);
   color: white;
   border: none;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: transform 0.2s;
-  box-shadow: 0 2px 8px rgba(255, 110, 180, 0.3);
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(255, 110, 180, 0.3);
+  transition: all 0.2s;
 }
+.btn-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 110, 180, 0.5);
+}
+.btn-action:disabled { background: #e0e0e0; cursor: not-allowed; box-shadow: none; }
 
-.btn-action:hover {
-  transform: scale(1.05);
-}
-.btn-action:disabled {
-  background: #ddd;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* ================= 卡片样式 (Mobile) ================= */
+/* ================= 卡片 (Mobile) ================= */
 .mobile-card {
   background: #fff;
-  border-radius: var(--radius-md);
-  padding: 16px;
+  border-radius: 20px;
+  padding: 20px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 16px rgba(255, 158, 205, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  transition: transform 0.2s;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  
+  /* 动画 */
+  animation: slideUp 0.5s ease backwards;
+  animation-delay: var(--delay);
 }
 
-.mobile-card:active {
-  transform: scale(0.98);
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed #ffeef6;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #eee;
 }
 
-.card-body {
-  margin-bottom: 12px;
-}
-
-.card-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-}
-
-.row-icon {
-  width: 24px;
-  text-align: center;
-  margin-right: 8px;
-}
-
-.path {
-  font-family: monospace;
-  color: #888;
-  word-break: break-all;
-}
-
-.card-desc {
-  background: #fafafa;
-  padding: 8px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: 8px;
-  line-height: 1.4;
-}
-
-.card-footer {
-  text-align: center;
-}
+.card-row { margin-bottom: 8px; font-size: 0.9rem; display: flex; align-items: flex-start;}
+.row-icon { margin-right: 8px; min-width: 20px; }
+.path { word-break: break-all; font-family: monospace; color: #ff6eb4; }
 
 .btn-card-action {
-  width: 100%;
-  padding: 10px;
-  background: #fff0f6;
-  color: var(--dark-pink);
-  border: 1px solid #ffcce6;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
+  width: 100%; padding: 12px;
+  background: #fff0f6; color: var(--dark-pink);
+  border: 1px solid #ffcce6; border-radius: 14px;
+  font-weight: bold; cursor: pointer; margin-top: 10px;
 }
 
 /* ================= 详情模态框 ================= */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .modal-content {
-  background: rgba(255, 255, 255, 0.95);
-  width: 90%;
-  max-width: 800px;
-  height: 80vh;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  display: flex;
-  flex-direction: column;
+  background: rgba(255, 255, 255, 0.96);
+  width: 90%; max-width: 800px; height: 80vh;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex; flex-direction: column;
   overflow: hidden;
-  border: 2px solid #fff;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes popIn {
-  from { transform: scale(0.8); opacity: 0; }
+  from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
 .modal-header {
-  padding: 16px 24px;
-  background: linear-gradient(90deg, #fff0f6, #fff);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: var(--dark-pink);
-  font-size: 1.2rem;
+  padding: 20px; background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex; justify-content: space-between; align-items: center;
 }
 
 .close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #999;
-  cursor: pointer;
+  background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%;
+  cursor: pointer; color: #666; transition: background 0.2s;
 }
+.close-btn:hover { background: #ffcce6; color: var(--dark-pink); }
 
-.modal-body {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  font-size: 0.95rem;
-}
+.modal-body { padding: 30px; overflow-y: auto; flex: 1; }
 
-/* ================= 状态组件 ================= */
-.loading-state, .empty-state {
-  text-align: center;
-  padding: 60px 0;
-  color: #aaa;
-}
-
+/* 状态组件 */
+.loading-state, .empty-state { text-align: center; padding: 60px 0; color: #bbb; }
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #ffe0f0;
-  border-top: 4px solid var(--dark-pink);
-  border-radius: 50%;
-  margin: 0 auto 16px;
-  animation: spin 1s linear infinite;
+  width: 40px; height: 40px; border: 4px solid #fff0f6;
+  border-top-color: var(--dark-pink); border-radius: 50%;
+  margin: 0 auto 16px; animation: spin 1s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-.empty-icon { font-size: 3rem; display: block; margin-bottom: 10px; }
-
-/* ================= 响应式切换 (确保PC端优先显示) ================= */
+/* 响应式辅助 */
 .hidden-mobile { display: block; }
 .hidden-desktop { display: none; }
 
 @media (max-width: 768px) {
   .hidden-mobile { display: none; }
   .hidden-desktop { display: block; }
-  
   .page-header { height: 200px; }
-  .main-title { font-size: 1.8rem; }
-  .filter-panel { flex-direction: column; gap: 10px; }
+  .main-title { font-size: 2rem; }
+  .home-btn { top: 15px; left: 15px; padding: 6px 12px; }
+  .home-btn .text { display: none; } /* 手机端只显示图标 */
+  .filter-panel { flex-direction: column; }
   .custom-select { width: 100%; }
 }
 </style>

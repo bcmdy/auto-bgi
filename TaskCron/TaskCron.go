@@ -56,7 +56,10 @@ func InitTaskCron() {
 	}
 	task["米游社签到"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：米游社签到-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
-		taskTask.MiYouSheSign()
+		//taskTask.MiYouSheSign()
+		go func() {
+			control.CallPython()
+		}()
 	}
 	task["关闭原神和关闭bgi"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：关闭原神和关闭bgi-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)

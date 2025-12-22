@@ -92,6 +92,22 @@ func CloseYuanShen() {
 	time.Sleep(3000 * time.Millisecond)
 
 	// 创建命令用于强制关闭原神启动器进程
+	cmd3 := exec.Command("taskkill", "/F", "/IM", "GenshinImpact.exe")
+
+	// 执行命令并获取输出
+	_, err3 := cmd3.CombinedOutput()
+
+	// 判断启动器关闭结果
+	if err3 != nil {
+		autoLog.Sugar.Infof("原神国际已关闭")
+	} else {
+		autoLog.Sugar.Infof("原神国际关闭成功")
+	}
+
+	// 等待3秒，确保原神完全关闭
+	time.Sleep(3000 * time.Millisecond)
+
+	// 创建命令用于强制关闭原神启动器进程
 	cmd2 := exec.Command("taskkill", "/F", "/IM", "HYP.exe")
 
 	// 执行命令并获取输出
@@ -306,7 +322,7 @@ func CallPython() {
 	//捕获异常
 	defer func() {
 		if err := recover(); err != nil {
-			autoLog.Sugar.Errorf("捕获异常: %v", err)
+			autoLog.Sugar.Errorf("CallPython捕获异常: %v", err)
 		}
 	}()
 
@@ -320,7 +336,8 @@ func CallPython() {
 		if n == 0 {
 			break
 		}
-		fmt.Print(string(buf[:n]))
+		//fmt.Print(string(buf[:n]))
+		autoLog.Sugar.Infof(string(buf[:n]))
 	}
 
 	cmd.Wait()

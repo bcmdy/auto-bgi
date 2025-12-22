@@ -190,3 +190,17 @@ func readVersion(manifestPath string) (string, string) {
 	}
 	return "未知版本", data["name"].(string)
 }
+
+// 切换账号
+func ChangeAccount(data string) {
+	split := strings.Split(data, "-")
+	if len(split) != 2 {
+		autoLog.Sugar.Warnf("切换账号失败,参数错误")
+		return
+	}
+	uid := split[0]
+	name := split[1]
+	//切换账号
+	config.Cfg.Account.Uid = uid
+	config.Cfg.Account.Name = name
+}

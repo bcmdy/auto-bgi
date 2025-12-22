@@ -8,6 +8,7 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/task"
+	"auto-bgi/tools"
 	"bufio"
 	"fmt"
 	"github.com/go-vgo/robotgo"
@@ -110,6 +111,21 @@ func (m *LogMonitor) Monitor() {
 						}
 
 					}
+				}
+
+				//ABGI启动重启ABGI:
+				if strings.HasPrefix(line, "ABGI启动重启ABGI：") {
+					autoLog.Sugar.Infof("js日志调用ABGI启动重启ABGI")
+					err := tools.RestartProgram()
+					if err != nil {
+						autoLog.Sugar.Errorf("js日志调用ABGI启动重启ABGI失败: %v", err)
+					}
+				}
+
+				//js日志调用abgi联机换号
+				if strings.HasPrefix(line, "ABGI启动联机换号：") {
+					data := strings.ReplaceAll(line, "ABGI启动联机换号：", "")
+					abgiSSE.ChangeAccount(data)
 				}
 
 				//js日志调用abgi启动一条龙

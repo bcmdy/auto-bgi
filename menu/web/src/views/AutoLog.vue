@@ -1,13 +1,19 @@
 <template>
-  <div class="auto-log-page">
-    <div class="page-background" aria-hidden="true"></div>
+  <div class="auto-log-page anime-theme">
+    <div class="page-background" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
 
     <a-card class="glass-card search-card" :bordered="false">
       <div class="search-header">
         <div class="card-title">
-          <file-search-outlined class="title-icon" />
-          <span>日志查询</span>
-          <a-tag color="purple" class="title-tag">自动任务</a-tag>
+          <div class="icon-box">
+            <file-search-outlined />
+          </div>
+          <span class="title-text">日志查询</span>
+          <a-tag color="#ffadd2" class="title-tag">AutoTask</a-tag>
         </div>
         
         <a-form layout="inline" class="search-form" @submit.prevent>
@@ -19,6 +25,7 @@
               allow-clear
               placeholder="默认今天"
               @change="handleFetchData"
+              class="anime-input"
             />
           </a-form-item>
           
@@ -27,26 +34,26 @@
               v-model:value="localKeyword"
               allow-clear
               :disabled="loading || logs.length === 0"
-              placeholder="在结果中过滤内容/ID..."
-              style="width: 260px"
+              placeholder="过滤内容/ID..."
+              class="anime-input local-search-input"
             >
               <template #prefix>
-                <filter-outlined style="color: rgba(0,0,0,0.25)"/>
+                <filter-outlined style="color: #ff85c0"/>
               </template>
             </a-input>
           </a-form-item>
 
-          <a-form-item>
-            <a-space>
-              <a-button type="primary" :loading="loading" @click="handleFetchData">
+          <a-form-item class="action-buttons">
+            <a-space wrap>
+              <a-button type="primary" class="anime-btn primary-btn" :loading="loading" @click="handleFetchData">
                 <template #icon><cloud-sync-outlined /></template>
-                获取日志
+                获取
               </a-button>
               
-              <a-button @click="handleReset">重置</a-button>
+              <a-button class="anime-btn default-btn" @click="handleReset">重置</a-button>
               
-              <a-tooltip title="导出当前筛选结果为CSV">
-                 <a-button :disabled="!filteredLogs.length" @click="exportLogs">
+              <a-tooltip title="导出CSV">
+                 <a-button class="anime-btn icon-only-btn" :disabled="!filteredLogs.length" @click="exportLogs">
                     <download-outlined />
                  </a-button>
               </a-tooltip>
@@ -56,40 +63,43 @@
       </div>
     </a-card>
 
-    <a-card class="glass-card result-card" :bordered="false" :body-style="{ padding: '16px 24px', height: '100%', display: 'flex', flexDirection: 'column' }">
+    <a-card class="glass-card result-card" :bordered="false" :body-style="{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column' }">
       
-      <transition name="fade">
+      <transition name="fade-slide">
         <div v-if="logSummary.total" class="summary-dashboard">
-          <div class="stat-item">
-            <div class="stat-icon info-bg"><bars-outlined /></div>
+          <div class="stat-item total">
+            <div class="stat-icon"><bars-outlined /></div>
             <div class="stat-info">
               <div class="label">日志总数</div>
               <div class="value">{{ logSummary.total }}</div>
             </div>
           </div>
           
-          <div class="stat-item" :class="{ 'has-error': logSummary.error > 0 }">
-             <div class="stat-icon error-bg"><close-circle-outlined /></div>
+          <div class="stat-item error" :class="{ 'is-active': logSummary.error > 0 }">
+             <div class="stat-icon"><close-circle-outlined /></div>
              <div class="stat-info">
-               <div class="label">错误数</div>
+               <div class="label">错误异常</div>
                <div class="value">{{ logSummary.error }}</div>
              </div>
           </div>
 
-          <div class="stat-item">
-            <div class="stat-icon success-bg"><check-circle-outlined /></div>
+          <div class="stat-item success">
+            <div class="stat-icon"><check-circle-outlined /></div>
             <div class="stat-info">
               <div class="label">成功率</div>
               <div class="value">{{ logSummary.successRate }}%</div>
             </div>
           </div>
 
-          <div class="stat-item time-range">
-             <div class="stat-icon time-bg"><clock-circle-outlined /></div>
+          <div class="stat-item time">
+             <div class="stat-icon"><clock-circle-outlined /></div>
              <div class="stat-info">
                <div class="label">执行时段</div>
-               <div class="value-sm">{{ logSummary.earliestTime || '--:--' }}</div>
-               <div class="value-sm sub">至 {{ logSummary.latestTime || '--:--' }}</div>
+               <div class="value-group">
+                 <span class="main-time">{{ logSummary.earliestTime || '--:--' }}</span>
+                 <span class="separator">~</span>
+                 <span class="sub-time">{{ logSummary.latestTime || '--:--' }}</span>
+               </div>
              </div>
           </div>
         </div>
@@ -98,20 +108,20 @@
       <div class="table-toolbar">
         <div class="left-tools">
             <span class="result-count">
-              <span v-if="localKeyword">已筛选 <b>{{ filteredLogs.length }}</b> 条</span>
-              <span v-else>共 {{ filteredLogs.length }} 条结果</span>
+              <span v-if="localKeyword">🔍 已筛选 <b>{{ filteredLogs.length }}</b> 条</span>
+              <span v-else>🌸 共 {{ filteredLogs.length }} 条结果</span>
             </span>
             <a-divider type="vertical" />
             
-            <a-radio-group v-model:value="levelFilter" button-style="solid" size="small">
+            <a-radio-group v-model:value="levelFilter" button-style="solid" size="small" class="anime-radio-group">
               <a-radio-button value="ALL">全部</a-radio-button>
               <a-radio-button value="ERROR" class="btn-error">仅错误 ({{ logSummary.error }})</a-radio-button>
               <a-radio-button value="WARN" class="btn-warn">仅警告 ({{ logSummary.warn }})</a-radio-button>
             </a-radio-group>
         </div>
         <div class="right-tools">
-            <a-button type="text" size="small" @click="refresh" :loading="loading">
-                <template #icon><reload-outlined /></template> 刷新数据
+            <a-button type="text" size="small" class="refresh-btn" @click="refresh" :loading="loading">
+                <template #icon><reload-outlined /></template> 刷新
             </a-button>
         </div>
       </div>
@@ -121,17 +131,18 @@
           :data-source="filteredLogs"
           :columns="columns"
           :pagination="tablePagination"
-          :scroll="{ x: 800, y: 'calc(100vh - 420px)' }"
+          :scroll="{ x: 800, y: 'calc(100vh - 460px)' }"
           size="middle"
           row-key="id"
           :row-class-name="getRowClassName"
+          class="anime-table"
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.dataIndex === 'level'">
-              <a-tag :color="getLevelConfig(record.level).color" class="level-tag">
+              <span class="anime-tag" :class="getLevelConfig(record.level).class">
                 <component :is="getLevelConfig(record.level).icon" />
                 {{ record.level }}
-              </a-tag>
+              </span>
             </template>
 
             <template v-else-if="column.dataIndex === 'msg'">
@@ -144,18 +155,21 @@
                 >
                     <template v-if="localKeyword && record.msg">
                       <span v-html="highlightKeyword(record.msg)"></span>
-                   </template>
+                    </template>
                 </a-typography-paragraph>
               </div>
             </template>
             
             <template v-else-if="column.dataIndex === 'time'">
-               <span class="time-text">{{ record.time }}</span>
+               <span class="time-pill">{{ record.time.split(' ')[1] || record.time }}</span>
             </template>
           </template>
           
           <template #emptyText>
-             <a-empty :description="logs.length === 0 ? '暂无日志数据' : '未找到匹配的筛选结果'" />
+             <div class="empty-state">
+                <img src="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg" alt="empty" style="height: 100px; opacity: 0.6;" />
+                <p>{{ logs.length === 0 ? '暂无日志数据' : '没有找到匹配的结果哦~' }}</p>
+             </div>
           </template>
         </a-table>
       </div>
@@ -184,15 +198,15 @@ import {
 import { apiMethods } from '@/utils/api'
 
 // --- State Definition ---
-const localKeyword = ref('')   // 本地过滤用的关键词
-const selectedDate = ref(null) // 接口传参用的日期
+const localKeyword = ref('')   
+const selectedDate = ref(null) 
 const loading = ref(false)
-const logs = ref([])           // 存储接口返回的全量原始数据
-const levelFilter = ref('ALL') // 级别过滤器
+const logs = ref([])           
+const levelFilter = ref('ALL') 
 
 // --- Table Config ---
 const columns = [
-  { title: '时间', dataIndex: 'time', key: 'time', width: 170, fixed: 'left' },
+  { title: '时间', dataIndex: 'time', key: 'time', width: 120, fixed: 'left', align: 'center' },
   { title: '级别', dataIndex: 'level', key: 'level', width: 110, align: 'center' },
   { title: '日志内容', dataIndex: 'msg', key: 'msg' }
 ]
@@ -200,18 +214,14 @@ const columns = [
 const ellipsisConfig = { rows: 2, expandable: true, symbol: '展开' }
 
 // --- Computed Properties ---
-
-// 核心：双重过滤逻辑（先过滤级别，再过滤关键词）
 const filteredLogs = computed(() => {
   let result = logs.value
 
-  // 1. 级别过滤
   if (levelFilter.value !== 'ALL') {
     const target = levelFilter.value.toUpperCase()
     result = result.filter((log) => (log.level || '').toUpperCase().includes(target))
   }
 
-  // 2. 本地关键词过滤
   if (localKeyword.value) {
     const k = localKeyword.value.toLowerCase().trim()
     result = result.filter((log) => {
@@ -232,7 +242,6 @@ const tablePagination = computed(() => ({
   showTotal: (total) => `共 ${total} 条`
 }))
 
-// 统计面板的数据（基于全量 logs 计算，反映整体任务情况）
 const logSummary = computed(() => {
   if (!logs.value.length) return { total: 0, error: 0, warn: 0, successRate: '0.0', earliestTime: '', latestTime: '' }
   
@@ -247,7 +256,6 @@ const logSummary = computed(() => {
     if (log.time && dayjs(log.time).isValid()) validTimes.push(dayjs(log.time))
   })
 
-  // 计算时间范围
   let earliest = '-', latest = '-'
   if (validTimes.length) {
       validTimes.sort((a, b) => a.valueOf() - b.valueOf())
@@ -266,13 +274,10 @@ const logSummary = computed(() => {
 })
 
 // --- Methods ---
-
-// 数据清洗与格式化
 const normalizeLogs = (raw) => {
   if (!raw) return []
   let items = raw
   
-  // 兼容字符串形式的 JSON 响应
   if (typeof raw === 'string') {
     try {
       items = JSON.parse(raw)
@@ -297,14 +302,11 @@ const normalizeLogs = (raw) => {
   })
 }
 
-// 核心请求方法：只传日期
 const fetchLogs = async () => {
   loading.value = true
   try {
-    // 接口调用：仅传入 selectedDate
     const res = await apiMethods.queryAutoLogs(selectedDate.value)
     if (res?.status === 'success') {
-       // 获取最新数据，localKeyword 会自动通过 computed 重新计算
       logs.value = normalizeLogs(res.msg).reverse()
     } else {
       logs.value = []
@@ -331,33 +333,30 @@ const handleReset = () => {
 
 const refresh = () => fetchLogs()
 
-// 简单的关键词高亮函数
 const highlightKeyword = (text) => {
     if (!localKeyword.value) return text
     const k = localKeyword.value
-    // 简单的正则替换，注意：生产环境如果包含特殊字符需要转义
+    // 简单的正则替换，生产环境建议转义正则字符
     const reg = new RegExp(`(${k})`, 'gi') 
-    return text.replace(reg, '<span style="background-color: #ffd591; font-weight: bold;">$1</span>')
+    return text.replace(reg, '<span style="background-color: #ffe58f; color: #d46b08; font-weight: bold; padding: 0 2px; border-radius: 2px;">$1</span>')
 }
 
-// 辅助：获取级别对应的颜色和图标
+// 修改：返回 class 名称而非 color，便于 CSS 控制
 const getLevelConfig = (level = '') => {
   const upper = level.toUpperCase()
-  if (upper.includes('ERR')) return { color: 'error', icon: CloseCircleOutlined }
-  if (upper.includes('WARN')) return { color: 'warning', icon: WarningOutlined }
-  if (upper.includes('DEBUG')) return { color: 'default', icon: InfoCircleOutlined }
-  return { color: 'processing', icon: InfoCircleOutlined }
+  if (upper.includes('ERR')) return { class: 'tag-error', icon: CloseCircleOutlined }
+  if (upper.includes('WARN')) return { class: 'tag-warn', icon: WarningOutlined }
+  if (upper.includes('DEBUG')) return { class: 'tag-debug', icon: InfoCircleOutlined }
+  return { class: 'tag-info', icon: InfoCircleOutlined }
 }
 
-// 辅助：根据级别设置行样式
 const getRowClassName = (record) => {
   const upper = (record?.level || '').toUpperCase()
-  if (upper.includes('ERR')) return 'row-error-light'
-  if (upper.includes('WARN')) return 'row-warn-light'
+  if (upper.includes('ERR')) return 'row-error'
+  if (upper.includes('WARN')) return 'row-warn'
   return ''
 }
 
-// 导出 CSV
 const exportLogs = () => {
     const header = 'Time,Level,Message\n'
     const content = filteredLogs.value.map(l => {
@@ -378,48 +377,71 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 全局变量 */
-:root {
-  --primary-color: #1890ff;
+/* --- 二次元粉色主题定义 --- */
+.anime-theme {
+  --primary-pink: #ffadd2;
+  --deep-pink: #eb2f96;
+  --soft-bg: #fff0f6;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --text-main: #5c3a58;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --shadow-soft: 0 8px 32px 0 rgba(235, 47, 150, 0.1);
 }
 
 .auto-log-page {
   position: relative;
   min-height: 100vh;
-  padding: 24px;
-  background-color: #f0f2f5;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 20px;
+  background-color: #fff0f6; /* 兜底色 */
+  font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', sans-serif; /* 选用圆润字体 */
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  color: var(--text-main);
 }
 
-/* 动感背景 */
+/* 动态背景球 */
 .page-background {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: 
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-  background-size: cover;
-  opacity: 0.05;
   z-index: 0;
-  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff0f6 0%, #fff7e6 100%);
 }
 
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.6;
+  animation: float 10s infinite ease-in-out;
+}
+.blob-1 { width: 300px; height: 300px; background: #ffadd2; top: -50px; left: -50px; animation-delay: 0s; }
+.blob-2 { width: 400px; height: 400px; background: #e6f7ff; bottom: -100px; right: -50px; animation-delay: -3s; }
+.blob-3 { width: 250px; height: 250px; background: #d3adf7; top: 40%; left: 30%; opacity: 0.4; animation-delay: -5s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(20px) scale(1.05); }
+}
+
+/* 卡片玻璃拟态 */
 .glass-card {
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  border-radius: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
 }
 
+/* 顶部搜索栏 */
 .search-header {
   display: flex;
   align-items: center;
@@ -431,111 +453,212 @@ onMounted(() => {
 .card-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+.icon-box {
+  width: 36px; height: 36px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--deep-pink);
   font-size: 18px;
-  font-weight: 600;
-  color: #1f1f1f;
+  box-shadow: 0 2px 8px rgba(235, 47, 150, 0.15);
+}
+.title-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #780650;
+}
+.title-tag {
+  border: none;
+  color: #c41d7f;
+  background: #ffd6e7;
+  border-radius: 12px;
+  padding: 0 10px;
 }
 
-.title-icon { font-size: 20px; color: #1890ff; }
+/* 搜索表单美化 */
+.search-form :deep(.ant-form-item-label > label) { color: #886278; }
+.anime-input :deep(.ant-input), 
+.anime-input :deep(.ant-picker-input > input) {
+  border-radius: 20px;
+  background: rgba(255,255,255,0.6);
+  border-color: #ffd6e7;
+  transition: all 0.3s;
+}
+.anime-input:hover :deep(.ant-input),
+.anime-input:focus :deep(.ant-input) {
+  border-color: var(--deep-pink);
+  box-shadow: 0 0 0 2px rgba(235, 47, 150, 0.1);
+}
 
-/* 结果区域布局 */
-.result-card { flex: 1; display: flex; flex-direction: column; }
+.local-search-input { width: 220px; }
 
-/* 统计仪表盘 */
+/* 按钮美化 */
+.anime-btn { border-radius: 20px; border: none; font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+.primary-btn { 
+  background: linear-gradient(135deg, #ffadd2 0%, #eb2f96 100%); 
+  color: white; 
+}
+.primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(235, 47, 150, 0.3);
+  background: linear-gradient(135deg, #ffadd2 0%, #eb2f96 100%); 
+  opacity: 0.9;
+}
+.default-btn { background: #fff; color: #eb2f96; border: 1px solid #ffadd2; }
+.icon-only-btn { padding: 4px 10px; border: 1px solid #ffd6e7; color: #eb2f96; background: #fff; }
+
+/* 统计区域 */
 .summary-dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .stat-item {
-  background: #fff;
-  border-radius: 10px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  border: 1px solid #f0f0f0;
+  gap: 12px;
+  border: 1px solid rgba(255,255,255,0.5);
   transition: transform 0.2s;
 }
-
-.stat-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.stat-item.has-error {
-    border-color: #ffccc7;
-    background: #fff1f0;
-}
-
+.stat-item:hover { transform: translateY(-3px); background: #fff; }
 .stat-icon {
-  width: 48px;
-  height: 48px;
+  width: 42px; height: 42px;
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-.info-bg { background: #e6f7ff; color: #1890ff; }
-.error-bg { background: #fff2f0; color: #ff4d4f; }
-.success-bg { background: #f6ffed; color: #52c41a; }
-.time-bg { background: #f9f0ff; color: #722ed1; }
-
-.stat-info { flex: 1; }
-.stat-info .label { font-size: 12px; color: #8c8c8c; margin-bottom: 4px; }
-.stat-info .value { font-size: 24px; font-weight: 700; color: #262626; line-height: 1; }
-.stat-info .value-sm { font-size: 16px; font-weight: 600; color: #262626; }
-.stat-info .sub { font-size: 12px; color: #8c8c8c; font-weight: normal; }
-
-/* 工具栏 */
-.table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
 }
 
-.left-tools { display: flex; align-items: center; gap: 12px; }
-.result-count { font-size: 13px; color: #666; }
+/* 颜色变体 */
+.stat-item.total .stat-icon { background: #e6f7ff; color: #1890ff; }
+.stat-item.error .stat-icon { background: #fff1f0; color: #ff4d4f; }
+.stat-item.success .stat-icon { background: #f6ffed; color: #52c41a; }
+.stat-item.time .stat-icon { background: #f9f0ff; color: #722ed1; }
 
-/* 表格样式 */
-.table-container { flex: 1; overflow: hidden; }
-.log-text { margin: 0; font-size: 13px; color: #333; }
-.monospace { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; }
-.time-text { color: #666; font-family: monospace; }
+.stat-item.error.is-active { background: #fff1f0; border-color: #ffa39e; }
 
-/* 状态行指示条 */
-:deep(.row-error-light) td:first-child { box-shadow: inset 4px 0 0 #ff4d4f; }
-:deep(.row-warn-light) td:first-child { box-shadow: inset 4px 0 0 #faad14; }
+.stat-info .label { font-size: 12px; color: #999; margin-bottom: 2px; }
+.stat-info .value { font-size: 22px; font-weight: 800; color: #333; line-height: 1.1; font-family: 'Arial Rounded MT Bold', sans-serif; }
 
-:deep(.row-error-light) { background-color: #fff1f0; }
-:deep(.row-warn-light) { background-color: #fffbe6; }
+.value-group { display: flex; flex-direction: column; line-height: 1.2; }
+.main-time { font-size: 16px; font-weight: 700; color: #722ed1; }
+.sub-time { font-size: 12px; color: #b37feb; }
+.separator { display: none; }
 
-/* AntDV 样式覆盖 */
-:deep(.ant-card-body) { padding: 20px 24px; }
-:deep(.ant-table-wrapper), :deep(.ant-spin-nested-loading), :deep(.ant-spin-container) { height: 100%; }
-:deep(.ant-table), :deep(.ant-table-container) { height: 100%; }
-:deep(.ant-table-body) { height: calc(100% - 40px) !important; }
-
-/* 按钮筛选器颜色 */
-:deep(.btn-error.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)) {
-    background: #ff4d4f; border-color: #ff4d4f; box-shadow: -1px 0 0 0 #ff4d4f;
+/* 筛选器 Tab */
+.anime-radio-group :deep(.ant-radio-button-wrapper) {
+  border: 1px solid #ffd6e7;
+  color: #eb2f96;
+  background: transparent;
 }
-:deep(.btn-warn.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)) {
-    background: #faad14; border-color: #faad14; box-shadow: -1px 0 0 0 #faad14;
+.anime-radio-group :deep(.ant-radio-button-wrapper:first-child) { border-radius: 16px 0 0 16px; }
+.anime-radio-group :deep(.ant-radio-button-wrapper:last-child) { border-radius: 0 16px 16px 0; }
+.anime-radio-group :deep(.ant-radio-button-wrapper-checked) {
+  background: #eb2f96 !important;
+  color: #fff !important;
+  border-color: #eb2f96 !important;
+  box-shadow: none;
+}
+.anime-radio-group :deep(.btn-error.ant-radio-button-wrapper-checked) { background: #ff4d4f !important; border-color: #ff4d4f !important; }
+.anime-radio-group :deep(.btn-warn.ant-radio-button-wrapper-checked) { background: #faad14 !important; border-color: #faad14 !important; }
+
+/* 表格美化 */
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.result-count { font-size: 13px; color: #eb2f96; }
+.refresh-btn { color: #999; }
+.refresh-btn:hover { color: #eb2f96; background: #fff0f6; border-radius: 12px; }
+
+.table-container { 
+    flex: 1; 
+    overflow: hidden; 
+    border-radius: 16px; 
+    background: rgba(255,255,255,0.4); 
+    border: 1px solid #fff;
 }
 
-/* 响应式 */
+/* Ant Table 深度定制 */
+:deep(.ant-table-thead > tr > th) {
+  background: rgba(255, 240, 246, 0.8) !important;
+  color: #780650;
+  font-weight: 600;
+  border-bottom: 1px solid #ffd6e7;
+}
+:deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid #fff0f6;
+  transition: background 0.3s;
+}
+:deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(255, 240, 246, 0.5) !important;
+}
+
+/* 状态胶囊 */
+.anime-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid transparent;
+}
+.tag-info { background: #e6f7ff; color: #096dd9; border-color: #91d5ff; }
+.tag-debug { background: #f0f0f0; color: #595959; border-color: #d9d9d9; }
+.tag-warn { background: #fffbe6; color: #d48806; border-color: #ffe58f; }
+.tag-error { background: #fff2f0; color: #cf1322; border-color: #ffccc7; }
+
+.time-pill {
+    background: #f9f0ff; color: #722ed1; padding: 2px 6px; border-radius: 6px; font-family: monospace; font-size: 12px;
+}
+
+/* 错误/警告行高亮 */
+:deep(.row-error) { background-color: #fff2f0 !important; }
+:deep(.row-warn) { background-color: #fffbe6 !important; }
+
+.log-text { font-size: 13px; color: #444; }
+.monospace { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+
+/* 动画 */
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.5s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateY(-10px); }
+
+/* --- 移动端适配 --- */
 @media (max-width: 768px) {
-  .auto-log-page { padding: 12px; }
-  .search-header { flex-direction: column; align-items: stretch; }
-  .search-form { width: 100%; }
-  .search-form :deep(.ant-form-item) { margin-right: 0; width: 100%; margin-bottom: 12px; }
-  .search-form :deep(.ant-input), .search-form :deep(.ant-picker) { width: 100% !important; }
-  .summary-dashboard { grid-template-columns: 1fr 1fr; }
+  .auto-log-page { padding: 10px; gap: 10px; }
+  
+  /* 搜索区调整 */
+  .search-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .card-title { justify-content: center; margin-bottom: 4px; }
+  .search-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .search-form :deep(.ant-form-item) { margin-right: 0; margin-bottom: 0; width: 100%; }
+  
+  .anime-input, .local-search-input { width: 100% !important; }
+  
+  /* 按钮组 */
+  .action-buttons { margin-top: 4px; }
+  .action-buttons :deep(.ant-form-item-control-input-content) { display: flex; justify-content: stretch; }
+  .action-buttons .ant-space { width: 100%; justify-content: space-between; }
+  .primary-btn { flex: 1; }
+  
+  /* 统计区变紧凑 */
+  .summary-dashboard { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-item { padding: 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .stat-icon { width: 32px; height: 32px; font-size: 16px; align-self: flex-start; }
+  .stat-info .value { font-size: 18px; }
+  
+  /* 工具栏调整 */
+  .table-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .left-tools { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .right-tools { position: absolute; top: 16px; right: 16px; } /* 移动端将刷新放回右上角 */
+  
+  /* 表格调整 */
+  .result-card :deep(.ant-card-body) { padding: 12px; }
+  /* 在手机上隐藏固定列阴影以减少视觉杂乱 */
+  :deep(.ant-table-ping-left .ant-table-cell-fix-left) { box-shadow: none !important; border-right: 1px solid #eee; }
+  
+  .anime-radio-group { width: 100%; display: flex; }
+  .anime-radio-group :deep(.ant-radio-button-wrapper) { flex: 1; text-align: center; padding: 0; font-size: 12px; }
 }
 </style>

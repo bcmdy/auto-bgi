@@ -712,6 +712,9 @@ onMounted(() => {
 
 .sub-text {
   color: #0c0505;
+  white-space: normal; /* 允许文本自动换行 */
+  word-wrap: break-word; /* 在单词长且无法容纳时强制换行 */
+  overflow: visible; /* 保证文字不被隐藏 */
 }
 
 .text-truncate {
@@ -721,6 +724,8 @@ onMounted(() => {
   max-width: 100%;
   display: inline-block;
   vertical-align: middle;
+    white-space: normal; /* 允许自动换行 */
+  overflow: visible; /* 让溢出的内容显示出来 */
 }
 
 /* 卡片底部按钮 */

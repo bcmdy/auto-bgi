@@ -436,3 +436,18 @@ func Unzip(zipPath, destDir string) error {
 
 	return nil
 }
+
+// 重启程序的函数
+func RestartProgram() error {
+
+	// 调用 run_auto_bgi.vbs 来启动更新后的程序
+	cmd := exec.Command("wscript", "run_auto_bgi.vbs")
+	err := cmd.Start()
+	if err != nil {
+		return fmt.Errorf("启动 VBS 脚本失败: %v", err)
+	}
+
+	// 退出当前进程
+	os.Exit(0)
+	return nil
+}

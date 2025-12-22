@@ -42,14 +42,14 @@
         </div>
         
         <div class="status-grid">
-            <div class="status-item">
+            <div class="status-item group-name">
                 <span class="label">🧩 执行配置组:</span>
                 <span class="value">{{ statusData.group }}</span>
+                <div class="ExpectedToEnd">
+                <pre >{{ statusData.ExpectedToEnd=="" ? '没有归档记录' : statusData.ExpectedToEnd }}</pre>
             </div>
-            <!-- <div class="status-item full-width">
-                <span class="label">⏱️ 预计结束:</span>
-                <span class="value highlight">{{ statusData.ExpectedToEnd }}</span>
-            </div> -->
+            </div>
+    
             <div class="status-item">
                 <span class="label">📜 运行路线:</span>
                 <span class="value">{{ statusData.line }}</span>
@@ -78,7 +78,7 @@
       <div class="action-zone">
 
         <div class="button-group glass-panel">
-            <div class="group-title">🔍 实时监测:</div>
+            <div class="group-title">🔍 实时监测</div>
               <div class="btn-grid">
             <button  @click="openScreenshot">查看桌面</button>
             <button  @click="sendImage">发送截图</button>
@@ -410,8 +410,22 @@ const handleCloseBgi = () => {
     })
 }
 
-const handleBackup = async () => {
-    try { await apiMethods.backup(); message.success('备份成功') } catch(e) { message.error('失败') }
+const handleBackup = () => {
+    Modal.confirm({
+        title: '确认备份？',
+        content: '是否确认备份当前的 USER 文件？',
+        okText: '确定',
+        cancelText: '取消',
+        centered: true, // 居中显示
+        onOk: async () => {
+            try { 
+                await apiMethods.backup()
+                message.success('备份成功') 
+            } catch(e) { 
+                message.error('备份失败') 
+            }
+        }
+    })
 }
 
 const sendImage = () => {
@@ -617,6 +631,20 @@ onMounted(() => {
   position: relative;
   width: 100%;
   padding-bottom: 120%; /* Aspect Ratio placeholder */
+}
+
+.ExpectedToEnd{
+  background: rgb(252, 207, 230);
+  position: absolute; 
+  opacity: 0;
+  display: none;
+  transition: all .2s ease;
+}
+
+.group-name:hover .ExpectedToEnd{
+  opacity: 1;
+  display: block;
+  visibility: visible;
 }
 
 .carousel-img {

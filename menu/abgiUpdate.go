@@ -3,13 +3,12 @@ package menu
 import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
+	"auto-bgi/tools"
 	_ "embed"
 	"fmt"
 	"github.com/inconshreveable/go-update"
 	"io"
 	"net/http"
-	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -82,25 +81,10 @@ func Update() error {
 	autoLog.Sugar.Infof("更新成功！请重新启动abgi")
 
 	// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
-	if err := restartProgram(); err != nil {
+	if err := tools.RestartProgram(); err != nil {
 		return fmt.Errorf("重启程序失败: %v", err)
 	}
 
 	// 更新成功，返回nil表示无错误
-	return nil
-}
-
-// 重启程序的函数
-func restartProgram() error {
-
-	// 调用 run_auto_bgi.vbs 来启动更新后的程序
-	cmd := exec.Command("wscript", "run_auto_bgi.vbs")
-	err := cmd.Start()
-	if err != nil {
-		return fmt.Errorf("启动 VBS 脚本失败: %v", err)
-	}
-
-	// 退出当前进程
-	os.Exit(0)
 	return nil
 }

@@ -1,266 +1,230 @@
 <template>
-  <div class="obs-container">
-    <!-- 背景动画 - 手机端关闭 -->
-    <div class="sky-bg" v-if="$mq === 'desktop'">
+  <div class="obs-container anime-theme">
+    <div class="sky-bg" v-if="$mq !== 'mobile'">
       <div class="cloud cloud-1"></div>
       <div class="cloud cloud-2"></div>
       <div class="sakura sakura-1"></div>
       <div class="sakura sakura-2"></div>
+      <div class="sakura sakura-3"></div>
       <div class="sparkle sparkle-1"></div>
-      <div class="sparkle sparkle-2"></div>
     </div>
 
-    <!-- 主布局：三列/单列响应式 -->
     <main class="main-layout">
-      <!-- 左侧录制控制 -->
       <aside class="control-sidebar">
-        <div class="card control-card">
+        <div class="card control-card glassy">
           <div class="card-header">
-            <h2 class="card-title">📹 录制控制</h2>
+            <span class="card-title">📹 控制台</span>
+            <div class="connection-status" :class="{ 'online': isObsConnected, 'offline': !isObsConnected }">
+              <span class="status-dot"></span>
+              {{ isObsConnected ? 'OBS已连接' : 'OBS未连接' }}
+            </div>
           </div>
           
           <div class="status-section">
-            <div class="status-badge" :class="{ recording: isRecording }">
+            <div class="status-badge" :class="{ 'recording': isRecording, 'disabled': !isObsConnected }">
               <div class="status-icon">
-                <span class="dot" :class="{ pulse: isRecording, loading: loadingStatus.gettingStatus }"></span>
+                <div class="dot" :class="{ 'loading': loadingStatus.gettingStatus }"></div>
               </div>
               <div class="status-content">
-                <div class="status-main">
-                  <span v-if="loadingStatus.gettingStatus">⏳ 连接中</span>
-                  <span v-else>{{ isRecording ? '🔴 录制中' : '⭕ 待机' }}</span>
-                </div>
-                <div class="status-sub">
-                  <span v-if="loadingStatus.gettingStatus">请稍等</span>
-                  <span v-else-if="isRecording">正在录制</span>
-                  <span v-else>点击开始</span>
-                </div>
+                <div class="status-main">{{ !isObsConnected ? '💔 断开' : (isRecording ? '🔴 录制中' : '⭕ 待机') }}</div>
+                <div class="status-sub">{{ loadingStatus.starting ? '请稍等...' : (isRecording ? '正在录制' : '点击开始') }}</div>
               </div>
             </div>
-            
-            <div class="status-badge replay-status" :class="{ recording: isReplayBufferActive }">
+
+            <div class="status-badge replay-status" :class="{ 'recording': isReplayBufferActive, 'disabled': !isObsConnected }">
               <div class="status-icon">
-                <span class="dot" :class="{ pulse: isReplayBufferActive, loading: loadingStatus.gettingReplayStatus }"></span>
+                <div class="dot" :class="{ 'loading': loadingStatus.gettingReplayStatus }"></div>
               </div>
               <div class="status-content">
-                <div class="status-main">
-                  <span v-if="loadingStatus.gettingReplayStatus">⏳ 连接中</span>
-                  <span v-else>{{ isReplayBufferActive ? '🟢 回放激活' : '⚪ 回放待机' }}</span>
-                </div>
-                <div class="status-sub">
-                  <span v-if="loadingStatus.gettingReplayStatus">请稍等</span>
-                  <span v-else-if="isReplayBufferActive">缓冲运行中</span>
-                  <span v-else>启动后可用</span>
-                </div>
+                <div class="status-main">{{ !isObsConnected ? '💔 断开' : (isReplayBufferActive ? '🟢 回放激活' : '⚪ 回放待机') }}</div>
+                <div class="status-sub">{{ isReplayBufferActive ? '缓冲运行中' : '启动后可用' }}</div>
               </div>
             </div>
           </div>
 
           <div class="control-buttons">
-            <div class="section-title">📹 录制</div>
+            <div v-if="!isObsConnected" class="offline-alert">
+              ⚠️ 无法连接到 OBS 服务
+              <button class="btn small refresh-btn" @click="checkConnection">重试</button>
+            </div>
+
+            <div class="section-title">📹 录制操作</div>
             <div class="btn-row">
               <button 
-                class="btn primary" 
+                class="btn primary large" 
                 @click="startRecording" 
-                :disabled="isRecording || loadingStatus.starting"
+                :disabled="!isObsConnected || isRecording || loadingStatus.starting"
               >
-                <span class="btn-icon">
-                  <MobileSpinner v-if="loadingStatus.starting" />
-                  <span v-else>🎬</span>
-                </span>
-                <span class="btn-text">{{ loadingStatus.starting ? '启动中' : '开始' }}</span>
+                <span class="btn-icon" v-if="!loadingStatus.starting">🎬</span>
+                <MobileSpinner v-else />
+                <span class="btn-text">{{ loadingStatus.starting ? '启动中' : '开始录制' }}</span>
               </button>
+              
               <button 
-                class="btn secondary" 
+                class="btn secondary large" 
                 @click="stopRecording" 
-                :disabled="!isRecording || loadingStatus.stopping"
+                :disabled="!isObsConnected || !isRecording || loadingStatus.stopping"
               >
-                <span class="btn-icon">
-                  <MobileSpinner v-if="loadingStatus.stopping" />
-                  <span v-else>⏹️</span>
-                </span>
-                <span class="btn-text">{{ loadingStatus.stopping ? '停止中' : '停止' }}</span>
+                <span class="btn-icon" v-if="!loadingStatus.stopping">⏹️</span>
+                <MobileSpinner v-else />
+                <span class="btn-text">{{ loadingStatus.stopping ? '停止中' : '停止录制' }}</span>
               </button>
             </div>
-            
-            <div class="section-title">🔄 回放缓冲</div>
+
+            <div class="section-title">🔄 回放缓冲操作</div>
             <div class="btn-row">
               <button 
-                class="btn primary" 
+                class="btn accent" 
                 @click="startReplayBuffer" 
-                :disabled="isReplayBufferActive || loadingStatus.startingReplay"
+                :disabled="!isObsConnected || isReplayBufferActive || loadingStatus.startingReplay"
               >
-                <span class="btn-icon">
-                  <MobileSpinner v-if="loadingStatus.startingReplay" />
-                  <span v-else>▶️</span>
-                </span>
-                <span class="btn-text">{{ loadingStatus.startingReplay ? '启动中' : '启动' }}</span>
+                <span class="btn-icon">▶️</span>
+                <span class="btn-text">{{ loadingStatus.startingReplay ? '启动中' : '启动回放' }}</span>
               </button>
+              
               <button 
                 class="btn secondary" 
                 @click="stopReplayBuffer" 
-                :disabled="!isReplayBufferActive || loadingStatus.stoppingReplay"
+                :disabled="!isObsConnected || !isReplayBufferActive || loadingStatus.stoppingReplay"
               >
-                <span class="btn-icon">
-                  <MobileSpinner v-if="loadingStatus.stoppingReplay" />
-                  <span v-else>⏸️</span>
-                </span>
-                <span class="btn-text">{{ loadingStatus.stoppingReplay ? '停止中' : '停止' }}</span>
+                <span class="btn-icon">⏸️</span>
+                <span class="btn-text">{{ loadingStatus.stoppingReplay ? '停止中' : '停止回放' }}</span>
               </button>
             </div>
+
             <button 
-              class="btn accent" 
+              class="btn save-btn" 
               @click="saveReplayBuffer" 
-              :disabled="!isReplayBufferActive || loadingStatus.savingReplay"
+              :disabled="!isObsConnected || !isReplayBufferActive || loadingStatus.savingReplay"
             >
-              <span class="btn-icon">
-                <MobileSpinner v-if="loadingStatus.savingReplay" />
-                <span v-else>💾</span>
-              </span>
-              <span class="btn-text">{{ loadingStatus.savingReplay ? '保存中' : '保存回放' }}</span>
+              <MobileSpinner v-if="loadingStatus.savingReplay" />
+              <span class="btn-icon" v-else>💾</span>
+              <span class="btn-text">{{ loadingStatus.savingReplay ? '保存中...' : '保存回放片段' }}</span>
             </button>
             
-            <div class="section-title">📂 文件</div>
-            <button 
-              class="btn ghost" 
-              @click="fetchVideos" 
-              :disabled="loadingStatus.fetchingVideos"
-            >
-              <span class="btn-icon">
+            <div class="divider"></div>
+            
+            <div class="section-title">📂 系统</div>
+            <div class="btn-row">
+              <button 
+                class="btn ghost" 
+                @click="fetchVideos" 
+                :disabled="loadingStatus.fetchingVideos"
+              >
                 <MobileSpinner v-if="loadingStatus.fetchingVideos" />
-                <span v-else>🔄</span>
-              </span>
-              <span class="btn-text">{{ loadingStatus.fetchingVideos ? '加载中' : '刷新列表' }}</span>
-            </button>
+                <span class="btn-icon" v-else>🔄</span>
+                <span class="btn-text">{{ loadingStatus.fetchingVideos ? '加载中' : '刷新列表' }}</span>
+              </button>
 
-                 <button 
-              class="btn ghost" 
-              @click="comeBack" 
-            >
-              <span class="btn-text">返回首页</span>
-            </button>
+              <button class="btn ghost" @click="comeBack">
+                <span class="btn-icon">🏠</span>
+                <span class="btn-text">返回首页</span>
+              </button>
+            </div>
           </div>
         </div>
       </aside>
 
-      <!-- 中间播放器区域 -->
-  <section class="player-section">
-        <div v-if="currentVideo" class="player-container">
-          <transition name="fade">
-            <div class="card player-card">
+      <section class="player-section" :class="{'active': currentVideo}">
+        <div class="card player-card glassy">
+          <transition name="fade" mode="out-in">
+            <div v-if="currentVideo" class="player-container" key="player">
               <div class="player-header">
-                <h2 class="player-title">
+                <div class="player-title">
                   <span class="icon">▶️</span>
-                  {{ currentVideoName }}
-                </h2>
-                <button 
-                  class="btn ghost small close-btn" 
-                  @click="currentVideo = ''" 
-                  :disabled="loadingStatus.loadingVideo"
-                  title="关闭"
-                >
-                  <MobileSpinner v-if="loadingStatus.loadingVideo" />
-                  <span v-else>✕</span>
-                </button>
+                  <span class="text">{{ currentVideoName }}</span>
+                </div>
+                <button class="btn small close-btn" @click="closePlayer">✕</button>
               </div>
               
               <div class="video-wrapper">
-                <video
+                <video 
                   ref="videoRef"
+                  controls 
+                  autoplay
                   class="main-video"
                   :src="getVideoStreamUrl(currentVideo)"
-                  controls
-                  autoplay
-                  playsinline
-                ></video>
+                  @ratechange="handleRateChange"
+                >
+                  您的浏览器不支持视频播放
+                </video>
+
+                <div class="speed-control-panel">
+                  <div class="speed-label">🚀 播放倍速</div>
+                  <div class="speed-grid">
+                    <button class="speed-btn" :class="{ active: currentPlaybackRate === 1.0 }" @click="setPlaybackRate(1.0)">1.0x</button>
+                    <button class="speed-btn" :class="{ active: currentPlaybackRate === 2.0 }" @click="setPlaybackRate(2.0)">2.0x</button>
+                    <button class="speed-btn high-speed" :class="{ active: currentPlaybackRate === 5.0 }" @click="setPlaybackRate(5.0)">5.0x</button>
+                    <button class="speed-btn high-speed" :class="{ active: currentPlaybackRate === 8.0 }" @click="setPlaybackRate(8.0)">8.0x</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div v-else class="empty-player" key="empty">
+              <div class="empty-content">
+                <div class="empty-icon">🎞️</div>
+                <h3>选择视频播放</h3>
+                <p>点击右侧列表观看回放 ~</p>
+                <div class="cute-decoration">｡◕‿◕｡</div>
               </div>
             </div>
           </transition>
         </div>
-        
-        <div v-else class="empty-player">
-          <div class="empty-content">
-            <div class="empty-icon">🎞️</div>
-            <h3>选择视频播放</h3>
-            <p class="mobile-hide">点击下方视频～</p>
-            <p class="mobile-show">在下方列表选择视频</p>
-          </div>
-        </div>
       </section>
 
-      <!-- 右侧视频列表 -->
-  <aside class="video-sidebar">
-        <div class="card list-card">
+      <aside class="video-sidebar">
+        <div class="card list-card glassy">
           <div class="card-header">
-            <h2 class="card-title">
-              <span v-if="loadingStatus.fetchingVideos">⏳</span>
-              <span v-else>📂</span>
-              {{ loadingStatus.fetchingVideos ? '加载中' : `文件 (${videos.length})` }}
-            </h2>
-            <button 
-              class="btn ghost small mobile-close" 
-              @click="fetchVideos" 
-              :disabled="loadingStatus.fetchingVideos"
-            >
-              <MobileSpinner v-if="loadingStatus.fetchingVideos" />
-              <span v-else>🔄</span>
+            <div class="header-left">
+              <span class="card-title">📂 文件列表</span>
+              <span class="badge" v-if="videos.length">{{ videos.length }}</span>
+            </div>
+            <button class="btn small refresh-icon" @click="fetchVideos" :disabled="loadingStatus.fetchingVideos">
+              <span :class="{'spin': loadingStatus.fetchingVideos}">🔄</span>
             </button>
           </div>
-          
-          <div class="video-list">
-            <transition-group name="list" tag="div">
+
+          <div class="video-list custom-scroll">
+            <div v-if="loadingStatus.fetchingVideos" class="mobile-loading">
+               <div class="list-spinner"></div>
+               <p class="loading-text">加载文件中...</p>
+            </div>
+
+            <transition-group name="list" tag="div" v-else-if="videos.length > 0">
               <div 
                 v-for="video in videos" 
-                :key="video.path" 
+                :key="video.name" 
                 class="video-item"
+                :class="{ 'active': currentVideo === video.name }"
                 @click="playVideo(video.name)"
               >
                 <div class="video-thumbnail">
-                  <div class="thumbnail-placeholder">
-                    <span class="thumb-icon">🎬</span>
-                  </div>
+                  <span class="thumb-icon">🎬</span>
                 </div>
-                
                 <div class="video-info">
                   <div class="video-title">{{ video.name }}</div>
-                  <div class="video-meta mobile-hide">
-                    <span class="size">{{ video.sizeMB.toFixed(1) }}MB</span>
-                    <span class="duration">• {{ formatTime(video.sizeMB) }}</span>
+                  <div class="video-meta">
+                    <span class="meta-tag size">{{ video.sizeMB.toFixed(1) }}MB</span>
+                    <span class="meta-tag time">⏱ {{ formatTime(video.sizeMB) }}</span>
                   </div>
                 </div>
-                
                 <div class="video-actions">
                   <button 
-                    class="btn primary small" 
-                    @click.stop="playVideo(video.name)"
-                    :disabled="loadingStatus.loadingVideo"
-                    :title="'播放'"
-                  >
-                    <MobileSpinner v-if="loadingStatus.loadingVideo && currentVideo === video.name" />
-                    <span v-else>▶️</span>
-                  </button>
-                  <button 
-                    class="btn danger small" 
+                    class="btn small delete-btn" 
                     @click.stop="DeleteVideo(video.name)"
-                    :disabled="loadingStatus.deletingVideo"
-                    :title="'删除'"
+                    :disabled="loadingStatus.deletingVideo && deletingVideoName === video.name"
                   >
-                    <MobileSpinner v-if="loadingStatus.deletingVideo && deletingVideoName === video.name" />
-                    <span v-else>🗑️</span>
+                    🗑️
                   </button>
                 </div>
               </div>
             </transition-group>
-            
-            <div v-if="videos.length === 0 && !loadingStatus.fetchingVideos" class="empty-list">
+
+            <div v-else class="empty-list">
               <div class="empty-icon">📭</div>
-              <p>暂无文件</p>
-              <p class="empty-sub mobile-show">开始录制～</p>
-            </div>
-            
-            <!-- 手机端专用加载 -->
-            <div v-if="loadingStatus.fetchingVideos" class="mobile-loading">
-              <MobileSpinner class="list-spinner" />
-              <p class="loading-text">加载文件...</p>
+              <h3>暂无文件</h3>
             </div>
           </div>
         </div>
@@ -270,20 +234,26 @@
 </template>
 
 <script setup>
-// 获取本地 token（假设存储在 localStorage，或根据实际情况调整）
+import { ref, onMounted, reactive, computed } from 'vue'
+import { apiMethods } from '@/utils/api'
+
 function getToken() {
   return localStorage.getItem('aBgiToken') || ''
 }
 
-// 拼接带 token 的视频流 URL
 function getVideoStreamUrl(path) {
   const token = getToken()
   const url = `/api/abgiObs/PlayVideoStream?path=${encodeURIComponent(path)}${token ? `&tk=${encodeURIComponent(token)}` : ''}`
   return url
 }
-import { ref, onMounted, reactive } from 'vue'
-import { apiMethods } from '@/utils/api'
 
+// 简单的响应式判断
+const windowWidth = ref(window.innerWidth)
+const $mq = computed(() => windowWidth.value > 768 ? 'desktop' : 'mobile')
+window.addEventListener('resize', () => { windowWidth.value = window.innerWidth })
+
+// --- 状态变量 ---
+const isObsConnected = ref(false) // 新增：连接状态
 const isRecording = ref(false)
 const isReplayBufferActive = ref(false)
 const videos = ref([])
@@ -291,8 +261,8 @@ const currentVideo = ref('')
 const currentVideoName = ref('')
 const videoRef = ref(null)
 const deletingVideoName = ref('')
+const currentPlaybackRate = ref(1.0)
 
-// 加载状态管理
 const loadingStatus = reactive({
   gettingStatus: false,
   gettingReplayStatus: false,
@@ -306,18 +276,51 @@ const loadingStatus = reactive({
   deletingVideo: false
 })
 
-// 手机端专用旋转组件
 const MobileSpinner = {
   template: `<div class="mobile-spinner"></div>`
+}
+
+// --- 倍速控制 ---
+function setPlaybackRate(rate) {
+  if (videoRef.value) {
+    videoRef.value.playbackRate = rate
+    currentPlaybackRate.value = rate
+  }
+}
+
+function handleRateChange(e) {
+  if(e.target) {
+    currentPlaybackRate.value = e.target.playbackRate
+  }
+}
+
+function closePlayer() {
+  if(videoRef.value) videoRef.value.pause();
+  currentVideo.value = '';
+  currentVideoName.value = '';
+}
+
+// --- API 方法 (包含连接检测逻辑) ---
+
+// 用于手动点击重试连接
+function checkConnection() {
+  getRecordingStatus()
+  getReplayBufferStatus()
+  fetchVideos()
 }
 
 async function getRecordingStatus() {
   loadingStatus.gettingStatus = true
   try {
     const res = await apiMethods.IsRecording()
+    // 如果 API 成功返回，说明连接正常
+    isObsConnected.value = true 
     isRecording.value = res.msg?.outputActive === true
   } catch (err) {
-    console.error(err)
+    console.error("OBS Connection Error:", err)
+    // 如果报错，判定为断开连接
+    isObsConnected.value = false 
+    isRecording.value = false
   } finally {
     loadingStatus.gettingStatus = false
   }
@@ -327,46 +330,44 @@ async function getReplayBufferStatus() {
   loadingStatus.gettingReplayStatus = true
   try {
     const res = await apiMethods.GetReplayBufferStatus()
+    isObsConnected.value = true // 更新连接状态
     isReplayBufferActive.value = res.msg?.outputActive === true
   } catch (err) {
     console.error(err)
+    isObsConnected.value = false
   } finally {
     loadingStatus.gettingReplayStatus = false
   }
 }
 
 async function startRecording() {
+  if (!isObsConnected.value) return; // 双重保险
   loadingStatus.starting = true
   try {
     const res = await apiMethods.StartRecording()
-    console.log("============",res.msg)
     if (res.status === 'success') {
       isRecording.value = true
-      // 延迟后再查询状态，确保后端已更新
-      setTimeout(() => {
-        getRecordingStatus()
-      }, 500)
+      setTimeout(() => getRecordingStatus(), 500)
       fetchVideos()
-    }else {
-      alert('❌'+res.msg)
+    } else {
+      alert('❌ ' + res.msg)
     }
   } catch (err) {
     console.error(err)
+    alert('请求失败，请检查网络')
   } finally {
     loadingStatus.starting = false
   }
 }
 
 async function stopRecording() {
+  if (!isObsConnected.value) return;
   loadingStatus.stopping = true
   try {
     const res = await apiMethods.StopRecording()
     if (res.status === 'success') {
       isRecording.value = false
-      // 延迟后再查询状态，确保后端已更新
-      setTimeout(() => {
-        getRecordingStatus()
-      }, 1000)
+      setTimeout(() => getRecordingStatus(), 1000)
       fetchVideos()
     }
   } catch (err) {
@@ -377,16 +378,13 @@ async function stopRecording() {
 }
 
 async function startReplayBuffer() {
+  if (!isObsConnected.value) return;
   loadingStatus.startingReplay = true
   try {
     const res = await apiMethods.StartReplayBuffer()
-    console.log("============", res.msg)
     if (res.status === 'success') {
       isReplayBufferActive.value = true
-      // 延迟后再查询状态，确保后端已更新
-      setTimeout(() => {
-        getReplayBufferStatus()
-      }, 500)
+      setTimeout(() => getReplayBufferStatus(), 500)
     } else {
       alert('❌ ' + res.msg)
     }
@@ -398,15 +396,13 @@ async function startReplayBuffer() {
 }
 
 async function stopReplayBuffer() {
+  if (!isObsConnected.value) return;
   loadingStatus.stoppingReplay = true
   try {
     const res = await apiMethods.StopReplayBuffer()
     if (res.status === 'success') {
       isReplayBufferActive.value = false
-      // 延迟后再查询状态，确保后端已更新
-      setTimeout(() => {
-        getReplayBufferStatus()
-      }, 500)
+      setTimeout(() => getReplayBufferStatus(), 500)
     } else {
       alert('❌ ' + res.msg)
     }
@@ -418,14 +414,15 @@ async function stopReplayBuffer() {
 }
 
 async function saveReplayBuffer() {
+  if (!isObsConnected.value) return;
   loadingStatus.savingReplay = true
   try {
     const res = await apiMethods.SaveReplayBuffer()
     if (res.status === 'success') {
       alert('✨ 回放已保存！')
       fetchVideos()
-    }else {
-      alert('❌'+res.msg)
+    } else {
+      alert('❌ ' + res.msg)
     }
   } catch (err) {
     console.error(err)
@@ -439,7 +436,7 @@ async function fetchVideos() {
   try {
     const res = await apiMethods.GetVideoInfo()
     if (res.status === 'success') {
-      videos.value = res.msg==null?[]:res.msg
+      videos.value = res.msg || [] 
     }
   } catch (err) {
     console.error(err)
@@ -450,7 +447,6 @@ async function fetchVideos() {
 
 async function comeBack() {
   window.location.href = '/'
-
 }
 
 async function playVideo(name) {
@@ -459,9 +455,22 @@ async function playVideo(name) {
     currentVideo.value = name
     const videoItem = videos.value.find(v => v.name === name)
     currentVideoName.value = videoItem ? videoItem.name : ''
+    
+    // 手机端滚动
+    if ($mq.value === 'mobile') {
+      setTimeout(() => {
+        const player = document.querySelector('.player-section')
+        if(player) player.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+
+    setPlaybackRate(1.0) // 默认1倍速
+
     if (videoRef.value) {
       videoRef.value.load()
-      await videoRef.value.play()
+      try {
+        await videoRef.value.play()
+      } catch(e) { console.log('Autoplay blocked', e) }
     }
   } catch (err) {
     console.error(err)
@@ -471,13 +480,14 @@ async function playVideo(name) {
 }
 
 async function DeleteVideo(name) {
-  if (!confirm(`删除 "${name}"？`)) return
+  if (!confirm(`确认要删除 "${name}" 吗？(>_<)`)) return
   deletingVideoName.value = name
   loadingStatus.deletingVideo = true
   try {
     const res = await apiMethods.DeleteVideo(name)
     if (res.status === 'success') {
       fetchVideos()
+      if (currentVideo.value === name) closePlayer()
     }
   } catch (err) {
     console.error(err)
@@ -495,6 +505,7 @@ function formatTime(sizeMB) {
 }
 
 onMounted(() => {
+  // 初始化时检测连接
   getRecordingStatus()
   getReplayBufferStatus()
   fetchVideos()
@@ -502,589 +513,233 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap'); */
+@import '../assets/css2.css';
+
 :root {
-  --pink-50: #fdf2f8;
-  --pink-100: #fce7f3;
-  --pink-200: #fbcfe8;
-  --pink-300: #f9a8d4;
-  --pink-500: #ec4899;
-  --text-accent: #60a5fa; /* 淡蓝色，用于主要文字 */
-  --blue-200: #dbeafe;
-  --purple-400: #c084fc;
-  --gray-50: #f9fafb;
-  --gray-600: #4b5563;
-  --white: #ffffff;
-  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --pink-light: #fff0f5;
+  --pink-bg: #ffe4e1;
+  --pink-primary: #ffb7c5;
+  --pink-deep: #ff69b4;
+  --purple-accent: #b19cd9;
+  --text-main: #5d4d68;
+  --text-light: #8b7d96;
+  --glass: rgba(255, 255, 255, 0.85);
+  --shadow-soft: 0 8px 32px 0 rgba(255, 183, 197, 0.3);
+  --radius-lg: 24px;
+  --radius-md: 16px;
 }
 
+/* 全局容器 */
 .obs-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--pink-50), var(--blue-200));
-  font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #fff0f5 0%, #e6e6fa 50%, #e0ffff 100%);
+  font-family: 'M PLUS Rounded 1c', 'Microsoft YaHei', sans-serif;
+  color: var(--text-main);
   position: relative;
   overflow-x: hidden;
 }
 
-.sky-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
+/* === 背景动画 === */
+.sky-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.cloud { position: absolute; background: #fff; border-radius: 100px; opacity: 0.6; filter: blur(5px); }
+.cloud-1 { width: 180px; height: 60px; top: 10%; left: -200px; animation: float 35s linear infinite; }
+.cloud-2 { width: 120px; height: 40px; top: 25%; left: -150px; animation: float 28s linear infinite 5s; }
+.sakura { position: absolute; background: #ffb7c5; border-radius: 100% 0 100% 0; animation: fall linear infinite; }
+.sakura-1 { width: 12px; height: 12px; left: 20%; animation-duration: 10s; }
+.sakura-2 { width: 8px; height: 8px; left: 70%; animation-duration: 14s; animation-delay: 2s; }
+.sakura-3 { width: 15px; height: 15px; left: 40%; animation-duration: 12s; animation-delay: 5s; }
 
-.cloud {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 50px;
-  filter: blur(8px);
-  opacity: 0.8;
-}
-.cloud-1 { width: 200px; height: 60px; top: 20%; left: -100px; animation: float 25s ease-in-out infinite; }
-.cloud-2 { width: 150px; height: 50px; top: 60%; right: -80px; animation: float 30s ease-in-out infinite reverse; }
-
-.sakura {
-  position: absolute;
-  width: 6px; height: 6px;
-  background: var(--pink-300);
-  border-radius: 50%;
-  animation: fall 15s linear infinite;
-}
-.sakura-1 { top: -10px; left: 20%; }
-.sakura-2 { top: -10px; left: 80%; animation-delay: -5s; }
-
-.sparkle {
-  position: absolute;
-  width: 2px; height: 2px;
-  background: var(--purple-400);
-  border-radius: 50%;
-  animation: twinkle 3s ease-in-out infinite;
-}
-.sparkle-1 { top: 30%; left: 10%; }
-.sparkle-2 { top: 70%; right: 20%; animation-delay: 1.5s; }
-
+/* === 主布局 === */
 .main-layout {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 280px 1fr 340px;
+  grid-template-columns: 300px 1fr 320px;
   gap: 24px;
-  max-width: 1700px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 20px 40px;
-  min-height: calc(100vh - 140px);
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-.card-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-accent);
-}
-
-.control-sidebar { grid-column: 1; }
-.control-card { height: fit-content; }
-
-.status-section {
-  padding: 0 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.status-badge {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--pink-100);
-  border-radius: 16px;
-  border: 1px solid var(--pink-200);
-  color: var(--gray-600);
-}
-.status-badge.recording {
-  background: #fee2e2;
-  border-color: var(--pink-500);
-}
-.status-badge.replay-status.recording {
-  background: #d1fae5;
-  border-color: #10b981;
-}
-.status-icon .dot {
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: #a3a3a3;
-}
-.status-icon .dot.loading {
-  background: var(--purple-400);
-  animation: spin 1s linear infinite;
-}
-.status-badge.recording .dot {
-  background: var(--pink-500);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-.status-content .status-main {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-.status-sub {
-  font-size: 0.85rem;
-  color: #4a4060;
-}
-
-.control-buttons {
-  padding: 0 24px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.section-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--gray-600);
-  margin-top: 8px;
-  padding-left: 4px;
-  opacity: 0.8;
-}
-.section-title:first-child {
-  margin-top: 0;
-}
-.btn-row { 
-  display: flex; 
-  gap: 12px; 
-}
-.btn-row .btn {
-  flex: 1;
-}
-.btn.large { padding: 14px 20px; font-size: 1rem; }
-.btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #0d59e7;
-  color: #2d1b3a;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.btn.primary {
-  background: var(--pink-500);
-  color: rgb(14, 226, 241);
-}
-.btn.secondary {
-  background: #d1d5db;
-  color: var(--gray-600);
-}
-.btn.accent {
-  background: var(--purple-400);
-  color: rgb(14, 226, 233);
-}
-.btn.ghost {
-  background: transparent;
-  color: #4a4060;
-  border: 1px solid #d1d5db;
-}
-.btn.danger {
-  background: #fca5a5;
-  color: white;
-}
-.btn:hover:not(:disabled) { transform: translateY(-2px); }
-.btn:active:not(:disabled) { transform: translateY(0); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.player-section { 
-  grid-column: 2; 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 600px;
-}
-
-.player-container {
-  width: 100%;
-  max-width: 1000px;
-}
-.player-card {
-  padding: 0;
-}
-.player-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-.player-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--text-accent);
-}
-.player-title .icon { font-size: 1.4rem; }
-
-.video-wrapper {
   padding: 24px;
-}
-.main-video {
-  width: 100%;
-  height: auto;
-  max-height: 600px;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  height: 100vh;
+  box-sizing: border-box;
 }
 
-.empty-player {
+/* === 卡片 === */
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 2px dashed var(--pink-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.4);
+}
+.card-title { font-weight: 700; font-size: 1.1rem; color: var(--pink-deep); }
+
+/* === 左侧：状态与连接 === */
+.connection-status {
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 400px;
-  text-align: center;
-  color: #4a4060;
-}
-.empty-icon { font-size: 4rem; margin-bottom: 16px; }
-.empty-content h3 { font-size: 1.5rem; margin: 0 0 8px 0; }
-.empty-content p { margin: 0; font-size: 1rem; }
-
-.video-sidebar { grid-column: 3; }
-.list-card { height: fit-content; max-height: 80vh; }
-
-.video-list {
-  max-height: calc(80vh - 120px);
-  overflow-y: auto;
-  padding-right: 8px;
-}
-.video-item {
-  display: flex;
-  gap: 12px;
-  padding: 16px 24px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  gap: 6px;
+  padding: 4px 8px;
   border-radius: 12px;
-  margin: 0 4px;
+  font-weight: bold;
 }
-.video-item:hover { background: var(--pink-50); transform: translateX(4px); }
-.video-thumbnail {
-  flex-shrink: 0;
-  width: 64px;
-  height: 48px;
+.connection-status.online { background: #d1fae5; color: #047857; }
+.connection-status.offline { background: #fee2e2; color: #b91c1c; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+.status-section { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.status-badge {
+  display: flex; align-items: center; gap: 15px; padding: 12px 16px;
+  background: #fff; border-radius: var(--radius-md); border: 2px solid var(--pink-bg);
+  transition: all 0.3s;
 }
-.thumbnail-placeholder {
+/* 禁用状态的 Badge */
+.status-badge.disabled { opacity: 0.6; background: #f3f4f6; border-color: #e5e7eb; filter: grayscale(1); }
+
+.status-badge.recording { background: #fff0f5; border-color: var(--pink-deep); transform: scale(1.02); }
+.status-icon .dot { width: 14px; height: 14px; background: #ddd; border-radius: 50%; }
+.status-badge.recording .dot { background: #ff4757; animation: pulse 1.5s infinite; }
+
+/* === 按钮区域 === */
+.control-buttons { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.offline-alert {
+  background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 12px;
+  font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;
+}
+.section-title { font-size: 0.85rem; color: var(--pink-deep); font-weight: bold; margin-top: 10px; }
+
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+
+.btn {
+  border: none; cursor: pointer; border-radius: 50px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; font-family: inherit; font-weight: 700;
+  transition: all 0.2s;
+}
+/* 禁用状态 */
+.btn:disabled { opacity: 0.5; cursor: not-allowed; background: #e5e7eb !important; color: #9ca3af !important; box-shadow: none !important; }
+
+.btn.large { padding: 12px 20px; font-size: 1rem; }
+.btn { padding: 10px 16px; font-size: 0.9rem; }
+.btn.small { padding: 6px; min-width: 32px; min-height: 32px; border-radius: 50%; }
+
+.btn.primary { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #fff; box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4); }
+.btn.secondary { background: #f1f2f6; color: var(--text-light); }
+.btn.accent { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: white; }
+.btn.save-btn { background: var(--pink-primary); color: white; width: 100%; }
+.btn.ghost { background: transparent; border: 1px dashed var(--pink-primary); color: var(--text-main); }
+
+/* === 播放器区域 === */
+.player-section { display: flex; flex-direction: column; height: 100%; }
+.player-card { flex: 1; background: rgba(255, 255, 255, 0.95); }
+.player-header { border-bottom: 2px solid var(--pink-light); }
+.player-title { font-size: 1.2rem; color: var(--pink-deep); display: flex; align-items: center; gap: 8px; }
+
+.video-wrapper { padding: 20px; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; flex: 1; }
+.main-video { width: 100%; max-height: 55vh; border-radius: var(--radius-md); background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+/* === 新版倍速控制面板 === */
+.speed-control-panel {
   width: 100%;
-  height: 100%;
-  background: var(--pink-100);
-  border-radius: 8px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 12px 20px;
+  border: 2px solid var(--pink-light);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 12px;
 }
-.thumb-icon { font-size: 1.5rem; color: var(--pink-500); }
+.speed-label { font-weight: bold; color: var(--pink-deep); font-size: 0.9rem; white-space: nowrap; }
+.speed-grid { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; flex: 1; }
 
-.video-info {
-  flex: 1;
-  min-width: 0;
+.speed-btn {
+  border: 1px solid #eee;
+  background: rgb(235, 240, 238);
+  color: #666;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.video-title {
-  font-weight: 600;
-  color: var(--text-accent);
-  /* 在移动端允许换行以显示全名 */
-  white-space: normal;
-  overflow: visible;
-  text-overflow: initial;
-  margin-bottom: 4px;
+.speed-btn:hover { background: var(--pink-light); color: var(--pink-deep); }
+.speed-btn.active {
+  background: var(--pink-deep);
+  color: rgb(129, 235, 203);
+  border-color: var(--pink-deep);
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3);
 }
-.video-meta {
-  display: flex;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: var(--gray-600);
+.speed-btn.high-speed {
+  border-color: var(--purple-accent);
+  color: var(--purple-accent);
 }
-.video-actions { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 6px; 
-  align-items: flex-end;
-  justify-content: center;
-}
-.btn.small { 
-  padding: 8px;
-  font-size: 1rem;
-  min-width: 42px;
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn.close-btn {
-  min-width: 36px;
-  min-height: 36px;
-  padding: 6px;
-  font-size: 1.2rem;
-  line-height: 1;
+.speed-btn.high-speed.active {
+  background: var(--purple-accent);
+  color: rgb(189, 221, 115);
 }
 
-.empty-list {
-  padding: 60px 24px;
-  text-align: center;
-  color: #4a4060;
-}
-.empty-list .empty-icon { font-size: 3rem; margin-bottom: 16px; }
-.empty-sub { font-size: 0.9rem; margin-top: 4px; }
+.empty-player { height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--pink-primary); }
+.empty-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.5; }
 
-/* ========== 手机端优化 ========== */
-.mobile-hide { display: none; }
-.mobile-show { display: block; }
-
-/* 桌面上显示文件大小，移动端隐藏以节省空间 */
-@media (min-width: 1081px) {
-  .video-meta { display: flex !important; }
+/* === 视频列表 === */
+.video-sidebar { height: 100%; overflow: hidden; }
+.list-card { height: 100%; }
+.video-list { flex: 1; overflow-y: auto; padding: 10px; }
+.video-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px;
+  background: rgba(255,255,255,0.6); border-radius: 12px; cursor: pointer; transition: all 0.2s;
+  border: 1px solid transparent;
 }
-@media (max-width: 1080px) {
-  .video-meta { display: none !important; }
-}
-.btn-text { white-space: nowrap; }
+.video-item:hover { background: #fff; transform: translateX(4px); border-color: var(--pink-primary); }
+.video-item.active { background: var(--pink-light); border-color: var(--pink-deep); }
+.video-thumbnail { width: 50px; height: 50px; background: var(--pink-bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.video-info { flex: 1; min-width: 0; }
+.video-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.video-meta { display: flex; gap: 8px; font-size: 0.75rem; color: var(--text-light); }
+.meta-tag { background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; }
+.delete-btn { background: #ffebee; color: #ff5252; }
 
-.mobile-spinner {
-  width: 20px !important;
-  height: 20px !important;
-  border: 2px solid transparent;
-  border-top: 2px solid var(--pink-500);
-  border-radius: 50%;
-  animation: mobile-spin 0.8s linear infinite !important;
-}
+/* === 动画 === */
+@keyframes float { 0% { transform: translateX(0); } 100% { transform: translateX(100vw); } }
+@keyframes fall { 0% { top: -10%; transform: translateX(0) rotate(0deg); } 100% { top: 110%; transform: translateX(20px) rotate(360deg); } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } }
 
-.list-spinner {
-  width: 28px !important;
-  height: 28px !important;
-  border-width: 3px !important;
-  display: block !important;
-  margin: 20px auto !important;
-}
-
-.loading-text {
-  text-align: center !important;
-  font-size: 14px !important;
-  color: #4a4060 !important;
-  margin: 0 !important;
-}
-
-.mobile-loading {
-  padding: 40px 16px !important;
-  text-align: center !important;
-}
-
-/* ========== 响应式 ========== */
-@media (max-width: 1080px) {
-  .main-layout { 
-    grid-template-columns: 1fr; 
-    max-width: 800px; 
-    gap: 16px;
-  }
-  /* 确保视频标题与 meta 在窄屏时完整显示 */
-  .video-title { white-space: normal; word-break: break-word; }
-  .control-sidebar, .video-sidebar { grid-column: 1; }
-  .player-section { min-height: 400px; }
-  .player-container { max-width: 800px; }
-  .main-video { max-height: 450px; }
-  .btn.large { padding: 12px 16px; }
-  .btn.small { padding: 5px 10px; }
-}
-
+/* === 手机端响应式 === */
 @media (max-width: 768px) {
-  .main-layout { 
-    padding: 0 12px 20px; 
-    gap: 12px;
-    display: flex;
-    flex-direction: column;
-  }
+  .sky-bg { display: none; }
+  .main-layout { display: flex; flex-direction: column; padding: 12px; height: auto; gap: 16px; }
+  .player-section { order: 1; margin-bottom: 10px; }
+  .control-sidebar { order: 2; }
+  .video-sidebar { order: 3; }
+  .player-section:not(.active) { display: none; }
+  .player-section.active { display: block; height: auto; }
+  .card { border-radius: 16px; }
+  .video-list { max-height: 400px; }
   
-  /* 控制区域优化 - 保持显示但更紧凑 */
-  .control-sidebar { 
-    order: 1;
-    width: 100%;
-  }
-  .control-card { 
-    padding: 0;
-  }
-  .card-header { 
-    padding: 14px 16px 12px; 
-  }
-  .card-title {
-    font-size: 1.1rem;
-  }
-  .status-section {
-    padding: 0 16px 14px;
-    gap: 10px;
-  }
-  .status-badge {
-    padding: 12px;
-  }
-  .status-main { 
-    font-size: 0.95rem;
-  }
-  .status-sub { 
-    font-size: 0.75rem;
-  }
+  /* 手机端倍速面板优化 */
+  .speed-control-panel { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .speed-grid { width: 100%; justify-content: space-between; }
+  .speed-btn { flex: 1; text-align: center; padding: 8px 0; }
   
-  /* 按钮区域优化 */
-  .control-buttons { 
-    padding: 0 16px 16px; 
-    gap: 8px;
-  }
-  .section-title {
-    font-size: 0.85rem;
-    margin-top: 6px;
-  }
-  .btn-row { 
-    gap: 10px; 
-  }
-  .btn.large { 
-    padding: 13px 18px; 
-    font-size: 0.95rem;
-  }
-  .btn-text { 
-    font-size: 0.85rem;
-  }
-  .btn-icon {
-    font-size: 1rem;
-  }
-  
-  /* 视频列表区域 - 第二显示 */
-  .video-sidebar { 
-    order: 2;
-    width: 100%;
-  }
-  .list-card { 
-    max-height: none;
-  }
-  .video-list { 
-    max-height: 400px;
-    overflow-y: auto;
-  }
-  .video-item { 
-    padding: 10px 16px;
-    gap: 10px;
-  }
-  .video-thumbnail { 
-    width: 52px;
-    height: 39px;
-  }
-  .video-title { 
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
-  .video-actions { 
-    gap: 4px;
-  }
-  .btn.small { 
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    min-width: 38px;
-    font-size: 1rem;
-  }
-  
-  /* 播放器区域 - 最后显示（选择后展开） */
-  .player-section { 
-    order: 3;
-    min-height: auto;
-  }
-  .player-container { 
-    max-width: 100%; 
-  }
-  .main-video { 
-    max-height: 350px;
-  }
-  .player-header {
-    padding: 14px 16px;
-  }
-  .player-title {
-    font-size: 1.1rem;
-  }
-  .video-wrapper {
-    padding: 16px;
-  }
-  .empty-player {
-    height: 280px;
-  }
-  .empty-icon {
-    font-size: 3rem;
-  }
-  .empty-content h3 {
-    font-size: 1.2rem;
-  }
-  
-  /* 移动端专用样式 */
-  .close-btn {
-    min-width: 40px !important;
-    min-height: 40px !important;
-    padding: 8px !important;
-    font-size: 1.3rem !important;
-  }
-  .mobile-hide { 
-    display: none !important; 
-  }
-  .mobile-show { 
-    display: block !important; 
-  }
-  
-  /* 动画简化 */
-  .list-enter-active, 
-  .list-leave-active,
-  .fade-enter-active, 
-  .fade-leave-active { 
-    transition: all 0.2s ease; 
-  }
-  .list-enter-from, 
-  .list-leave-to { 
-    opacity: 0; 
-    transform: translateY(-8px); 
-  }
+  .mobile-spinner { width: 18px; height: 18px; border: 2px solid transparent; border-top: 2px solid currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .list-spinner { width: 30px; height: 30px; border: 3px solid var(--pink-primary); border-top-color: transparent; border-radius: 50%; margin: 20px auto; animation: spin 0.8s linear infinite; }
 }
-
-/* ========== 动画 ========== */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes mobile-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
-@keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
-@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0); } 50% { opacity: 1; transform: scale(1); } }
-@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
-
-.video-list::-webkit-scrollbar { width: 6px; }
-.video-list::-webkit-scrollbar-track { background: transparent; }
-.video-list::-webkit-scrollbar-thumb { background: var(--pink-300); border-radius: 3px; }
 </style>

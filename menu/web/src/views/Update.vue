@@ -139,6 +139,10 @@ const doUpdate = async () => {
   note.value = ''
   try {
     const res = await apiMethods.aBgiUpdate()
+      setTimeout(() => {
+        window.location.href = '/' // 跳转到登录页
+      }, 3500)
+
 
     // 修正：原代码使用了赋值符号 = ，这里修正为 == 或 ===
     // 逻辑：如果是200或success为true，视为成功
@@ -149,7 +153,7 @@ const doUpdate = async () => {
       // 给予1.5秒延迟让用户看到成功提示
       setTimeout(() => {
         window.location.href = '/login' // 跳转到登录页
-      }, 1500)
+      }, 3500)
 
     } else {
       message.success((res && (res.msg || res.message)) || '更新请求已发送（请检查服务端日志）')

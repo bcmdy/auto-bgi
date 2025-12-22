@@ -46,19 +46,25 @@ api.interceptors.response.use(
       router.push('/login')
       return Promise.reject(error)
     }
+  
+
 
     // 2. 【新增】处理网络错误、后端未启动、连接超时等情况
     // 如果 error.response 不存在，说明根本没有收到后端的响应
-    if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || error.message.includes('Network Error')) {
-      console.error('连接失败：后端未启动或网络异常', error.message)
-      
-      // 可选：清除 token，防止死循环
-      // localStorage.removeItem('aBgiToken') 
-      
-      // 只有当前不在登录页时才跳转，防止重复跳转报错
-      if (router.currentRoute.path !== '/login') {
-         router.push('/login')
+    if ( error.code === 'ERR_BAD_RESPONSE') {
+            console.error('连接失败：后端未启动或网络异常', error.message)
+            var token = localStorage.getItem('aBgiToken')
+            if (token==null) {
+              localStorage.removeItem('aBgiToken')
+                // 只有当前不在登录页时才跳转，防止重复跳转报错
+            if (router.currentRoute._rawValue.path !== '/login') {
+              router.push('/login')
+              return
+            }
       }
+      
+      
+    
       return Promise.reject(error)
     }
     
