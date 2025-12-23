@@ -1,48 +1,57 @@
 <template>
-  <div class="container" :class="{ hacker: isHackerTheme }">
-    <!-- 背景动画canvas -->
-    <canvas ref="animeStars" id="animeStars"></canvas>
+  <div class="app-container" :class="{ 'theme-hacker': isHackerTheme }">
+    <canvas ref="animeStars" id="bg-canvas"></canvas>
 
-    <!-- 页面头部 -->
-    <header class="topbar">
-      <button class="homeBtn" @click="goHome">返回首页</button>
-
-      <div class="titleWrap">
-        <h1 class="title">实时日志查看</h1>
-        <p class="subtitle">LIVE · STREAM · LOG</p>
+    <header class="navbar">
+      <div class="nav-center">
+        <h1 class="page-title">BGI实时日志</h1>
+        <div class="status-dot" :class="{ active: ws && ws.readyState === 1 }"></div>
       </div>
 
-      <div class="controls">
-        <label class="srOnly" for="logSelector">选择日志文件</label>
-        <select id="logSelector" v-model="selectedLog" @change="onLogChange">
-          <option v-for="file in logFiles" :key="file" :value="file">
-            {{ file }}
-          </option>
-        </select>
-
-        <button id="themeToggle" @click="toggleTheme">
-          {{ isHackerTheme ? '切换中二风' : '切换黑客风' }}
+      <div class="nav-right">
+        <div class="select-wrapper">
+          <select v-model="selectedLog" @change="onLogChange" class="glass-select">
+            <option value="" disabled>选择日志源...</option>
+            <option v-for="file in logFiles" :key="file" :value="file">{{ file }}</option>
+          </select>
+        </div>
+        <button class="glass-btn theme-btn" @click="toggleTheme">
+          {{ isHackerTheme ? '魔法风' : '黑客风' }}
         </button>
       </div>
     </header>
 
-    <!-- 主内容区域 -->
-    <main class="main">
-      <div class="logShell">
-        <div id="log" ref="logContainer">{{ logContent }}</div>
-      </div>
-    </main>
+    <div class="content-body">
+      <section class="panel-section log-section">
+        <div class="panel-header">
+          <span class="panel-label">实时日志</span>
+          <div class="window-controls">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+        </div>
+        <div class="log-viewport" ref="logContainer">
+          <pre class="log-text">{{ logContent }}</pre>
+        </div>
+      </section>
 
-    <!-- 轮播图背景（桌面端显示） -->
-    <div class="right-bg-swiper" aria-hidden="true">
-      <div class="swiper-wrapper" ref="swiperWrapper">
-        <!-- 动态插入图片 -->
-      </div>
-      <!-- 装饰层 -->
-      <div class="swiperFrame" />
+      <aside class="panel-section swiper-section">
+        <div class="swiper-container right-bg-swiper">
+          <div class="swiper-wrapper" ref="swiperWrapper">
+          </div>
+          <div class="decorative-frame"></div>
+        </div>
+      </aside>
     </div>
+
+    <button class="glass-btn floating-home-btn" @click="goHome" title="返回首页">
+      <span class="icon">⌂</span>
+    </button>
+
   </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
@@ -52,28 +61,28 @@ import 'swiper/css/bundle'
 
 const router = useRouter()
 
-// 响应式数据
+// --- 响应式数据 ---
 const animeStars = ref(null)
 const logContainer = ref(null)
 const swiperWrapper = ref(null)
 const selectedLog = ref('')
 const logFiles = ref([])
-const logContent = ref('正在加载日志列表...')
+const logContent = ref('>> System Initializing...\n>> Waiting for log selection...')
 const isHackerTheme = ref(false)
 
-// 常量定义
+// --- 常量配置 ---
 const CONSTANTS = {
-  STAR_COUNT: 100,
+  STAR_COUNT: 80,
   SWIPER_CONFIG: {
-    delay: 10000, // 10秒切换一次
-    speed: 1000
+    delay: 8000,
+    speed: 1200
   },
-  STATIC_IMAGES: ['bd.jpg', 'ff.png', 'ng.jpg', 'sh.jpg'],
-  IMG_CACHE_KEY: 'chuunibyou_bg_cache_v1',
-  IMG_CACHE_TTL: 1000 * 60 * 60 * 24 * 7 // 7天
+  STATIC_IMAGES: ['bd.jpg', 'ff.png', 'ng.jpg', 'sh.jpg'], // 确保这些图片在 public/img/ 下
+  IMG_CACHE_KEY: 'sys_bg_cache_v1',
+  IMG_CACHE_TTL: 604800000 // 7天
 }
 
-// WebSocket 相关
+// --- WebSocket 变量 ---
 let ws = null
 let canvas = null
 let ctx = null
@@ -83,39 +92,30 @@ const stars = []
 let mySwiper = null
 let rafId = 0
 
-// 路由跳转到首页
-const goHome = () => {
-  router.push('/')
-}
+// --- 核心逻辑 ---
 
-// 切换主题
+const goHome = () => router.push('/')
+
 const toggleTheme = () => {
   isHackerTheme.value = !isHackerTheme.value
-
-  // 重新设置星星效果以适应新主题
   setupStars()
-
-  // 确保日志容器在主题切换后仍然可见
-  nextTick(() => {
-    if (logContainer.value) {
-      logContainer.value.style.display = 'block'
-      logContainer.value.style.visibility = 'visible'
-      logContainer.value.style.opacity = '1'
-    }
-  })
+  // 强制滚动到底部
+  nextTick(scrollToBottom)
 }
 
-// 日志选择变化
 const onLogChange = () => {
-  if (selectedLog.value) {
-    connectWebSocket(selectedLog.value)
+  if (selectedLog.value) connectWebSocket(selectedLog.value)
+}
+
+const scrollToBottom = () => {
+  if (logContainer.value) {
+    logContainer.value.scrollTop = logContainer.value.scrollHeight
   }
 }
 
-// 设置背景动画
+// --- 动画效果 (保留原有逻辑，微调参数) ---
 const setupStars = () => {
   if (!animeStars.value) return
-
   canvas = animeStars.value
   ctx = canvas.getContext('2d')
   width = window.innerWidth
@@ -124,101 +124,70 @@ const setupStars = () => {
   canvas.height = height
 
   stars.length = 0
+  const isHacker = isHackerTheme.value
+
   for (let i = 0; i < CONSTANTS.STAR_COUNT; i++) {
-    const isHacker = isHackerTheme.value
     stars.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: Math.random() * (isHacker ? 4 : 3) + 1,
-      speed: Math.random() * (isHacker ? 0.1 : 0.05) + 0.01,
-      brightness: 0,
-      maxBrightness: Math.random() * 0.8 + 0.2,
-      increasing: true,
-      color: isHacker
-        ? Math.random() > 0.3
-          ? '#00ff41'
-          : '#00ff88'
-        : Math.random() > 0.5
-          ? '#ff5fd7'
-          : '#8b5cff',
-      // 黑客主题下添加下降效果
-      fallSpeed: isHacker ? Math.random() * 2 + 0.5 : 0
+      size: Math.random() * (isHacker ? 3 : 2) + 1,
+      speed: Math.random() * 0.05 + 0.02,
+      brightness: Math.random(),
+      maxBrightness: Math.random() * 0.5 + 0.5,
+      increasing: Math.random() > 0.5,
+      // 颜色配置：粉色魔法 vs 绿色代码
+      color: isHacker 
+        ? (Math.random() > 0.8 ? '#0f0' : '#00ff41') 
+        : (Math.random() > 0.5 ? '#ff7eb3' : '#7afcff')
     })
   }
 }
 
-// 绘制星星动画
 const drawStars = () => {
   if (!ctx) return
-
   ctx.clearRect(0, 0, width, height)
   const isHacker = isHackerTheme.value
 
   stars.forEach(star => {
+    // 闪烁逻辑
     star.brightness += star.increasing ? star.speed : -star.speed
-    if (star.brightness >= star.maxBrightness || star.brightness <= 0) {
-      star.increasing = !star.increasing
-    }
+    if (star.brightness >= star.maxBrightness) star.increasing = false
+    if (star.brightness <= 0.1) star.increasing = true
 
-    // 黑客主题下的下降效果
-    if (isHacker && star.fallSpeed) {
-      star.y += star.fallSpeed
-      if (star.y > height) {
-        star.y = -star.size
-        star.x = Math.random() * width
-      }
-    }
-
-    ctx.beginPath()
-    ctx.fillStyle = star.color
-    ctx.globalAlpha = star.brightness
-
+    // 移动逻辑 (Hacker模式下坠，Magic模式漂浮)
     if (isHacker) {
-      // 黑客主题下绘制数字/字符效果
-      const chars = ['0', '1', '/', '+', '-', '*', '=', '<', '>', '[', ']', '{', '}', '#']
-      const char = chars[Math.floor(Math.random() * chars.length)]
-      ctx.font = `${star.size * 4}px Courier New`
-      ctx.textAlign = 'center'
-      ctx.fillText(char, star.x, star.y)
-
-      // 添加光晕效果
-      ctx.shadowColor = star.color
-      ctx.shadowBlur = star.size * 2
-      ctx.fillText(char, star.x, star.y)
-      ctx.shadowBlur = 0
+      star.y += star.speed * 20
+      if (star.y > height) star.y = 0
     } else {
-      // 普通主题下绘制星星
-      const spikes = 5
-      const outerRadius = star.size
-      const innerRadius = star.size / 2
-      let rot = (Math.PI / 2) * 3
-      const step = Math.PI / spikes
+      star.y -= star.speed * 5
+      if (star.y < 0) star.y = height
+    }
 
-      ctx.moveTo(star.x, star.y - outerRadius)
-      for (let i = 0; i < spikes; i++) {
-        ctx.lineTo(star.x + Math.cos(rot) * outerRadius, star.y + Math.sin(rot) * outerRadius)
-        rot += step
-        ctx.lineTo(star.x + Math.cos(rot) * innerRadius, star.y + Math.sin(rot) * innerRadius)
-        rot += step
-      }
-      ctx.closePath()
+    ctx.globalAlpha = star.brightness
+    ctx.fillStyle = star.color
+    
+    if (isHacker) {
+      // 绘制字符
+      ctx.font = '12px monospace'
+      ctx.fillText(Math.random() > 0.5 ? '1' : '0', star.x, star.y)
+    } else {
+      // 绘制圆点
+      ctx.beginPath()
+      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2)
       ctx.fill()
     }
-
-    ctx.globalAlpha = 1
   })
-
+  ctx.globalAlpha = 1
   rafId = requestAnimationFrame(drawStars)
 }
 
-// WebSocket连接 - 优化版本（保持接口不变）
+// --- WebSocket 逻辑 ---
 const connectWebSocket = name => {
   if (ws) {
     ws.close()
     ws = null
   }
-
-  logContent.value = `正在连接 ${name} 日志服务...\n`
+  logContent.value = `>> 连接日志: ${name}...\n`
 
   try {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
@@ -227,741 +196,464 @@ const connectWebSocket = name => {
 
     ws.onmessage = e => {
       if (!logContainer.value) return
-
-      const atBottom =
-        logContainer.value.scrollHeight - logContainer.value.scrollTop <=
-        logContainer.value.clientHeight + 10
+      // 判断是否在底部，决定是否自动滚动
+      const el = logContainer.value
+      const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 50
+      
       logContent.value += e.data
 
-      if (atBottom) {
-        nextTick(() => {
-          if (logContainer.value) {
-            logContainer.value.scrollTop = logContainer.value.scrollHeight
-          }
-        })
-      }
+      if (isAtBottom) nextTick(scrollToBottom)
     }
 
     ws.onopen = () => {
-      logContent.value += `[已连接到 ${name}]\n`
-      console.log(`WebSocket 连接成功: ${name}`)
+      logContent.value += `>> [SUCCESS] 连接成功: ${name}\n----------------------------------------\n`
     }
-
-    ws.onclose = event => {
-      logContent.value += `\n[连接已关闭 - 代码: ${event.code}]`
-      console.log(`WebSocket 连接关闭: ${name}, 代码: ${event.code}`)
+    ws.onclose = e => {
+      logContent.value += `\n>> [CLOSED] 连接已终止 (Code: ${e.code})`
     }
-
-    ws.onerror = error => {
-      logContent.value += '\n[连接出错]'
-      console.error(`WebSocket 连接错误: ${name}`, error)
+    ws.onerror = () => {
+      logContent.value += `\n>> [ERROR] 连接失败.`
     }
-  } catch (error) {
-    logContent.value += `\n[创建WebSocket连接失败: ${error.message}]`
-    console.error('WebSocket 创建失败:', error)
+  } catch (err) {
+    logContent.value += `\n>> [FATAL] 连接失败: ${err.message}`
   }
 }
 
-// 加载日志文件列表（保持接口不变）
+// --- 数据加载 (保持原有) ---
 const loadLogFiles = async () => {
   try {
     const token = localStorage.getItem('aBgiToken')
-    console.log('获取到的 token:', token)
-
-    const headers = {}
-    if (token) {
-      headers['Authorization'] = `${token}`
-    }
-
+    const headers = token ? { 'Authorization': token } : {}
     const res = await fetch('/api/logFiles', { headers })
-
-    if (!res.ok) {
-      if (res.status === 401) {
-        logContent.value = '未授权 (401)，请先登录并确保 token 可用。'
-      } else {
-        let txt = ''
-        try {
-          txt = await res.text()
-        } catch (e) {
-          txt = ''
-        }
-        logContent.value = `加载日志列表失败：${res.status} ${res.statusText}\n${txt}`
-      }
-      return
-    }
-
+    
+    if (!res.ok) throw new Error(`Status ${res.status}`)
     const data = await res.json()
+    
     if (data.files?.length) {
       logFiles.value = data.files
       selectedLog.value = data.files[0]
       connectWebSocket(data.files[0])
     } else {
-      logContent.value = '未找到日志文件。'
+      logContent.value = '>> No log files available.'
     }
   } catch (err) {
-    logContent.value = '加载日志列表失败。\n' + (err && err.message ? err.message : String(err))
+    logContent.value = `>> Failed to load file list: ${err.message}`
   }
 }
 
-// 轻量缓存：记住“哪些静态图曾经加载成功”，减少无意义重试（不改后端）
-const getCachedImages = () => {
-  try {
-    const raw = localStorage.getItem(CONSTANTS.IMG_CACHE_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw)
-    if (!data || !Array.isArray(data.list) || !data.ts) return null
-    if (Date.now() - data.ts > CONSTANTS.IMG_CACHE_TTL) return null
-    return data.list
-  } catch {
-    return null
-  }
-}
-
-const setCachedImages = list => {
-  try {
-    localStorage.setItem(
-      CONSTANTS.IMG_CACHE_KEY,
-      JSON.stringify({ ts: Date.now(), list })
-    )
-  } catch {
-    // ignore
-  }
-}
-
-// 预加载图片
-const preloadImages = list => {
-  return Promise.all(
-    list.map(imgSrc => {
-      return new Promise(resolve => {
-        const img = new Image()
-        img.onload = () => resolve(imgSrc)
-        img.onerror = () => {
-          console.warn(`图片预加载失败: ${imgSrc}`)
-          resolve(null)
-        }
-        img.src = `/img/${imgSrc}`
-      })
-    })
-  )
-}
-
-// 获取轮播图片 - 直接使用静态目录中的图片
+// --- 轮播图逻辑 (优化适配) ---
 const getImages = async () => {
-  try {
-    if (!swiperWrapper.value) {
-      console.error('找不到轮播容器')
-      return
-    }
+  // 移动端直接跳过
+  if (window.innerWidth <= 768) return
+  if (!swiperWrapper.value) return
 
-    // 移动端不需要轮播：直接不初始化（避免浪费性能）
-    if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-      return
-    }
+  // 简单的缓存/加载逻辑
+  const cached = localStorage.getItem(CONSTANTS.IMG_CACHE_KEY)
+  const list = cached ? JSON.parse(cached).list : CONSTANTS.STATIC_IMAGES
+  
+  // 渲染DOM
+  swiperWrapper.value.innerHTML = ''
+  list.forEach(src => {
+    const div = document.createElement('div')
+    div.className = 'swiper-slide'
+    const img = document.createElement('img')
+    img.src = `/img/${src}`
+    // 使用 Object-fit: cover 保证填满1/3区域
+    img.style.width = '100%'
+    img.style.height = '100%'
+    img.style.objectFit = 'cover'
+    img.style.borderRadius = '12px'
+    div.appendChild(img)
+    swiperWrapper.value.appendChild(div)
+  })
 
-    console.log('开始加载轮播图片...')
+  await nextTick()
 
-    // 优先用缓存（成功列表），没有再用静态常量
-    const cached = getCachedImages()
-    const baseList = cached && cached.length ? cached : CONSTANTS.STATIC_IMAGES
-
-    const loadedImages = await preloadImages(baseList)
-    const validImages = loadedImages.filter(img => img !== null)
-
-    // 写回缓存（只缓存成功项）
-    if (validImages.length) setCachedImages(validImages)
-
-    console.log('有效图片数量:', validImages.length, validImages)
-
-    if (validImages.length < 2) {
-      console.warn('图片数量不足，无法轮播')
-      return
-    }
-
-    swiperWrapper.value.innerHTML = ''
-
-    const imagePromises = validImages.map((imgSrc, i) => {
-      return new Promise(resolve => {
-        const slide = document.createElement('div')
-        slide.classList.add('swiper-slide')
-        const img = document.createElement('img')
-        img.src = `/img/${imgSrc}`
-        img.alt = `轮播图${i + 1}`
-
-        img.onload = () => {
-          const aspectRatio = img.naturalWidth / img.naturalHeight
-          img.style.width = 'auto'
-          img.style.height = 'auto'
-          img.style.objectFit = 'contain'
-
-          if (aspectRatio > 1.2) {
-            img.style.maxWidth = '100%'
-            img.style.maxHeight = '90vh'
-          } else if (aspectRatio < 0.8) {
-            img.style.maxWidth = '100%'
-            img.style.maxHeight = '94vh'
-          } else {
-            img.style.maxWidth = '100%'
-            img.style.maxHeight = '92vh'
-          }
-          resolve()
-        }
-
-        img.onerror = () => {
-          console.error(`图片 ${imgSrc} 加载失败`)
-          resolve()
-        }
-
-        slide.appendChild(img)
-        swiperWrapper.value.appendChild(slide)
-      })
-    })
-
-    await Promise.all(imagePromises)
-    await nextTick()
-
-    if (mySwiper) {
-      mySwiper.destroy(true, true)
-      mySwiper = null
-    }
-
-    mySwiper = new Swiper('.right-bg-swiper', {
-      slidesPerView: 1,
-      spaceBetween: 0,
-      loop: true,
-      autoplay: {
-        delay: CONSTANTS.SWIPER_CONFIG.delay,
-        disableOnInteraction: false,
-        pauseOnMouseEnter: false
-      },
-      effect: 'fade',
-      fadeEffect: { crossFade: true },
-      speed: CONSTANTS.SWIPER_CONFIG.speed,
-      allowTouchMove: false
-    })
-
-    setTimeout(() => {
-      if (mySwiper && mySwiper.autoplay) {
-        mySwiper.autoplay.start()
-      }
-    }, 100)
-  } catch (err) {
-    console.error('轮播图加载失败：', err)
-  }
+  // 初始化 Swiper
+  if (mySwiper) mySwiper.destroy()
+  mySwiper = new Swiper('.right-bg-swiper', {
+    effect: 'fade',
+    fadeEffect: { crossFade: true },
+    loop: true,
+    speed: CONSTANTS.SWIPER_CONFIG.speed,
+    autoplay: {
+      delay: CONSTANTS.SWIPER_CONFIG.delay,
+      disableOnInteraction: false
+    },
+    allowTouchMove: false // 禁止手动拖拽
+  })
 }
 
-// 窗口大小变化处理
+// --- 生命周期 ---
 const handleResize = () => {
   setupStars()
-  // 桌面/移动切换时：销毁/重建轮播（不改接口）
-  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-    if (mySwiper) {
-      mySwiper.destroy(true, true)
-      mySwiper = null
-    }
-  } else {
-    // 重新拉起
+  // 简单的去抖动处理
+  if (window.innerWidth <= 768 && mySwiper) {
+    mySwiper.destroy()
+    mySwiper = null
+  } else if (window.innerWidth > 768 && !mySwiper) {
     getImages()
   }
 }
 
-// 组件挂载
 onMounted(() => {
   setupStars()
   drawStars()
   loadLogFiles()
   getImages()
   window.addEventListener('resize', handleResize)
-
-  nextTick(() => {
-    if (logContainer.value) {
-      logContainer.value.style.display = 'block'
-      logContainer.value.style.visibility = 'visible'
-      logContainer.value.style.opacity = '1'
-    }
-  })
 })
 
-// 组件卸载
 onUnmounted(() => {
   if (ws) ws.close()
-  window.removeEventListener('resize', handleResize)
-  if (mySwiper) {
-    mySwiper.destroy(true, true)
-  }
+  if (mySwiper) mySwiper.destroy()
   if (rafId) cancelAnimationFrame(rafId)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
-* {
-  box-sizing: border-box;
+/* 核心修复：去除浏览器默认边距，防止灰边和滚动条 */
+html, body {
   margin: 0;
   padding: 0;
-}
-
-/* 无障碍：屏幕阅读器专用 */
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
-
-/* ======= 主题变量（中二二次元 · 霓虹魔法阵） ======= */
-.container {
-  --bg1: #120a2a;
-  --bg2: #2a0f49;
-  --glass: rgba(255, 255, 255, 0.08);
-  --glass2: rgba(255, 255, 255, 0.12);
-  --line: rgba(255, 255, 255, 0.16);
-
-  --txt: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.62);
-
-  --p1: #ff4fd8;
-  --p2: #8b5cff;
-  --p3: #46f5ff;
-  --p4: #ffe66d;
-
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  position: relative;
-  color: var(--txt);
-  font-family: "Mochiy Pop One", "Comic Sans MS", system-ui, -apple-system, "Segoe UI", sans-serif;
-
-  background: radial-gradient(1200px 600px at 20% 10%, rgba(255, 79, 216, 0.18), transparent 60%),
-    radial-gradient(900px 500px at 80% 20%, rgba(139, 92, 255, 0.18), transparent 60%),
-    radial-gradient(900px 600px at 50% 90%, rgba(70, 245, 255, 0.10), transparent 60%),
-    linear-gradient(145deg, var(--bg1), var(--bg2));
-  transition: all 0.25s ease;
-}
-
-/* 魔法阵点阵 */
-.container::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(255, 79, 216, 0.12) 1px, transparent 1px),
-    radial-gradient(circle at 70% 60%, rgba(139, 92, 255, 0.12) 1px, transparent 1px),
-    radial-gradient(circle at 40% 80%, rgba(70, 245, 255, 0.10) 1px, transparent 1px);
-  background-size: 54px 54px, 72px 72px, 90px 90px;
-  filter: blur(0.2px);
-  opacity: 0.75;
-}
-
-/* ======= 黑客主题（暗黑终端 · 赛博绿） ======= */
-.container.hacker {
-  --bg1: #000000;
-  --bg2: #041106;
-  --glass: rgba(0, 255, 65, 0.06);
-  --glass2: rgba(0, 255, 65, 0.10);
-  --line: rgba(0, 255, 65, 0.22);
-
-  --txt: #00ff41;
-  --muted: rgba(0, 255, 136, 0.70);
-
-  --p1: #00ff41;
-  --p2: #00ff88;
-  --p3: #00ffaa;
-  --p4: #b8ffbf;
-
-  font-family: "Courier New", Consolas, monospace;
-  animation: scanlines 2s linear infinite;
-}
-
-@keyframes scanlines {
-  0% { background-position: 0 0, 0 0, 0 0, 0 0; }
-  100% { background-position: 0 100%, 0 0, 0 0, 0 0; }
-}
-
-/* 背景动画层 */
-canvas#animeStars {
-  position: fixed;
-  inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 0;
-  background: transparent;
+  overflow: hidden; /* 禁止整个页面的滚动条 */
+  background-color: #1a1b2e; /* 补上底色，防止露馅 */
 }
 
-/* ======= 顶栏 ======= */
-.topbar {
+/* 确保 Vue 根节点也占满 */
+#app {
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+<style scoped>
+/* 引入漂亮字体 */
+/* @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;700&display=swap'); */
+
+/* --- 全局变量 --- */
+.app-container {
+  /* Magic Theme (默认) */
+  --bg-core: #1a1b2e;
+  --bg-gradient: linear-gradient(135deg, #1a1b2e 0%, #2d1b4e 100%);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --primary: #ff7eb3;
+  --text-main: #ffffff;
+  --text-dim: rgba(255, 255, 255, 0.6);
+  --font-ui: 'Nunito', sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
+  --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  
+  /* 布局修复 */
   position: relative;
-  z-index: 5;
-  padding: 14px 16px;
-  margin: 10px 12px 0;
-  border-radius: 18px;
-
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--line);
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  backdrop-filter: blur(10px);
+  width: 100%;  /* 改用 100% 避免 vw 计算误差 */
+  height: 100%; /* 改用 100% */
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  display: flex;
+  flex-direction: column;
 }
 
-/* 顶栏霓虹边 */
-.topbar::before {
-  content: "";
+/* Hacker Theme */
+.theme-hacker {
+  --bg-core: #000000;
+  --bg-gradient: #000000;
+  --glass-bg: rgba(0, 50, 0, 0.3);
+  --glass-border: #00ff41;
+  --primary: #00ff41;
+  --text-main: #00ff41;
+  --text-dim: #008F11;
+  --font-ui: 'Courier New', monospace;
+  --font-code: 'Courier New', monospace;
+  --shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+}
+
+#bg-canvas {
   position: absolute;
-  inset: -1px;
-  border-radius: 18px;
-  padding: 1px;
-  background: linear-gradient(90deg, rgba(255,79,216,0.55), rgba(139,92,255,0.55), rgba(70,245,255,0.45));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  top: 0;
+  left: 0;
+  z-index: 0;
   pointer-events: none;
-  opacity: 0.85;
 }
 
-.container.hacker .topbar::before {
-  background: linear-gradient(90deg, transparent, rgba(0,255,65,0.9), rgba(0,255,136,0.9), rgba(0,255,65,0.9), transparent);
-  opacity: 0.95;
-}
-
-.topbar {
-  display: grid;
-  grid-template-columns: 140px 1fr auto;
-  gap: 10px;
+/* --- 顶部导航栏 --- */
+.navbar {
+  position: relative;
+  z-index: 10;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  padding: 0 24px;
+  background: rgba(20, 20, 30, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
 }
 
-.titleWrap {
-  text-align: center;
-  min-width: 0;
+.nav-right{
+    display: flex; /* 使用flexbox让内容在一行排列 */
+  align-items: center; /* 垂直居中对齐 */
+  gap: 10px; /* 可以调整两个元素之间的间距 */
 }
 
-.title {
-  font-size: 1.25rem;
-  letter-spacing: 1px;
-  text-shadow:
-    0 0 18px rgba(255, 79, 216, 0.20),
-    0 0 18px rgba(139, 92, 255, 0.18);
-}
-
-.subtitle {
-  margin-top: 2px;
-  font-size: 0.72rem;
-  color: var(--muted);
-  letter-spacing: 2px;
-  opacity: 0.9;
-}
-
-.controls {
+.nav-center {
   display: flex;
   align-items: center;
-  gap: 10px;
-  justify-content: flex-end;
+  gap: 12px;
 }
 
-/* ======= 按钮/选择框（统一中二风） ======= */
-select,
-button {
-  -webkit-tap-highlight-color: transparent;
-}
-
-select {
-  padding: 10px 12px;
-  font-size: 0.95rem;
-  color: var(--txt);
-  background: var(--glass);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  outline: none;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(10px);
-  max-width: min(48vw, 360px);
-}
-
-.container.hacker select {
-  border-radius: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 0 18px rgba(0, 255, 65, 0.25);
-}
-
-button {
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  cursor: pointer;
-  color: var(--txt);
-  background: linear-gradient(135deg, rgba(255, 79, 216, 0.16), rgba(139, 92, 255, 0.12));
-  box-shadow:
-    0 10px 22px rgba(0, 0, 0, 0.20),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-  backdrop-filter: blur(10px);
-}
-
-button:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.24),
-    0 0 18px rgba(255, 79, 216, 0.18);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-.container.hacker button {
-  background: linear-gradient(145deg, rgba(0, 0, 0, 0.88), rgba(0, 40, 0, 0.55));
-  border-radius: 8px;
-  box-shadow: 0 0 18px rgba(0, 255, 65, 0.25);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.page-title {
+  font-size: 1.2rem;
+  letter-spacing: 2px;
   font-weight: 700;
+  text-shadow: 0 0 10px var(--primary);
 }
 
-.container.hacker button:hover {
-  box-shadow: 0 0 26px rgba(0, 255, 65, 0.42);
-  color: var(--p2);
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
+  transition: all 0.3s;
 }
 
-.homeBtn {
-  justify-self: start;
+.status-dot.active {
+  background: #00ff41;
+  box-shadow: 0 0 8px #00ff41;
 }
 
-#themeToggle {
-  justify-self: end;
+.glass-btn, .glass-select {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 8px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 0.7rem;
+  outline: none;
 }
 
-/* ======= 主体区域（避开右侧轮播） ======= */
-.main {
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary);
+}
+
+.glass-select {
+  min-width: 200px;
+}
+
+.glass-select option {
+  background: #2a1f3d;
+  color: white;
+}
+
+/* --- 主体内容 --- */
+.content-body {
   position: relative;
-  z-index: 4;
-  height: calc(100vh - 92px);
-  padding: 12px;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  overflow: hidden;
+  box-sizing: border-box; /* 关键：防止padding撑大容器 */
 }
 
-/* 桌面端：为右侧轮播预留空间 */
-@media (min-width: 769px) {
-  .main {
-    padding-right: clamp(12px, 2vw, 24px);
-    margin-right: clamp(0px, 0vw, 0px);
-  }
-  /* 让日志区域不要被右侧轮播盖住 */
-  .logShell {
-    width: calc(100% - clamp(360px, 25vw, 940px) + 18px);
-  }
-}
-
-/* 移动端：日志全宽 */
-@media (max-width: 768px) {
-  .logShell {
-    width: 100%;
-  }
-}
-
-.logShell {
-  height: 100%;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--line);
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+/* 左侧日志区 */
+.panel-section {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.log-section {
+  flex: 2; 
   position: relative;
+  min-width: 0; /* 防止Flex子项溢出 */
 }
 
-/* 角落“封印符文”装饰 */
-.logShell::before {
-  content: "";
-  position: absolute;
-  inset: -40px;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(255,79,216,0.18), transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(139,92,255,0.16), transparent 45%),
-    radial-gradient(circle at 60% 85%, rgba(70,245,255,0.12), transparent 45%);
-  filter: blur(2px);
-  pointer-events: none;
+/* 右侧轮播区 */
+.swiper-section {
+  flex: 1;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  min-width: 0; /* 防止Flex子项溢出 */
 }
 
-.container.hacker .logShell::before {
-  background:
-    radial-gradient(circle at 20% 30%, rgba(0,255,65,0.14), transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(0,255,136,0.12), transparent 45%);
+.panel-header {
+  height: 40px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
-/* 日志文本区 */
-#log {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  padding: 14px 14px 18px;
-  white-space: pre-wrap;
-  word-break: break-word;
+.panel-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0.7; }
+.red { background: #ff5f56; }
+.yellow { background: #ffbd2e; }
+.green { background: #27c93f; }
+
+.log-viewport {
+  flex: 1;
   overflow-y: auto;
-  font-size: 0.95rem;
-  line-height: 1.55;
-  color: var(--txt);
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.18);
+  padding: 16px;
+  scroll-behavior: smooth;
 }
 
-/* 更好看的滚动条 */
-#log::-webkit-scrollbar {
-  width: 10px;
-}
-#log::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-}
-#log::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(255,79,216,0.55), rgba(139,92,255,0.45));
-  border-radius: 10px;
-  box-shadow: 0 0 12px rgba(255,79,216,0.18);
-}
-#log::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(255,79,216,0.75), rgba(139,92,255,0.65));
+.log-text {
+  font-family: var(--font-code);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  color: var(--text-main);
 }
 
-.container.hacker #log {
-  text-shadow: 0 0 4px rgba(0, 255, 65, 0.45);
-  font-size: 0.92rem;
-}
-.container.hacker #log::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.35);
-}
-.container.hacker #log::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(0,255,65,0.9), rgba(0,255,136,0.75));
-  box-shadow: 0 0 12px rgba(0,255,65,0.35);
-}
+/* 滚动条美化 */
+.log-viewport::-webkit-scrollbar { width: 8px; }
+.log-viewport::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+.log-viewport::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+.log-viewport::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-/* ======= 右侧轮播（桌面端） ======= */
-.right-bg-swiper {
-  position: fixed;
-  top: 92px;
-  bottom: 14px;
-  right: 14px;
-  width: clamp(320px, 30vw, 400px);
-  z-index: 3;
-  border-radius: 18px;
+.swiper-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
   overflow: hidden;
-
-  background: rgba(0, 0, 0, 0.14);
-  border: 1px solid var(--line);
-  box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.30),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  backdrop-filter: blur(10px);
-}
-
-/* 轮播框装饰（魔法封印边） */
-.swiperFrame {
-  position: absolute;
-  inset: 10px;
-  border-radius: 14px;
-  pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 0 0 1px rgba(255, 79, 216, 0.10) inset,
-    0 0 0 1px rgba(139, 92, 255, 0.10);
-  opacity: 0.9;
-}
-
-.container.hacker .swiperFrame {
-  border-color: rgba(0, 255, 65, 0.20);
-  box-shadow: 0 0 0 1px rgba(0, 255, 65, 0.18) inset;
-}
-
-.right-bg-swiper .swiper-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--glass-border);
 }
 
-.right-bg-swiper .swiper-slide {
+.swiper-slide img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+
+/* 装饰框 */
+.decorative-frame {
+  position: absolute;
+  top: 10px; left: 10px; right: 10px; bottom: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.theme-hacker .decorative-frame {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 10px var(--primary);
+}
+
+
+/* --- 新增：右下角悬浮按钮样式 --- */
+.floating-home-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 1000; /* 确保在最上层 */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%; /* 圆形 */
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  font-size: 1.5rem; /* 图标放大 */
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性动画 */
 }
 
-.right-bg-swiper img {
-  width: 100%;
-  height: auto;
-  max-height: 95vh;
-  object-fit: contain;
-  display: block;
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+/* 悬浮时的效果增强 */
+.floating-home-btn:hover {
+  transform: translateY(-5px) scale(1.1);
+  box-shadow: 0 0 20px var(--primary); /* 跟随主题色发光 */
+  border-color: var(--primary);
 }
 
-/* 移动端隐藏轮播 */
+/* 点击时的微缩反馈 */
+.floating-home-btn:active {
+  transform: scale(0.95);
+}
+
+/* 图标微调 */
+.floating-home-btn .icon {
+  margin-top: -4px; /* 视觉修正，让房子图标居中 */
+}
+
+/* --- 移动端适配 --- */
 @media (max-width: 768px) {
-  .right-bg-swiper {
+  .content-body {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+  }
+.floating-home-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+  }
+  .swiper-section {
+    display: none !important; /* 强制隐藏 */
+  }
+  .page-title {
     display: none;
   }
 
-  .topbar {
-    margin: 8px 8px 0;
-    border-radius: 16px;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    text-align: left;
+  .glass-select{
+    /* width: 200px; */
   }
+  
 
-  .titleWrap {
-    text-align: left;
+  .log-section {
+    flex: 1;
+    width: 100%;
   }
-
-  .controls {
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
+  
+  .navbar {
+    padding: 0 12px;
   }
-
-  select {
-    max-width: 100%;
-    flex: 1 1 240px;
+  
+  .glass-select {
+    min-width: 120px;
+    font-size: 0.8rem;
   }
-
-  #themeToggle {
-    flex: 0 0 auto;
-  }
-
-  .main {
-    height: calc(100vh - 128px);
-    padding: 10px 8px 12px;
-  }
-
-  .logShell {
-    border-radius: 16px;
-  }
-}
-
-/* 超宽屏微调 */
-@media (min-width: 1600px) {
-  .topbar {
-    margin: 14px 18px 0;
-  }
-  .right-bg-swiper {
-    right: 18px;
-    bottom: 18px;
-  }
-}
-
-/* 选中文本 */
-::selection {
-  background: rgba(255, 79, 216, 0.32);
-  color: #fff;
-}
-.container.hacker ::selection {
-  background: rgba(0, 255, 65, 0.28);
-  color: rgba(0, 255, 136, 1);
 }
 </style>

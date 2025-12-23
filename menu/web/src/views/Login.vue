@@ -1,22 +1,26 @@
 <template>
   <div class="login-container">
-    <!-- 背景装饰 -->
+    <div class="bg-layer"></div>
+    <div class="grid-pattern"></div>
+    
     <div class="bg-decoration">
-      <div class="star star-1"></div>
-      <div class="star star-2"></div>
-      <div class="star star-3"></div>
-      <div class="star star-4"></div>
-      <div class="star star-5"></div>
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
+      <div class="floating-shape shape-1"></div>
+      <div class="floating-shape shape-2"></div>
+      <div class="floating-shape shape-3"></div>
+      <div class="star star-1">✨</div>
+      <div class="star star-2">⭐</div>
+      <div class="star star-3">✨</div>
+      <div class="star star-4">🌟</div>
     </div>
 
-    <!-- 登录卡片 -->
     <div class="login-card-wrapper">
+      <div class="card-ribbon">🎀</div>
+
       <div class="card-header">
-        <h1 class="system-title">~~~{{ systemName }}~~~</h1>
-        <p class="subtitle">欢迎回来~</p>
+        <h1 class="system-title">{{ systemName }}</h1>
+        <div class="subtitle-badge">
+          <span>✨ 欢迎回来 Master ✨</span>
+        </div>
       </div>
 
       <a-form
@@ -32,24 +36,32 @@
           name="username"
           :rules="[{ required: true, message: '请输入用户名哦~' }]"
         >
-          <a-input
-            v-model:value="formState.username"
-            placeholder="👤 输入你的用户名"
-            class="form-input"
-            @keyup.enter="handleEnter"
-          />
+          <div class="input-group">
+            <span class="input-icon">👤</span>
+            <a-input
+              v-model:value="formState.username"
+              placeholder="请输入用户名..."
+              class="kawaii-input"
+              :bordered="false"
+              @keyup.enter="handleEnter"
+            />
+          </div>
         </a-form-item>
 
         <a-form-item
           name="password"
           :rules="[{ required: true, message: '请输入密码哦~' }]"
         >
-          <a-input-password
-            v-model:value="formState.password"
-            placeholder="🔐 输入你的密码"
-            class="form-input"
-            @keyup.enter="handleEnter"
-          />
+          <div class="input-group">
+            <span class="input-icon">🔐</span>
+            <a-input-password
+              v-model:value="formState.password"
+              placeholder="请输入密码..."
+              class="kawaii-input"
+              :bordered="false"
+              @keyup.enter="handleEnter"
+            />
+          </div>
         </a-form-item>
 
         <a-form-item>
@@ -58,22 +70,23 @@
             html-type="submit"
             :loading="loading"
             block
-            class="login-button"
+            class="kawaii-button"
           >
-            {{ loading ? '登录中✨' : '进入系统 →' }}
+            {{ loading ? '少女祈祷中...✨' : '进入异世界 →' }}
           </a-button>
         </a-form-item>
 
-        <transition name="fade">
-          <div v-if="errorMessage" class="error-message">
-            ⚠️ {{ errorMessage }}
+        <transition name="bounce">
+          <div v-if="errorMessage" class="error-bubble">
+            <span class="error-icon">💢</span> {{ errorMessage }}
           </div>
         </transition>
       </a-form>
 
       <div class="card-footer">
+        <div class="footer-divider"></div>
         <p class="footer-text">嘿~这是一个神秘的地方呢🎀</p>
-        <p class="footer-text">qq群：215053644</p>
+        <div class="contact-pill">qq群：215053644</div>
       </div>
     </div>
   </div>
@@ -105,7 +118,6 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('获取系统配置失败:', error)
-    // 保持默认标题 "登录"
   }
 })
 
@@ -125,24 +137,18 @@ const onFinish = async () => {
       formState.value.password
     )
 
-    // 检查响应中的 code 字段
     if (response.code === 401 || response.error) {
-      // 登录失败
       errorMessage.value = response.error || '登录失败，请检查用户名和密码'
       message.error('登录失败：' + (response.error || '未知错误'))
     } else if (response.code === 200 && response.aBgiToken) {
-      // 登录成功
       localStorage.setItem('aBgiToken', response.aBgiToken)
       message.success('登录成功！')
-      // 重定向到首页
       router.push('/')
     } else if (response.aBgiToken) {
-      // 兼容没有 code 字段的情况
       localStorage.setItem('aBgiToken', response.aBgiToken)
       message.success('登录成功！')
       router.push('/')
     } else {
-      // 未知响应格式
       errorMessage.value = '登录失败，请重试'
       message.error('登录失败，请重试')
     }
@@ -160,7 +166,9 @@ const onFinishFailed = (errorInfo) => {
 </script>
 
 <style scoped>
-/* ========== 容器样式 ========== */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+
+/* ========== 全局容器与背景 ========== */
 .login-container {
   display: flex;
   justify-content: center;
@@ -168,280 +176,308 @@ const onFinishFailed = (errorInfo) => {
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-  /* 渐变背景：柔和粉色到紫色 */
-  background: linear-gradient(135deg, #ffc0e9 0%, #f5a9e6 25%, #e099d4 50%, #d598d9 75%, #b5d0e6 100%);
-  font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+  font-family: 'Fredoka', 'Microsoft YaHei', sans-serif;
 }
 
-/* ========== 背景装饰 ========== */
+/* 渐变底层 */
+.bg-layer {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%);
+  opacity: 0.6;
+  z-index: -2;
+}
+
+/* 波点网格 */
+.grid-pattern {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    radial-gradient(#ffffff 2px, transparent 2px),
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px, 50px 50px, 50px 50px;
+  background-position: 0 0, 0 0, 0 0;
+  z-index: -1;
+}
+
+/* ========== 漂浮装饰 ========== */
 .bg-decoration {
   position: absolute;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  z-index: 1;
+  pointer-events: none;
+  z-index: 0;
 }
 
-/* 星星装饰 */
+.floating-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: float 10s infinite ease-in-out;
+}
+
+.shape-1 {
+  width: 300px; height: 300px;
+  background: #ff9a9e;
+  top: -50px; left: -50px;
+  opacity: 0.5;
+}
+
+.shape-2 {
+  width: 400px; height: 400px;
+  background: #a18cd1;
+  bottom: -100px; right: -100px;
+  opacity: 0.4;
+  animation-delay: -5s;
+}
+
 .star {
   position: absolute;
-  width: 4px;
-  height: 4px;
-  background: white;
-  border-radius: 50%;
-  opacity: 0.8;
-  animation: twinkle 3s ease-in-out infinite;
+  font-size: 24px;
+  animation: twinkle 3s infinite alternate;
 }
-
-.star-1 { top: 10%; left: 10%; animation-delay: 0s; }
-.star-2 { top: 20%; right: 15%; animation-delay: 0.5s; }
-.star-3 { top: 40%; left: 5%; animation-delay: 1s; }
-.star-4 { bottom: 20%; right: 10%; animation-delay: 1.5s; }
-.star-5 { bottom: 30%; left: 15%; animation-delay: 2s; }
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
-}
-
-/* 圆形装饰 */
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.1;
-}
-
-.circle-1 {
-  width: 400px;
-  height: 400px;
-  background: #ff69b4;
-  top: -100px;
-  left: -150px;
-  animation: float 6s ease-in-out infinite;
-}
-
-.circle-2 {
-  width: 300px;
-  height: 300px;
-  background: #ff99cc;
-  bottom: -80px;
-  right: -100px;
-  animation: float 8s ease-in-out infinite reverse;
-}
-
-.circle-3 {
-  width: 200px;
-  height: 200px;
-  background: #ffb3d9;
-  top: 50%;
-  right: 5%;
-  animation: float 7s ease-in-out infinite;
-}
+.star-1 { top: 15%; left: 10%; animation-delay: 0s; }
+.star-2 { top: 25%; right: 20%; animation-delay: 1s; font-size: 18px; }
+.star-3 { bottom: 20%; left: 15%; animation-delay: 2s; }
+.star-4 { bottom: 10%; right: 10%; animation-delay: 1.5s; font-size: 30px;}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(20px); }
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20px, 30px); }
+}
+@keyframes twinkle {
+  0% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+  100% { transform: scale(1.2) rotate(15deg); opacity: 1; }
 }
 
-/* ========== 卡片样式 ========== */
+/* ========== 卡片核心 ========== */
 .login-card-wrapper {
   position: relative;
   z-index: 10;
-  width: 100%;
-  max-width: 480px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 30px;
+  width: 90%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
   padding: 40px 30px;
-  box-shadow: 0 20px 60px rgba(255, 105, 180, 0.25), 
-              0 0 30px rgba(200, 150, 200, 0.2);
-  border: 2px solid rgba(255, 192, 233, 0.4);
-  animation: slideUp 0.6s ease-out;
+  box-shadow: 
+    0 10px 40px rgba(255, 154, 158, 0.3),
+    0 0 0 5px rgba(255, 255, 255, 0.4);
+  border: 2px solid #fff;
+  animation: cardEnter 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(50px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ========== 卡片头 ========== */
+.card-ribbon {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 40px;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+  z-index: 20;
+}
+
+/* ========== 头部修改区域 (重点) ========== */
 .card-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px dashed rgba(255, 105, 180, 0.3);
+  display: flex;             /* 启用Flex布局 */
+  flex-direction: column;    /* 垂直排列：上标题，下副标题 */
+  align-items: center;       /* 水平居中 */
+  justify-content: center;
+  margin-bottom: 35px;
+  width: 100%;
 }
 
 .system-title {
-  margin: 0;
-  font-size: 28px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #ff1493 0%, #ff69b4 50%, #da70d6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmer 2s ease-in-out infinite;
+  display: block;            /* 块级元素 */
+  width: 100%;               /* 占满整行宽度 */
+  text-align: center;        /* 文字居中 */
+  margin: 0 0 15px 0;        /* 底部留出间距，与副标题分开 */
+  font-size: 26px;
+  font-weight: 800;
+  color: #5c5c8a;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0px #fff;
+  line-height: 1.4;          /* 优化行高 */
 }
 
-.subtitle {
-  margin: 8px 0 0 0;
-  font-size: 14px;
-  color: #da70d6;
-  font-style: italic;
-  letter-spacing: 1px;
+.subtitle-badge {
+  display: inline-block;
+  background: #ffebf7;
+  padding: 5px 15px;
+  border-radius: 20px;
+  border: 1px dashed #ffb7d6;
 }
 
-@keyframes shimmer {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.1); }
-}
-
-/* ========== 表单样式 ========== */
-.login-form {
-  margin: 0;
-}
-
-.form-input {
-  height: 45px;
-  font-size: 14px;
-  border-radius: 15px;
-  border: 2px solid #ffc0e9;
-  background: rgba(255, 240, 250, 0.8);
-  transition: all 0.3s ease;
-}
-
-.form-input:focus,
-.form-input:hover,
-:deep(.form-input:focus),
-:deep(.form-input:hover) {
-  border-color: #ff69b4;
-  box-shadow: 0 0 15px rgba(255, 105, 180, 0.25);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-:deep(.form-input input),
-:deep(.form-input input::placeholder) {
-  color: #999;
-}
-
-:deep(.form-input input) {
-  font-size: 14px;
-}
-
-/* ========== 按钮样式 ========== */
-.login-button {
-  height: 45px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 15px;
-  border: none;
-  background: linear-gradient(135deg, #ff69b4 0%, #da70d6 100%);
-  color: white;
-  transition: all 0.3s ease;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  box-shadow: 0 5px 20px rgba(255, 105, 180, 0.35);
-  margin-top: 10px;
-}
-
-.login-button:hover,
-:deep(.login-button:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(255, 105, 180, 0.45);
-  background: linear-gradient(135deg, #ff5fa8 0%, #d860d1 100%);
-}
-
-.login-button:active,
-:deep(.login-button:active) {
-  transform: translateY(0px);
-}
-
-/* ========== 错误提示 ========== */
-.error-message {
-  margin-top: 15px;
-  padding: 12px;
-  background: rgba(255, 77, 79, 0.1);
-  border: 1.5px solid #ff4d4f;
-  border-radius: 10px;
-  color: #ff4d4f;
+.subtitle-badge span {
+  color: #ff85b3;
   font-size: 13px;
-  text-align: center;
-  font-weight: 500;
-  animation: shake 0.5s ease-in-out;
+  font-weight: bold;
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+/* ========== 表单控件 ========== */
+.input-group {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 2px solid #f0f0f0;
+  border-radius: 999px;
+  padding: 5px 15px;
+  transition: all 0.3s ease;
 }
 
-/* ========== 卡片底部 ========== */
-.card-footer {
-  text-align: center;
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 2px dashed rgba(255, 105, 180, 0.3);
+.input-group:focus-within {
+  border-color: #ffb7d6;
+  box-shadow: 0 0 15px rgba(255, 183, 214, 0.4);
+  transform: translateY(-2px);
 }
 
-.footer-text {
-  margin: 0;
-  font-size: 12px;
-  color: #da70d6;
-  opacity: 0.7;
-  font-style: italic;
+.input-icon {
+  font-size: 18px;
+  margin-right: 8px;
+  filter: grayscale(0.5);
+  transition: 0.3s;
 }
 
-/* ========== 过渡效果 ========== */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+.input-group:focus-within .input-icon {
+  filter: grayscale(0);
+  transform: scale(1.1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+.kawaii-input {
+  flex: 1;
+  background: transparent !important;
+  height: 38px;
+  font-size: 14px;
+  color: #666;
 }
 
-/* ========== Ant Design 组件覆盖 ========== */
-:deep(.ant-form-item) {
-  margin-bottom: 20px;
-}
-
-:deep(.ant-form-item-has-error .ant-input),
-:deep(.ant-form-item-has-error .ant-input-affix-wrapper) {
-  border-color: #ff4d4f !important;
-  background: rgba(255, 77, 79, 0.05) !important;
+:deep(.ant-input-password), 
+:deep(.ant-input), 
+:deep(.ant-input:focus), 
+:deep(.ant-input-focused) {
+  box-shadow: none !important;
+  border: none !important;
 }
 
 :deep(.ant-input-password-icon) {
-  color: #da70d6;
+  color: #ffb7d6 !important;
+}
+:deep(.ant-input-password-icon:hover) {
+  color: #ff85b3 !important;
 }
 
-:deep(.ant-input::placeholder) {
-  color: #d3a5d3;
+/* ========== 按钮 ========== */
+.kawaii-button {
+  height: 48px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 20px rgba(255, 154, 158, 0.4);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin-top: 10px;
 }
 
-/* 响应式设计 */
+.kawaii-button:hover, 
+.kawaii-button:focus {
+  background: linear-gradient(90deg, #ff85b3 0%, #ff9a9e 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(255, 133, 179, 0.5);
+}
+
+.kawaii-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* ========== 错误提示 ========== */
+.error-bubble {
+  background: #fff1f0;
+  border: 1px solid #ffccc7;
+  color: #ff4d4f;
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bounce-enter-active {
+  animation: bounce-in 0.5s;
+}
+.bounce-leave-active {
+  animation: bounce-in 0.5s reverse;
+}
+@keyframes bounce-in {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* ========== 底部 ========== */
+.card-footer {
+  margin-top: 25px;
+  text-align: center;
+}
+
+.footer-divider {
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ffb7d6 0,
+    #ffb7d6 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.footer-text {
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.contact-pill {
+  display: inline-block;
+  background: #f0f5ff;
+  color: #85a5ff;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* ========== 响应式 ========== */
 @media (max-width: 480px) {
   .login-card-wrapper {
-    max-width: calc(100% - 30px);
+    width: 85%;
     padding: 30px 20px;
   }
-
+  
   .system-title {
-    font-size: 24px;
+    font-size: 22px;
   }
-
-  .login-form {
-    margin-top: 20px;
+  
+  .kawaii-button {
+    height: 44px;
+    font-size: 15px;
   }
+  
+  .star-4 { display: none; }
 }
 </style>
