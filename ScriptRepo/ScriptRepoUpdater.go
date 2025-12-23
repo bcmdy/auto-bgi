@@ -10,11 +10,13 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	otiai10Copy "github.com/otiai10/copy"
+	"github.com/tidwall/gjson"
 	"golang.org/x/term"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -297,4 +299,49 @@ func SubscribeScript(ScriptName string) (string, error) {
 	}
 	return "订阅成功", nil
 
+}
+
+type ScriptInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// 所有的js脚本
+func getAllJsScript(search string) ([]ScriptInfo, error) {
+	filePath := filepath.Join(
+		myConfig.Cfg.BetterGIAddress,
+		"Repos",
+		"bettergi-scripts-list-git",
+		"repo.json",
+	)
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("读取 repo.json 失败: %w", err)
+	}
+
+	// 提前处理搜索关键字
+	search = strings.TrimSpace(strings.ToLower(search))
+
+	results := gjson.GetBytes(data, "indexes.1.children")
+	if !results.Exists() {
+		return nil, fmt.Errorf("repo.json 中未找到 indexes.1.children")
+	}
+
+	scripts := make([]ScriptInfo, 0, len(results.Array()))
+
+	for _, item := range results.Array() {
+		Description := item.Get("description").String()
+
+		if search != "" && !strings.Contains(strings.ToLower(Description), search) {
+			continue
+		}
+
+		scripts = append(scripts, ScriptInfo{
+			Name:        item.Get("name").String(),
+			Description: Description,
+		})
+	}
+
+	return scripts, nil
 }

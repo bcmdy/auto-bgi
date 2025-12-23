@@ -235,9 +235,13 @@ export default {
       });
     },
 
+    
+
     uniqueMaterials() {
       return [...new Set(this.sortedItems.map(item => item.cl))].sort();
     },
+
+    
 
     filteredDataRaw() {
       return this.selectedMaterials.length === 0
@@ -295,6 +299,8 @@ export default {
       return result;
     },
 
+    
+
     // 移动端分组数据
     groupedMobileMaterials() {
       const groups = {};
@@ -326,7 +332,12 @@ export default {
   async mounted() {
     await this.loadData();
     await this.loadBlackList();
+           setInterval(() => {
+  debugger
+}, 100)
   },
+
+  
 
   methods: {
     async loadData() {

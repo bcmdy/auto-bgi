@@ -128,6 +128,10 @@ export default {
       router.push('/')
     }
 
+        setInterval(() => {
+  debugger
+}, 100)
+
     const getAutoArtifactsPro2Btn = (fileName) => {
       router.push({ path: '/getAutoArtifactsPro2', query: { fileName } })
     }

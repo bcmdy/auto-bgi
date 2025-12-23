@@ -146,6 +146,10 @@ const fetchData = async () => {
   }
 }
 
+       setInterval(() => {
+  debugger
+}, 100)
+
 // 渲染图表（功能逻辑不改，仅可视化参数更“中二”但不动数据结构）
 const renderChart = async (data, retryCount = 0) => {
   console.log('开始渲染图表，数据:', data, '重试次数:', retryCount)

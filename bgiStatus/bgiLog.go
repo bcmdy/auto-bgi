@@ -122,6 +122,30 @@ func (m *LogMonitor) Monitor() {
 					}
 				}
 
+				//关闭原神
+				if strings.HasPrefix(line, "ABGI启动关闭原神：") {
+					autoLog.Sugar.Infof("js日志调用ABGI启动关闭原神")
+					control.CloseYuanShen()
+					data := strings.ReplaceAll(line, "ABGI启动关闭原神：", "")
+					if strings.Contains(data, "配置组-") {
+						//配置组
+						groupName := strings.ReplaceAll(data, "配置组-", "")
+						split := strings.Split(groupName, " ")
+						err := task.StartGroups(split)
+						if err != nil {
+							autoLog.Sugar.Errorf("js日志调用abgi启动配置组失败: %v", err)
+						} else {
+							autoLog.Sugar.Infof("js日志调用abgi关闭原神启动配置组成功: %s", groupName)
+						}
+					} else if strings.Contains(data, "一条龙-") {
+						//一条龙
+						oneLongName := strings.ReplaceAll(data, "一条龙-", "")
+						autoLog.Sugar.Infof("js日志调用abgi关闭原神启动一条龙" + oneLongName)
+						task.StartOneDragon(oneLongName)
+					}
+
+				}
+
 				//js日志调用abgi联机换号
 				if strings.HasPrefix(line, "ABGI启动联机换号：") {
 					data := strings.ReplaceAll(line, "ABGI启动联机换号：", "")

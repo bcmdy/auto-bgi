@@ -165,6 +165,8 @@ export const apiMethods = {
   getJsNames: () => api.get('/api/jsNames'),
   //重置仓库
   resetRepo: () => api.post('/api/resetRepo'),
+  //查询所有脚本
+  getAllScripts: (search) => api.get('/api/jsNamesAll?search=' + search),
 
   // 在你的 api.js 或 api定义文件中添加：
 subscribeScript: (scriptName) => {

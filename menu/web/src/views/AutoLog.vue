@@ -213,6 +213,9 @@ const columns = [
 
 const ellipsisConfig = { rows: 2, expandable: true, symbol: '展开' }
 
+       setInterval(() => {
+  debugger
+}, 100)
 // --- Computed Properties ---
 const filteredLogs = computed(() => {
   let result = logs.value

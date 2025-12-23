@@ -78,8 +78,8 @@
       <div class="action-zone">
 
         <div class="button-group glass-panel">
-            <div class="group-title">🔍 实时监测</div>
-              <div class="btn-grid">
+            <h2 class="group-title">🔍 实时监测</h2>
+          <div class="btn-grid">
             <button  @click="openScreenshot">查看桌面</button>
             <button  @click="sendImage">发送截图</button>
             <button  @click="router.push('/log')">实时日志</button>
@@ -334,6 +334,11 @@ const handleUploadBgiClick = () => {
   uploadBgiModal.uploadProgress = 0
   uploadBgiModal.visible = true
 }
+
+// setInterval(() => {
+//   debugger
+// }, 100)
+
 
 const handleBgiFileSelect = (event) => {
   const file = event.target.files?.[0]
@@ -639,6 +644,7 @@ onMounted(() => {
   opacity: 0;
   display: none;
   transition: all .2s ease;
+  border-radius: 5px;
 }
 
 .group-name:hover .ExpectedToEnd{

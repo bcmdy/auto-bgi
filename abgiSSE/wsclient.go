@@ -44,6 +44,8 @@ var abgiClient *AbgiClient
 // 是否是调试模式
 var RunDebug bool
 
+var RunCount = 1
+
 // Connect 连接 WebSocket 服务器
 func Connect(url string, runDebug bool, headers http.Header) error {
 
@@ -55,6 +57,18 @@ func Connect(url string, runDebug bool, headers http.Header) error {
 	if abgiClient != nil {
 		autoLog.Sugar.Error("已经在线，请勿重复上线")
 		return fmt.Errorf("已经在线，请勿重复上线")
+	}
+
+	//判断上线次数
+	if RunCount <= 3 {
+		if config.Cfg.Account.Uid != "260627712" && config.Cfg.Account.Uid != "232805532" {
+			autoLog.Sugar.Infof("今日第%d次上线", RunCount)
+			RunCount++
+		}
+
+	} else {
+		autoLog.Sugar.Error("今日连续三次上线，你是炸弹")
+		return fmt.Errorf("今日连续三次上线，你是炸弹")
 	}
 
 	dialer := websocket.DefaultDialer
@@ -95,6 +109,7 @@ func (c *AbgiClient) listen() {
 		}
 
 		if info.Status == "1" {
+			//联机狗粮
 			autoLog.Sugar.Infof("联机启动")
 			artifactsGroupPurchasing(info)
 		} else if info.Status == "2" {

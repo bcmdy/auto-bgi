@@ -573,6 +573,9 @@ func StarGin() {
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": jsNamesInfo})
 		})
 
+		//查询所有脚本
+		needAuth.GET("/jsNamesAll", ScriptRepo.QueryAllScript)
+
 		//重置仓库
 		needAuth.POST("/repo/resetRepo", warehouse.RepoReset)
 
@@ -1370,6 +1373,8 @@ func StarGin() {
 
 	if err != nil {
 		autoLog.Sugar.Errorf("服务器启动失败:%v", err)
+		//退出程序
+		os.Exit(1)
 		return
 	}
 

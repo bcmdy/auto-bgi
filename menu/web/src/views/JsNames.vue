@@ -49,7 +49,7 @@
       </div>
       <div class="action-item jelly-hover" @click="openSubscribeModal">
         <div class="action-icon bg-purple">🎀</div>
-        <span class="action-text">订阅契约</span>
+        <span class="action-text">签订契约</span>
       </div>
       <div class="action-item jelly-hover" @click="resetRepo">
         <div class="action-icon bg-yellow">💫</div>
@@ -60,8 +60,6 @@
         <span class="action-text">刷新列表</span>
       </div>
     </section>
-
-  
 
     <main class="main-list">
       
@@ -114,21 +112,51 @@
     <transition name="pop">
       <div v-if="showModal" class="modal-mask" @click.self="closeSubscribeModal">
         <div class="modal-panel">
+          <div class="modal-decorative-bg"></div>
           <div class="modal-header">
             <h3>📝 签订契约</h3>
             <button class="close-btn" @click="closeSubscribeModal">✕</button>
           </div>
           <div class="modal-body">
             <p class="input-label">神秘的脚本</p>
-            <input 
-              v-model="subscribeInput" 
-              type="text" 
-              class="modal-input" 
-              placeholder="在此输入脚本"
-              ref="subInputRef"
-            />
+            
+            <div class="input-wrapper">
+              <span class="input-icon">🔮</span>
+              <input 
+                v-model="subscribeInput" 
+                type="text" 
+                class="modal-input" 
+                placeholder="输入关键词搜索或填写脚本名"
+                ref="subInputRef"
+                @input="handleSearchInput"
+                @focus="showSearchResult = true"
+              />
+              
+              <transition name="fade">
+                <div class="search-dropdown" v-if="showSearchResult && searchList.length > 0">
+                  <ul>
+                    <li 
+                      v-for="(script, idx) in searchList" 
+                      :key="idx" 
+                      @click="selectScript(script)"
+                      class="search-item"
+                    >
+                      <div class="item-name">{{ script.name }}</div>
+                      <div class="item-desc">
+                        {{ formatDesc(script.description) }}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </transition>
+              
+              <div class="loading-indicator" v-if="isSearchingScript">
+                <span class="loading-spin">🌸</span>
+              </div>
+            </div>
+
             <div class="modal-tips">
-              提示：请输入脚本文件夹名字
+              提示：点击列表选中，或直接输入脚本文件夹名字
             </div>
           </div>
           <div class="modal-footer">
@@ -157,7 +185,6 @@ export default {
     // 数据状态
     const pluginData = ref([])
     const isUpdating = reactive({})
-    const headerCurrentImageIndex = ref(0)
     let carouselTimer = null
 
     // 交互状态
@@ -166,6 +193,12 @@ export default {
     const showModal = ref(false)
     const subscribeInput = ref('')
     const subInputRef = ref(null)
+
+    // 搜索脚本相关状态
+    const searchList = ref([])
+    const showSearchResult = ref(false)
+    const isSearchingScript = ref(false)
+    let searchTimer = null
 
     // --- 计算属性 ---
     const updateCount = computed(() => {
@@ -194,7 +227,7 @@ export default {
       })
     })
 
-    // --- 方法 (保持原有逻辑不变) ---
+    // --- 方法 ---
 
     const loadPluginList = async () => {
       try {
@@ -202,10 +235,7 @@ export default {
         pluginData.value = data.data || []
       } catch (e) {
         console.error(e)
-        // 模拟数据用于预览效果
-        pluginData.value = [
-  
-        ]
+        pluginData.value = []
       }
     }
 
@@ -246,14 +276,66 @@ export default {
       }
     }
 
+    // --- 订阅/搜索模态框逻辑 ---
     const openSubscribeModal = () => {
       subscribeInput.value = ''
+      searchList.value = []
+      showSearchResult.value = false
       showModal.value = true
       nextTick(() => {
         if(subInputRef.value) subInputRef.value.focus()
       })
     }
-    const closeSubscribeModal = () => showModal.value = false
+
+    const closeSubscribeModal = () => {
+      showModal.value = false
+      // 延迟清空，防止闪烁
+      setTimeout(() => {
+        searchList.value = []
+      }, 300)
+    }
+
+    // 处理输入，带防抖的搜索
+    const handleSearchInput = () => {
+      if (searchTimer) clearTimeout(searchTimer)
+      
+      const query = subscribeInput.value.trim()
+      if (!query) {
+        searchList.value = []
+        showSearchResult.value = false
+        return
+      }
+
+      searchTimer = setTimeout(async () => {
+        isSearchingScript.value = true
+        try {
+          // 调用新增的接口
+          const res = await apiMethods.getAllScripts(query)
+          if (res && res.code === 200) {
+            searchList.value = res.data || []
+            showSearchResult.value = true
+          }
+        } catch (error) {
+          console.error("搜索失败", error)
+        } finally {
+          isSearchingScript.value = false
+        }
+      }, 500) // 500ms 防抖
+    }
+
+    // 选中联想词
+    const selectScript = (item) => {
+      subscribeInput.value = item.name
+      showSearchResult.value = false
+    }
+
+    // 格式化描述信息 (AAA狗粮批发~|~直接利用...)
+    const formatDesc = (desc) => {
+      if (!desc) return ''
+      const parts = desc.split('~|~')
+      return parts.length > 1 ? parts[1] : parts[0]
+    }
+
     const confirmSubscribe = async () => {
       if (!subscribeInput.value) return
       try {
@@ -270,15 +352,11 @@ export default {
       }
     }
 
-
-
     const getTagClass = (mark) => {
       if (mark === '有更新') return 'tag-update'
       if (mark === '未知') return 'tag-unknown'
       return 'tag-normal'
     }
-    
-
 
     onMounted(() => {
       loadPluginList()
@@ -286,6 +364,7 @@ export default {
 
     onUnmounted(() => {
       if (carouselTimer) clearInterval(carouselTimer)
+      if (searchTimer) clearTimeout(searchTimer)
     })
 
     return {
@@ -298,6 +377,11 @@ export default {
       showModal,
       subscribeInput,
       subInputRef,
+      // 新增状态
+      searchList,
+      showSearchResult,
+      isSearchingScript,
+      // 方法
       loadPluginList,
       updatePlugin,
       batchUpdate,
@@ -306,6 +390,9 @@ export default {
       closeSubscribeModal,
       confirmSubscribe,
       getTagClass,
+      handleSearchInput,
+      selectScript,
+      formatDesc,
       goHome: () => router.push('/')
     }
   }
@@ -331,7 +418,7 @@ export default {
 .app-container {
   min-height: 100vh;
   background-color: var(--bg-color);
-  font-family: "Varela Round", "PingFang SC", "Microsoft YaHei", sans-serif; /* 圆润字体优先 */
+  font-family: "Varela Round", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--text-main);
   padding-bottom: calc(20px + var(--gap-safe));
   position: relative;
@@ -349,7 +436,7 @@ export default {
   pointer-events: none;
 }
 
-/* --- 1. 顶部导航栏 (玻璃拟态) --- */
+/* --- 1. 顶部导航栏 --- */
 .navbar {
   position: sticky;
   top: 10px;
@@ -474,7 +561,7 @@ export default {
   border-radius: 50%;
 }
 
-/* --- 2. 快捷功能区 (图标拟物化) --- */
+/* --- 2. 快捷功能区 --- */
 .quick-actions {
   display: flex;
   justify-content: space-between;
@@ -521,48 +608,7 @@ export default {
   color: #777;
 }
 
-/* --- 3. 轮播图 --- */
-.banner-area {
-  padding: 0 16px 16px;
-  position: relative;
-  z-index: 1;
-}
-.banner-wrapper {
-  position: relative;
-  height: 130px;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: var(--shadow-soft);
-  border: 4px solid #FFF;
-}
-.banner-img {
-  width: 100%;
-  height: 400%;
-  object-fit: cover;
-}
-.banner-dots {
-  position: absolute;
-  bottom: 8px;
-  right: 12px; /* 移到右侧 */
-  display: flex;
-  gap: 6px;
-}
-.banner-dots .dot {
-  width: 8px;
-  height: 8px;
-  background: rgba(255,255,255,0.6);
-  border-radius: 50%;
-  position: static;
-  transition: all 0.3s;
-}
-.banner-dots .dot.active {
-  background: #FFF;
-  transform: scale(1.2);
-  width: 20px;
-  border-radius: 10px;
-}
-
-/* --- 4. 列表卡片 --- */
+/* --- 3. 列表卡片 --- */
 .main-list {
   padding: 0 16px;
   position: relative;
@@ -593,12 +639,10 @@ export default {
   box-shadow: var(--shadow-hover);
 }
 
-/* 待更新状态：粉色边框和浅色背景 */
 .script-card.needs-update {
   border-color: #FFB6C1;
   background: #FFF8FA;
 }
-/* 装饰性丝带效果 */
 .script-card.needs-update::before {
   content: '';
   position: absolute;
@@ -653,21 +697,14 @@ export default {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-family: monospace; /* 保持版本号清晰 */
+  font-family: monospace;
   background: #F7F8FA;
   padding: 4px 8px;
   border-radius: 10px;
 }
 
-.ver-badge {
-  color: #666;
-}
-
-.ver-badge.new {
-  color: var(--primary);
-  font-weight: 800;
-}
-
+.ver-badge { color: #666; }
+.ver-badge.new { color: var(--primary); font-weight: 800; }
 .arrow { color: #FFC0CB; font-weight: bold; }
 
 .time-text {
@@ -682,19 +719,14 @@ export default {
   border-radius: 10px;
   font-weight: bold;
 }
-.tag-update { 
-    color: #f30606; 
-    background: var(--primary); 
-    box-shadow: 0 2px 6px rgba(251, 114, 153, 0.3);
-}
+.tag-update { color: #f30606; background: var(--primary); box-shadow: 0 2px 6px rgba(251, 114, 153, 0.3); }
 .tag-normal { color: #52C41A; background: #F6FFED; border: 1px solid #B7EB8F; }
 .tag-unknown { color: #B0B0B0; background: #F5F5F5; }
 
-/* 按钮区域 */
 .card-action {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 2px dashed #FFE4EA; /* 虚线分隔更可爱 */
+  border-top: 2px dashed #FFE4EA;
 }
 
 .btn-update {
@@ -714,11 +746,7 @@ export default {
   transition: all 0.2s;
 }
 .btn-update:active { transform: scale(0.97); }
-.btn-update:disabled { 
-    background: #E0E0E0; 
-    box-shadow: none; 
-    color: #999;
-}
+.btn-update:disabled { background: #E0E0E0; box-shadow: none; color: #999; }
 
 .loading-spin {
   animation: spin 1s infinite linear;
@@ -726,103 +754,245 @@ export default {
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* --- 5. 弹窗 (Pop-up Style) --- */
+/* --- 5. 弹窗 (Pop-up Style - 美化重构版) --- */
 .modal-mask {
   position: fixed;
   inset: 0;
-  background: rgba(255, 192, 203, 0.3); /* 粉色半透明遮罩 */
-  backdrop-filter: blur(5px);
+  background: rgba(100, 100, 110, 0.4);
+  backdrop-filter: blur(8px);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
 }
 
 .modal-panel {
-  background: #FFF;
-  width: 80%;
-  max-width: 320px;
-  border-radius: 30px;
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFFFFF 100%);
+  width: 90%;
+  max-width: 720px;
+  height: 700px;
+  border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 20px 60px rgba(251, 114, 153, 0.3);
-  border: 4px solid #FFF;
+  box-shadow: 0 20px 60px rgba(251, 114, 153, 0.35), 0 0 0 6px rgba(255, 255, 255, 0.6);
+  border: 1px solid #FFE4EA;
   text-align: center;
+  position: relative;
+  overflow: visible; /* 允许下拉框超出 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 装饰性背景 */
+.modal-decorative-bg {
+    position: absolute;
+    top: -20px; left: -20px; right: -20px; bottom: -20px;
+    z-index: -1;
+    /* background: radial-gradient(circle at 50% 0, #ffdce5 0%, transparent 60%); */
+    border-radius: 40px;
+    opacity: 0.5;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  position: relative;
 }
-.modal-header h3 { margin: 0; font-size: 20px; color: var(--primary); }
+.modal-header h3 { 
+    margin: 0; 
+    font-size: 20px; 
+    color: var(--primary); 
+    font-weight: 900;
+    text-shadow: 1px 1px 0 #fff;
+    flex: 1;
+    text-align: center;
+    margin-left: 32px; /* 平衡关闭按钮的位置 */
+}
 .close-btn { 
-    background: #F0F0F0; 
-    border: none; 
-    width: 32px; height: 32px; 
-    border-radius: 50%; 
-    color: #999; 
-    font-weight: bold;
+  background: #FFF; 
+  border: 2px solid #FFE6EE; 
+  width: 32px; height: 32px; 
+  border-radius: 50%; 
+  color: #FB7299; 
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.close-btn:hover { background: #FB7299; color: #FFF; border-color: #FB7299; }
+
+.modal-body {
+    text-align: left;
+    margin-bottom: 24px;
 }
 
 .input-label { 
-    font-size: 15px; 
-    color: #666; 
-    margin-bottom: 12px; 
-    font-weight: bold; 
-    text-align: left;
+  font-size: 14px; 
+  color: #888; 
+  margin-bottom: 8px; 
+  font-weight: bold; 
+  padding-left: 8px;
+}
+
+/* 输入框容器 */
+.input-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .modal-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 14px;
+  padding: 14px 14px 14px 46px; /* 留出图标位置 */
   border: 2px solid #FFE6EE;
-  border-radius: 16px;
+  border-radius: 50px; /* 全圆角 */
   font-size: 16px;
-  background: #FFFBFD;
+  background: #FFF;
   outline: none;
-  color: var(--primary);
-  text-align: center;
-  transition: border 0.3s;
+  color: #555;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
 }
 .modal-input:focus { 
-    border-color: var(--primary); 
-    background: #FFF; 
-    box-shadow: 0 0 0 4px rgba(251, 114, 153, 0.1);
+  border-color: var(--primary); 
+  background: #FFF; 
+  box-shadow: 0 0 0 6px rgba(251, 114, 153, 0.15);
+}
+.modal-input::placeholder { 
+  color: #ccc; font-size: 14px; 
 }
 
-.modal-tips { font-size: 12px; color: #FFB7C5; margin-top: 10px; }
+/* 搜索下拉 */
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 12px;
+  background: #FFF;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(100, 100, 110, 0.15);
+  border: 1px solid #FFE6EE;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 8px;
+}
+
+/* 滚动条美化 */
+.search-dropdown::-webkit-scrollbar { width: 4px; }
+.search-dropdown::-webkit-scrollbar-thumb { background: #FFD1DC; border-radius: 4px; }
+.search-dropdown::-webkit-scrollbar-track { background: transparent; }
+
+.search-dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.search-item {
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 4px;
+}
+.search-item:last-child { margin-bottom: 0; }
+.search-item:hover {
+  background: #FFF0F5;
+}
+.item-name {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.item-desc {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.loading-indicator {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.modal-tips { 
+    font-size: 12px; 
+    color: #BBB; 
+    margin-top: 12px; 
+    padding-left: 8px;
+}
 
 .modal-footer {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: auto;
 }
 .btn-cancel, .btn-confirm {
   flex: 1;
   padding: 12px;
-  border-radius: 18px;
+  border-radius: 50px;
   border: none;
   font-size: 15px;
   font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.btn-cancel { background: #F5F5F5; color: #999; }
+.btn-cancel { 
+    background: #F2F3F5; 
+    color: #999; 
+}
+.btn-cancel:hover { background: #E5E6EB; }
+
 .btn-confirm { 
-    background: var(--primary); 
-    color: white; 
-    box-shadow: 0 4px 10px rgba(251, 114, 153, 0.4);
+   background: linear-gradient(90deg, #FB7299, #FF5C8A);
+   color: #FFF; 
+   box-shadow: 0 4px 12px rgba(251, 114, 153, 0.4);
 }
-.btn-confirm:disabled { background: #FFD1DC; box-shadow: none; }
+.btn-confirm:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(251, 114, 153, 0.5);
+}
+.btn-confirm:disabled { 
+    background: #E0E0E0; 
+    box-shadow: none; 
+    color: #AAA; 
+    transform: none;
+    cursor: not-allowed;
+}
 
 /* 弹窗动画 */
-.pop-enter-active, .pop-leave-active { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
-.pop-enter-from, .pop-leave-to { transform: scale(0.5); opacity: 0; }
+.pop-enter-active, .pop-leave-active { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.pop-enter-from, .pop-leave-to { transform: scale(0.9) translateY(20px); opacity: 0; }
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* 桌面端适配 */
 @media (min-width: 768px) {
   .app-container {
-    background-color: #FFE6EE; /* 桌面端更深的粉色背景 */
+    background-color: #FFE6EE;
   }
   .navbar, .quick-actions, .banner-area, .main-list {
     max-width: 800px;

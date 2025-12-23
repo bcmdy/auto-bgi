@@ -1809,8 +1809,6 @@ func JsNamesInfo() []JsNamesInfoStruct {
 			mark = "有更新"
 		}
 
-		//最后更新时间
-
 		jsNamesInfoStructs = append(jsNamesInfoStructs, JsNamesInfoStruct{
 			Name:        name,
 			NowVersion:  nowVersion,
@@ -1824,7 +1822,8 @@ func JsNamesInfo() []JsNamesInfoStruct {
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo.json")
 	repo, err := os.ReadFile(filePath)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		return jsNamesInfoStructs
 	}
 	newData := repo
 	data := gjson.Get(string(newData), "indexes.1.children")

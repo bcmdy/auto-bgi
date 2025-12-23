@@ -30,6 +30,11 @@ func InitFunction() {
 		autoLog.Sugar.Infof("关闭每隔一小时发送截图")
 	}
 
+	if config.Cfg.Account.SecretKey != "" {
+		//每天0点清空联机次数
+		go task.ClearRunCount()
+	}
+
 	//实时读取文件
 	go bgiStatus.LogM()
 
@@ -101,8 +106,9 @@ func InitFunction() {
 	} else {
 		go frpc.InitFrp()
 	}
-
 	//检查重启文件
 	check()
+
+	//abgiSSE.ChangeAccount("101879243-派萌")
 
 }

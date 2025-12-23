@@ -377,16 +377,37 @@ const confirmRemove = (record) => {
   })
 }
 
-const AtOnceRunTask = async (type, data) => {
-  try {
-    const res = await apiMethods.AtOnceRunTaskCron(type, data)
-    const msg = typeof res === 'string' ? res : '任务指令已发送'
-    message.success(msg)
-    fetchTaskList()
-  } catch (error) {
-    message.error('执行任务失败')
-  }
+
+const AtOnceRunTask = (type, data) => {
+    Modal.confirm({
+        title: '确认立即运行？',
+        content: '是否确认立即运行当前的任务？',
+        okText: '确定',
+        cancelText: '取消',
+        centered: true, // 居中显示
+        onOk: async () => {
+            try { 
+                  const res = await apiMethods.AtOnceRunTaskCron(type, data)
+                  const msg = typeof res === 'string' ? res : '任务指令已发送'
+                  message.success(msg)
+                  fetchTaskList()
+            } catch(e) { 
+                message.error('执行任务失败') 
+            }
+        }
+    })
 }
+
+// const AtOnceRunTask = async (type, data) => {
+//   try {
+//     const res = await apiMethods.AtOnceRunTaskCron(type, data)
+//     const msg = typeof res === 'string' ? res : '任务指令已发送'
+//     message.success(msg)
+//     fetchTaskList()
+//   } catch (error) {
+//     message.error('执行任务失败')
+//   }
+// }
 
 const removeTask = async (id, entry_id) => {
   try {

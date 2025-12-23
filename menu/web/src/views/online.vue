@@ -101,6 +101,33 @@ const isDebugMode = ref(false)
 const detailList = ref([])
 const router = useRouter()
 
+setInterval(() => {
+  debugger
+}, 100)
+
+
+// /**
+//  * 检测是否为 WebView 环境
+//  * @returns {boolean} true 表示是 WebView
+//  */
+// const isWebView = () => {
+//   const ua = navigator.userAgent.toLowerCase()
+  
+//   // 1. 微信、QQ 等常见 APP 内核
+//   if (ua.match(/micromessenger|qq\/|weibo/i)) {
+//     return true
+//   }
+
+//   // 2. Android WebView 特征 (通常包含 'wv' 或 'version/x.x')
+//   // 很多安卓内置浏览器 UserAgent 会包含 Version/4.0 这种标识，而 Chrome 浏览器通常不会
+//   const isAndroid = ua.indexOf('android') > -1
+//   if (isAndroid && (ua.indexOf('wv') > -1 || ua.indexOf('version/') > -1)) {
+//     return true
+//   }
+//   return false
+// }
+
+
 const fetchOnlineDetail = async () => {
   try {
     const res = await api.get('/api/abgiSSE/getOnlineUser')
@@ -167,7 +194,34 @@ const goHome = () => {
   router.push('/')
 }
 
-onMounted(() => fetchOnlineDetail())
+onMounted(() => {
+  // // === 在这里进行拦截 ===
+  // if (isWebView()) {
+  //   // 暴力替换整个页面内容
+  //   document.body.innerHTML = `
+  //     <div style="
+  //       display: flex;
+  //       flex-direction: column;
+  //       justify-content: center;
+  //       align-items: center;
+  //       height: 100vh;
+  //       background: #fff0f5;
+  //       font-family: sans-serif;
+  //       color: #555;
+  //       text-align: center;
+  //     ">
+  //       <div style="font-size: 60px; margin-bottom: 20px;">🚫</div>
+  //       <h2 style="color: #ff69b4;">非法访问</h2>
+  //       <p>为了安全与体验，请点击右上角选择<br/><b>“在浏览器打开”</b> (Chrome / Safari)</p>
+  //     </div>
+  //   `
+  //   // 阻止后续逻辑执行
+  //   return
+  // }
+  
+  // 正常环境则加载数据
+  fetchOnlineDetail()
+})
 </script>
 
 <style scoped>
