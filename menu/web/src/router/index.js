@@ -28,6 +28,7 @@ import TaskCron from '../views/TaskCron.vue'
 import Login from '../views/Login.vue'
 import BgiConfig from '../views/BgiConfig.vue'
 import Update from '../views/Update.vue'
+import CollectionManagement from '../views/CollectionManagement.vue'
 
 // 路由配置
 const routes = [
@@ -58,6 +59,7 @@ const routes = [
   { path: '/TaskCron', component: TaskCron, meta: { requiresAuth: true } }
   ,{ path: '/BgiConfig', component: BgiConfig, meta: { requiresAuth: true } }
   ,{ path: '/Update', component: Update, meta: { requiresAuth: true } }
+  ,{ path: '/CollectionManagement', component: CollectionManagement, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

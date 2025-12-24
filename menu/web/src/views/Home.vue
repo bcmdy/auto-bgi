@@ -321,6 +321,7 @@ const dataAnalysisButtons = ref([
   { text: '背包统计', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },
   { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
+  { text: '采集管理', route: '/CollectionManagement' },
   { text: 'ABGI日志查询', route: '/autoLog' },
   { text: 'ABGI定时任务', route: '/TaskCron' }
 ])

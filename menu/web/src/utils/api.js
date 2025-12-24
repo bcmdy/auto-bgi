@@ -145,6 +145,10 @@ export const apiMethods = {
   getCalculateTaskEnabledList: () => api.get('/CalculateTaskEnabledList'),
   getBagStatistics: () => api.get('/api/BagStatistics'),
   getCDAwareAutoGather: (status = '3') => api.get('/api/CD-Aware-AutoGather/ReadInfo', { params: { status } }),
+  // 采集管理
+  getCollectionManagement: (name) => api.get('/api/CDCollectionManagement/list', { params: { name } }),
+  getAllUserFiles: () => api.get('/api/CDCollectionManagement/AllUserFile'),
+  getPickupHistory: (name) => api.get('/api/CDCollectionManagement/ReadPickup', { params: { name } }),
   // 更新是否加入背包统计
   CDAllMaterial : () => api.post('/api/CD-Aware-AutoGather/CDAllMaterial'),
   // 一键更新全部材料

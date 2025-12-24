@@ -12,6 +12,7 @@
     "@ant-design/icons-vue": "^7.0.0",
     "ant-design-vue": "^4.0.0",
     "axios": "^1.5.0",
+    "dayjs": "^1.11.19",
     "dompurify": "^3.1.6",
     "echarts": "^6.0.0",
     "flv.js": "^1.6.2",
