@@ -40,12 +40,14 @@
             <a-tag color="blue">{{ items.length }} 个采集点</a-tag>
           </template>
           
+          <!-- 桌面端表格显示 -->
           <a-table 
             :columns="columns" 
             :data-source="items" 
             :pagination="false"
             size="small"
             :row-key="(record) => record.FileName"
+            class="desktop-table"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'FileName'">
@@ -73,6 +75,40 @@
               </template>
             </template>
           </a-table>
+          
+          <!-- 移动端卡片显示 -->
+          <div class="mobile-cards">
+            <div 
+              v-for="(record, index) in items" 
+              :key="index"
+              class="collection-item-card"
+            >
+              <div class="card-header">
+                <div class="card-title">{{ record.FileName }}</div>
+                <a-tag :color="getStatusColor(record.Status)" class="card-status">
+                  {{ record.Status }}
+                </a-tag>
+              </div>
+              
+              <div class="card-body">
+                <div class="card-info-row">
+                  <span class="info-label">📅 CD时间：</span>
+                  <span class="info-value">{{ record.CdTime }}</span>
+                </div>
+              </div>
+              
+              <div class="card-footer">
+                <a-button 
+                  type="primary" 
+                  size="small"
+                  @click="showHistory(record)"
+                  block
+                >
+                  📊 查看历史
+                </a-button>
+              </div>
+            </div>
+          </div>
         </a-collapse-panel>
       </a-collapse>
     </a-card>
@@ -525,6 +561,83 @@ onMounted(async () => {
   font-weight: 600;
 }
 
+/* 移动端卡片样式 */
+.mobile-cards {
+  display: none; /* 桌面端隐藏 */
+}
+
+.collection-item-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.collection-item-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.collection-item-card:last-child {
+  margin-bottom: 0;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.card-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.card-status {
+  flex-shrink: 0;
+}
+
+.card-body {
+  margin-bottom: 10px;
+}
+
+.card-info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.card-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.info-value {
+  color: #333;
+  font-weight: 400;
+}
+
+.card-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .collection-management {
@@ -541,6 +654,15 @@ onMounted(async () => {
   
   :deep(.ant-space) {
     flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  
+  :deep(.ant-select) {
+    width: 100% !important;
+  }
+  
+  :deep(.ant-btn) {
+    width: 100%;
   }
   
   :deep(.ant-collapse-header) {
@@ -548,17 +670,30 @@ onMounted(async () => {
     padding: 10px 12px !important;
   }
   
-  :deep(.ant-table) {
+  /* 隐藏表格，显示卡片 */
+  .desktop-table {
+    display: none !important;
+  }
+  
+  .mobile-cards {
+    display: block !important;
+  }
+  
+  .collection-item-card {
+    margin-bottom: 10px;
+  }
+  
+  .card-title {
     font-size: 12px;
   }
   
-  .file-name {
-    font-size: 12px;
-    word-break: break-all;
-  }
-  
-  .cd-time {
+  .card-info-row {
     font-size: 11px;
+  }
+  
+  :deep(.ant-tag) {
+    font-size: 11px;
+    padding: 2px 6px;
   }
 }
 
@@ -571,6 +706,14 @@ onMounted(async () => {
     font-size: 16px;
   }
   
+  :deep(.ant-card-head) {
+    padding: 10px;
+  }
+  
+  :deep(.ant-card-body) {
+    padding: 10px;
+  }
+  
   :deep(.ant-date-picker),
   :deep(.ant-select) {
     width: 100% !important;
@@ -579,6 +722,7 @@ onMounted(async () => {
   
   :deep(.ant-space) {
     width: 100%;
+    gap: 8px !important;
   }
   
   :deep(.ant-space-item) {
@@ -587,6 +731,51 @@ onMounted(async () => {
   
   :deep(.ant-btn) {
     width: 100%;
+  }
+  
+  :deep(.ant-collapse-header) {
+    font-size: 13px;
+    padding: 8px 10px !important;
+  }
+  
+  /* 小屏手机卡片优化 */
+  .desktop-table {
+    display: none !important;
+  }
+  
+  .mobile-cards {
+    display: block !important;
+  }
+  
+  .collection-item-card {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .card-title {
+    font-size: 12px;
+  }
+  
+  .card-info-row {
+    font-size: 11px;
+  }
+  
+  .info-label {
+    font-size: 11px;
+  }
+  
+  .info-value {
+    font-size: 11px;
+  }
+  
+  :deep(.ant-tag) {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+  
+  .card-footer :deep(.ant-btn) {
+    font-size: 12px;
+    height: 32px;
   }
 }
 
@@ -950,10 +1139,26 @@ onMounted(async () => {
     gap: 8px;
   }
   
+  .pickup-date {
+    font-size: 14px;
+  }
+  
   .pickup-stats {
     grid-template-columns: 1fr;
     gap: 8px;
     padding: 10px;
+  }
+  
+  .stat-item {
+    font-size: 12px;
+  }
+  
+  .stat-label {
+    font-size: 12px;
+  }
+  
+  .stat-value {
+    font-size: 14px;
   }
   
   .pickup-items {
@@ -963,6 +1168,62 @@ onMounted(async () => {
   .pickup-item-tag {
     font-size: 12px;
     padding: 4px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .empty-state {
+    padding: 40px 10px;
+  }
+  
+  .empty-icon {
+    font-size: 48px;
+  }
+  
+  .empty-text {
+    font-size: 14px;
+  }
+  
+  .pickup-record {
+    margin-left: 5px;
+    padding: 10px;
+  }
+  
+  .pickup-date {
+    font-size: 13px;
+  }
+  
+  .date-icon {
+    font-size: 16px;
+  }
+  
+  .pickup-stats {
+    padding: 8px;
+  }
+  
+  .stat-item {
+    font-size: 11px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  .stat-value {
+    font-size: 13px;
+  }
+  
+  .pickup-items {
+    gap: 4px;
+  }
+  
+  .pickup-item-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  
+  .timeline-dot {
+    font-size: 16px;
   }
 }
 </style>
