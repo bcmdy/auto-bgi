@@ -166,7 +166,7 @@ const onFinishFailed = (errorInfo) => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+@import '../assets/css2.css';
 
 /* ========== 全局容器与背景 ========== */
 .login-container {

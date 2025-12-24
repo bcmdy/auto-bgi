@@ -513,7 +513,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap'); */
 @import '../assets/css2.css';
 
 :root {

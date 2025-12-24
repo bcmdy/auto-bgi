@@ -225,8 +225,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 引入可爱字体 (如果系统没有则回退) */
-/* @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap'); */
 @import '../assets/fonts3.css';
 
 /* 全局容器：樱花背景 */

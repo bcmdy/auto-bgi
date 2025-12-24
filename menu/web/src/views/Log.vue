@@ -331,8 +331,7 @@ html, body {
 </style>
 
 <style scoped>
-/* 引入漂亮字体 */
-/* @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;700&display=swap'); */
+@import '../assets/css2.css';
 
 /* --- 全局变量 --- */
 .app-container {
