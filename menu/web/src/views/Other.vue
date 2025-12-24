@@ -55,6 +55,14 @@
                             {{ formatFileName(file) }}
                         </option>
                     </select>
+                    <button 
+                        class="btn view-detail-btn" 
+                        @click="viewLogDetail"
+                        :disabled="!selectedFile || loading"
+                        title="查看日志详情"
+                    >
+                        📄 查看详情
+                    </button>
                 </div>
             </section>
 
@@ -601,6 +609,18 @@ export default {
             document.execCommand('copy');
             document.body.removeChild(textarea);
             this.$message?.success('复制成功！（包含配置组、文件、错误总数等汇总信息）');
+        },
+        // 查看日志详情
+        viewLogDetail() {
+            if (!this.selectedFile) {
+                this.$message?.warning('请先选择一个日志文件');
+                return;
+            }
+            // 跳转到日志详情页面，传递文件名参数
+            this.$router.push({
+                path: '/logDetail',
+                query: { file: this.selectedFile }
+            });
         }
     }
 }
@@ -796,6 +816,33 @@ export default {
     cursor: pointer;
     min-width: 200px;
     transition: all 0.2s ease;
+}
+
+.view-detail-btn {
+    background: linear-gradient(45deg, #2196F3, #42A5F5);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.view-detail-btn:hover:not(:disabled) {
+    background: linear-gradient(45deg, #42A5F5, #2196F3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.view-detail-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: linear-gradient(45deg, #ccc, #ddd);
+    box-shadow: none;
 }
 
 .file-select:focus {
@@ -1748,6 +1795,11 @@ export default {
         min-width: auto;
         width: 100%;
         font-size: 0.9rem;
+    }
+
+    .view-detail-btn {
+        width: 100%;
+        font-size: 0.85rem;
     }
 
     /* 分析面板响应式设计 */
