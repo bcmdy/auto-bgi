@@ -33,13 +33,14 @@
               </a-alert>
 
               <a-form layout="vertical" class="custom-form">
-                <a-form-item label="任务名称">
+                <a-form-item label="任务类型">
                   <a-select
                     v-model:value="formState.name"
                     placeholder="选择后端注册任务"
                     :loading="dropdownLoading"
                     allow-clear
                     class="pink-input"
+                    :disabled="isEditing"
                   >
                     <a-select-option
                       v-for="taskName in availableTaskNames"

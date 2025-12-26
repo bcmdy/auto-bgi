@@ -693,9 +693,7 @@ func LogAnalysis(fileName string) map[string]int {
 			if bestSim < 0.1 {
 				autoLog.Sugar.Infof("未知材料:%s", item)
 			}
-
 			data[name] += count
-
 		}
 
 	}

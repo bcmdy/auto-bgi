@@ -8,7 +8,7 @@
                     <span class="logo-icon">🧩</span>
                 </div>
                 <div class="header-title-group">
-                    <h1>详细日志分析</h1>
+                    <h1>日志分析</h1>
                 </div>
                 <button class="btn header-btn" @click="$router.push('/')">返回首页</button>
             </div>
@@ -650,6 +650,7 @@ export default {
     box-shadow: 0 0 20px var(--primary-color);
     border-radius: 0 0 30px 30px;
     position: sticky;
+        height: 100px;
     top: 0;
     z-index: 10;
 }
@@ -704,6 +705,7 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    width: 300px;
     gap: 8px;
 }
 

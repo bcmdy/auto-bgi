@@ -4,7 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 // import { visualizer } from 'rollup-plugin-visualizer'
 // import styleImport from 'vite-plugin-style-import'
 
-const baseURL = "http://localhost:10086"
+const baseURL = "http://localhost:8082"
 
 export default defineConfig({
   plugins: [
@@ -29,7 +29,7 @@ export default defineConfig({
     }
   },
   server: {
-    host: 'localhost', // 新增此行，允许外部访问
+    host: '0.0.0.0', // 新增此行，允许外部访问
     port: 3000,
     proxy: {
       '/api': {

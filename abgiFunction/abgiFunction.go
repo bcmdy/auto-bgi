@@ -109,6 +109,4 @@ func InitFunction() {
 	//检查重启文件
 	check()
 
-	//abgiSSE.ChangeAccount("101879243-派萌")
-
 }

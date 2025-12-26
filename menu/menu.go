@@ -4,6 +4,7 @@ import (
 	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
+	"auto-bgi/CDCollectionManagement"
 	"auto-bgi/JsAPI"
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
@@ -261,7 +262,7 @@ func StarGin() {
 		//查询所有日志文件
 		needAuth.GET("/logFiles", bgiStatus.GetLogFiles)
 		//读取日志
-		ginServer.GET("/logInfo", bgiStatus.GetLogFileContent)
+		needAuth.GET("/logInfo", bgiStatus.GetLogFileContent)
 
 		/**
 		 * 联机相关
@@ -852,6 +853,14 @@ func StarGin() {
 			})
 		}
 
+		CDCollectionController := needAuth.Group("/CDCollectionManagement")
+		{
+			CDCollectionController.GET("/AllUserFile", CDCollectionManagement.AllUserFile)
+			CDCollectionController.GET("/list", CDCollectionManagement.CDCollectionRead)
+			CDCollectionController.GET("/ReadPickup", CDCollectionManagement.ReadPickup)
+
+		}
+
 		bgiController := needAuth.Group("/betterGi")
 		{
 			//读取黑名单
@@ -1057,6 +1066,9 @@ func StarGin() {
 			jsController.POST("/abgiAiConversation", JsAPI.AbgiAiConversation)
 		}
 	}
+
+	//测试
+	ginServer.GET("/api/test", CDCollectionManagement.CDCollectionRead)
 
 	ginServer.GET("/api/abgiObs/PlayVideoStream", func(c *gin.Context) {
 		token := c.Query("tk")

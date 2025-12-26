@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"path/filepath"
-	"time"
 )
 
 // 获取所有日志文件
@@ -21,7 +20,8 @@ func GetLogFiles(context *gin.Context) {
 
 // 获取指定日志文件内容
 func GetLogFileContent(context *gin.Context) {
-	filePath := filepath.Clean(fmt.Sprintf("%s\\log\\better-genshin-impact%s.log", config.Cfg.BetterGIAddress, time.Now().Format("20060102"))) // 本地日志路径
+	fileName := context.Query("fileName")
+	filePath := filepath.Clean(fmt.Sprintf("%s\\log\\%s", config.Cfg.BetterGIAddress, fileName)) // 本地日志路径
 	logInfo, err := GetLogInfo(filePath)
 	if err != nil {
 		context.String(http.StatusInternalServerError, "读取日志失败")

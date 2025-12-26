@@ -2,6 +2,7 @@ package task
 
 import (
 	"auto-bgi/Notice"
+	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -137,6 +138,31 @@ func SendWeChatImageTask() {
 
 		Notice.SentImage("jt.jpg")
 
+	}
+
+	// 添加定时任务
+	cronTab.AddFunc(spec, task)
+	// 启动定时器
+	cronTab.Start()
+	// 阻塞主线程停止
+	select {}
+
+}
+
+// 清空联机次数
+// 每隔1个小时发送截图
+func ClearRunCount() {
+
+	cronTab := cron.New(cron.WithSeconds())
+
+	// 定时任务,cron表达式
+	//每1个小时执行一次
+	spec := fmt.Sprintf("0 0 0 * * *")
+
+	// 定义定时器调用的任务函数
+	task := func() {
+		autoLog.Sugar.Infof("清空联机次数 %v", time.Now().Format("2006-01-02 15:04:05"))
+		abgiSSE.RunCount = 1
 	}
 
 	// 添加定时任务

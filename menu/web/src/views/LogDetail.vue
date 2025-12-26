@@ -42,6 +42,7 @@
 
 <script>
 import api from '@/utils/api'
+import indexHtmlContent from '@/assets/index.html?raw'
 
 export default {
     name: 'LogDetail',
@@ -85,9 +86,8 @@ export default {
         // 加载 index.html 模板
         async loadIndexHtml() {
             try {
-                // 获取 index.html 的内容
-                const htmlResponse = await fetch('/src/assets/index.html')
-                let htmlContent = await htmlResponse.text()
+                // 使用导入的 HTML 内容
+                let htmlContent = indexHtmlContent
                 
                 // 转义日志内容以便安全地注入到 JavaScript 中
                 const escapedLogContent = this.logContent

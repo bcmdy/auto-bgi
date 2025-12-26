@@ -9,8 +9,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/agnivade/levenshtein"
 	"io"
 	"log"
+	"math"
 	"net"
 	"os"
 	"os/exec"
@@ -450,4 +452,65 @@ func RestartProgram() error {
 	// 退出当前进程
 	os.Exit(0)
 	return nil
+}
+
+func computeDistance(a, b string) (int, float64) {
+	distance := levenshtein.ComputeDistance(a, b)
+	//fmt.Println("编辑距离:", distance)
+
+	// 转化为相似度（0~1之间）
+	similarity := 1 - float64(distance)/float64(max(len([]rune(a)), len([]rune(b))))
+	//fmt.Printf("相似度: %.2f\n", similarity)
+	return distance, similarity
+}
+
+// GetStandardName 根据输入名称返回匹配度最高的标准材料名
+// rawName: 原始名称 (例如 "月萤虫" 或 OCR 识别出的 "琉鳞石")
+func GetStandardName(rawName string) string {
+	// 1. 特殊别名映射 (如果以后别名多了，建议提取为全局 map)
+	if rawName == "月萤虫" {
+		return "晶蝶"
+	}
+
+	// 初始化最佳匹配
+	bestMatch := rawName // 默认回退到原始名称
+	maxScore := 0.0      // 记录最高相似度
+
+	// 2. 遍历标准库 (abgiConstant.Material 需在包级可见)
+	for _, stdName := range abgiConstant.Material {
+		// 性能优化：如果完全相等，直接返回，不做复杂计算
+		if rawName == stdName {
+			return stdName
+		}
+
+		// 计算相似度
+		_, score := computeDistance(rawName, stdName)
+
+		// 更新最佳匹配
+		if score > maxScore {
+			maxScore = score
+			bestMatch = stdName
+
+			// 性能优化：如果相似度已经是 1.0 (完美匹配)，没必要继续找了
+			if score >= 1.0 {
+				return stdName
+			}
+		}
+	}
+
+	// 3. 阈值检查与日志记录
+	// 注意：虽然记录了日志，但为了程序的连贯性，通常还是返回在这个阈值下找到的“最像”的那个，或者原名
+	//if maxScore < 0.1 {
+	//	// 这里假设 autoLog 是全局变量，如果不是，需要作为参数传入或通过回调处理
+	//	// autoLog.Sugar.Infof("未知材料: %s (最高相似度: %.2f, 匹配项: %s)", rawName, maxScore, bestMatch)
+	//	fmt.Printf("[Log] 未知材料: %s (最高相似度: %.2f)\n", rawName, maxScore)
+	//}
+
+	return bestMatch
+}
+
+// 保留指定位小数
+func RoundFloat(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
 }

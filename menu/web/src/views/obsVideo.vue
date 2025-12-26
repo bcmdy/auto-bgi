@@ -207,7 +207,6 @@
                   <div class="video-title">{{ video.name }}</div>
                   <div class="video-meta">
                     <span class="meta-tag size">{{ video.sizeMB.toFixed(1) }}MB</span>
-                    <span class="meta-tag time">⏱ {{ formatTime(video.sizeMB) }}</span>
                   </div>
                 </div>
                 <div class="video-actions">

@@ -177,8 +177,11 @@ BetterGIAddress   bgi安装地址
 
 ![image-20250901133817494](./assets/image-20250901133817494.png)
 
-- 需获取 **stoken-cookie**，加群，需要搭配一个压缩包
+- 需获取 **stoken-cookie**，加群，需要搭配一个压缩包（https://github.com/bcmdy/MihoyoBBSTools）
+
 - 只需要填如图两个值就行
+
+  ![image-20251219180136492](./assets/image-20251219180136492.png)
 
 ### ✅地图追踪更新功能（茶包版本的不行）
 

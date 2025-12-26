@@ -313,21 +313,21 @@ onUnmounted(() => {
   background: var(--bg-gradient);
   color: #444;
   min-height: 100vh;
-  padding-bottom: 100px; /* 为底部悬浮条留出空间 */
+  padding-bottom: 80px; /* 减小底部空间 */
 }
 
 /* 头部样式优化 */
 .page-header {
   position: relative;
-  height: 240px; /* 移动端更友好的高度 */
+  height: 120px; /* 进一步减小头部高度 */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  border-radius: 0 0 30px 30px;
+  border-radius: 0 0 15px 15px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(255,110,180,0.15);
+  box-shadow: 0 3px 15px rgba(255,110,180,0.12);
 }
 
 .header-carousel, .carousel-slide img, .header-overlay {
@@ -350,7 +350,7 @@ onUnmounted(() => {
 }
 
 .page-title {
-  font-size: 2rem;
+  font-size: 1.3rem; /* 进一步减小标题字体 */
   color: #e91e63;
   margin: 0;
   text-shadow: 0 2px 4px rgba(255,255,255,0.8);
@@ -358,19 +358,19 @@ onUnmounted(() => {
 
 .subtitle {
   color: #888;
-  margin-top: 5px;
-  font-size: 0.95rem;
+  margin-top: 2px;
+  font-size: 0.75rem; /* 进一步减小副标题 */
 }
 
 /* 布局容器 */
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 10px; /* 减小左右边距 */
 }
 
 .main-content {
-  margin-top: -30px; /* 上移一部分，产生层叠感 */
+  margin-top: -15px; /* 进一步减小上移距离 */
   position: relative;
   z-index: 3;
 }
@@ -380,14 +380,14 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px; /* 进一步减小底部间距 */
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px;
 }
 
 .groups-header h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 0.9rem; /* 进一步减小标题字体 */
   display: flex;
   align-items: center;
   color: #333;
@@ -396,10 +396,10 @@ onUnmounted(() => {
 .groups-count {
   background: var(--primary-color);
   color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.8rem;
-  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  margin-left: 6px;
 }
 
 .header-right {
@@ -410,23 +410,31 @@ onUnmounted(() => {
 /* 网格系统 - 响应式核心 */
 .groups-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); /* 默认手机单列 */
-  gap: 16px;
-
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* 手机端默认双列，最小140px */
+  gap: 8px;
 }
 
-@media (min-width: 640px) {
-  .groups-grid { grid-template-columns: repeat(2, 1fr); } /* 平板双列 */
+@media (min-width: 500px) {
+  .groups-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* 更大屏幕，卡片稍大 */
+  }
+}
+@media (min-width: 768px) {
+  .groups-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* 平板 */
+  }
 }
 @media (min-width: 1024px) {
-  .groups-grid { grid-template-columns: repeat(3, 1fr); } /* PC三列 */
+  .groups-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* PC端 */
+  }
 }
 
 /* 卡片样式 */
 .group-card {
   background: var(--card-bg);
-  border-radius: 20px;
-  padding: 20px;
+  border-radius: 12px; /* 进一步减小圆角 */
+  padding: 8px; /* 进一步减小内边距 */
   position: relative;
   border: 2px solid transparent;
   box-shadow: var(--shadow-sm);
@@ -449,14 +457,14 @@ onUnmounted(() => {
 
 .select-checkbox-wrapper {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 6px; /* 调整位置 */
+  right: 6px;
   z-index: 5;
 }
 
 .checkbox-ui {
-  width: 24px;
-  height: 24px;
+  width: 18px; /* 进一步减小复选框 */
+  height: 18px;
   border-radius: 50%;
   border: 2px solid #ddd;
   background: #fff;
@@ -472,8 +480,8 @@ onUnmounted(() => {
 .checkbox-ui.checked::after {
   content: '';
   position: absolute;
-  top: 4px; left: 8px;
-  width: 5px; height: 10px;
+  top: 2px; left: 5px; /* 调整勾的位置 */
+  width: 3px; height: 7px; /* 进一步减小勾的大小 */
   border: solid rgb(252, 5, 5);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
@@ -484,29 +492,31 @@ onUnmounted(() => {
   flex-direction: column; /* 手机端垂直排列更省空间 */
   align-items: center;
   text-align: center;
-  margin-bottom: 15px;
-  border:5px solid rgba(245, 7, 122, 0.2);
-  border-radius:15px;
+  margin-bottom: 4px; /* 进一步减小间距 */
+  border: 2px solid rgba(245, 7, 122, 0.15); /* 进一步减小边框 */
+  border-radius: 8px;
+  padding: 6px 4px; /* 减小内边距 */
 }
 
 .group-icon {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
+  font-size: 1.4rem; /* 进一步减小图标 */
+  margin-bottom: 3px;
 }
 
 .group-name {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 0.85rem; /* 进一步减小字体 */
   color: #333;
   word-break: break-all;
+  line-height: 1.2;
 }
 
 .selected-tag {
   display: block;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.65rem; /* 进一步减小字体 */
   color: var(--primary-color);
-  margin-bottom: 10px;
+  margin-bottom: 2px; /* 进一步减小间距 */
   font-weight: bold;
 }
 
@@ -523,22 +533,22 @@ onUnmounted(() => {
 /* 底部悬浮操作栏 */
 .selection-footer {
   position: fixed;
-  bottom: 20px;
+  bottom: 15px; /* 减小底部距离 */
   left: 50%;
   transform: translateX(-50%);
   width: 92%; /* 手机端稍微宽一点 */
-  max-width: 500px;
+  max-width: 450px; /* 减小最大宽度 */
   background: rgba(255, 255, 255, 0.98); /* 增加不透明度 */
   backdrop-filter: blur(15px);
-  padding: 12px 16px; /* 减小一点内边距 */
-  border-radius: 50px;
+  padding: 8px 12px; /* 减小内边距 */
+  border-radius: 40px; /* 减小圆角 */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18); /* 减小阴影 */
   border: 1px solid rgba(255,110,180, 0.3); /* 增加一点边框颜色 */
   z-index: 100;
-  gap: 10px; /* 元素之间的间距 */
+  gap: 8px; /* 减小元素间距 */
 }
 
 .selection-info {
@@ -552,14 +562,14 @@ onUnmounted(() => {
 .count-badge {
   background: linear-gradient(135deg, #ff6eb4, #ff2f9d);
   color: white;
-  width: 24px;
-  height: 24px;
+  width: 22px; /* 减小气泡 */
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* 减小字体 */
   flex-shrink: 0; /* 防止气泡被压扁 */
   box-shadow: 0 2px 6px rgba(255, 47, 157, 0.4);
 }
@@ -573,22 +583,22 @@ onUnmounted(() => {
 }
 
 .selection-text-col .label {
-  font-size: 0.7rem;
+  font-size: 0.65rem; /* 减小字体 */
   color: #999;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .selection-text {
   display: flex;
   flex-direction: column;
-  font-size: 0.85rem;
+  font-size: 0.8rem; /* 减小字体 */
   overflow: hidden;
 }
 
 .preview-text {
   color: #333;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* 减小字体 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis; /* 文字过长显示省略号 */
@@ -614,22 +624,24 @@ onUnmounted(() => {
 .btn.primary {
   background: linear-gradient(135deg, #ff6eb4, #ff8cc8);
   color: white;
-  border-radius: 20px;
-  padding: 8px 16px;
+  border-radius: 18px; /* 减小圆角 */
+  padding: 6px 14px; /* 减小内边距 */
   font-weight: bold;
-  box-shadow: 0 4px 15px rgba(255, 110, 180, 0.4);
+  font-size: 0.85rem; /* 减小字体 */
+  box-shadow: 0 3px 12px rgba(255, 110, 180, 0.35); /* 减小阴影 */
 }
 
 .btn.ghost {
   background: #f0f0f0;
   color: #666;
-  border-radius: 20px;
-  padding: 8px 16px;
+  border-radius: 18px; /* 减小圆角 */
+  padding: 6px 14px; /* 减小内边距 */
+  font-size: 0.85rem; /* 减小字体 */
 }
 /* 按钮微调，适应小屏幕 */
 .btn.small {
-  padding: 6px 12px;
-  font-size: 0.85rem;
+  padding: 5px 10px; /* 减小内边距 */
+  font-size: 0.8rem; /* 减小字体 */
 }
 
 /* 动画 */
@@ -639,8 +651,9 @@ onUnmounted(() => {
 /* 针对极小屏幕适配 */
 @media (max-width: 380px) {
   .btn-text { display: none; } /* 隐藏部分按钮文字 */
-  .page-title { font-size: 1.5rem; }
-  .selection-footer { width: 95%; padding: 10px 15px; }
+  .page-title { font-size: 1.2rem; }
+  .selection-footer { width: 95%; padding: 6px 10px; }
+  .container { padding: 0 8px; }
 }
 
 /* 装饰性元素保持不变 (Heart, Sparkle等) - 省略以节省篇幅，保持原样即可 */

@@ -2,6 +2,7 @@ package abgiObs
 
 import (
 	"auto-bgi/config"
+	"auto-bgi/tools"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,12 +32,14 @@ func (V *VideoInfo) GetAllRecordingsInfo(obsPath string) ([]VideoInfo, error) {
 			return nil
 		}
 		ext := filepath.Ext(info.Name())
+		rawSizeMB := float64(info.Size()) / 1024.0 / 1024.0
+		finalSizeMB := tools.RoundFloat(rawSizeMB, 2)
 		switch ext {
 		case ".mp4", ".mkv", ".flv", ".mov":
 			videos = append(videos, VideoInfo{
 				Name:         info.Name(),
 				Path:         path,
-				SizeMB:       float64(info.Size()) / 1024 / 1024,
+				SizeMB:       finalSizeMB,
 				ModifiedTime: info.ModTime(),
 			})
 		}

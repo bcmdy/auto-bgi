@@ -138,27 +138,11 @@ const doUpdate = async () => {
   loading.value = true
   note.value = ''
   try {
-    const res = await apiMethods.aBgiUpdate()
+     await apiMethods.aBgiUpdate()
       setTimeout(() => {
         window.location.href = '/' // 跳转到登录页
       }, 3500)
-
-
-    // 修正：原代码使用了赋值符号 = ，这里修正为 == 或 ===
-    // 逻辑：如果是200或success为true，视为成功
-    if (res && (res.code == 200 || res.msg == '更新成功' || res.success == true || res.message == '更新成功')) {
-      message.success('更新已触发，即将重启并跳转登录页...')
       
-      // 核心需求：ABGI更新成功后，断网并跳转登录页
-      // 给予1.5秒延迟让用户看到成功提示
-      setTimeout(() => {
-        window.location.href = '/login' // 跳转到登录页
-      }, 3500)
-
-    } else {
-      message.success((res && (res.msg || res.message)) || '更新请求已发送（请检查服务端日志）')
-      await refresh() // 如果没成功，刷新一下状态
-    }
   } catch (err) {
     console.error(err)
     message.error('更新失败：' + (err?.message || String(err)))
