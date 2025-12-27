@@ -31,6 +31,9 @@
           <button @click="goBagStatisticsTrend" class="kawaii-btn trend-btn icon-btn">
             📈 <span class="btn-text">变化图</span>
           </button>
+          <button @click="openEatStatisticsModal" class="kawaii-btn eat-btn icon-btn">
+            💊 <span class="btn-text">吃药查看</span>
+          </button>
         </div>
       </header>
 
@@ -194,6 +197,59 @@
       </div>
     </div>
 
+    <div v-if="showEatStatisticsModal" class="kawaii-modal-mask" @click.self="closeEatStatisticsModal">
+      <div class="kawaii-modal kawaii-modal-large">
+        <div class="modal-header modal-header-green">
+          <h3>💊 营养袋吃药统计</h3>
+          <button class="close-btn" @click="closeEatStatisticsModal">✖</button>
+        </div>
+        <div class="modal-body">
+          <div class="date-selector">
+            <label class="selector-label">📅 选择日期：</label>
+            <select v-model="selectedDate" class="kawaii-select">
+              <option v-for="date in availableDates" :key="date" :value="date">
+                {{ date }}
+              </option>
+            </select>
+          </div>
+
+          <div v-if="selectedDate && eatStatisticsData[selectedDate]" class="eat-statistics-content">
+            <div class="consumption-summary">
+              <h4 class="summary-title">📊 {{ selectedDate }} 消耗汇总</h4>
+              <div class="summary-cards">
+                <div v-for="(count, name) in dailyConsumptionSummary" :key="name" class="summary-card" :class="{ negative: count > 0 }">
+                  <div class="card-name">{{ name }}</div>
+                  <div class="card-count" :class="{ negative: count > 0 }">
+                    {{ count > 0 ? '+' : '' }}{{ count }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-records">
+              <h4 class="detail-title">📝 详细记录</h4>
+              <div class="records-list">
+                <div v-for="(item, idx) in getDetailRecordsWithDiff(selectedDate)" :key="idx" class="record-item">
+                  <span class="record-time">{{ item.Time }}</span>
+                  <span class="record-name">{{ item.Name }}</span>
+                  <span class="record-count">
+                    {{ item.Count }}
+                    <span v-if="item.diff !== null" class="diff-badge" :class="{ positive: item.diff > 0, negative: item.diff < 0 }">
+                      {{ item.diff > 0 ? '+' : '' }}{{ item.diff }}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="empty-mini-state">
+            ✨ 请选择日期查看吃药统计数据~
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -214,7 +270,10 @@ export default {
       showDetailModal: false,
       checkBagData: {},
       showBlackListModal: false,
-      blackList: []
+      blackList: [],
+      showEatStatisticsModal: false,
+      eatStatisticsData: {},
+      selectedDate: ''
     }
   },
   computed: {
@@ -327,17 +386,21 @@ export default {
         items: groups[cl]
       }));
     },
+
+    // 吃药统计相关计算属性
+    availableDates() {
+      return Object.keys(this.eatStatisticsData).sort().reverse();
+    },
+
+    dailyConsumptionSummary() {
+      return this.getDailyConsumption();
+    }
   },
 
   async mounted() {
     await this.loadData();
     await this.loadBlackList();
-           setInterval(() => {
-  debugger
-}, 100)
   },
-
-  
 
   methods: {
     async loadData() {
@@ -418,6 +481,125 @@ export default {
     cancelSelection() { this.selectedMaterials = []; },
     selectAllOre() { this.selectedMaterials = [...this.allOre]; },
     toggleFilter() { this.filterCollapsed = !this.filterCollapsed; },
+
+    async openEatStatisticsModal() {
+      this.showEatStatisticsModal = true;
+      await this.loadEatStatistics();
+    },
+
+    async loadEatStatistics() {
+      try {
+        const data = await api.get('/api/EatStatistics');
+        this.eatStatisticsData = data;
+        // 默认选择最新日期
+        const dates = Object.keys(data).sort().reverse();
+        if (dates.length > 0) {
+          this.selectedDate = dates[0];
+        }
+      } catch (error) {
+        console.error('加载吃药统计失败:', error);
+        alert('加载吃药统计数据失败，请稍后重试');
+      }
+    },
+
+    closeEatStatisticsModal() {
+      this.showEatStatisticsModal = false;
+      this.selectedDate = '';
+    },
+
+    // 计算选中日期的消耗统计（通过差值计算真实消耗）
+    getDailyConsumption() {
+      if (!this.selectedDate || !this.eatStatisticsData[this.selectedDate]) {
+        return {};
+      }
+      
+      const records = [...this.eatStatisticsData[this.selectedDate]];
+      // 按时间排序（从旧到新）
+      records.sort((a, b) => {
+        const timeA = a.Time.replace('时间:', '');
+        const timeB = b.Time.replace('时间:', '');
+        return new Date(timeA) - new Date(timeB);
+      });
+
+      // 按物品名称分组
+      const groupedByName = {};
+      records.forEach(item => {
+        if (!groupedByName[item.Name]) {
+          groupedByName[item.Name] = [];
+        }
+        groupedByName[item.Name].push(item);
+      });
+
+      // 计算每种物品的总消耗（累加所有差值）
+      const consumption = {};
+      Object.keys(groupedByName).forEach(name => {
+        const group = groupedByName[name];
+        let totalConsumption = 0;
+        let previousCount = null;
+        
+        group.forEach(item => {
+          if (previousCount !== null) {
+            // 差值 = 当前数量 - 上一次数量
+            const diff = item.Count - previousCount;
+            totalConsumption += diff;
+          }
+          previousCount = item.Count;
+        });
+        
+        consumption[name] = totalConsumption;
+      });
+      
+      return consumption;
+    },
+
+    // 获取带差值的详细记录（按物品名称分组，每组内按时间排序）
+    getDetailRecordsWithDiff(date) {
+      if (!date || !this.eatStatisticsData[date]) {
+        return [];
+      }
+
+      const records = [...this.eatStatisticsData[date]];
+      // 先按时间排序（从旧到新）
+      records.sort((a, b) => {
+        const timeA = a.Time.replace('时间:', '');
+        const timeB = b.Time.replace('时间:', '');
+        return new Date(timeA) - new Date(timeB);
+      });
+
+      // 按物品名称分组
+      const groupedByName = {};
+      records.forEach(item => {
+        if (!groupedByName[item.Name]) {
+          groupedByName[item.Name] = [];
+        }
+        groupedByName[item.Name].push(item);
+      });
+
+      // 为每组计算差值，并合并所有组
+      const result = [];
+      Object.keys(groupedByName).sort().forEach(name => {
+        const group = groupedByName[name];
+        let previousCount = null;
+        
+        group.forEach(item => {
+          let diff = null;
+          
+          if (previousCount !== null) {
+            // 计算变化量：当前数量 - 上一次数量
+            diff = item.Count - previousCount;
+          }
+          
+          previousCount = item.Count;
+          
+          result.push({
+            ...item,
+            diff
+          });
+        });
+      });
+      
+      return result;
+    }
   }
 }
 </script>
@@ -581,6 +763,8 @@ export default {
 .trend-btn { background: var(--k-blue-light); border-color: var(--k-blue-main); color: var(--k-blue-main); box-shadow: 0 4px 0 var(--k-blue-main); }
 /* 溢出检查按钮样式 */
 .overflow-btn { background: var(--k-purple-light); border-color: var(--k-purple-main); color: #8E24AA; box-shadow: 0 4px 0 var(--k-purple-main); }
+/* 吃药查看按钮样式 */
+.eat-btn { background: #C8E6C9; border-color: #66BB6A; color: #2E7D32; box-shadow: 0 4px 0 #66BB6A; }
 
 /* --- 筛选面板 --- */
 .filter-panel-wrapper {
@@ -800,12 +984,14 @@ export default {
   box-shadow: var(--k-shadow-hover); overflow: hidden;
   animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
+.kawaii-modal-large { max-width: 700px; }
 .modal-header {
   padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
   color: white;
 }
 .modal-header-pink { background: var(--k-pink-main); }
 .modal-header-purple { background: #CE93D8; }
+.modal-header-green { background: #66BB6A; }
 .modal-header h3 { margin: 0; font-size: 1.2rem; }
 .close-btn {
   background: rgba(255,255,255,0.3); border: none; width: 32px; height: 32px; border-radius: 50%;
@@ -813,6 +999,10 @@ export default {
 }
 .close-btn:hover { background: rgba(255,255,255,0.5); transform: rotate(90deg); }
 .modal-body { padding: 25px; max-height: 70vh; overflow-y: auto; }
+
+/* 隐藏滚动条但保持滚动功能 */
+.modal-body::-webkit-scrollbar { width: 0; height: 0; }
+.modal-body { scrollbar-width: none; -ms-overflow-style: none; }
 
 /* 详情列表 */
 .detail-list { list-style: none; padding: 0; margin: 0; }
@@ -838,6 +1028,80 @@ export default {
   background: transparent; color: #FF4B5E; border: none; font-weight: bold; cursor: pointer;
 }
 
+/* 吃药统计模态框样式 */
+.date-selector {
+  display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
+  padding: 15px; background: var(--k-pink-light); border-radius: var(--k-radius-sm);
+  flex-wrap: wrap;
+}
+.selector-label { font-weight: bold; color: var(--k-pink-dark); white-space: nowrap; }
+.kawaii-select {
+  padding: 8px 15px; border-radius: 20px; border: 2px solid var(--k-pink-main);
+  background: var(--k-white); color: var(--k-text-dark); font-weight: bold;
+  cursor: pointer; transition: all 0.2s; flex: 1; min-width: 150px;
+}
+.kawaii-select:hover { border-color: var(--k-pink-dark); box-shadow: 0 2px 8px rgba(255, 105, 180, 0.2); }
+
+.eat-statistics-content { margin-top: 20px; }
+
+.consumption-summary { margin-bottom: 30px; }
+.summary-title {
+  margin: 0 0 15px 0; font-size: 1.1rem; color: var(--k-pink-dark);
+  padding-bottom: 10px; border-bottom: 3px dotted var(--k-pink-main);
+}
+.summary-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;
+}
+.summary-card {
+  background: linear-gradient(135deg, #C8E6C9 0%, #A5D6A7 100%);
+  border: 2px solid #66BB6A; border-radius: var(--k-radius-sm);
+  padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(102, 187, 106, 0.3);
+  transition: transform 0.2s;
+}
+.summary-card:hover { transform: translateY(-3px); }
+.summary-card.negative { background: linear-gradient(135deg, #FFE0B2 0%, #FFCC80 100%); border-color: #FF9800; }
+.card-name { font-size: 0.9rem; color: #2E7D32; margin-bottom: 8px; }
+.card-count {
+  font-size: 1.8rem; font-weight: bold; color: #1B5E20;
+  font-family: "Comic Sans MS", cursive, sans-serif;
+}
+.card-count.negative { color: #E65100; }
+
+.detail-records { }
+.detail-title {
+  margin: 0 0 15px 0; font-size: 1.1rem; color: var(--k-pink-dark);
+  padding-bottom: 10px; border-bottom: 3px dotted var(--k-pink-main);
+}
+.records-list { max-height: 300px; overflow-y: auto; }
+
+/* 隐藏记录列表滚动条 */
+.records-list::-webkit-scrollbar { width: 0; height: 0; }
+.records-list { scrollbar-width: none; -ms-overflow-style: none; }
+.record-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 15px; background: var(--k-pink-light); border-radius: var(--k-radius-sm);
+  margin-bottom: 10px; border: 2px solid transparent; transition: all 0.2s;
+  flex-wrap: wrap; gap: 8px;
+}
+.record-item:hover { border-color: var(--k-pink-main); background: #FFE4E1; }
+.record-time { font-size: 0.85rem; color: var(--k-text-light); flex: 0 0 180px; }
+.record-name { flex: 0 0 150px; font-weight: bold; color: var(--k-text-dark); padding: 0 10px; }
+.record-count {
+  font-weight: bold; color: #66BB6A; font-size: 1.1rem;
+  background: var(--k-white); padding: 4px 12px; border-radius: 20px;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.diff-badge {
+  font-size: 0.9rem; padding: 2px 8px; border-radius: 12px;
+  font-weight: bold;
+}
+.diff-badge.positive {
+  background: #FFE0B2; color: #E65100; /* 橙色表示增加（消耗） */
+}
+.diff-badge.negative {
+  background: #C8E6C9; color: #2E7D32; /* 绿色表示减少（补充） */
+}
+
 /* --- 响应式适配 --- */
 @media (max-width: 768px) {
   .kawaii-header { flex-direction: column; text-align: center; padding: 15px; }
@@ -850,6 +1114,39 @@ export default {
   .material-checkbox-grid { grid-template-columns: repeat(2, 1fr); }
   .main-container { padding: 10px; }
   .data-display-section { padding: 10px; background: transparent; box-shadow: none; border: none; }
+
+  /* 吃药统计移动端适配 */
+  .kawaii-modal-large { max-width: 100%; margin: 10px; }
+  .modal-body { padding: 15px; }
+  
+  .date-selector { 
+    flex-direction: column; align-items: stretch; gap: 10px; padding: 12px;
+  }
+  .kawaii-select { width: 100%; min-width: auto; }
+  
+  .summary-cards { 
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+    gap: 10px;
+  }
+  .summary-card { padding: 12px; }
+  .card-count { font-size: 1.5rem; }
+  
+  .summary-title, .detail-title { font-size: 1rem; }
+  
+  .record-item { 
+    flex-direction: column; align-items: flex-start; padding: 10px; gap: 6px;
+  }
+  .record-time { 
+    flex: none; font-size: 0.75rem; width: 100%;
+    padding-bottom: 4px; border-bottom: 1px dashed var(--k-pink-main);
+  }
+  .record-name { 
+    flex: none; font-size: 0.95rem; padding: 0; width: 100%;
+  }
+  .record-count { 
+    font-size: 1rem; align-self: flex-end;
+  }
+  .diff-badge { font-size: 0.85rem; }
 }
 
 /* 动画 */

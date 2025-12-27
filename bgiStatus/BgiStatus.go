@@ -190,9 +190,6 @@ func BagStatistics() ([]Material, error) {
 					y1, m1, d1 := time1.Date()
 					y2, m2, d2 := time2.Date()
 
-					//fmt.Println("======", y1, m1, d1, bag.Cl)
-					//fmt.Println("======", y1, m1, d1, bag.Cl)
-
 					if y1 == y2 && m1 == m2 && d1 == d2 {
 						continue
 					} else {

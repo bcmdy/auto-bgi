@@ -69,6 +69,9 @@ func SpecifyUpdateJs(subDirs []string) (string, error) {
 				autoLog.Sugar.Infof("脚本更新：带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
 				Notice.SentText("带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
 				continue
+			} else if name == "采集cd管理" {
+				autoLog.Sugar.Infof("脚本更新：采集cd管理有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
+				Notice.SentText("采集cd管理有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
 			}
 
 			// 开始更新
