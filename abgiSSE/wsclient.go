@@ -60,7 +60,7 @@ func Connect(url string, runDebug bool, headers http.Header) error {
 	}
 
 	//判断上线次数
-	if RunCount <= 3 {
+	if RunCount <= 2 {
 		if config.Cfg.Account.Uid != "260627712" && config.Cfg.Account.Uid != "232805532" {
 			autoLog.Sugar.Infof("今日第%d次上线", RunCount)
 			RunCount++

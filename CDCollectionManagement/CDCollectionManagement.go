@@ -4,6 +4,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/tools"
+	"fmt"
 	"github.com/tidwall/gjson"
 	"os"
 	"path/filepath"
@@ -28,49 +29,23 @@ func ReadAllUser() []string {
 	directories, err := tools.ListDirectories(filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "record"))
 	if err != nil {
 		autoLog.Sugar.Errorf("读取record.json失败: %v", err)
+		return nil
 	}
 	return directories
 }
 
 // 遍历文件，获取路径和json文件
-func ReadAllPathing() map[string]string {
-	mapData := make(map[string]string)
-	directories, err := tools.FindJSONFiles(filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "pathing"))
+func ReadAllPathing() (*FileNode, error) {
+	tree, err := GenerateTree(filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "pathing"), ".js", ".txt", ".ini", ".ico")
 	if err != nil {
-		autoLog.Sugar.Errorf("读取pathing.json失败: %v", err)
-		return nil
+		autoLog.Sugar.Errorf("ReadAllPathing:%s", err.Error())
+		return nil, err
 	}
-	rootPrefix := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "pathing")
-
-	for _, fullPath := range directories {
-
-		baseName := filepath.Base(fullPath)
-		dirPath := filepath.Dir(fullPath)
-		relativePath, err := filepath.Rel(rootPrefix, dirPath)
-
-		if err != nil {
-			relativePath = dirPath
-		}
-		//finalPath := strings.ReplaceAll(relativePath, "\\", "-")
-
-		finalPath := filepath.Base(relativePath)
-
-		mapData[baseName] = finalPath
-	}
-
-	return mapData
-
-}
-
-type TreeNode struct {
-	Label    string      `json:"label"`              // 显示的名称（文件夹名）
-	FullPath string      `json:"fullPath,omitempty"` // 完整路径标识（可选，方便前端做key）
-	Children []*TreeNode `json:"children,omitempty"` // 子文件夹
-	Records  []Record    `json:"records,omitempty"`  // 该文件夹下的文件记录
+	return tree, nil
 }
 
 // 读取record.json
-func ReadRecord(name string) map[string]*[]Record {
+func ReadRecord(name string) *FileNode {
 
 	data, err := os.ReadFile(filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "record", name, "record.json"))
 	if err != nil {
@@ -80,16 +55,12 @@ func ReadRecord(name string) map[string]*[]Record {
 
 	result := gjson.Parse(string(data))
 
-	collectionMap := make(map[string]*[]Record)
+	var records []Record
 
-	pathingMap := ReadAllPathing()
+	recordMap := make(map[string]Record)
+
 	result.ForEach(func(key, value gjson.Result) bool {
 		fileName := gjson.Get(value.String(), "fileName")
-		standardName := pathingMap[fileName.String()]
-		if _, ok := collectionMap[standardName]; !ok {
-			collectionMap[standardName] = &[]Record{}
-		}
-		records := collectionMap[standardName]
 
 		//历史收集
 		var record Record
@@ -111,7 +82,7 @@ func ReadRecord(name string) map[string]*[]Record {
 		record.FileName = fileName.String()
 		parse, _ := time.Parse(time.RFC3339, value.Get("cdTime").String())
 		//加8个小时
-		parse = parse.Add(8 * time.Hour)
+		//parse = parse.Add(8 * time.Hour)
 		record.CdTime = parse.Format("2006-01-02 15:04:05")
 		//判断收集时间是否到达
 		if time.Now().After(parse) {
@@ -119,13 +90,36 @@ func ReadRecord(name string) map[string]*[]Record {
 		} else {
 			record.Status = "冷却中"
 		}
-		*records = append(*records, record)
-		collectionMap[standardName] = records
+
+		records = append(records, record)
+		recordMap[fileName.String()] = record
 		return true
 	})
 
-	return collectionMap
+	pathing, err := ReadAllPathing()
+	if err != nil {
+		return nil
+	}
 
+	PrintTree(pathing, recordMap)
+
+	return pathing
+
+}
+
+func PrintTree(node *FileNode, recordMap map[string]Record) {
+	if node == nil {
+		return
+	}
+	//判断key是否存在
+	if _, ok := recordMap[node.Name]; ok {
+		node.Record = recordMap[node.Name]
+	}
+	// 3. 递归遍历子节点
+	for _, child := range node.Children {
+		PrintTree(child, recordMap)
+	}
+	return
 }
 
 type PickupRecord struct {
@@ -158,4 +152,67 @@ func ReadPickupRecord(name string) []PickupRecord {
 
 	})
 	return pickupRecords
+}
+
+type FileNode struct {
+	Name     string      `json:"name"`               // 文件名
+	Path     string      `json:"path"`               // 完整路径
+	IsDir    bool        `json:"is_dir"`             // 是否是目录
+	Size     int64       `json:"size"`               // 大小 (字节)
+	Children []*FileNode `json:"children,omitempty"` // 子节点 (如果是文件则为空)
+	Record   Record      `json:"record,omitempty"`
+}
+
+// GenerateTree 递归生成文件树
+func GenerateTree(path string, exclude ...string) (*FileNode, error) {
+	// 1. 获取当前路径的文件信息
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. 创建当前节点
+	node := &FileNode{
+		Name:  info.Name(),
+		Path:  path,
+		IsDir: info.IsDir(),
+		Size:  info.Size(),
+	}
+
+	// 3. 如果是文件，直接返回（没有子节点）
+	if !info.IsDir() {
+		return node, nil
+	}
+
+	// 4. 如果是目录，读取目录下所有内容
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		// 如果读取目录失败（例如权限问题），这里可以选择返回错误，或者记录日志并返回空目录
+		// 这里选择返回错误
+		return nil, err
+	}
+
+	// 5. 遍历目录内容，递归构建子节点
+	for _, entry := range entries {
+
+		if tools.DetermineFileType(entry.Name(), exclude...) {
+			//fmt.Println(entry.Name())
+			continue
+		}
+
+		// 构建子文件的完整路径
+		childPath := filepath.Join(path, entry.Name())
+
+		// 递归调用
+		childNode, err := GenerateTree(childPath, exclude...)
+		if err != nil {
+			// 这里可以根据需求处理子节点的错误，例如跳过权限不足的文件
+			fmt.Printf("Error processing %s: %v\n", childPath, err)
+			continue
+		}
+
+		node.Children = append(node.Children, childNode)
+	}
+
+	return node, nil
 }

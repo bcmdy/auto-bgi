@@ -63,3 +63,11 @@ func Online(c *gin.Context) {
 	}
 	c.String(http.StatusOK, "连接成功")
 }
+
+func NumberOfLaunches(context *gin.Context) {
+
+	data := make(map[string]any)
+	data["number"] = RunCount
+
+	context.JSON(http.StatusOK, data)
+}

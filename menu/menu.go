@@ -285,6 +285,9 @@ func StarGin() {
 
 		}
 
+		//获取上线次数
+		ginServer.GET("/api/NumberOfLaunches", abgiSSE.NumberOfLaunches)
+
 		needAuth.GET("/index", bgiStatus.GetIndex)
 
 		//首页刷新

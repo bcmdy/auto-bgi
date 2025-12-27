@@ -208,6 +208,17 @@ func FindJSONFiles(rootDir string) ([]string, error) {
 	return jsonFiles, nil
 }
 
+// DetermineFileType 检查一个字符串是否包含字典数组中的任何词语
+func DetermineFileType(target string, typeS ...string) bool {
+	for _, word := range typeS {
+
+		if strings.HasSuffix(target, word) {
+			return true // 如果找到任何一个词语，就返回 true
+		}
+	}
+	return false // 遍历完所有词语都没有找到，则返回 false
+}
+
 // 查询指定目录下的文件夹
 func ListDirectories(dirPath string) ([]string, error) {
 	var directories []string
