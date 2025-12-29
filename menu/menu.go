@@ -390,6 +390,9 @@ func StarGin() {
 
 		})
 
+		//吃药统计
+		needAuth.GET("/EatStatistics", bgiStatus.EatStatisticsList)
+
 		//检查背包材料是否超过8000
 		needAuth.GET("/checkBag", func(context *gin.Context) {
 			checkBag := bgiStatus.CheckBag()

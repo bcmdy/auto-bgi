@@ -32,6 +32,7 @@ func EatStatisticsList(context *gin.Context) {
 		var eatStatistics EatStatistics
 		line := scanner.Text()
 		split := strings.Split(line, "-")
+		split[0] = strings.ReplaceAll(split[0], "时间:", "")
 		eatStatistics.Time = split[0]
 		eatStatistics.Name = split[1]
 		Count, err := strconv.Atoi(split[2])
@@ -41,7 +42,7 @@ func EatStatisticsList(context *gin.Context) {
 		eatStatistics.Count = Count
 
 		s := strings.Split(split[0], " ")
-		Date := strings.ReplaceAll(s[0], "时间:", "")
+		Date := s[0]
 
 		if _, ok := mapData[Date]; !ok {
 			mapData[Date] = []EatStatistics{}

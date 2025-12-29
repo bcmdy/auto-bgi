@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -104,6 +105,13 @@ func UploadBgi(c *gin.Context) {
 	})
 }
 
+var (
+	downloadLock   sync.Mutex
+	lastInvokeTime time.Time
+	// 2分钟的时间间隔
+	invokeInterval = 2 * time.Minute
+)
+
 // DownloadBgi 是 Gin handler：从请求中读取 url（form/json/query），下载压缩包并替换到 ./uploads/BetterGI.zip
 // DownloadBgi 处理下载BGI的请求函数
 func DownloadBgi(c *gin.Context) {
@@ -115,6 +123,21 @@ func DownloadBgi(c *gin.Context) {
 		})
 		return
 	}
+
+	// 加锁检查调用频率
+	downloadLock.Lock()
+	// 检查是否在2分钟内重复调用
+	if time.Since(lastInvokeTime) < invokeInterval && !lastInvokeTime.IsZero() {
+		downloadLock.Unlock()
+		autoLog.Sugar.Warn("操作过于频繁，请等待2分钟后再试")
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"message": "操作过于频繁，请等待2分钟后再试",
+		})
+		return
+	}
+	// 更新最后调用时间
+	lastInvokeTime = time.Now()
+	downloadLock.Unlock()
 
 	//判断是否需要更新
 	// 获取最新版本信息
@@ -146,7 +169,7 @@ func DownloadBgi(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	if err := downloadFileFromURL(ctx, abgiConstant.BgiUpdateUrl, dst); err != nil {
+	if err := downloadFileFromURL(ctx, GetTeaBaoUpdateUrl(), dst); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -163,12 +186,13 @@ func DownloadBgi(c *gin.Context) {
 		})
 		return
 	}
-	// 更新仓库（异步）
-	go func() {
-		bgiStatus.GitPull()
-	}()
+
+	// 更新仓库
+	bgiStatus.GitPull()
 
 	config.BgiCfg.RunForVersion = version
+
+	control.OpenSoftware(config.Cfg.BetterGIAddress + "\\BetterGI.exe")
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "下载并更新成功,请自启bgi,更新版本",
@@ -342,11 +366,16 @@ func UpdateBgi() error {
 	autoLog.Sugar.Infof("删除BetterGI压缩包")
 	return nil
 
-	//删除log
-	//err5 = os.RemoveAll("backups\\log\\")
-	//if err5 != nil {
-	//	autoLog.Sugar.Errorf("删除log失败: %v", err5)
-	//}
-	//autoLog.Sugar.Infof("删除log")
+}
 
+// 获取茶包版更新url
+func GetTeaBaoUpdateUrl() string {
+	version, err := GetVersion()
+	if err != nil {
+		autoLog.Sugar.Errorf("获取远程版本失败: %v", err)
+		return ""
+	}
+	BgiUpdateUrl := fmt.Sprintf("%s_v%s.7z", abgiConstant.BgiUpdateUrl, version)
+
+	return BgiUpdateUrl
 }
