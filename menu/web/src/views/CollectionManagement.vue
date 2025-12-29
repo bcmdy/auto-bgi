@@ -90,78 +90,90 @@
         </div>
       </div>
 
-      <!-- 拾取记录 -->
-      <a-card title="拾取记录" class="collection-card" style="margin-top: 20px">
-        <template #extra>
-          <a-space :size="8">
-            <a-button @click="togglePickupCollapse" size="small" type="text">
-              {{ pickupCollapsed ? '展开' : '收起' }} {{ pickupCollapsed ? '▼' : '▲' }}
-            </a-button>
-            <a-button @click="refreshPickupData" :loading="pickupLoading">刷新</a-button>
-          </a-space>
-        </template>
-
-        <div v-if="pickupData.length === 0" class="empty-state">
-          <div class="empty-icon">📅</div>
-          <div class="empty-text">暂无拾取记录</div>
-        </div>
-
-        <div v-show="!pickupCollapsed">
-          <a-timeline v-if="pickupData.length > 0" mode="left" class="pickup-timeline">
-          <a-timeline-item  
-            v-for="(record, index) in pickupData" 
-            :key="index"
-            :color="index === 0 ? 'green' : 'blue'"
-          >
-            <template #dot>
-              <span class="timeline-dot">{{ index === 0 ? '🌟' : '📅' }}</span>
+      <!-- 标签页切换 -->
+      <a-card class="tabs-container" style="margin-top: 20px">
+        <a-tabs v-model:activeKey="activeTab" type="card" size="large">
+          <!-- 拾取记录标签页 -->
+          <a-tab-pane key="pickup" tab="📅 拾取记录">
+            <template #tab>
+              <span class="tab-title">
+                <span class="tab-icon">📅</span>
+                <span>拾取记录</span>
+              </span>
             </template>
             
-            <div class="pickup-record">
-              <div class="pickup-header">
-                <span class="pickup-date">
-                  <span class="date-icon">📆</span>
-                  {{ record.Date }}
-                </span>
-                <a-tag :color="index === 0 ? 'green' : 'blue'">
-                  {{ index === 0 ? '最近' : formatDateDiff(record.Date) }}
-                </a-tag>
-              </div>
-              
-              <a-divider style="margin: 12px 0" />
-              
-              <div class="pickup-stats">
-                <div class="stat-item">
-                  <span class="stat-label">采集种类：</span>
-                  <span class="stat-value">{{ Object.keys(record.Item).length }} 种</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">总采集量：</span>
-                  <span class="stat-value">{{ calculateDailyTotal(record.Item) }} 个</span>
-                </div>
-              </div>
-              
-              <div class="pickup-items">
-                <a-tag 
-                  v-for="(count, itemName) in sortedItems(record.Item)" 
-                  :key="itemName"
-                  :color="getItemTagColor(itemName)"
-                  class="pickup-item-tag"
-                >
-                  <span class="item-name">{{ itemName }}</span>
-                  <span class="item-count">× {{ count }}</span>
-                </a-tag>
-              </div>
+            <div class="tab-toolbar">
+              <a-button @click="refreshPickupData" :loading="pickupLoading" type="primary">
+                <template #icon><span v-if="!pickupLoading">🔄</span></template>
+                {{ pickupLoading ? '刷新中...' : '刷新数据' }}
+              </a-button>
             </div>
-          </a-timeline-item>
-          </a-timeline>
-        </div>
-      </a-card>
 
-      <!-- 树形展示 -->
-    
-      <div class="tree-container">
-           <h1>&nbsp;CD记录</h1>
+            <div v-if="pickupData.length === 0" class="empty-state">
+              <div class="empty-icon">📅</div>
+              <div class="empty-text">暂无拾取记录</div>
+            </div>
+
+            <a-timeline v-if="pickupData.length > 0" mode="left" class="pickup-timeline">
+              <a-timeline-item  
+                v-for="(record, index) in pickupData" 
+                :key="index"
+                :color="index === 0 ? 'green' : 'blue'"
+              >
+                <template #dot>
+                  <span class="timeline-dot">{{ index === 0 ? '🌟' : '📅' }}</span>
+                </template>
+                
+                <div class="pickup-record">
+                  <div class="pickup-header">
+                    <span class="pickup-date">
+                      <span class="date-icon">📆</span>
+                      {{ record.Date }}
+                    </span>
+                    <a-tag :color="index === 0 ? 'green' : 'blue'">
+                      {{ index === 0 ? '最近' : formatDateDiff(record.Date) }}
+                    </a-tag>
+                  </div>
+                  
+                  <a-divider style="margin: 12px 0" />
+                  
+                  <div class="pickup-stats">
+                    <div class="stat-item">
+                      <span class="stat-label">采集种类：</span>
+                      <span class="stat-value">{{ Object.keys(record.Item).length }} 种</span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-label">总采集量：</span>
+                      <span class="stat-value">{{ calculateDailyTotal(record.Item) }} 个</span>
+                    </div>
+                  </div>
+                  
+                  <div class="pickup-items">
+                    <a-tag 
+                      v-for="(count, itemName) in sortedItems(record.Item)" 
+                      :key="itemName"
+                      :color="getItemTagColor(itemName)"
+                      class="pickup-item-tag"
+                    >
+                      <span class="item-name">{{ itemName }}</span>
+                      <span class="item-count">× {{ count }}</span>
+                    </a-tag>
+                  </div>
+                </div>
+              </a-timeline-item>
+            </a-timeline>
+          </a-tab-pane>
+
+          <!-- CD记录标签页 -->
+          <a-tab-pane key="cd" tab="⏰ CD记录">
+            <template #tab>
+              <span class="tab-title">
+                <span class="tab-icon">⏰</span>
+                <span>CD记录</span>
+              </span>
+            </template>
+            
+            <div class="tree-container">
         <a-tree
           v-if="treeData.length > 0"
           :tree-data="treeData"
@@ -273,7 +285,10 @@
           <div class="empty-text">暂无采集数据</div>
           <div class="empty-hint">请选择账户后刷新数据</div>
         </div>
-      </div>
+            </div>
+          </a-tab-pane>
+        </a-tabs>
+      </a-card>
     </div>
 
     <!-- 历史记录弹窗 -->
@@ -379,7 +394,7 @@ const historyVisible = ref(false)
 const currentHistory = ref(null)
 const pickupLoading = ref(false) // 采集历史加载状态
 const pickupData = ref([]) // 采集历史数据
-const pickupCollapsed = ref(false) // 拾取记录折叠状态
+const activeTab = ref('cd') // 当前激活的标签页，默认显示CD记录
 const currentTime = ref(dayjs()) // 当前时间，用于倒计时
 let countdownTimer = null // 倒计时定时器
 
@@ -495,10 +510,7 @@ const formatDateDiff = (dateStr) => {
   return `${diff} 天前`
 }
 
-// 切换拾取记录折叠状态
-const togglePickupCollapse = () => {
-  pickupCollapsed.value = !pickupCollapsed.value
-}
+
 
 // 获取所有账户列表
 const fetchAccountList = async () => {
@@ -530,13 +542,17 @@ const statisticsData = computed(() => {
   const countFiles = (node) => {
     if (!node) return
     
-    // 如果是.json文件且有有效的record数据
-    if (!node.is_dir && node.name && node.name.endsWith('.json') && node.record && node.record.FileName) {
+    // 只统计.json文件
+    if (!node.is_dir && node.name && node.name.endsWith('.json')) {
       totalFiles++
-      if (node.record.Status === '可采集') {
-        availableCount++
-      } else if (node.record.Status === '冷却中') {
-        coolingCount++
+      
+      // 如果有有效的record数据，统计状态
+      if (node.record && node.record.FileName) {
+        if (node.record.Status === '可采集') {
+          availableCount++
+        } else if (node.record.Status === '冷却中') {
+          coolingCount++
+        }
       }
       
       // 提取材料名称（从路径中获取倒数第二级目录）
@@ -591,13 +607,6 @@ const convertToTreeData = (node, parentKey = '0') => {
     dataRef: { 
       ...node
     }
-  }
-  
-  // 调试：打印 dataRef 中的 record
-  if (!node.is_dir && node.name && node.name.endsWith('.json')) {
-    console.log('convertToTreeData - 文件:', node.name)
-    console.log('  - node.record:', node.record)
-    console.log('  - treeNode.dataRef.record:', treeNode.dataRef.record)
   }
   
   // 如果是文件节点且有有效的 record 数据，计算倒计时
@@ -931,12 +940,12 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* 树形容器 */
+/* 树容器 */
 .tree-container {
-  padding: 20px;
-  border: 3px solid rgb(241, 19, 230);
-  border-radius: 15px;
-  overflow-x: auto; /* 允许横向滚动以防内容过宽 */
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  overflow-x: auto;
 }
 
 .collection-tree {
@@ -1310,19 +1319,92 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 标签页容器样式 */
+.tabs-container {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tabs-container :deep(.ant-card-body) {
+  padding: 0;
+}
+
+.tabs-container :deep(.ant-tabs) {
+  margin: 0;
+}
+
+.tabs-container :deep(.ant-tabs-nav) {
+  margin: 0;
+  padding: 16px 16px 0 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8eaf0 100%);
+}
+
+.tabs-container :deep(.ant-tabs-tab) {
+  background: #fff;
+  border: 2px solid #e8e8e8;
+  border-radius: 8px 8px 0 0;
+  margin-right: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.tabs-container :deep(.ant-tabs-tab:hover) {
+  border-color: #1890ff;
+  transform: translateY(-2px);
+}
+
+.tabs-container :deep(.ant-tabs-tab-active) {
+  background: linear-gradient(135deg, #f0d0eb 0%, #e93de0 100%);
+  border-color: #1890ff;
+  transform: translateY(-2px);
+}
+
+.tabs-container :deep(.ant-tabs-tab-active .tab-title) {
+  color: #fff;
+}
+
+.tab-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.tabs-container :deep(.ant-tabs-content) {
+  padding: 24px;
+  min-height: 400px;
+}
+
+.tab-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
 
 
 /* 移动端适配 */
 @media (max-width: 768px) {
   .collection-management {
-    padding: 12px;
+    padding: 8px;
   }
   
   /* 工具栏移动端适配 */
   .toolbar-container {
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
   }
   
   .toolbar-left,
@@ -1335,11 +1417,11 @@ onUnmounted(() => {
   }
   
   .title-icon {
-    font-size: 24px;
+    font-size: 20px;
   }
   
   .title-text {
-    font-size: 18px;
+    font-size: 16px;
   }
   
   :deep(.ant-space) {
@@ -1359,26 +1441,58 @@ onUnmounted(() => {
   /* 统计卡片移动端适配 */
   .stats-cards {
     grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 12px;
   }
   
   .stat-card {
-    padding: 16px;
+    padding: 12px;
   }
   
   .stat-icon {
-    font-size: 32px;
+    font-size: 28px;
   }
   
   .stat-value {
-    font-size: 22px;
+    font-size: 20px;
+  }
+  
+  .stat-label {
+    font-size: 13px !important;
   }
   
   /* 树容器移动端适配 - 关键优化 */
   .tree-container {
-    padding: 12px;
+    padding: 0;
     overflow-x: visible; /* 移动端不使用横向滚动 */
+  }
+  
+  /* 标签页移动端适配 */
+  .tabs-container :deep(.ant-tabs-nav) {
+    padding: 8px 8px 0 8px;
+  }
+  
+  .tabs-container :deep(.ant-tabs-tab) {
+    padding: 6px 10px;
+    margin-right: 4px;
+  }
+  
+  .tab-title {
+    font-size: 12px;
+    gap: 4px;
+  }
+  
+  .tab-icon {
+    font-size: 14px;
+  }
+  
+  .tabs-container :deep(.ant-tabs-content) {
+    padding: 12px;
+    min-height: 250px;
+  }
+  
+  .tab-toolbar {
+    margin-bottom: 12px;
   }
   
   .collection-tree {
@@ -1387,18 +1501,18 @@ onUnmounted(() => {
   
   /* 树节点移动端适配 - 关键优化 */
   .node-main {
-    padding: 10px 12px;
+    padding: 8px 10px;
     max-width: 100%;
   }
   
   .node-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
   }
   
   .node-title {
-    font-size: 14px;
+    font-size: 13px;
     width: 100%;
     white-space: normal; /* 允许标题换行 */
   }
@@ -1406,8 +1520,8 @@ onUnmounted(() => {
   /* 倒计时和子节点徽章移动端适配 */
   .countdown-badge,
   .children-count-badge {
-    font-size: 11px;
-    padding: 3px 8px;
+    font-size: 10px;
+    padding: 2px 6px;
     width: fit-content;
   }
   
@@ -1415,7 +1529,7 @@ onUnmounted(() => {
   .file-info-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
   }
   
@@ -1431,7 +1545,7 @@ onUnmounted(() => {
   
   .file-name-value {
     max-width: 100%;
-    font-size: 12px;
+    font-size: 11px;
     white-space: normal; /* 移动端允许文件名换行 */
     word-break: break-all;
   }
@@ -1441,12 +1555,12 @@ onUnmounted(() => {
   }
   
   .cd-time-label {
-    font-size: 12px;
+    font-size: 11px;
   }
   
   .cd-time-value {
-    font-size: 12px;
-    padding: 3px 8px;
+    font-size: 11px;
+    padding: 2px 6px;
   }
   
   .latest-collect {
@@ -1461,7 +1575,8 @@ onUnmounted(() => {
   }
   
   .status-tag {
-    font-size: 12px;
+    font-size: 11px;
+    padding: 2px 8px;
   }
   
   .history-btn {
@@ -1484,7 +1599,7 @@ onUnmounted(() => {
   }
   
   :deep(.ant-tree-indent-unit) {
-    width: 16px !important; /* 减少缩进以节省空间 */
+    width: 12px !important; /* 减少缩进以节省空间 */
   }
   
   /* 材料统计移动端适配 */
@@ -1493,106 +1608,108 @@ onUnmounted(() => {
   }
   
   .tree-node-icon {
-    font-size: 18px;
-    width: 28px;
-    height: 28px;
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
   }
   
   /* 空状态移动端适配 */
   .empty-state {
-    padding: 60px 20px;
+    padding: 40px 16px;
   }
   
   .empty-icon {
-    font-size: 60px;
+    font-size: 48px;
   }
   
   .empty-text {
-    font-size: 16px;
+    font-size: 14px;
   }
   
   .empty-hint {
-    font-size: 13px;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .collection-management {
-    padding: 8px;
+    padding: 6px;
   }
   
   .toolbar-container {
-    padding: 12px;
+    padding: 10px;
+    gap: 10px;
+    margin-bottom: 10px;
   }
   
   .title-icon {
-    font-size: 24px;
-  }
-  
-  .title-text {
     font-size: 18px;
   }
   
-  .stats-cards {
-    gap: 10px;
-  }
-  
-  .stat-card {
-    padding: 14px 16px;
-  }
-  
-  .stat-icon {
-    font-size: 32px;
-  }
-  
-  .stat-label {
-    font-size: 12px;
-  }
-  
-  .stat-value {
-    font-size: 22px;
-  }
-  
-  .tree-container {
-    padding: 12px;
-  }
-  
-  .tree-node-wrapper {
-    padding: 8px 10px;
-  }
-  
-  .node-title {
-    font-size: 13px;
-  }
-  
-  .cd-time {
-    font-size: 11px;
-  }
-  
-  .btn-text {
-    font-size: 11px;
-  }
-  
-  .custom-tree-icon {
-    font-size: 16px;
-    width: 22px;
-    height: 22px;
-  }
-  
-  .empty-state {
-    padding: 50px 16px;
-  }
-  
-  .empty-icon {
-    font-size: 56px;
-  }
-  
-  .empty-text {
+  .title-text {
     font-size: 15px;
   }
   
-  .empty-hint {
+  .stats-cards {
+    gap: 6px;
+  }
+  
+  .stat-card {
+    padding: 10px 12px;
+  }
+  
+  .stat-icon {
+    font-size: 24px;
+  }
+  
+  .stat-label {
+    font-size: 11px !important;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  .tree-container {
+    padding: 0;
+  }
+  
+  .tree-node-wrapper {
+    padding: 6px 8px;
+  }
+  
+  .node-title {
     font-size: 12px;
+  }
+  
+  .cd-time {
+    font-size: 10px;
+  }
+  
+  .btn-text {
+    font-size: 10px;
+  }
+  
+  .custom-tree-icon {
+    font-size: 14px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .empty-state {
+    padding: 30px 12px;
+  }
+  
+  .empty-icon {
+    font-size: 40px;
+  }
+  
+  .empty-text {
+    font-size: 13px;
+  }
+  
+  .empty-hint {
+    font-size: 11px;
   }
 }
 
@@ -1947,75 +2064,23 @@ onUnmounted(() => {
 /* 采集历史移动端优化 */
 @media (max-width: 768px) {
   .pickup-record {
-    margin-left: 10px;
-    padding: 12px;
+    margin-left: 8px;
+    padding: 10px;
   }
   
   .pickup-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .pickup-date {
-    font-size: 14px;
-  }
-  
-  .pickup-stats {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 10px;
-  }
-  
-  .stat-item {
-    font-size: 12px;
-  }
-  
-  .stat-label {
-    font-size: 12px;
-  }
-  
-  .stat-value {
-    font-size: 14px;
-  }
-  
-  .pickup-items {
     gap: 6px;
-  }
-  
-  .pickup-item-tag {
-    font-size: 12px;
-    padding: 4px 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .empty-state {
-    padding: 40px 10px;
-  }
-  
-  .empty-icon {
-    font-size: 48px;
-  }
-  
-  .empty-text {
-    font-size: 14px;
-  }
-  
-  .pickup-record {
-    margin-left: 5px;
-    padding: 10px;
   }
   
   .pickup-date {
     font-size: 13px;
   }
   
-  .date-icon {
-    font-size: 16px;
-  }
-  
   .pickup-stats {
+    grid-template-columns: 1fr;
+    gap: 6px;
     padding: 8px;
   }
   
@@ -2032,16 +2097,68 @@ onUnmounted(() => {
   }
   
   .pickup-items {
-    gap: 4px;
+    gap: 5px;
   }
   
   .pickup-item-tag {
     font-size: 11px;
     padding: 3px 8px;
   }
+}
+
+@media (max-width: 480px) {
+  .empty-state {
+    padding: 30px 8px;
+  }
+  
+  .empty-icon {
+    font-size: 40px;
+  }
+  
+  .empty-text {
+    font-size: 13px;
+  }
+  
+  .pickup-record {
+    margin-left: 4px;
+    padding: 8px;
+  }
+  
+  .pickup-date {
+    font-size: 12px;
+  }
+  
+  .date-icon {
+    font-size: 14px;
+  }
+  
+  .pickup-stats {
+    padding: 6px;
+  }
+  
+  .stat-item {
+    font-size: 10px;
+  }
+  
+  .stat-label {
+    font-size: 10px;
+  }
+  
+  .stat-value {
+    font-size: 12px;
+  }
+  
+  .pickup-items {
+    gap: 3px;
+  }
+  
+  .pickup-item-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
   
   .timeline-dot {
-    font-size: 16px;
+    font-size: 14px;
   }
 }
 </style>

@@ -82,7 +82,7 @@ func ReadRecord(name string) *FileNode {
 		record.FileName = fileName.String()
 		parse, _ := time.Parse(time.RFC3339, value.Get("cdTime").String())
 		//加8个小时
-		//parse = parse.Add(8 * time.Hour)
+		parse = parse.Add(8 * time.Hour)
 		record.CdTime = parse.Format("2006-01-02 15:04:05")
 		//判断收集时间是否到达
 		if time.Now().After(parse) {

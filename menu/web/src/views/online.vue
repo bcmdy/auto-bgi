@@ -165,7 +165,7 @@ const fetchLaunchCount = async () => {
 const clearLaunchCount = async () => {
   Modal.confirm({
     title: '确认清零？',
-    content: '确定要清空上线测试次数吗？',
+    content: '确定要清空上线次数吗？',
     okText: '确定',
     cancelText: '取消',
     centered: true,

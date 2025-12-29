@@ -44,7 +44,7 @@ var abgiClient *AbgiClient
 // 是否是调试模式
 var RunDebug bool
 
-var RunCount = 1
+var RunCount = 0
 
 // Connect 连接 WebSocket 服务器
 func Connect(url string, runDebug bool, headers http.Header) error {

@@ -267,7 +267,7 @@ func StarGin() {
 		/**
 		 * 联机相关
 		 */
-		abgiWs := needAuth.Group("abgiSSE")
+		abgiWs := needAuth.Group("/abgiSSE")
 		{
 			//上线
 			abgiWs.POST("/connect/:typeKey", abgiSSE.Online)
@@ -281,6 +281,12 @@ func StarGin() {
 			abgiWs.GET("/getOnlineUser", func(context *gin.Context) {
 				onlineUser := abgiSSE.GroupsStatusHandler()
 				context.JSON(http.StatusOK, onlineUser)
+			})
+
+			//联机清0
+			abgiWs.POST("/clearNumberOfLaunches", func(context *gin.Context) {
+				abgiSSE.RunCount = 0
+				context.JSON(http.StatusOK, gin.H{"status": "received", "data": "清0成功"})
 			})
 
 		}

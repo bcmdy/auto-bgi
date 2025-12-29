@@ -12,7 +12,7 @@
       <div class="section-block">
         <div class="section-header">
           <span class="icon">🌸</span>
-          <span class="text">ABGI 核心组件</span>
+          <span class="text">ABGI 在线更新</span>
           <button class="refresh-btn" @click="refresh" :disabled="checking" title="刷新状态">
             <span :class="{ 'spin': checking }">↻</span>
           </button>
@@ -48,7 +48,7 @@
       <div class="section-block">
         <div class="section-header">
           <span class="icon">🎀</span>
-          <span class="text">BGI 远程组件</span>
+          <span class="text">茶包BGI 在线更新</span>
           <button class="refresh-btn" @click="refreshBgiVersions" :disabled="downloading" title="刷新状态">
             <span>↻</span>
           </button>
