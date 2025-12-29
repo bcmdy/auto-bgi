@@ -20,6 +20,17 @@
           </div>
         </div>
 
+        <div class="launch-count-panel">
+          <div class="count-header">
+            <span class="icon">🚀</span>
+            <span class="label">上线次数</span>
+          </div>
+          <div class="count-display">{{ launchCount }}</div>
+          <button class="clear-btn" @click="clearLaunchCount">
+            <span>🧽</span> 清零
+          </button>
+        </div>
+
         <div class="action-buttons">
           <button class="anime-btn btn-online" @click="StartOnline(null)">
             <span class="icon">🐶</span> 
@@ -100,10 +111,7 @@ import { useRouter } from 'vue-router'
 const isDebugMode = ref(false)
 const detailList = ref([])
 const router = useRouter()
-
-setInterval(() => {
-  debugger
-}, 100)
+const launchCount = ref(0)
 
 
 // /**
@@ -145,6 +153,36 @@ const fetchOnlineDetail = async () => {
   }
 }
 
+const fetchLaunchCount = async () => {
+  try {
+    const res = await apiMethods.getNumberOfLaunches()
+    launchCount.value = res.number || 0
+  } catch (e) {
+    console.error('获取上线次数失败', e)
+  }
+}
+
+const clearLaunchCount = async () => {
+  Modal.confirm({
+    title: '确认清零？',
+    content: '确定要清空上线测试次数吗？',
+    okText: '确定',
+    cancelText: '取消',
+    centered: true,
+    class: 'anime-modal',
+    async onOk() {
+      try {
+        await apiMethods.clearNumberOfLaunches()
+        Modal.destroyAll()
+        message.success('清零成功')
+        fetchLaunchCount()
+      } catch (e) {
+        message.error(e.message || '清零失败')
+      }
+    }
+  })
+}
+
 const offline = (typeKey) => {
   Modal.confirm({
     title: '确认下线吗？',
@@ -181,6 +219,7 @@ const StartOnline = (typeKey) => {
         Modal.destroyAll()
         Modal.info({ title: '上线结果', content: response, okText: '关闭', centered: true })
         fetchOnlineDetail()
+        fetchLaunchCount() // 上线成功后刷新上线次数
       } catch (e) {
         console.log("=====", e)
         const errorMsg = e.response && e.response.data ? e.response.data : '上线失败';
@@ -212,7 +251,7 @@ onMounted(() => {
   //     ">
   //       <div style="font-size: 60px; margin-bottom: 20px;">🚫</div>
   //       <h2 style="color: #ff69b4;">非法访问</h2>
-  //       <p>为了安全与体验，请点击右上角选择<br/><b>“在浏览器打开”</b> (Chrome / Safari)</p>
+  //       <p>为了安全与体验，请点击右上角选择<br/><b>"在浏览器打开"</b> (Chrome / Safari)</p>
   //     </div>
   //   `
   //   // 阻止后续逻辑执行
@@ -221,6 +260,7 @@ onMounted(() => {
   
   // 正常环境则加载数据
   fetchOnlineDetail()
+  fetchLaunchCount()
 })
 </script>
 
@@ -341,6 +381,65 @@ onMounted(() => {
 
 .sakura-switch.active .switch-handle {
   transform: translateX(28px);
+}
+
+/* 上线次数面板 */
+.launch-count-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 20px;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.count-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.count-header .icon {
+  font-size: 18px;
+}
+
+.count-display {
+  font-size: 48px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 10px 0;
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.clear-btn:active {
+  transform: scale(0.95);
 }
 
 /* 按钮组 */

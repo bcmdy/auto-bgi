@@ -186,6 +186,10 @@ subscribeScript: (scriptName) => {
   StartOnline: (typeKey,runDebug) => api.post('/api/abgiSSE/connect/'+typeKey+"?runDebug="+runDebug),
   offline:() => api.post('/api/abgiSSE/disconnect'),
   DogFooddisconnect: () => api.post('/api/abgiSSE/disconnect'),
+  // 查询上线次数
+  getNumberOfLaunches: () => api.get('/api/NumberOfLaunches'),
+  // 清零上线次数
+  clearNumberOfLaunches: () => api.post('/api/abgiSSE/clearNumberOfLaunches'),
   
   // 黑名单相关
   getBlackList: () => api.get('/api/betterGi/blackList'),
