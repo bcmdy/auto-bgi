@@ -67,13 +67,14 @@
 
         <div v-else class="data-grid">
           <div 
-            v-for="([key, value], index) in sortedData" 
-            :key="key"
+            v-for="(item, index) in sortedData" 
+            :key="item.name"
             class="item-card"
             :class="{
               'rank-1': index === 0,
               'rank-2': index === 1,
-              'rank-3': index === 2
+              'rank-3': index === 2,
+              'is-focused': item.isFocus
             }"
             :style="{ animationDelay: `${index * 0.05}s` }"
           >
@@ -82,7 +83,7 @@
             <div class="card-content">
               <div class="info-col name-col">
                 <span class="item-icon" v-if="index < 3">{{ getMedal(index) }}</span>
-                <span class="item-name" :title="key">{{ key }}</span>
+                <span class="item-name" :title="item.name">{{ item.name }}</span>
               </div>
 
               <div class="divider-line">
@@ -91,19 +92,23 @@
 
               <div class="info-col count-col">
                 <span class="count-label">获得</span>
-                <span class="count-num">{{ value }}</span>
+                <span class="count-num">{{ item.count }}</span>
                 <span class="count-unit">个</span>
               </div>
 
               <div class="action-col">
-                <button 
-                  class="focus-btn" 
-                  @click="addToFocus(key)"
-                  :disabled="addingItem === key"
-                  title="添加到关注列表"
-                >
-                  {{ addingItem === key ? '⏳' : '⭐' }}
-                </button>
+                <template v-if="!isExcluded(item.name)">
+                  <button 
+                    v-if="!item.isFocus"
+                    class="focus-btn" 
+                    @click="addToFocus(item.name)"
+                    :disabled="addingItem === item.name"
+                    title="添加到关注列表"
+                  >
+                    {{ addingItem === item.name ? '⏳' : '⭐' }}
+                  </button>
+                  <span v-else class="focused-badge" title="已在关注列表中">✅</span>
+                </template>
               </div>
             </div>
           </div>
@@ -129,13 +134,14 @@ export default {
   setup() {
     const logFiles = ref([])
     const selectedFile = ref('')
-    const analysisData = ref({})
+    const analysisData = ref([])
     const loading = ref(false)
     const error = ref('')
     const addingItem = ref('')
 
     const sortedData = computed(() => {
-      return Object.entries(analysisData.value).sort((a, b) => b[1] - a[1])
+      // 后端返回的是数组，直接按 count 降序排序
+      return [...analysisData.value].sort((a, b) => b.count - a.count)
     })
 
     const chipText = computed(() => {
@@ -168,7 +174,7 @@ export default {
 
     const loadAnalysisData = async () => {
       if (!selectedFile.value) {
-        analysisData.value = {}
+        analysisData.value = []
         return
       }
 
@@ -177,10 +183,11 @@ export default {
 
       try {
         const data = await apiMethods.getLogAnalysis(selectedFile.value)
-        analysisData.value = data
+        // 确保返回的是数组格式
+        analysisData.value = Array.isArray(data) ? data : []
       } catch (err) {
         error.value = '加载失败：' + err.message
-        analysisData.value = {}
+        analysisData.value = []
       } finally {
         loading.value = false
       }
@@ -196,13 +203,22 @@ export default {
       addingItem.value = materialName
       try {
         await apiMethods.addBagStatistics(materialName)
-        // 可以添加成功提示
         alert(`材料 "${materialName}" 已添加到关注列表`)
+        // 添加成功后，更新本地数据的 isFocus 状态
+        const item = analysisData.value.find(i => i.name === materialName)
+        if (item) {
+          item.isFocus = true
+        }
       } catch (err) {
         alert(`添加失败：${err.message}`)
       } finally {
         addingItem.value = ''
       }
+    }
+
+    const isExcluded = (name) => {
+      const excludedItems = ['圣遗物', '调查']
+      return excludedItems.includes(name)
     }
 
     const getRankClass = (index) => {
@@ -252,7 +268,8 @@ export default {
       getParticleStyle,
       getStarStyle,
       addToFocus,
-      addingItem
+      addingItem,
+      isExcluded
     }
   }
 }
@@ -654,6 +671,26 @@ export default {
 .focus-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 已关注徽章 */
+.focused-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4cd964, #5ac777);
+  color: white;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(76, 217, 100, 0.3);
+}
+
+/* 已关注项目的特殊样式 */
+.item-card.is-focused {
+  background: linear-gradient(to right, #f0fff4, #fff);
+  border-color: #4cd964;
 }
 
 /* =========================================
