@@ -42,7 +42,7 @@
         </a-card>
 
         <a-row :gutter="24">
-          <a-col :xs="24" :lg="12">
+          <!-- <a-col :xs="24" :lg="12">
             <a-card title="背包统计" class="config-card">
               <template #extra>
                 <div class="card-extra">
@@ -66,9 +66,9 @@
                 </a-button>
               </div>
             </a-card>
-          </a-col>
+          </a-col> -->
 
-          <a-col :xs="24" :lg="12">
+          <a-col :xs="24" :lg="24">
             <a-card title="关注关键字" class="config-card">
               <template #extra>
                 <div class="card-extra">
@@ -145,12 +145,12 @@
           <a-row :gutter="24" v-if="formData.ScreenRecord.IsRecord" class="fade-in-section">
             <a-col :xs="24" :md="12">
               <a-form-item label="OBS 地址" class="form-item-enhanced">
-                <a-input v-model:value="formData.ScreenRecord.StartScreen" type="password" placeholder="ws://..." class="enhanced-input" />
+                <a-input-password v-model:value="formData.ScreenRecord.StartScreen" placeholder="ws://..." class="enhanced-input" />
               </a-form-item>
             </a-col>
              <a-col :xs="24" :md="12">
               <a-form-item label="密码" class="form-item-enhanced">
-                <a-input v-model:value="formData.ScreenRecord.EndScreen" type="password" placeholder="根据后端需求填写" class="enhanced-input" />
+                <a-input-password v-model:value="formData.ScreenRecord.EndScreen" placeholder="根据后端需求填写" class="enhanced-input" />
               </a-form-item>
             </a-col>
           </a-row>
@@ -170,43 +170,43 @@
 
           <div v-if="formData.Notice.Type === 'Wechat'" class="fade-in-section">
             <a-form-item label="Webhook 地址" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.Wechat" type="password" class="enhanced-input"><template #prefix>💬</template></a-input>
+              <a-input-password v-model:value="formData.Notice.Wechat" class="enhanced-input"><template #prefix>💬</template></a-input-password>
             </a-form-item>
           </div>
 
           <div v-if="formData.Notice.Type === 'TG'" class="fade-in-section">
             <a-form-item label="Bot Token" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.TGNotice.TGToken" type="password" class="enhanced-input"><template #prefix>🤖</template></a-input>
+              <a-input-password v-model:value="formData.Notice.TGNotice.TGToken" class="enhanced-input"><template #prefix>🤖</template></a-input-password>
             </a-form-item>
             <a-form-item label="Chat ID" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.TGNotice.ChatID" type="password" class="enhanced-input"><template #prefix>🆔</template></a-input>
+              <a-input-password v-model:value="formData.Notice.TGNotice.ChatID" class="enhanced-input"><template #prefix>🆔</template></a-input-password>
             </a-form-item>
              <a-form-item label="代理地址" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.TGNotice.Proxy" type="password" class="enhanced-input"><template #prefix>🌐</template></a-input>
+              <a-input-password v-model:value="formData.Notice.TGNotice.Proxy" class="enhanced-input"><template #prefix>🌐</template></a-input-password>
             </a-form-item>
           </div>
 
           <div v-if="formData.Notice.Type === 'FeiShu'" class="fade-in-section">
              <a-form-item label="Webhook URL" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.FeiShu.FeiShuWebhookURL" type="password" class="enhanced-input"><template #prefix>🔗</template></a-input>
+              <a-input-password v-model:value="formData.Notice.FeiShu.FeiShuWebhookURL" class="enhanced-input"><template #prefix>🔗</template></a-input-password>
             </a-form-item>
             <a-form-item label="App ID" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.FeiShu.AppID" type="password" class="enhanced-input"><template #prefix>🆔</template></a-input>
+              <a-input-password v-model:value="formData.Notice.FeiShu.AppID" class="enhanced-input"><template #prefix>🆔</template></a-input-password>
             </a-form-item>
             <a-form-item label="App Secret" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.FeiShu.AppSecret" type="password" class="enhanced-input"><template #prefix>🔑</template></a-input>
+              <a-input-password v-model:value="formData.Notice.FeiShu.AppSecret" class="enhanced-input"><template #prefix>🔑</template></a-input-password>
             </a-form-item>
           </div>
 
           <div v-if="formData.Notice.Type === 'OneBot'" class="fade-in-section">
              <a-form-item label="API Base" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.OneBot.APIBase" type="password" class="enhanced-input"><template #prefix>🌐</template></a-input>
+              <a-input-password v-model:value="formData.Notice.OneBot.APIBase" class="enhanced-input"><template #prefix>🌐</template></a-input-password>
             </a-form-item>
             <a-form-item label="Token" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.OneBot.Token" type="password" class="enhanced-input"><template #prefix>🎟️</template></a-input>
+              <a-input-password v-model:value="formData.Notice.OneBot.Token" class="enhanced-input"><template #prefix>🎟️</template></a-input-password>
             </a-form-item>
              <a-form-item label="QQ号" class="form-item-enhanced">
-              <a-input v-model:value="formData.Notice.OneBot.QQNum" type="password" class="enhanced-input"><template #prefix>🐧</template></a-input>
+              <a-input-password v-model:value="formData.Notice.OneBot.QQNum" class="enhanced-input"><template #prefix>🐧</template></a-input-password>
             </a-form-item>
           </div>
         </a-card>
@@ -228,12 +228,12 @@
           <a-row :gutter="24">
             <a-col :xs="24" :md="12">
               <a-form-item label="UID" class="form-item-enhanced">
-                <a-input v-model:value="formData.Account.Uid" type="password" class="enhanced-input"><template #prefix>🆔</template></a-input>
+                <a-input-password v-model:value="formData.Account.Uid" class="enhanced-input"><template #prefix>🆔</template></a-input-password>
               </a-form-item>
             </a-col>
             <a-col :xs="24" :md="12">
               <a-form-item label="旅行者名字" class="form-item-enhanced">
-                <a-input v-model:value="formData.Account.Name" type="password" class="enhanced-input"><template #prefix>🥵</template></a-input>
+                <a-input-password v-model:value="formData.Account.Name" class="enhanced-input"><template #prefix>🥵</template></a-input-password>
               </a-form-item>
             </a-col>
           </a-row>
@@ -250,7 +250,7 @@
             </a-col>
             <a-col :xs="24" :md="12">
               <a-form-item label="联机 SecretKey" class="form-item-enhanced">
-                <a-input v-model:value="formData.Account.SecretKey" type="password" class="enhanced-input"><template #prefix>🔑</template></a-input>
+                <a-input-password v-model:value="formData.Account.SecretKey" class="enhanced-input"><template #prefix>🔑</template></a-input-password>
               </a-form-item>
             </a-col>
           </a-row>

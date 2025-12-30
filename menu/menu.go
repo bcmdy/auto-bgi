@@ -2,6 +2,7 @@ package menu
 
 import (
 	"auto-bgi/ArtifactsBulkSupply"
+	"auto-bgi/BackpackStatistics"
 	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/CDCollectionManagement"
@@ -375,26 +376,32 @@ func StarGin() {
 
 		})
 
-		//背包统计
-		needAuth.GET("/BagStatistics", func(context *gin.Context) {
-			statistics, _ := bgiStatus.BagStatistics()
+		BagStatistics := needAuth.Group("/BagStatistics")
+		{
+			BagStatistics.GET("", func(context *gin.Context) {
+				statistics, _ := bgiStatus.BagStatistics()
 
-			// 按材料名称排序，再按日期排序
-			sort.Slice(statistics, func(i, j int) bool {
-				// 首先按材料名称排序
-				if statistics[i].Cl != statistics[j].Cl {
-					return statistics[i].Cl < statistics[j].Cl
-				}
-				// 如果材料名称相同，则按日期排序
-				layout := "2006/1/2 15:04:05"
-				ti, _ := time.Parse(layout, statistics[i].Data)
-				tj, _ := time.Parse(layout, statistics[j].Data)
-				return ti.Before(tj)
+				// 按材料名称排序，再按日期排序
+				sort.Slice(statistics, func(i, j int) bool {
+					// 首先按材料名称排序
+					if statistics[i].Cl != statistics[j].Cl {
+						return statistics[i].Cl < statistics[j].Cl
+					}
+					// 如果材料名称相同，则按日期排序
+					layout := "2006/1/2 15:04:05"
+					ti, _ := time.Parse(layout, statistics[i].Data)
+					tj, _ := time.Parse(layout, statistics[j].Data)
+					return ti.Before(tj)
+				})
+
+				context.JSON(http.StatusOK, statistics)
 			})
 
-			context.JSON(http.StatusOK, statistics)
-
-		})
+			// 删除关注的材料
+			BagStatistics.DELETE("/DELETE", BackpackStatistics.DeleteService)
+			//添加关注的材料
+			BagStatistics.POST("/ADD", BackpackStatistics.AddService)
+		}
 
 		//吃药统计
 		needAuth.GET("/EatStatistics", bgiStatus.EatStatisticsList)
@@ -1070,8 +1077,7 @@ func StarGin() {
 		//js-API
 		jsController := needAuth.Group("/js")
 		{
-			//发送今日收获前10
-			jsController.GET("/logAnalysis", JsAPI.SendLogAnalysis)
+
 			//给指定区域截图
 			jsController.POST("/screenShot", JsAPI.ScreenShot)
 			//ai

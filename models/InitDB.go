@@ -32,7 +32,7 @@ func InitDB() error {
 	}
 
 	// 自动迁移模式
-	err2 := DB.AutoMigrate(&ArchiveRecords{}, &AutoBgiConfig{}, &TaskCron{})
+	err2 := DB.AutoMigrate(&ArchiveRecords{}, &AutoBgiConfig{}, &TaskCron{}, &BackpackStatistics{})
 	if err2 != nil {
 		return fmt.Errorf("failed to migrate database: %v", err2)
 	}

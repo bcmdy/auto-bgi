@@ -316,7 +316,7 @@ const statusData = reactive({
 // --- 按钮配置 (保持不变) ---
 const dataAnalysisButtons = ref([
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
-  { text: '采集数据', route: '/logAnalysis' },
+  { text: '屑荧进村', route: '/logAnalysis' },
   { text: '归档查询', route: '/archive' },
   { text: '旅行者轧记', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },

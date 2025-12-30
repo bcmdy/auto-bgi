@@ -38,5 +38,14 @@ type TaskCron struct {
 
 func (TaskCron) TableName() string {
 	return "TaskCron"
+}
 
+// 背包统计
+type BackpackStatistics struct {
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	Material string `json:"material"`
+}
+
+func (BackpackStatistics) TableName() string {
+	return "BackpackStatistics"
 }

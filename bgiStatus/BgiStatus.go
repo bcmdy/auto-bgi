@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"archive/zip"
+	"auto-bgi/BackpackStatistics"
 	"auto-bgi/Notice"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/abgiConstant"
@@ -143,9 +144,10 @@ func BagStatistics() ([]Material, error) {
 	// 创建一个正则表达式来匹配日期格式 "YYYY/M/D HH:MM:SS"
 	re1 := regexp.MustCompile(`\b\d{4}/\d{1,2}/\d{1,2} \d{2}:\d{2}:\d{2}\b`)
 
-	statistics := config.Cfg.BagStatistics
-
-	split := strings.Split(statistics, ",")
+	//statistics := config.Cfg.BagStatistics
+	//
+	//split := strings.Split(statistics, ",")
+	statistics := BackpackStatistics.List()
 
 	var bags []Material
 	var bag Material
@@ -155,9 +157,9 @@ func BagStatistics() ([]Material, error) {
 	layout := "2006/1/2 15:04:05"
 
 	for scanner.Scan() {
-		for _, s := range split {
+		for _, statistic := range statistics {
 			// 创建一个正则表达式来匹配 "晶蝶：数字" 模式
-			sprintf := fmt.Sprintf(`(?:^|[,\s])%s: (\d+)`, s)
+			sprintf := fmt.Sprintf(`(?:^|[,\s])%s: (\d+)`, statistic.Material)
 
 			re := regexp.MustCompile(sprintf)
 
@@ -639,7 +641,7 @@ var Relics = []string{"冒险家", "游医", "幸运儿", "险家", "医的", "�
 // LogAnalysis 函数用于分析日志文件并统计材料数量
 // 参数 fileName: 日志文件名
 // 返回值: map[string]int - 材料名称及其数量的映射，只返回数量超过10的材料
-func LogAnalysis(fileName string) map[string]int {
+func LogAnalysis(fileName string) []map[string]interface{} {
 	// 记录日志分析开始
 	autoLog.Sugar.Infof("日志分析")
 	// 获取今日收获的数据，忽略错误
@@ -698,15 +700,31 @@ func LogAnalysis(fileName string) map[string]int {
 	data["圣遗物"] = syw
 	data["螃蟹"] = xie
 
+	statistics := BackpackStatistics.List()
+	dd := make(map[string]uint)
+	for _, s := range statistics {
+		dd[s.Material] = s.ID
+	}
+
 	// 取出数量超过10的材料
-	mapData := make(map[string]int)
+	//mapDatas := make([]map[string]interface{},len(data))
+	var mapDatas []map[string]interface{}
 	for s, i2 := range data {
+		mapData := make(map[string]interface{})
 		if i2 >= 10 {
-			mapData[s] = i2
+			mapData["name"] = s
+			mapData["count"] = i2
+			//判断是否已经关注
+			if _, ok := dd[s]; ok {
+				mapData["isFocus"] = true
+			} else {
+				mapData["isFocus"] = false
+			}
+			mapDatas = append(mapDatas, mapData)
 		}
 	}
 
-	return mapData
+	return mapDatas
 
 }
 
