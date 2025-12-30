@@ -669,16 +669,8 @@ func StarGin() {
 			//重新加载配置文件
 			_ = config.ReloadConfig()
 			time.Sleep(1 * time.Second)
-			//
-			//// 调用重启脚本
-			//cmd := exec.Command("cmd", "/c", "restart.bat")
-			//err2 := cmd.Start()
-			//if err2 != nil {
-			//	c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err2.Error()})
-			//	return
-			//}
 
-			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "重启命令已执行"})
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "配置保存成功"})
 
 		})
 

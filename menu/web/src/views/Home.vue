@@ -316,9 +316,9 @@ const statusData = reactive({
 // --- 按钮配置 (保持不变) ---
 const dataAnalysisButtons = ref([
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
-  { text: '屑荧进村', route: '/logAnalysis' },
+  { text: '采集数据', route: '/logAnalysis' },
   { text: '归档查询', route: '/archive' },
-  { text: '旅行者札记', route: '/BagStatistics' },
+  { text: '旅行者轧记', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },
   { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
   { text: '采集管理', route: '/CollectionManagement' },
@@ -851,10 +851,19 @@ button:hover::after { left: 100%; }
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  overflow: auto;
   margin-bottom: 10px;
+  max-height: 75vh; /* 限制最大高度 */
+  width: 100%;
 }
-.live-img { max-width: 100%; transition: transform 0.3s ease; }
+.live-img { 
+  max-width: 100%; 
+  max-height: 75vh;
+  width: auto;
+  height: auto;
+  object-fit: contain; /* 保持宽高比 */
+  transition: transform 0.3s ease; 
+}
 .modal-tools { 
   display: flex; 
   gap: 14px; 

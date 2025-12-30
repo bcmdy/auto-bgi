@@ -1,5 +1,6 @@
 package control
 
+import "C"
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -15,6 +16,34 @@ import (
 	"time"
 	"unsafe"
 )
+
+/*
+#cgo LDFLAGS: -luser32 -lgdi32
+#include <windows.h>
+
+// 定义一个结构体方便返回
+typedef struct {
+    int width;
+    int height;
+} ScreenSize;
+
+// 实现获取分辨率的函数
+static ScreenSize GetPhysicalResolution() {
+    // 关键：声明进程对高DPI感知
+    SetProcessDPIAware();
+
+    HDC hdc = GetDC(NULL);
+    ScreenSize size;
+
+    // 获取真实的物理像素宽度和高度
+    size.width = GetDeviceCaps(hdc, 8);  // 8 是 HORZRES
+    size.height = GetDeviceCaps(hdc, 10); // 10 是 VERTRES
+
+    ReleaseDC(NULL, hdc);
+    return size;
+}
+*/
+import "C"
 
 var (
 	user32                   = syscall.NewLazyDLL("user32.dll")
@@ -137,9 +166,14 @@ func MouseClick(x, y int, key string, DoubleClick bool) {
 
 // ScreenShot 截图
 func ScreenShot(imgName string) error {
-	screenWidth, screenHeight := robotgo.GetScreenSize()
-	//autoLog.Sugar.Infof("屏幕尺寸: %d x %d", screenWidth, screenHeight)
-	imgScreen := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
+	//screenWidth, screenHeight := robotgo.GetScreenSize()
+	// 调用 C 代码
+	size := C.GetPhysicalResolution()
+	//fmt.Println("--- 屏幕真实分辨率 ---")
+	//fmt.Printf("宽度: %d px\n", int(size.width))
+	//fmt.Printf("高度: %d px\n", int(size.height))
+
+	imgScreen := robotgo.CaptureScreen(0, 0, int(size.width), int(size.height))
 	if imgScreen == nil {
 		return fmt.Errorf("截图失败: 无法获取屏幕图像")
 	}
