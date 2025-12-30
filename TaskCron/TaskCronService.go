@@ -37,7 +37,7 @@ func CronAdd(c *gin.Context) {
 		c.String(400, "任务名称不存在")
 		return
 	}
-	if _, err := Tm.Add(taskCron.Spec, taskCron.Name, taskCron.Data, fn); err != nil {
+	if _, err := Tm.Add(taskCron.Spec, taskCron.Name, taskCron.Data, taskCron.Mark, fn); err != nil {
 		c.String(500, "添加失败: %v", err)
 		return
 	}

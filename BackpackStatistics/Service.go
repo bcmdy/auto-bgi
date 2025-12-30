@@ -36,3 +36,17 @@ func DeleteService(context *gin.Context) {
 	})
 
 }
+
+func ClearAllService(context *gin.Context) {
+	err := ClearAll()
+	if err != nil {
+		context.JSON(200, gin.H{
+			"code": 400,
+			"msg":  err.Error(),
+		})
+	}
+	context.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "ok",
+	})
+}

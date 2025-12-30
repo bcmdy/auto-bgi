@@ -74,9 +74,17 @@
         <div class="bar-info">
           🎁 共统计 <span class="highlight-num">{{ sortedItems.length }}</span> 条记录
         </div>
-        <button @click="openBlackListModal" class="kawaii-btn danger-btn small">
-          🚫 黑名单管理
-        </button>
+        <div class="action-bar-buttons">
+          <button @click="openAddMaterialModal" class="kawaii-btn small" style="background: #E1F5FE; border-color: #0288D1; color: #01579B; box-shadow: 0 3px 0 #0288D1;">
+            ➕ 新增关注材料
+          </button>
+          <button @click="clearAllStatistics" class="kawaii-btn small" style="background: #FFEBEE; border-color: #EF5350; color: #C62828; box-shadow: 0 3px 0 #EF5350;">
+            🗑️ 清空所有
+          </button>
+          <button @click="openBlackListModal" class="kawaii-btn danger-btn small">
+            🚫 黑名单管理
+          </button>
+        </div>
       </section>
 
       <main class="data-display-section">
@@ -200,6 +208,30 @@
       </div>
     </div>
 
+    <div v-if="showAddMaterialModal" class="kawaii-modal-mask" @click.self="closeAddMaterialModal">
+      <div class="kawaii-modal">
+        <div class="modal-header" style="background: #0288D1;">
+          <h3>➕ 新增关注材料</h3>
+          <button class="close-btn" @click="closeAddMaterialModal">✖</button>
+        </div>
+        <div class="modal-body">
+          <div class="add-material-form">
+            <label class="form-label">📝 材料名称：</label>
+            <input 
+              v-model="newMaterialName" 
+              type="text" 
+              class="kawaii-input" 
+              placeholder="请输入材料名称"
+              @keyup.enter="addMaterial"
+            >
+            <button @click="addMaterial" class="kawaii-btn primary" style="margin-top: 15px; width: 100%;">
+              ✨ 确认添加
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="showEatStatisticsModal" class="kawaii-modal-mask" @click.self="closeEatStatisticsModal">
       <div class="kawaii-modal kawaii-modal-large">
         <div class="modal-header modal-header-green">
@@ -277,7 +309,9 @@ export default {
       blackList: [],
       showEatStatisticsModal: false,
       eatStatisticsData: {},
-      selectedDate: ''
+      selectedDate: '',
+      showAddMaterialModal: false,
+      newMaterialName: ''
     }
   },
   computed: {
@@ -638,6 +672,53 @@ export default {
           }
         }
       });
+    },
+
+    openAddMaterialModal() {
+      this.showAddMaterialModal = true;
+      this.newMaterialName = '';
+    },
+
+    closeAddMaterialModal() {
+      this.showAddMaterialModal = false;
+      this.newMaterialName = '';
+    },
+
+    async addMaterial() {
+      if (!this.newMaterialName.trim()) {
+        message.warning('请输入材料名称');
+        return;
+      }
+      
+      try {
+        await api.post(`/api/BagStatistics/ADD?name=${encodeURIComponent(this.newMaterialName.trim())}`);
+        message.success('材料添加成功！');
+        this.closeAddMaterialModal();
+        await this.loadData();
+      } catch (error) {
+        console.error('添加材料失败:', error);
+        message.error('添加材料失败: ' + (error.message || error));
+      }
+    },
+
+    async clearAllStatistics() {
+      Modal.confirm({
+        title: '⚠️ 危险操作',
+        content: '确定要清空所有背包统计数据吗？此操作将删除所有材料的统计记录，且无法撤销！',
+        okText: '确定清空',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: async () => {
+          try {
+            await api.post('/api/BagStatistics/CLEAR');
+            message.success('所有统计数据已清空！');
+            await this.loadData();
+          } catch (error) {
+            console.error('清空数据失败:', error);
+            message.error('清空数据失败: ' + (error.message || error));
+          }
+        }
+      });
     }
   }
 }
@@ -907,6 +988,13 @@ export default {
   border-radius: 50px;
   border: 2px dashed var(--k-blue-main);
   margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.action-bar-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .bar-info { font-weight: bold; color: var(--k-blue-main); display: flex; align-items: center; gap: 5px; }
 .highlight-num { 
@@ -1107,6 +1195,36 @@ export default {
   cursor: pointer; transition: all 0.2s; flex: 1; min-width: 150px;
 }
 .kawaii-select:hover { border-color: var(--k-pink-dark); box-shadow: 0 2px 8px rgba(255, 105, 180, 0.2); }
+
+.add-material-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.form-label {
+  font-weight: bold;
+  color: var(--k-text-dark);
+  font-size: 1rem;
+}
+.kawaii-input {
+  padding: 10px 15px;
+  border-radius: 20px;
+  border: 2px solid var(--k-pink-main);
+  background: var(--k-white);
+  color: var(--k-text-dark);
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+.kawaii-input:focus {
+  outline: none;
+  border-color: var(--k-pink-dark);
+  box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.1);
+}
+.kawaii-input::placeholder {
+  color: var(--k-text-light);
+  font-weight: normal;
+}
 
 .eat-statistics-content { margin-top: 20px; }
 

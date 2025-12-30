@@ -32,6 +32,7 @@ func (tm *TaskManager) updateDB(req models.TaskCron) error {
 		"spec":     req.Spec,
 		"data":     req.Data,
 		"entry_id": req.EntryID,
+		"mark":     req.Mark,
 	})
 	if updates.Error != nil {
 		autoLog.Sugar.Errorf("更新定时任务失败: %v", updates.Error)
@@ -136,13 +137,14 @@ func (tm *TaskManager) loadTasksFromDB() {
 }
 
 // 添加任务：允许同名多条，DB 用自增 id 区分
-func (tm *TaskManager) Add(spec, name, data string, fn func(string)) (cron.EntryID, error) {
+func (tm *TaskManager) Add(spec, name, data, mark string, fn func(string)) (cron.EntryID, error) {
 	// 先准备 TaskCron 对象（不含 ID / DBID）
 	t := models.TaskCron{
 		Name:   name,
 		Spec:   spec,
 		Status: 1,
 		Data:   data,
+		Mark:   mark,
 	}
 
 	// 2. 再注册到调度器

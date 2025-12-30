@@ -87,6 +87,16 @@
                   />
                 </a-form-item>
 
+                <a-form-item label="备注 (可选)">
+                  <a-textarea
+                    v-model:value="formState.mark"
+                    :auto-size="{ minRows: 2, maxRows: 4 }"
+                    placeholder="任务备注信息..."
+                    allow-clear
+                    class="pink-input"
+                  />
+                </a-form-item>
+
                 <div class="form-actions">
                   <a-button 
                     type="primary" 
@@ -153,6 +163,11 @@
                         <div class="info-row data-row" v-if="item.data">
                           <code-outlined class="icon" />
                           <span class="sub-text text-truncate" :title="item.data">{{ item.data }}</span>
+                        </div>
+
+                        <div class="info-row mark-row" v-if="item.mark">
+                          <edit-outlined class="icon" />
+                          <span class="sub-text" :title="item.mark">备注: {{ item.mark }}</span>
                         </div>
                       </div>
 
@@ -243,6 +258,7 @@ const formState = reactive({
   name: '',
   spec: '',
   data: '',
+  mark: '',
   status: 1
 })
 
@@ -315,6 +331,7 @@ const handleSubmitTask = async () => {
       name: formState.name,
       spec: formState.spec.trim(),
       data: formState.data?.trim() || '',
+      mark: formState.mark?.trim() || '',
       status: formState.status
     }
     let res
@@ -348,6 +365,7 @@ const resetForm = () => {
   formState.name = ''
   formState.spec = ''
   formState.data = ''
+  formState.mark = ''
   formState.status = 0
 }
 
@@ -358,6 +376,7 @@ const startEdit = (record) => {
   formState.name = record.name
   formState.spec = record.spec
   formState.data = record.data || ''
+  formState.mark = record.mark || ''
   formState.status = record.status || 0
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }

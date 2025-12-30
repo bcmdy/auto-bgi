@@ -707,7 +707,6 @@ func LogAnalysis(fileName string) []map[string]interface{} {
 	}
 
 	// 取出数量超过10的材料
-	//mapDatas := make([]map[string]interface{},len(data))
 	var mapDatas []map[string]interface{}
 	for s, i2 := range data {
 		mapData := make(map[string]interface{})

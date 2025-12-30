@@ -34,6 +34,7 @@ type TaskCron struct {
 	Next    string `json:"next"`
 	Data    string `json:"data"`   // 任务参数
 	Status  int    `json:"status"` // 1=运行中, 0=暂停（持久化在 DB）
+	Mark    string `json:"mark"`   //备注
 }
 
 func (TaskCron) TableName() string {

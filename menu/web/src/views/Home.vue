@@ -318,7 +318,7 @@ const dataAnalysisButtons = ref([
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
   { text: '屑荧进村', route: '/logAnalysis' },
   { text: '归档查询', route: '/archive' },
-  { text: '旅行者轧记', route: '/BagStatistics' },
+  { text: '旅行者札记', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },
   { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
   { text: '采集管理', route: '/CollectionManagement' },

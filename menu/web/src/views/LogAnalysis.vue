@@ -125,8 +125,8 @@
 </template>
 
 <script>
-// 逻辑部分完全保持原样，只字未改
 import { ref, computed, onMounted } from 'vue'
+import { Modal, message } from 'ant-design-vue'
 import { apiMethods } from '../utils/api.js'
 
 export default {
@@ -203,14 +203,14 @@ export default {
       addingItem.value = materialName
       try {
         await apiMethods.addBagStatistics(materialName)
-        alert(`材料 "${materialName}" 已添加到关注列表`)
+        message.success(`材料 "${materialName}" 已添加到关注列表`)
         // 添加成功后，更新本地数据的 isFocus 状态
         const item = analysisData.value.find(i => i.name === materialName)
         if (item) {
           item.isFocus = true
         }
       } catch (err) {
-        alert(`添加失败：${err.message}`)
+        message.error(`添加失败：${err.message}`)
       } finally {
         addingItem.value = ''
       }

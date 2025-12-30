@@ -401,6 +401,9 @@ func StarGin() {
 			BagStatistics.DELETE("/DELETE", BackpackStatistics.DeleteService)
 			//添加关注的材料
 			BagStatistics.POST("/ADD", BackpackStatistics.AddService)
+			//清空所有
+			BagStatistics.POST("/CLEAR", BackpackStatistics.ClearAllService)
+
 		}
 
 		//吃药统计
