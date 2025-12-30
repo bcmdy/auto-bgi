@@ -61,6 +61,9 @@
                 <input type="checkbox" :value="material" v-model="selectedMaterials" class="hidden-input">
                 <span class="checkbox-deco">🌸</span>
                 <span class="material-name">{{ material }}</span>
+                <button @click.stop="deleteMaterial(material)" class="material-delete-btn" title="删除此材料">
+                  ✖
+                </button>
               </label>
             </div>
           </div>
@@ -256,6 +259,7 @@
 <script>
 import { apiMethods } from '@/utils/api'
 import api from '@/utils/api'
+import { Modal, message } from 'ant-design-vue'
 
 export default {
   name: 'BagStatistics',
@@ -409,7 +413,7 @@ export default {
         this.items = await apiMethods.getBagStatistics();
       } catch (error) {
         console.error('加载数据失败:', error);
-        alert('加载背包统计数据失败，请稍后重试');
+        message.error('加载背包统计数据失败，请稍后重试');
       } finally {
         this.isLoading = false;
       }
@@ -427,7 +431,7 @@ export default {
           this.checkBagData = data;
       } catch (e) {
           console.error(e);
-          alert('获取溢出数据失败，请稍后重试');
+          message.error('获取溢出数据失败，请稍后重试');
       }
     },
 
@@ -447,35 +451,50 @@ export default {
       try {
         await apiMethods.addBlackList([materialName]);
         this.blackList.push(materialName);
-        alert('已添加到黑名单');
+        message.success('已添加到黑名单');
       } catch (error) {
-        alert('添加黑名单失败: ' + (error.message || error));
+        message.error('添加黑名单失败: ' + (error.message || error));
       }
     },
 
     async removeFromBlackList(materialName) {
-      if (!confirm(`确定要从黑名单中移除 ${materialName} 吗？`)) return;
-      try {
-        await apiMethods.deleteBlackList(materialName);
-        this.blackList = this.blackList.filter(item => item !== materialName);
-        alert('已从黑名单中移除');
-      } catch (error) {
-        alert('移除黑名单失败: ' + (error.message || error));
-      }
+      Modal.confirm({
+        title: '确认移除',
+        content: `确定要从黑名单中移除 ${materialName} 吗？`,
+        okText: '确定',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await apiMethods.deleteBlackList(materialName);
+            this.blackList = this.blackList.filter(item => item !== materialName);
+            message.success('已从黑名单中移除');
+          } catch (error) {
+            message.error('移除黑名单失败: ' + (error.message || error));
+          }
+        }
+      });
     },
 
     openBlackListModal() { this.showBlackListModal = true; },
     closeBlackListModal() { this.showBlackListModal = false; },
 
     async deleteBag() {
-      if (!confirm('确定要清理统计数据吗？只保留最近一天。')) return;
-      try {
-        const data = await api.post('/api/deleteBag');
-        alert(data.message || '操作成功！');
-        await this.loadData();
-      } catch (error) {
-        alert("请求出错：" + (error.message || error));
-      }
+      Modal.confirm({
+        title: '确认清理',
+        content: '确定要清理统计数据吗？只保留最近一天。',
+        okText: '确定',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: async () => {
+          try {
+            const data = await api.post('/api/deleteBag');
+            message.success(data.message || '操作成功！');
+            await this.loadData();
+          } catch (error) {
+            message.error("请求出错：" + (error.message || error));
+          }
+        }
+      });
     },
 
     cancelSelection() { this.selectedMaterials = []; },
@@ -498,7 +517,7 @@ export default {
         }
       } catch (error) {
         console.error('加载吃药统计失败:', error);
-        alert('加载吃药统计数据失败，请稍后重试');
+        message.error('加载吃药统计数据失败，请稍后重试');
       }
     },
 
@@ -599,6 +618,26 @@ export default {
       });
       
       return result;
+    },
+
+    async deleteMaterial(materialName) {
+      Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除材料 "${materialName}" 的所有统计记录吗？此操作无法撤销！`,
+        okText: '确定删除',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: async () => {
+          try {
+            await api.delete(`/api/BagStatistics/DELETE?name=${encodeURIComponent(materialName)}`);
+            message.success('材料删除成功！');
+            await this.loadData();
+          } catch (error) {
+            console.error('删除材料失败:', error);
+            message.error('删除材料失败: ' + (error.message || error));
+          }
+        }
+      });
     }
   }
 }
@@ -829,7 +868,34 @@ export default {
 .hidden-input { display: none; }
 .checkbox-deco { margin-right: 8px; font-size: 1.1rem; opacity: 0.5; transition: 0.2s; }
 .kawaii-checkbox.checked .checkbox-deco { opacity: 1; transform: rotate(20deg); }
-.material-name { font-weight: bold; font-size: 0.95rem; }
+.material-name { font-weight: bold; font-size: 0.95rem; flex: 1; }
+.material-delete-btn {
+  background: transparent;
+  border: none;
+  color: #FF4B5E;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.2s;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+}
+.kawaii-checkbox:hover .material-delete-btn {
+  opacity: 1;
+}
+.material-delete-btn:hover {
+  background: rgba(255, 75, 94, 0.15);
+  transform: scale(1.15);
+}
+.material-delete-btn:active {
+  transform: scale(0.95);
+}
 
 /* --- 功能入口栏 --- */
 .action-bar {

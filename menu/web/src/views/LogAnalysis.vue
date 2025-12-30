@@ -94,6 +94,17 @@
                 <span class="count-num">{{ value }}</span>
                 <span class="count-unit">个</span>
               </div>
+
+              <div class="action-col">
+                <button 
+                  class="focus-btn" 
+                  @click="addToFocus(key)"
+                  :disabled="addingItem === key"
+                  title="添加到关注列表"
+                >
+                  {{ addingItem === key ? '⏳' : '⭐' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -121,6 +132,7 @@ export default {
     const analysisData = ref({})
     const loading = ref(false)
     const error = ref('')
+    const addingItem = ref('')
 
     const sortedData = computed(() => {
       return Object.entries(analysisData.value).sort((a, b) => b[1] - a[1])
@@ -178,6 +190,21 @@ export default {
       loadAnalysisData()
     }
 
+    const addToFocus = async (materialName) => {
+      if (!materialName) return
+      
+      addingItem.value = materialName
+      try {
+        await apiMethods.addBagStatistics(materialName)
+        // 可以添加成功提示
+        alert(`材料 "${materialName}" 已添加到关注列表`)
+      } catch (err) {
+        alert(`添加失败：${err.message}`)
+      } finally {
+        addingItem.value = ''
+      }
+    }
+
     const getRankClass = (index) => {
       if (index === 0) return 'first'
       if (index === 1) return 'second'
@@ -223,7 +250,9 @@ export default {
       getRankClass,
       getMedal,
       getParticleStyle,
-      getStarStyle
+      getStarStyle,
+      addToFocus,
+      addingItem
     }
   }
 }
@@ -588,6 +617,43 @@ export default {
 .count-unit {
   font-size: 10px;
   color: var(--text-sub);
+}
+
+.action-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+}
+
+.focus-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid var(--primary-pink);
+  background: white;
+  color: var(--primary-pink);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.focus-btn:hover:not(:disabled) {
+  background: var(--primary-pink);
+  transform: scale(1.1) rotate(15deg);
+}
+
+.focus-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.focus-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* =========================================

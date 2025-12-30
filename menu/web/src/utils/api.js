@@ -144,6 +144,7 @@ export const apiMethods = {
   getError: () => api.get('/error'),
   getCalculateTaskEnabledList: () => api.get('/CalculateTaskEnabledList'),
   getBagStatistics: () => api.get('/api/BagStatistics'),
+  addBagStatistics: (name) => api.post(`/api/BagStatistics/ADD?name=${encodeURIComponent(name)}`),
   getCDAwareAutoGather: (status = '3') => api.get('/api/CD-Aware-AutoGather/ReadInfo', { params: { status } }),
   // 采集管理
   getCollectionManagement: (name) => api.get('/api/CDCollectionManagement/list', { params: { name } }),
