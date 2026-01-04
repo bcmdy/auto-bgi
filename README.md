@@ -190,7 +190,7 @@ BetterGIAddress   bgi安装地址
 
 ### ✅ 米游社签到
 
-- 需获取 **stoken-cookie**，加群，需要搭配一个压缩包，压缩包在群里。
+- 需获取 **stoken-cookie**，加群，需要搭配一个压缩包，压缩包在群里，将文件解压出来，放到abgi根目录里面。
 
 - 原项目作者仓库地址，可以点点star（https://github.com/bcmdy/MihoyoBBSTools）
 
