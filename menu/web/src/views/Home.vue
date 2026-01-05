@@ -294,6 +294,7 @@ let headerCarouselInterval = null
 let statusInterval = null
 let petals = []
 let animationId = null
+const isUniappReady = ref(false) //
 
 const currentImage = computed(() => {
   if (carouselImages.value.length > 0) {
@@ -316,11 +317,11 @@ const statusData = reactive({
 // --- 按钮配置 (保持不变) ---
 const dataAnalysisButtons = ref([
   { text: '查看狗粮日志', route: '/getAutoArtifactsPro' },
-  { text: '采集数据', route: '/logAnalysis' },
+  { text: '屑荧进村', route: '/logAnalysis' },
   { text: '归档查询', route: '/archive' },
-  { text: '旅行者轧记', route: '/BagStatistics' },
+  { text: '旅行者札记', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },
-  { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
+  // { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
   { text: '采集管理', route: '/CollectionManagement' },
   { text: 'ABGI日志查询', route: '/autoLog' },
   { text: 'ABGI定时任务', route: '/TaskCron' }
@@ -454,7 +455,7 @@ const indexSXBtn = () => {
 const automationButtons = ref([
   { text: '一条龙启动', action: () => { oneLongModal.visible = true; handleOneLongLoad() } },
   { text: '关闭BGI和原神', action: handleCloseBgi },
-  { text: '调度器启动', route: '/listGroups' },
+  { text: '调度圣坛', route: '/listGroups' },
   { text: '备份 USER 文件', action: handleBackup },
   { text: '脚本屋', route: '/jsNames' },
   { text: '地图追踪', route: '/Pathing' },
@@ -597,6 +598,24 @@ onMounted(() => {
         if (statusInterval) clearInterval(statusInterval)
         if (headerCarouselInterval) clearInterval(headerCarouselInterval)
     })
+
+    //给app发送上线次数
+    const SendNumberOfLaunches = async () => {
+        isUniappReady.value = true;
+        console.log('✨ UniApp Bridge 已就绪');
+        // 自动握手一次
+        if (window.uni && window.uni.postMessage) {
+          const res = await apiMethods.getNumberOfLaunches()
+      window.uni.postMessage({ data: res });
+          console.log('✨ 已向 UniApp 发送握手消息', JSON.stringify(res));
+        }
+  };
+
+      if (window.UniAppJSBridgeReady) {
+          SendNumberOfLaunches();
+        } else {
+          document.addEventListener('UniAppJSBridgeReady', SendNumberOfLaunches);
+      }
 })
 </script>
 
