@@ -30,7 +30,9 @@ func DeleteBag() {
 	// 打开文件读取内容
 	file, err := os.Open(filePath)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		autoLog.Sugar.Errorf("删除背包数据失败：%v\n", err)
+		return
 	}
 	defer file.Close()
 
@@ -82,7 +84,9 @@ func DeleteBag() {
 	// 直接覆盖原文件
 	err = os.WriteFile(filePath, []byte(strings.Join(result, "\n\n")), 0644)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		autoLog.Sugar.Errorf("删除背包数据失败：%v\n", err)
+		return
 	}
 
 	autoLog.Sugar.Infof("成功：已将 %s 更新为仅包含 %s 的数据。\n", filePath, latestDate)
@@ -95,7 +99,9 @@ func DeleteMoLa() {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		autoLog.Sugar.Errorf("删除摩拉数据失败：%v\n", err)
+		return
 	}
 	defer file.Close()
 
@@ -141,7 +147,9 @@ func DeleteYuanShi() {
 	filePath := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\OCR读取当前抽卡资源并发送通知\\Resources_log.txt", config.Cfg.BetterGIAddress))
 	file, err := os.Open(filePath)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		autoLog.Sugar.Errorf("删除原石数据失败：%v\n", err)
+		return
 	}
 	defer file.Close()
 
@@ -173,7 +181,9 @@ func DeleteYuanShi() {
 		output := strings.Join(lines, "\n") + "\n"
 		err = os.WriteFile(filePath, []byte(output), 0644)
 		if err != nil {
-			panic(err)
+			//panic(err)
+			autoLog.Sugar.Errorf("删除原石数据失败：%v\n", err)
+			return
 		}
 		//fmt.Printf("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)
 		autoLog.Sugar.Infof("成功：%s 中只保留了 %s 的记录。\n", filePath, latestDate)

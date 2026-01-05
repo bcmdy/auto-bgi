@@ -30,6 +30,7 @@ import BgiConfig from '../views/BgiConfig.vue'
 import Update from '../views/Update.vue'
 import CollectionManagement from '../views/CollectionManagement.vue'
 import LogDetail from '../views/LogDetail.vue'
+import Morale from '../views/Morale.vue'
 
 // 路由配置
 const routes = [
@@ -62,6 +63,7 @@ const routes = [
   ,{ path: '/Update', component: Update, meta: { requiresAuth: true } }
   ,{ path: '/CollectionManagement', component: CollectionManagement, meta: { requiresAuth: true } }
   ,{ path: '/logDetail', component: LogDetail, meta: { requiresAuth: true } }
+  ,{ path: '/Morale', component: Morale, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

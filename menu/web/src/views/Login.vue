@@ -85,7 +85,7 @@
 
       <div class="card-footer">
         <div class="footer-divider"></div>
-        <p class="footer-text">嘿~这是一个神秘的地方呢🎀</p>
+        <p class="footer-text" @click="aaa">嘿~这是一个神秘的地方呢🎀</p>
         <div class="contact-pill">qq群：215053644</div>
       </div>
     </div>
@@ -109,6 +109,9 @@ const formState = ref({
   password: ''
 })
 
+// 在 script setup 顶部添加定义
+const isUniappReady = ref(false) //
+
 // 页面挂载时获取系统配置
 onMounted(async () => {
   try {
@@ -119,6 +122,27 @@ onMounted(async () => {
   } catch (error) {
     console.error('获取系统配置失败:', error)
   }
+
+
+
+const initUniBridge = () => {
+    isUniappReady.value = true;
+    console.log('✨ UniApp Bridge 已就绪');
+    // 自动握手一次
+    if (window.uni && window.uni.postMessage) {
+      // window.uni.postMessage({ data: { type: '思姐真可爱', msg: 'abgi已经连接' } });
+      console.log('✨ 已向 UniApp 发送握手消息');
+    }
+  };
+
+  // 2. 同时尝试两种检查方式
+  if (window.UniAppJSBridgeReady) {
+    initUniBridge();
+  } else {
+    document.addEventListener('UniAppJSBridgeReady', initUniBridge);
+  }
+
+
 })
 
 const handleEnter = () => {
@@ -126,6 +150,25 @@ const handleEnter = () => {
     formRef.value.submit()
   }
 }
+
+
+const aaa = () => {
+    console.log("Check Uni Object:", window.uni);
+
+      // 在 Uniapp WebView 中，官方 SDK 会挂载 window.uni
+      if (window.uni && window.uni.postMessage) {
+        window.uni.postMessage({
+          data: { 
+            action: '思姐真可爱',
+            content: '来自神秘地方的数据🎀' 
+          }
+        });
+        message.success('已向异世界发送信号✨');
+      } else {
+        console.error("【提示】当前不在 UniApp 环境，或 SDK 尚未加载。");
+        message.warning('咒语失效了，请在 App 中尝试哦~');
+      }
+};
 
 const onFinish = async () => {
   loading.value = true
@@ -163,6 +206,9 @@ const onFinish = async () => {
 const onFinishFailed = (errorInfo) => {
   console.log('Failed:', errorInfo)
 }
+
+
+
 </script>
 
 <style scoped>

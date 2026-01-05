@@ -43,6 +43,7 @@ type BgiConfig struct {
 	RunForVersion                 string `json:"runForVersion"`                  // bgi版本号
 	SelectedChannelName           string `json:"selectedChannelName"`            // selectedChannelName：仓库
 	RepoUrl                       string `json:"repoUrl"`                        // 仓库地址
+	MiYouSheConfigCookie          string `json:"miyousheConfig"`                 // miyousheConfig
 }
 
 var BgiCfg BgiConfig
@@ -62,6 +63,8 @@ func ReadBgiConfig() {
 
 	//bgi版本号
 	BgiCfg.RunForVersion = gjson.Get(data, "commonConfig.runForVersion").String()
+
+	BgiCfg.MiYouSheConfigCookie = gjson.Get(data, "otherConfig.miyousheConfig.cookie").String()
 
 	//selectedChannelName：仓库
 	BgiCfg.SelectedChannelName = gjson.Get(data, "scriptConfig.selectedChannelName").String()

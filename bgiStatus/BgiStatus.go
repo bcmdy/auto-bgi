@@ -64,6 +64,7 @@ func CheckBetterGIStatus() {
 				if config.Cfg.Control.IsCloseYuanShen {
 					autoLog.Sugar.Infof("需要关闭原神")
 					control.CloseYuanShen()
+
 				}
 			}
 			lastRunning = running
@@ -690,7 +691,7 @@ func LogAnalysis(fileName string) []map[string]interface{} {
 
 			// 如果相似度达不到阈值，则视为未知
 			if bestSim < 0.1 {
-				autoLog.Sugar.Infof("未知材料:%s", item)
+				autoLog.Sugar.Infof("未判断出的材料:%s", item)
 			}
 			data[name] += count
 		}

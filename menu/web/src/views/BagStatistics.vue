@@ -34,7 +34,11 @@
           <button @click="openEatStatisticsModal" class="kawaii-btn eat-btn icon-btn">
             💊 <span class="btn-text">吃药查看</span>
           </button>
+       
         </div>
+           <button @click="goMoralePage" class="kawaii-btn morale-btn icon-btn">
+            💰 <span class="btn-text">摩拉收益</span>
+          </button>
       </header>
 
       <section class="filter-panel-wrapper">
@@ -455,6 +459,7 @@ export default {
 
     goHome() { this.$router.push('/'); },
     goBagStatisticsTrend() { this.$router.push('/MaterialTrend'); },
+    goMoralePage() { this.$router.push('/Morale'); },
 
     // 修改：item 变为可选参数，支持按钮直接点击
     async checkBag(item) {
@@ -885,6 +890,8 @@ export default {
 .overflow-btn { background: var(--k-purple-light); border-color: var(--k-purple-main); color: #8E24AA; box-shadow: 0 4px 0 var(--k-purple-main); }
 /* 吃药查看按钮样式 */
 .eat-btn { background: #C8E6C9; border-color: #66BB6A; color: #2E7D32; box-shadow: 0 4px 0 #66BB6A; }
+/* 摩拉收益按钮样式 */
+.morale-btn { background: #FFF9C4; border-color: #FBC02D; color: #F57F17; box-shadow: 0 4px 0 #FBC02D; }
 
 /* --- 筛选面板 --- */
 .filter-panel-wrapper {

@@ -149,7 +149,7 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
 
 				go func() {
-					if a+b <= 300000 {
+					if a+b > 190000 || a+b < 150000 {
 						UpdateRevenue(sum)
 					}
 				}()

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 	"unsafe"
@@ -91,63 +92,67 @@ func CloseSoftware() {
 		autoLog.Sugar.Errorf("执行命令出错: %v\n", err)
 	}
 
-	// 检查配置文件中是否设置了需要关闭原神
-	if config.Cfg.Control.IsCloseYuanShen {
-		autoLog.Sugar.Infof("需要关闭原神")
-		CloseYuanShen()
-	}
-
 }
 
 // CloseYuanShen 关闭软件
 // CloseYuanShen 函数用于关闭原神游戏及其启动器
+var CloseYuanShenWg sync.WaitGroup
+
 func CloseYuanShen() {
+	CloseYuanShenWg.Add(3)
+	go func() {
+		defer CloseYuanShenWg.Done()
+		// 创建命令用于强制关闭原神进程
+		cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
-	// 创建命令用于强制关闭原神进程
-	cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		// 执行命令并获取输出
+		_, err := cmd.CombinedOutput()
 
-	// 执行命令并获取输出
-	_, err := cmd.CombinedOutput()
+		// 判断原神关闭结果
+		if err != nil {
+			autoLog.Sugar.Infof("原神已关闭")
+		} else {
+			autoLog.Sugar.Infof("原神关闭成功")
+		}
+	}()
 
-	// 判断原神关闭结果
-	if err != nil {
-		autoLog.Sugar.Infof("原神已关闭")
-	} else {
-		autoLog.Sugar.Infof("原神关闭成功")
-	}
+	go func() {
+		defer CloseYuanShenWg.Done()
+		// 创建命令用于强制关闭原神启动器进程
+		cmd3 := exec.Command("taskkill", "/F", "/IM", "GenshinImpact.exe")
+
+		// 执行命令并获取输出
+		_, err3 := cmd3.CombinedOutput()
+
+		// 判断启动器关闭结果
+		if err3 != nil {
+			autoLog.Sugar.Infof("原神国际已关闭")
+		} else {
+			autoLog.Sugar.Infof("原神国际关闭成功")
+		}
+	}()
+
+	go func() {
+		defer CloseYuanShenWg.Done()
+		// 创建命令用于强制关闭原神启动器进程
+		cmd2 := exec.Command("taskkill", "/F", "/IM", "HYP.exe")
+
+		// 执行命令并获取输出
+		_, err2 := cmd2.CombinedOutput()
+
+		// 判断启动器关闭结果
+		if err2 != nil {
+			autoLog.Sugar.Infof("原神启动器已关闭")
+		} else {
+			autoLog.Sugar.Infof("原神启动器关闭成功")
+		}
+	}()
+
+	CloseYuanShenWg.Wait()
 
 	// 等待3秒，确保原神完全关闭
-	time.Sleep(3000 * time.Millisecond)
-
-	// 创建命令用于强制关闭原神启动器进程
-	cmd3 := exec.Command("taskkill", "/F", "/IM", "GenshinImpact.exe")
-
-	// 执行命令并获取输出
-	_, err3 := cmd3.CombinedOutput()
-
-	// 判断启动器关闭结果
-	if err3 != nil {
-		autoLog.Sugar.Infof("原神国际已关闭")
-	} else {
-		autoLog.Sugar.Infof("原神国际关闭成功")
-	}
-
-	// 等待3秒，确保原神完全关闭
-	time.Sleep(3000 * time.Millisecond)
-
-	// 创建命令用于强制关闭原神启动器进程
-	cmd2 := exec.Command("taskkill", "/F", "/IM", "HYP.exe")
-
-	// 执行命令并获取输出
-	_, err2 := cmd2.CombinedOutput()
-
-	// 判断启动器关闭结果
-	if err2 != nil {
-		autoLog.Sugar.Infof("原神启动器已关闭")
-	} else {
-		autoLog.Sugar.Infof("原神启动器关闭成功")
-	}
+	time.Sleep(2000 * time.Millisecond)
 
 }
 
@@ -167,7 +172,7 @@ func MouseClick(x, y int, key string, DoubleClick bool) {
 // ScreenShot 截图
 func ScreenShot(imgName string) error {
 	//screenWidth, screenHeight := robotgo.GetScreenSize()
-	// 调用 C 代码
+
 	size := C.GetPhysicalResolution()
 	//fmt.Println("--- 屏幕真实分辨率 ---")
 	//fmt.Printf("宽度: %d px\n", int(size.width))

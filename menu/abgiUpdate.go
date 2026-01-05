@@ -73,7 +73,7 @@ func Update() error {
 	// 应用下载的更新
 	err = update.Apply(resp.Body, update.Options{})
 	if err != nil {
-		// 如果应用更新失败，返回错误
+		// 如果应用更新失败，返回错误zoa
 		return err
 	}
 

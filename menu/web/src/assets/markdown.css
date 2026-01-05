@@ -212,16 +212,47 @@ table {
     padding: 0;
     word-break: initial;
 }
+
+/* 排除 Ant Design 日期选择器的表格 */
+.ant-picker-dropdown table,
+.ant-picker-panel table,
+.ant-picker-date-panel table,
+.ant-picker-content table {
+    padding: 0 !important;
+    word-break: normal !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
     
 table tr {
     border: 1px solid #dfe2e5;
     margin: 0;
     padding: 0;
 }
+
+/* 排除 Ant Design 日期选择器的行 */
+.ant-picker-dropdown tr,
+.ant-picker-panel tr,
+.ant-picker-date-panel tr,
+.ant-picker-content tr {
+    border: none !important;
+    width: 100% !important;
+    display: table-row !important;
+}
+
 table tr:nth-child(2n),
 thead {
     background-color: #f8f8f8;
 }
+
+/* 排除 Ant Design 日期选择器的背景色 */
+.ant-picker-dropdown tr:nth-child(2n),
+.ant-picker-dropdown thead {
+    background-color: transparent !important;
+}
+
 table th {
     font-weight: bold;
     border: 3px solid #ff69b4;
@@ -229,11 +260,44 @@ table th {
     margin: 0;
     padding: 6px 13px;
 }
+
+/* 排除 Ant Design 日期选择器的表头 */
+.ant-picker-dropdown th,
+.ant-picker-panel th,
+.ant-picker-date-panel th,
+.ant-picker-content th {
+    font-weight: 500 !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    width: 14.285714% !important;
+    min-width: 14.285714% !important;
+    max-width: 14.285714% !important;
+    display: table-cell !important;
+    text-align: center !important;
+}
+
 table td {
     border: 3px solid #ff69b4;
     margin: 0;
     padding: 6px 13px;
 }
+
+/* 排除 Ant Design 日期选择器的单元格 */
+.ant-picker-dropdown td,
+.ant-picker-panel td,
+.ant-picker-date-panel td,
+.ant-picker-content td {
+    border: none !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    width: 14.285714% !important;
+    min-width: 14.285714% !important;
+    max-width: 14.285714% !important;
+    display: table-cell !important;
+    text-align: center !important;
+}
+
 table th:first-child,
 table td:first-child {
     margin-top: 0;

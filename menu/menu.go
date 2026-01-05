@@ -83,6 +83,7 @@ func OnReady() {
 					autoLog.Sugar.Errorf("打开浏览器失败: %v", err)
 				}
 			case <-mQuit.ClickedCh:
+				tools.CloseSoftware("frpc.exe")
 				systray.Quit()
 				return
 			}
@@ -403,6 +404,12 @@ func StarGin() {
 			BagStatistics.POST("/ADD", BackpackStatistics.AddService)
 			//清空所有
 			BagStatistics.POST("/CLEAR", BackpackStatistics.ClearAllService)
+
+			//查询摩拉收益
+			BagStatistics.GET("/Morale", task.QueryMoraleRecord)
+
+			//更新摩拉收益
+			BagStatistics.POST("/updateMorale", task.UpdateMoraleRecord)
 
 		}
 

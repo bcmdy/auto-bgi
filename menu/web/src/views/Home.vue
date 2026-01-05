@@ -83,6 +83,7 @@
             <button  @click="openScreenshot">查看桌面</button>
             <button  @click="sendImage">发送截图</button>
             <button  @click="router.push('/log')">实时日志</button>
+            <button  @click="router.push('/autoLog')">ABGI日志查询</button>
           </div>
           
         </div>
@@ -322,9 +323,9 @@ const dataAnalysisButtons = ref([
   { text: '旅行者札记', route: '/BagStatistics' },
   { text: '配置组运行情况', route: '/other' },
   // { text: 'CD管理自动采集', route: '/CDAwareAutoGather' },
-  { text: '采集管理', route: '/CollectionManagement' },
-  { text: 'ABGI日志查询', route: '/autoLog' },
-  { text: 'ABGI定时任务', route: '/TaskCron' }
+  { text: '采集管理', route: '/CollectionManagement' }
+
+
 ])
 
 // --- BGI上传逻辑 ---
@@ -460,7 +461,8 @@ const automationButtons = ref([
   { text: '脚本屋', route: '/jsNames' },
   { text: '地图追踪', route: '/Pathing' },
   { text: '联机管理', route: '/Online' },
-  { text: 'BGI一条龙配置', route: '/BgiConfig' },
+  { text: 'ABGI定时任务', route: '/TaskCron' }
+
 ])
 
 const bgiButtons = ref([
@@ -470,6 +472,7 @@ const bgiButtons = ref([
   { text: '米游社签到', action: mysSignIn },
   { text: '检查更新', action: () => router.push('/Update') },
   { text: 'ABGI设置', route: '/Config' },
+    { text: 'BGI一条龙配置', route: '/BgiConfig' },
   { text: '退出登录', action: handleLogout }
 ])
 
