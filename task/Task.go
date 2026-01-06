@@ -6,10 +6,6 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
-	"auto-bgi/internal/gamecheckin"
-	"auto-bgi/internal/mihoyobbs"
-	"auto-bgi/internal/mysConfig"
-	"auto-bgi/internal/utils"
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"io/fs"
@@ -150,19 +146,19 @@ func SendWeChatImageTask() {
 }
 
 // 清空联机次数
-// 每隔1个小时发送截图
 func ClearRunCount() {
 
 	cronTab := cron.New(cron.WithSeconds())
 
 	// 定时任务,cron表达式
 	//每1个小时执行一次
-	spec := fmt.Sprintf("0 0 0 * * *")
+	spec := fmt.Sprintf("0 30 23 * * *")
 
 	// 定义定时器调用的任务函数
 	task := func() {
 		autoLog.Sugar.Infof("清空联机次数 %v", time.Now().Format("2006-01-02 15:04:05"))
-		abgiSSE.RunCount = 1
+		abgiSSE.RunCount = 0
+		Rank()
 	}
 
 	// 添加定时任务
@@ -172,60 +168,4 @@ func ClearRunCount() {
 	// 阻塞主线程停止
 	select {}
 
-}
-
-// 米游社签到
-func MiYouSheSign() {
-	//// 解析命令行参数
-	//var configPath string
-	//flag.StringVar(&configPath, "mysCfg", "mysConfig.yaml", "配置文件路径")
-	//flag.Parse()
-	//
-	//// 初始化随机数种子
-	utils.InitRandom()
-	//
-	//// 加载配置文件
-	//autoLog.Sugar.Infof("米游社-正在加载配置文件: %s", configPath)
-	//if err := mysConfig.LoadConfig(configPath); err != nil {
-	//
-	//	autoLog.Sugar.Errorf("米游社-加载配置文件失败: %v", err)
-	//	return
-	//}
-
-	// 检查Cookie是否配置
-	if mysConfig.GlobalConfig.Account.Cookie == "" {
-		autoLog.Sugar.Errorf("米游社-Cookie未配置，请先在配置文件中设置Cookie")
-		return
-	}
-
-	// 生成设备ID（如果未配置）
-	if mysConfig.GlobalConfig.Device.ID == "" {
-		deviceID := utils.GetDeviceID(mysConfig.GlobalConfig.Account.Cookie)
-		mysConfig.GlobalConfig.Device.ID = deviceID
-		//autoLog.Sugar.Infof("米游社-自动生成设备ID: %s", deviceID)
-	}
-
-	//autoLog.Sugar.Infof("米游社-签到工具启动")
-
-	// 运行米游社签到
-	if mysConfig.GlobalConfig.Mihoyobbs.Enable {
-		autoLog.Sugar.Infof("米游社-开始签到任务")
-		mihoyobbsClient := mihoyobbs.NewMihoyobbs()
-		if err := mihoyobbsClient.Run(); err != nil {
-
-			autoLog.Sugar.Errorf("米游社-签到失败: %v", err)
-		}
-	}
-
-	// 运行游戏签到
-	if mysConfig.GlobalConfig.Games.CN.Enable {
-
-		autoLog.Sugar.Infof("米游社-开始游戏签到任务")
-		if err := gamecheckin.RunAllGames(); err != nil {
-
-			autoLog.Sugar.Errorf("米游社-游戏签到失败: %v", err)
-		}
-	}
-
-	autoLog.Sugar.Infof("米游社-所有任务完成")
 }

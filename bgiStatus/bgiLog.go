@@ -301,6 +301,14 @@ func (m *LogMonitor) Monitor() {
 					abgiSSE.WriteDogFoodNum(num)
 				}
 
+				if strings.Contains(line, "abgi联机排行榜") {
+					//提取数字
+					re := regexp.MustCompile(`(\d+)$`)
+					num := re.FindString(line)
+
+					abgiSSE.WriteDogFoodNum(num)
+				}
+
 				if strings.Contains(line, "如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）") {
 					Notice.SentText("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")
 					autoLog.Sugar.Infof("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")

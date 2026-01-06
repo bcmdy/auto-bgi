@@ -125,22 +125,22 @@ onMounted(async () => {
 
 
 
-const initUniBridge = () => {
-    isUniappReady.value = true;
-    console.log('✨ UniApp Bridge 已就绪');
-    // 自动握手一次
-    if (window.uni && window.uni.postMessage) {
-      // window.uni.postMessage({ data: { type: '思姐真可爱', msg: 'abgi已经连接' } });
-      console.log('✨ 已向 UniApp 发送握手消息');
-    }
-  };
+// const initUniBridge = () => {
+//     isUniappReady.value = true;
+//     console.log('✨ UniApp Bridge 已就绪');
+//     // 自动握手一次
+//     if (window.uni && window.uni.postMessage) {
+//       // window.uni.postMessage({ data: { type: '思姐真可爱', msg: 'abgi已经连接' } });
+//       console.log('✨ 已向 UniApp 发送握手消息');
+//     }
+//   };
 
-  // 2. 同时尝试两种检查方式
-  if (window.UniAppJSBridgeReady) {
-    initUniBridge();
-  } else {
-    document.addEventListener('UniAppJSBridgeReady', initUniBridge);
-  }
+//   // 2. 同时尝试两种检查方式
+//   if (window.UniAppJSBridgeReady) {
+//     initUniBridge();
+//   } else {
+//     document.addEventListener('UniAppJSBridgeReady', initUniBridge);
+//   }
 
 
 })

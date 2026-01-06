@@ -3,23 +3,29 @@ package tools
 import (
 	"archive/zip"
 	"auto-bgi/abgiConstant"
+	"auto-bgi/autoLog"
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/agnivade/levenshtein"
+	"github.com/getlantern/systray"
 	"io"
 	"log"
 	"math"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -459,6 +465,7 @@ func RestartProgram() error {
 	if err != nil {
 		return fmt.Errorf("启动 VBS 脚本失败: %v", err)
 	}
+	defer systray.Quit() // 或确保内部调用 NIM_DELETE
 
 	// 退出当前进程
 	os.Exit(0)
@@ -524,4 +531,110 @@ func GetStandardName(rawName string) string {
 func RoundFloat(val float64, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(val*ratio) / ratio
+}
+
+var httpClient = &http.Client{
+	Timeout: 15 * time.Second, // 默认超时时间 15 秒
+}
+
+func PostJSON(url string, data interface{}, headers map[string]string) ([]byte, int, error) {
+	// 1. 序列化 JSON 数据
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, 0, fmt.Errorf("json 序列化失败: %w", err)
+	}
+
+	// 2. 构建请求
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return nil, 0, fmt.Errorf("构建请求失败: %w", err)
+	}
+
+	// 3. 设置请求头
+	req.Header.Set("Content-Type", "application/json")
+	// 合并自定义请求头
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	// 4. 发送请求
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, 0, fmt.Errorf("发送请求失败: %w", err)
+	}
+	defer resp.Body.Close() // 确保响应体关闭
+
+	// 5. 读取响应体
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("读取响应失败: %w", err)
+	}
+
+	return buf.Bytes(), resp.StatusCode, nil
+}
+
+// IsDateLess 判断 date1 是否早于 date2
+// 支持常见日期格式：
+// 2006-01-02
+// 2006-01-02 15:04:05
+// 2006/01/02
+// 2006/01/02 15:04:05
+func IsDateLess(date1, date2 string) (bool, error) {
+	//日期相同直接返回
+	if date1 == date2 {
+		return true, nil
+	}
+
+	layouts := []string{
+		"2006-01-02",
+		"2006-01-02 15:04:05",
+		"2006/01/02",
+		"2006/01/02 15:04:05",
+	}
+
+	parse := func(dateStr string) (time.Time, error) {
+		for _, layout := range layouts {
+			if t, err := time.ParseInLocation(layout, dateStr, time.Local); err == nil {
+				return t, nil
+			}
+		}
+		return time.Time{}, errors.New("不支持的日期格式: " + dateStr)
+	}
+
+	t1, err := parse(date1)
+	if err != nil {
+		return false, err
+	}
+
+	t2, err := parse(date2)
+	if err != nil {
+		return false, err
+	}
+
+	return t1.Before(t2), nil
+}
+
+// 关闭软件
+func CloseSoftware(name string) {
+	//关闭软件之前，停止当前脚本/独立任务
+
+	time.Sleep(5 * time.Second)
+
+	// 创建命令
+	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", name, "/FI", "USERNAME eq %USERNAME%")
+
+	//cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+
+	// 执行命令并获取输出
+	_, err := cmd.CombinedOutput()
+
+	if err != nil {
+		autoLog.Sugar.Errorf("执行命令出错: %v\n", err)
+	}
+	autoLog.Sugar.Infof("%s关闭成功", name)
+
 }

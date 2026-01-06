@@ -50,3 +50,15 @@ type BackpackStatistics struct {
 func (BackpackStatistics) TableName() string {
 	return "BackpackStatistics"
 }
+
+// 摩拉记录
+type MoraleRecord struct {
+	ID     uint64 `gorm:"primaryKey" json:"id"`
+	Time   string `json:"Time"`
+	Num    int    `json:"morale"` // 摩拉
+	Action string `json:"action"` // 收入/支出
+}
+
+func (MoraleRecord) TableName() string {
+	return "MoraleRecord"
+}

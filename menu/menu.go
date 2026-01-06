@@ -292,11 +292,15 @@ func StarGin() {
 			})
 
 		}
+		ArtifactsBulkSupply.UpdateRevenue("174300")
 
 		//获取上线次数
 		ginServer.GET("/api/NumberOfLaunches", abgiSSE.NumberOfLaunches)
 
 		needAuth.GET("/index", bgiStatus.GetIndex)
+
+		//app获取信息
+		needAuth.GET("/appInfo", GetAppInfo)
 
 		//首页刷新
 		needAuth.GET("/indexSX", func(c *gin.Context) {

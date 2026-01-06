@@ -602,22 +602,22 @@ onMounted(() => {
         if (headerCarouselInterval) clearInterval(headerCarouselInterval)
     })
 
-    //给app发送上线次数
-    const SendNumberOfLaunches = async () => {
+    //给app发送信息
+    const SendAppInfo = async () => {
         isUniappReady.value = true;
         console.log('✨ UniApp Bridge 已就绪');
         // 自动握手一次
         if (window.uni && window.uni.postMessage) {
-          const res = await apiMethods.getNumberOfLaunches()
+          const res = await apiMethods.GetAppInfo()
       window.uni.postMessage({ data: res });
           console.log('✨ 已向 UniApp 发送握手消息', JSON.stringify(res));
         }
   };
 
       if (window.UniAppJSBridgeReady) {
-          SendNumberOfLaunches();
+          SendAppInfo();
         } else {
-          document.addEventListener('UniAppJSBridgeReady', SendNumberOfLaunches);
+          document.addEventListener('UniAppJSBridgeReady', SendAppInfo);
       }
 })
 </script>

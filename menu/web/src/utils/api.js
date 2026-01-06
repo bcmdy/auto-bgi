@@ -229,6 +229,8 @@ subscribeScript: (scriptName) => {
   // 立即执行定时任务
   AtOnceRunTaskCron: (type,data) => api.post(`/api/taskCron/AtOnceRun?type=${type}&data=${data}`),
 
+  GetAppInfo: () => api.get('/api/appInfo'),
+
   // BGI更新
   uploadBgi: (file) => {
     const formData = new FormData()
@@ -260,7 +262,9 @@ subscribeScript: (scriptName) => {
         timeout: 10 * 60 * 1000 // 10 分钟
       }
     )
+    
   
 }
+
 
 export default api
