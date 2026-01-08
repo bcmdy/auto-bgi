@@ -11,6 +11,17 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		QueryToken := c.Query("token")
+		if QueryToken != "" {
+			_, err := ParseToken(QueryToken)
+			if err != nil {
+				c.JSON(401, gin.H{"code": 401, "error": "未授权"})
+				c.Abort()
+				return
+			}
+			c.Next()
+			return
+		}
 
 		token := c.GetHeader("Authorization")
 		_, err := ParseToken(token)

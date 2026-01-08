@@ -16,8 +16,8 @@ func (ArchiveRecords) TableName() string {
 
 type AutoBgiConfig struct {
 	ID           uint   `gorm:"primaryKey" json:"id"`
-	AutoBgiKey   string `json:"autobgi_key"`
-	AutoBgiValue string `json:"autobgi_value"`
+	AutoBgiKey   string `gorm:"auto_bgi_key"`
+	AutoBgiValue string `gorm:"auto_bgi_value"`
 }
 
 // 配置
@@ -54,11 +54,13 @@ func (BackpackStatistics) TableName() string {
 // 摩拉记录
 type MoraleRecord struct {
 	ID     uint64 `gorm:"primaryKey" json:"id"`
+	UID    string `json:"uid"`
+	Name   string `json:"name"`
 	Time   string `json:"Time"`
 	Num    int    `json:"morale"` // 摩拉
 	Action string `json:"action"` // 收入/支出
 }
 
 func (MoraleRecord) TableName() string {
-	return "MoraleRecord"
+	return "MoraleRecord_two"
 }

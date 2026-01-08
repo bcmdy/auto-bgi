@@ -77,6 +77,7 @@ func StartGroups(names []string) error {
 }
 
 func StartOneDragon(name string) {
+
 	autoLog.Sugar.Infof("准备启动一条龙：%s", name)
 
 	// 关闭软件
@@ -95,6 +96,10 @@ func StartOneDragon(name string) {
 	exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
 
 	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startOneDragon", name)
+
+	go func() {
+		SendMoraleRank(true)
+	}()
 
 }
 

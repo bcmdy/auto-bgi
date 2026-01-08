@@ -3,7 +3,6 @@ package menu
 import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
-	"auto-bgi/tools"
 	_ "embed"
 	"fmt"
 	"github.com/inconshreveable/go-update"
@@ -80,10 +79,10 @@ func Update() error {
 	// 记录更新成功的日志，并提示用户重启程序
 	autoLog.Sugar.Infof("更新成功！请重新启动abgi")
 
-	// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
-	if err := tools.RestartProgram(); err != nil {
-		return fmt.Errorf("重启程序失败: %v", err)
-	}
+	//// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
+	//if err := tools.RestartProgram(); err != nil {
+	//	return fmt.Errorf("重启程序失败: %v", err)
+	//}
 
 	// 更新成功，返回nil表示无错误
 	return nil

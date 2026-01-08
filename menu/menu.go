@@ -292,7 +292,7 @@ func StarGin() {
 			})
 
 		}
-		ArtifactsBulkSupply.UpdateRevenue("174300")
+		//ArtifactsBulkSupply.UpdateRevenue("174300")
 
 		//获取上线次数
 		ginServer.GET("/api/NumberOfLaunches", abgiSSE.NumberOfLaunches)
@@ -764,7 +764,7 @@ func StarGin() {
 		{
 			updateBgi.POST("/Upload", BetterGI.UploadBgi)
 			//通过url下载
-			updateBgi.POST("/Download", BetterGI.DownloadBgi)
+			updateBgi.GET("/Download", BetterGI.DownloadBgiProgress)
 		}
 
 		aBgiUpdate := needAuth.Group("/aBgiUpdate")

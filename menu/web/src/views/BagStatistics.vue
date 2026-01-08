@@ -34,11 +34,10 @@
           <button @click="openEatStatisticsModal" class="kawaii-btn eat-btn icon-btn">
             💊 <span class="btn-text">吃药查看</span>
           </button>
-       
-        </div>
-           <button @click="goMoralePage" class="kawaii-btn morale-btn icon-btn">
+          <button @click="goMoralePage" class="kawaii-btn morale-btn icon-btn">
             💰 <span class="btn-text">摩拉收益</span>
           </button>
+        </div>
       </header>
 
       <section class="filter-panel-wrapper">
@@ -405,16 +404,37 @@ export default {
     // 移动端分组数据
     groupedMobileMaterials() {
       const groups = {};
+      const materialMap = {}; // 用于计算变化量
+      
       // 使用 raw 数据避免包含 spacer
       this.filteredDataRaw.forEach(item => {
         if (!groups[item.cl]) groups[item.cl] = [];
         
-        // 重新计算移动端的显示文本（简单版）
+        // 重新计算移动端的显示文本
         let numDisplay = item.num.toString();
-        // 原石特殊显示
+        
+        // 计算差值
+        if (materialMap[item.cl] !== undefined) {
+          const prev = materialMap[item.cl];
+          const diff = item.num - prev.num;
+          if (diff !== 0) {
+            const sign = diff > 0 ? '+' : '';
+            numDisplay = `${item.num} (${sign}${diff})`;
+          }
+        }
+        materialMap[item.cl] = { date: item.date, num: item.num };
+        
+        // 原石特殊显示（追加抽数信息）
         if (item.cl === '原石') {
-             const pulls = Math.floor(item.num / 160);
-             if (pulls > 0) numDisplay = `${item.num} (${pulls}抽)`;
+          const pulls = Math.floor(item.num / 160);
+          if (pulls > 0) {
+            // 如果已有差值显示，则在差值后追加抽数
+            if (numDisplay.includes('(') && !numDisplay.includes('抽')) {
+              numDisplay = numDisplay.replace(')', ` | ${pulls}抽)`);
+            } else if (!numDisplay.includes('(')) {
+              numDisplay = `${item.num} (${pulls}抽)`;
+            }
+          }
         }
         
         groups[item.cl].push({
@@ -1297,7 +1317,20 @@ export default {
 @media (max-width: 768px) {
   .kawaii-header { flex-direction: column; text-align: center; padding: 15px; }
   .header-actions, .title-box { width: 100%; }
+  .header-actions { 
+    flex-wrap: wrap; 
+    justify-content: center;
+  }
+  .header-actions.left { order: 1; }
+  .header-actions.right { order: 2; }
   .title-box { order: -1; margin-bottom: 10px; }
+  
+  .kawaii-btn.icon-btn {
+    padding: 10px 14px;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
 
   .desktop-table-view { display: none; }
   .mobile-card-view { display: block; }

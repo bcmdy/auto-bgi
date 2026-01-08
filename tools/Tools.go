@@ -465,7 +465,7 @@ func RestartProgram() error {
 	if err != nil {
 		return fmt.Errorf("启动 VBS 脚本失败: %v", err)
 	}
-	defer systray.Quit() // 或确保内部调用 NIM_DELETE
+	systray.Quit() // 或确保内部调用 NIM_DELETE
 
 	// 退出当前进程
 	os.Exit(0)

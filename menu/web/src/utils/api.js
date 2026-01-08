@@ -46,6 +46,13 @@ api.interceptors.response.use(
       router.push('/login')
       return Promise.reject(error)
     }
+
+    //处理888错误，强制更新前端
+    if (error.response && error.response.status === 888) {
+      console.warn('等待重启中，请稍后...')
+      router.push('/')
+      return Promise.reject("等待重启中，请稍后...")
+    }
   
 
 

@@ -115,7 +115,7 @@
         </div>
 
         <div class="button-group glass-panel">
-          <h2 class="group-title">🧭 BGI 管理</h2>
+          <h2 class="group-title">🧭 提瓦特指挥所</h2>
           <div class="btn-grid">
             <button 
                 v-for="(btn, index) in bgiButtons" 
@@ -471,8 +471,8 @@ const bgiButtons = ref([
   { text: '手动更新BGI', action: handleUploadBgiClick },
   { text: '米游社签到', action: mysSignIn },
   { text: '检查更新', action: () => router.push('/Update') },
+   { text: 'BGI一条龙配置', route: '/BgiConfig' },
   { text: 'ABGI设置', route: '/Config' },
-    { text: 'BGI一条龙配置', route: '/BgiConfig' },
   { text: '退出登录', action: handleLogout }
 ])
 

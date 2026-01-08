@@ -109,4 +109,8 @@ func InitFunction() {
 	//检查重启文件
 	check()
 
+	go func() {
+		config.InitA()
+	}()
+
 }

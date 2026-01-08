@@ -43,6 +43,7 @@ static ScreenSize GetPhysicalResolution() {
     ReleaseDC(NULL, hdc);
     return size;
 }
+
 */
 import "C"
 

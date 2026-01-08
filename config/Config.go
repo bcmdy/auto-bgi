@@ -111,6 +111,7 @@ var Cfg Config
 var Parser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 
 func init() {
+
 	err := ReloadConfig()
 	if err != nil {
 		//autoLog.Sugar.Fatalf("首次加载配置失败: %v", err)

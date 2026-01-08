@@ -109,12 +109,124 @@ var (
 	downloadLock   sync.Mutex
 	lastInvokeTime time.Time
 	// 2分钟的时间间隔
-	invokeInterval = 2 * time.Minute
+	invokeInterval = 5 * time.Minute
 )
 
 // DownloadBgi 是 Gin handler：从请求中读取 url（form/json/query），下载压缩包并替换到 ./uploads/BetterGI.zip
 // DownloadBgi 处理下载BGI的请求函数
 func DownloadBgi(c *gin.Context) {
+
+	//if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
+	//	autoLog.Sugar.Error("当前版本不是lcb版本，无法更新")
+	//	c.JSON(http.StatusBadRequest, gin.H{
+	//		"message": "当前版本不是lcb版本，无法更新",
+	//	})
+	//	return
+	//}
+	//
+	//// 加锁检查调用频率
+	//downloadLock.Lock()
+	//// 检查是否在2分钟内重复调用
+	//if time.Since(lastInvokeTime) < invokeInterval && !lastInvokeTime.IsZero() {
+	//	downloadLock.Unlock()
+	//	autoLog.Sugar.Warn("操作过于频繁，请等待2分钟后再试")
+	//	c.JSON(http.StatusTooManyRequests, gin.H{
+	//		"message": "操作过于频繁，请等待2分钟后再试",
+	//	})
+	//	return
+	//}
+	//// 更新最后调用时间
+	//lastInvokeTime = time.Now()
+	//downloadLock.Unlock()
+	//
+	////判断是否需要更新
+	//// 获取最新版本信息
+	//version, err := GetVersion()
+	//if err != nil {
+	//	// 记录错误日志并返回错误响应
+	//	autoLog.Sugar.Error("获取版本失败:", err)
+	//	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	//	return
+	//}
+	//// 记录最新版本信息
+	//autoLog.Sugar.Infof("当前BGI版本: %s", config.BgiCfg.RunForVersion)
+	//autoLog.Sugar.Infof("最新BGI版本: %s", version)
+	//
+	//// 检查当前版本是否为最新版本
+	//if version == config.BgiCfg.RunForVersion {
+	//	c.JSON(http.StatusOK, gin.H{
+	//		"message": "当前版本已经是最新版本",
+	//	})
+	//	return
+	//}
+	//
+	//// 关闭软件（和上传逻辑一致）
+	//control.CloseSoftware()
+
+	// 下载并保存
+	dst := filepath.Join("./uploads", "BetterGI.zip")
+	// ctx with timeout for the whole download operation
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	err2 := downloadFileWithProgress(ctx, GetTeaBaoUpdateUrl(), dst, func(current, total int64) {
+		percent := float64(current) / float64(total) * 100
+		fmt.Printf("\r下载进度: %.2f%% (%d/%d bytes)", percent, current, total)
+	})
+	if err2 != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err2.Error()})
+		return
+	}
+
+	//if err := downloadFileFromURL(ctx, GetTeaBaoUpdateUrl(), dst); err != nil {
+	//	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	//	return
+	//}
+	//// 小延时确保文件系统稳定（保持与 UploadBgi 一致）
+	//time.Sleep(1 * time.Second)
+	//
+	//// 更新 bgi（和 upload 的行为一致）
+	//err = UpdateBgi()
+	//if err != nil {
+	//	autoLog.Sugar.Error("更新失败:", err)
+	//	c.JSON(http.StatusBadRequest, gin.H{
+	//		"message": err,
+	//	})
+	//	return
+	//}
+	//
+	//// 更新仓库
+	//bgiStatus.GitPull()
+	//
+	//config.BgiCfg.RunForVersion = version
+	//
+	//control.OpenSoftware(config.Cfg.BetterGIAddress + "\\BetterGI.exe")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "下载并更新成功,请自启bgi,更新版本",
+		"path":    dst,
+	})
+}
+
+//func DownloadBgiProgress(c *gin.Context) {
+//
+//	// 下载并保存
+//	dst := filepath.Join("./uploads", "BetterGI.zip")
+//	// ctx with timeout for the whole download operation
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+//	defer cancel()
+//
+//	err2 := downloadFileWithProgress(ctx, GetTeaBaoUpdateUrl(), dst, func(current, total int64) {
+//		percent := float64(current) / float64(total) * 100
+//		fmt.Printf("\r下载进度: %.2f%% (%d/%d bytes)", percent, current, total)
+//	})
+//	if err2 != nil {
+//		c.JSON(http.StatusInternalServerError, gin.H{"error": err2.Error()})
+//		return
+//	}
+//}
+
+func DownloadBgiProgress(c *gin.Context) {
 
 	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
 		autoLog.Sugar.Error("当前版本不是lcb版本，无法更新")
@@ -163,16 +275,36 @@ func DownloadBgi(c *gin.Context) {
 	// 关闭软件（和上传逻辑一致）
 	control.CloseSoftware()
 
-	// 下载并保存
-	dst := filepath.Join("./uploads", "BetterGI.zip")
-	// ctx with timeout for the whole download operation
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	// 设置响应头，声明这是一个 SSE 流
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	// 设置内容类型为服务器发送事件
+	dst := filepath.Join("./uploads", "BetterGI.zip")                       // 禁用缓存
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Minute) // 保持长连接
 	defer cancel()
+	// 构建目标文件路径
 
-	if err := downloadFileFromURL(ctx, GetTeaBaoUpdateUrl(), dst); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 创建一个10分钟超时的上下文
+	err = downloadFileWithProgress(ctx, GetTeaBaoUpdateUrl(), dst, func(current, total int64) {
+		percent := float64(current) / float64(total) * 100 // 确保在函数返回前取消上下文
+		// 发送 SSE 格式的数据：data: {"percent": 50.5}\n\n
+		// 调用下载函数，并传入进度回调函数
+		c.SSEvent("progress", gin.H{
+			"percent": fmt.Sprintf("%.2f", percent),
+			"current": current,
+			"total":   total, // 使用SSE发送进度事件
+		}) // 保留两位小数的百分比
+		c.Writer.Flush() // 立即推送到前端                      // 当前已下载字节数
+	}) // 文件总字节数
+
+	if err != nil {
+		c.SSEvent("error", err.Error())
 		return
+		// 如果下载过程中发生错误，发送错误事件
 	}
+
+	c.SSEvent("done", "success")
 
 	// 小延时确保文件系统稳定（保持与 UploadBgi 一致）
 	time.Sleep(1 * time.Second)
@@ -187,17 +319,128 @@ func DownloadBgi(c *gin.Context) {
 		return
 	}
 
-	// 更新仓库
-	bgiStatus.GitPull()
+	//// 更新仓库
+	//bgiStatus.GitPull()
+	//更新仓库
+	go func() {
+		bgiStatus.GitPull()
+	}()
 
 	config.BgiCfg.RunForVersion = version
 
 	control.OpenSoftware(config.Cfg.BetterGIAddress + "\\BetterGI.exe")
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "下载并更新成功,请自启bgi,更新版本",
-		"path":    dst,
-	})
+	autoLog.Sugar.Infof("更新成功,请自启bgi,更新版本")
+
+	//重定向
+	c.Redirect(http.StatusFound, "/")
+
+}
+
+// 下载完成后发送成功事件
+// ProgressFunc 用于反馈下载进度
+// current: 已下载字节数, total: 总字节数
+type ProgressFunc func(current, total int64)
+
+// downloadFileWithProgress 支持分片下载并实时反馈进度
+func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, onProgress ProgressFunc) error {
+	// 1. 验证 URL
+	parsed, err := url.ParseRequestURI(reqURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return errors.New("invalid http/https url")
+	}
+
+	// 2. 获取文件总大小
+	headReq, err := http.NewRequestWithContext(ctx, http.MethodHead, reqURL, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(headReq)
+	if err != nil {
+		return fmt.Errorf("head request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned status: %s", resp.Status)
+	}
+
+	contentLength, _ := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+	if contentLength <= 0 {
+		return errors.New("cannot determine file size")
+	}
+
+	// 3. 准备临时文件
+	dir := filepath.Dir(dst)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	tmpFile, err := os.CreateTemp(dir, "download-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmpFile.Name()
+	defer func() {
+		tmpFile.Close()
+		_ = os.Remove(tmpPath) // 如果成功 Rename，此处删除会失效，符合预期
+	}()
+
+	// 4. 分片下载逻辑
+	const chunkSize = 1024 * 1024 // 每次下载 1MB
+	var downloaded int64 = 0
+
+	for downloaded < contentLength {
+		// 检查上下文是否取消
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		end := downloaded + chunkSize - 1
+		if end >= contentLength {
+			end = contentLength - 1
+		}
+
+		// 创建带 Range 头的请求
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+		if err != nil {
+			return err
+		}
+		rangeHeader := fmt.Sprintf("bytes=%d-%d", downloaded, end)
+		req.Header.Set("Range", rangeHeader)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
+
+		// 写入文件
+		n, err := io.Copy(tmpFile, resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return fmt.Errorf("write chunk failed: %w", err)
+		}
+
+		downloaded += n
+
+		// 5. 触发进度回调
+		if onProgress != nil {
+			onProgress(downloaded, contentLength)
+		}
+	}
+
+	// 6. 原子重命名
+	if err := tmpFile.Sync(); err != nil {
+		return err
+	}
+	tmpFile.Close()
+
+	if err := os.Rename(tmpPath, dst); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // downloadFileFromURL 从给定 URL 下载文件并原子写入到 dst（覆盖）。

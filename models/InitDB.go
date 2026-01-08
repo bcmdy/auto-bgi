@@ -27,8 +27,8 @@ func InitDB() error {
 		//Logger: logger.Default.LogMode(logger.Error),
 		Logger: logger.Default.LogMode(logger.Silent), // 不打印任何日志
 	})
-	//逻辑
-	DB.Migrator().DropIndex(&MoraleRecord{}, "idx_MoraleRecord_time")
+	////逻辑
+	//DB.Migrator().DropIndex(&MoraleRecord{}, "idx_MoraleRecord_time")
 
 	if err != nil {
 		return fmt.Errorf("打开数据库失败: %v", err)

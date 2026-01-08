@@ -16,10 +16,10 @@ import (
 	"time"
 )
 
-var GameRoles gameRolesRes
+var GameRoles GameRolesRes
 
 // 初始化游戏角色数据
-func InitA() {
+func InitA() GameRolesRes {
 
 	// 异步获取原神游戏角色数据
 	GetGenShinGameRolesAsync()
@@ -27,23 +27,24 @@ func InitA() {
 	// 打开GameInfo.json文件
 	file, err := os.Open("GameInfo.json")
 	if err != nil {
-		return
+		return GameRoles
 	}
 	defer file.Close() // 确保文件在函数返回前被关闭
 
 	// 读取文件内容
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return
+		return GameRoles
 	}
 
 	// 将JSON数据解析到GameRoles结构体中
 	if err := json.Unmarshal(bytes, &GameRoles); err != nil {
-		return
+		return GameRoles
 	}
+	return GameRoles
 }
 
-type gameRolesRes struct {
+type GameRolesRes struct {
 	RetCode int    `json:"retcode"`
 	Message string `json:"message"`
 	Data    struct {
@@ -89,7 +90,7 @@ func CreateSecret2(apiSalt2, urlStr string) string {
 // 获取原神账号信息
 func GetGenShinGameRolesAsync() {
 
-	var result gameRolesRes
+	var result GameRolesRes
 
 	ApiSalt2 := "xV8v4Qu54lUKrEYFZkJhB8cuOh9Asafs"
 
