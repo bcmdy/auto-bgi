@@ -144,6 +144,13 @@ const doUpdate = async () => {
       }, 3500)
       
   } catch (err) {
+
+    if (err.status===888) {
+      message.info('更新已启动，等待系统重启中，请稍后...')
+      note.value = '更新已启动，等待系统重启中，请稍后...'
+      return
+    }
+
     console.error(err)
     message.error('更新失败：' + (err?.message || String(err)))
     note.value = err?.message || String(err)
