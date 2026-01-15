@@ -21,7 +21,8 @@ go.mod
 jt.jpg
 logging.log
 *.7z
-*.txt
+build/**
+menu/web/TEMP-OneLong.txt
 .workflow/**
 .main.json
 internal/**
