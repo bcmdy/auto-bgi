@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run "run_auto_bgi_hidden.bat", 0, False

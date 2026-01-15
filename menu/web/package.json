@@ -1,0 +1,34 @@
+{
+  "name": "autobgi-vue",
+  "version": "1.0.0",
+  "description": "AutoBGI Vue3 Frontend",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "^7.0.0",
+    "ant-design-vue": "^4.0.0",
+    "axios": "^1.5.0",
+    "dayjs": "^1.11.19",
+    "dompurify": "^3.1.6",
+    "echarts": "^6.0.0",
+    "flv.js": "^1.6.2",
+    "marked": "^12.0.2",
+    "swiper": "^11.2.10",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.3.4",
+    "eslint": "^8.49.0",
+    "eslint-plugin-vue": "^9.17.0",
+    "rollup-plugin-visualizer": "^6.0.3",
+    "terser": "^5.43.1",
+    "vite": "^4.4.9",
+    "vite-plugin-style-import": "^2.0.0"
+  }
+}
