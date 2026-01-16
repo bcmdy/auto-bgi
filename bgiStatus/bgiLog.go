@@ -260,7 +260,7 @@ func (m *LogMonitor) Monitor() {
 
 				//js日志调用abgi更换房间
 				if strings.HasPrefix(line, "ABGI启动更换房间：") {
-					autoLog.Sugar.Infof("ABGI启动更换房间")
+					autoLog.Sugar.Infof(line)
 					data := strings.ReplaceAll(line, "ABGI启动更换房间：", "")
 					split := strings.Split(data, "-")
 					if len(split) == 2 {

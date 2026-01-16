@@ -412,7 +412,7 @@ const AtOnceRunTask = (type, data) => {
                   message.success(msg)
                   fetchTaskList()
             } catch(e) { 
-                message.error('执行任务失败') 
+                message.error('执行任务失败',JSON.stringify(e)) 
             }
         }
     })

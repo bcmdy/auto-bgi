@@ -1,6 +1,7 @@
 package TaskCron
 
 import (
+	"auto-bgi/autoLog"
 	"auto-bgi/models"
 	"github.com/gin-gonic/gin"
 	"sort"
@@ -135,7 +136,7 @@ func Resume(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"msg": "任务已恢复",
-		"id":  newID, // 新的 EntryID（如果前端要展示的话）
+		"id":  newID,
 	})
 }
 
@@ -145,6 +146,7 @@ func AtOnceRun(c *gin.Context) {
 	data := c.Query("data")
 
 	if typeName == "" {
+		autoLog.Sugar.Errorf("缺少参数 typeName")
 		c.String(400, "缺少参数 typeName")
 		return
 	}
