@@ -14,6 +14,7 @@ import (
 	"github.com/go-vgo/robotgo"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
@@ -48,6 +49,11 @@ func (m *LogMonitor) scanLog() ([]string, error) {
 	}
 	defer f.Close()
 
+	info, err := f.Stat()
+	if err == nil && m.lastPosition > info.Size() {
+		m.lastPosition = 0
+	}
+
 	_, err = f.Seek(m.lastPosition, io.SeekStart)
 	if err != nil {
 		return nil, err
@@ -77,6 +83,7 @@ func (m *LogMonitor) Monitor() {
 
 	fmt.Println("====== 日志监控启动 ======")
 	fmt.Println("文件:", m.LogFile)
+	autoLog.Sugar.Infof("文件:%s", m.LogFile)
 	fmt.Println("关键词:", strings.Join(m.Keywords, ", "))
 	fmt.Println("=========================")
 
@@ -88,9 +95,41 @@ func (m *LogMonitor) Monitor() {
 		case <-ticker.C:
 			lines, err := m.scanLog()
 			if err != nil {
+				if os.IsNotExist(err) {
+					logDir := filepath.Dir(m.LogFile)
+					files, ferr := findLogFiles(logDir)
+					if ferr != nil || len(files) == 0 {
+						fmt.Println("日志文件被删除，且未找到新的日志文件")
+						continue
+					}
+
+					newLogFile := filepath.Join(logDir, files[0])
+					fmt.Println("日志文件被删除，切换到新的日志文件:", newLogFile)
+
+					m.LogFile = newLogFile
+					m.lastPosition = 0
+
+					currentLogFile = newLogFile
+					go func() {
+						config.Cfg.BgiLog = newLogFile
+						InitBgiLogStatus()
+					}()
+
+					fmt.Println("====== 日志监控切换 ======")
+					fmt.Println("文件:", m.LogFile)
+					fmt.Println("关键词:", strings.Join(m.Keywords, ", "))
+					fmt.Println("=========================")
+
+					continue
+				}
+
 				fmt.Println("[!] 读取日志错误:", err)
 				Notice.SentText(fmt.Sprintf("日志监控服务异常: %v", err))
 				return
+			}
+
+			if len(lines) == 0 {
+				continue
 			}
 
 			var lastLine string

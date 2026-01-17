@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/agnivade/levenshtein"
+	"github.com/fsnotify/fsnotify"
 	"github.com/otiai10/copy"
 	"github.com/robfig/cron/v3"
 	"github.com/tidwall/gjson"
@@ -1910,41 +1911,84 @@ func readVersion(manifestPath string) (string, string) {
 var monitor *LogMonitor
 var currentLogFile string
 
-// 监控日志（支持每天变化的日志文件）
+func switchLogFile(newLogFile string) {
+	fmt.Printf("检测到新日志文件: %s\n", newLogFile)
+	currentLogFile = newLogFile
+
+	go func() {
+		config.Cfg.BgiLog = newLogFile
+		InitBgiLogStatus()
+	}()
+
+	if monitor != nil {
+		monitor.Stop()
+	}
+
+	monitor = NewLogMonitor(newLogFile, config.Cfg.LogKeywords, 5)
+	go monitor.Monitor()
+}
+
 func LogM() {
 	logDir := filepath.Clean(fmt.Sprintf("%s\\log", config.Cfg.BetterGIAddress))
 
-	ticker := time.NewTicker(10 * time.Minute)
-	defer ticker.Stop()
+	files, err := findLogFiles(logDir)
+	if err != nil || len(files) == 0 {
+		fmt.Println("找不到日志文件")
+	} else {
+		newLogFile := filepath.Join(logDir, files[0])
+		if newLogFile != currentLogFile {
+			switchLogFile(newLogFile)
+		}
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		fmt.Println("创建日志目录监控失败:", err)
+		return
+	}
+	defer watcher.Close()
+
+	if err := watcher.Add(logDir); err != nil {
+		fmt.Println("监听日志目录失败:", err)
+		return
+	}
 
 	for {
-		files, err := findLogFiles(logDir)
-		if err != nil || len(files) == 0 {
-			fmt.Println("找不到日志文件")
-			<-ticker.C
-			continue
-		}
-
-		newLogFile := filepath.Join(logDir, files[0])
-
-		if newLogFile != currentLogFile {
-			fmt.Printf("检测到新日志文件: %s\n", newLogFile)
-			currentLogFile = newLogFile
-
-			go func() {
-				config.Cfg.BgiLog = newLogFile
-				InitBgiLogStatus()
-			}()
-
-			if monitor != nil {
-				monitor.Stop()
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
 			}
 
-			monitor = NewLogMonitor(newLogFile, config.Cfg.LogKeywords, 5)
-			go monitor.Monitor()
-		}
+			if event.Name == "" {
+				continue
+			}
 
-		<-ticker.C
+			ext := strings.ToLower(filepath.Ext(event.Name))
+			if ext != ".log" {
+				continue
+			}
+
+			if event.Op&(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) == 0 {
+				continue
+			}
+
+			files, err := findLogFiles(logDir)
+			if err != nil || len(files) == 0 {
+				fmt.Println("日志事件触发，但未找到日志文件")
+				continue
+			}
+
+			newLogFile := filepath.Join(logDir, files[0])
+			if newLogFile != currentLogFile {
+				switchLogFile(newLogFile)
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			fmt.Println("日志目录监控错误:", err)
+		}
 	}
 }
 
