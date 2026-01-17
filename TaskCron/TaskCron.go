@@ -111,6 +111,16 @@ func InitTaskCron() {
 		autoLog.Sugar.Infof("定时任务启动：联机下线-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		abgiSSE.Close()
 	}
+	task["联机更换房间"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：联机更换房间-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		data = strings.ReplaceAll(data, "ABGI启动更换房间：", "")
+		split := strings.Split(data, "-")
+		if len(split) == 2 {
+			abgiSSE.ModifyRoom(split[0], split[1])
+		} else {
+			autoLog.Sugar.Errorf("更换房间参数错误")
+		}
+	}
 	task["电脑静音"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：电脑静音-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		AudioService.Mute()

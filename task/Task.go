@@ -93,7 +93,11 @@ func StartOneDragon(name string) {
 		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
 		return
 	}
-	exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
+	err := exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
+	if err != nil {
+		autoLog.Sugar.Errorf("启动一条龙失败: %v", err)
+		return
+	}
 
 	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startOneDragon", name)
 
