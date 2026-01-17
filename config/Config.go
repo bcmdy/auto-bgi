@@ -215,8 +215,6 @@ func DefaultConfig() {
 
 }
 
-// 获取今天启动的一条龙名字
-
 func FindLogFiles(dirPath string) ([]string, error) {
 	pattern := filepath.Join(dirPath, "*.log")
 

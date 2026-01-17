@@ -690,6 +690,11 @@ func StarGin() {
 			_ = config.ReloadConfig()
 			time.Sleep(1 * time.Second)
 
+			// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
+			if err := tools.RestartProgram(); err != nil {
+				autoLog.Sugar.Error(err.Error())
+			}
+
 			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "配置保存成功"})
 
 		})
