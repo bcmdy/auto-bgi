@@ -11,7 +11,6 @@ import (
 	"auto-bgi/tools"
 	"bufio"
 	"fmt"
-	"github.com/go-vgo/robotgo"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,6 +18,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/go-vgo/robotgo"
 )
 
 var AudioService control.Audio
@@ -107,7 +108,14 @@ func (m *LogMonitor) Monitor() {
 					fmt.Println("日志文件被删除，切换到新的日志文件:", newLogFile)
 
 					m.LogFile = newLogFile
-					m.lastPosition = 0
+
+					if f2, err2 := os.Open(newLogFile); err2 == nil {
+						pos2, _ := f2.Seek(0, io.SeekEnd)
+						m.lastPosition = pos2
+						f2.Close()
+					} else {
+						m.lastPosition = 0
+					}
 
 					currentLogFile = newLogFile
 					go func() {
@@ -117,6 +125,7 @@ func (m *LogMonitor) Monitor() {
 
 					fmt.Println("====== 日志监控切换 ======")
 					fmt.Println("文件:", m.LogFile)
+					autoLog.Sugar.Infof("文件:%s", m.LogFile)
 					fmt.Println("关键词:", strings.Join(m.Keywords, ", "))
 					fmt.Println("=========================")
 

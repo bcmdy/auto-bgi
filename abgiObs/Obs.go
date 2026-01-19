@@ -34,7 +34,7 @@ func EnsureConnected() error {
 		return fmt.Errorf("连接到 OBS WebSocket 失败: %v", err)
 	}
 
-	fmt.Printf("✅ 已连接到 OBS WebSocket (%s)", config.Cfg.ScreenRecord.StartScreen)
+	autoLog.Sugar.Infof("✅ 已连接到 OBS WebSocket (%s)", config.Cfg.ScreenRecord.StartScreen)
 	return nil
 }
 
@@ -139,6 +139,7 @@ func GetRecordingStatus() (*record.GetRecordStatusResponse, error) {
 
 	status, err := client.Record.GetRecordStatus(&record.GetRecordStatusParams{})
 	if err != nil {
+		client = nil
 		return status, fmt.Errorf("获取录制状态失败: %v", err)
 	}
 
