@@ -29,12 +29,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/getlantern/systray"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
-	"github.com/go-toast/toast"
-	"github.com/gorilla/websocket"
-	"golang.org/x/sys/windows"
 	"io"
 	"io/fs"
 	"log"
@@ -49,6 +43,13 @@ import (
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/getlantern/systray"
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
+	"github.com/go-toast/toast"
+	"github.com/gorilla/websocket"
+	"golang.org/x/sys/windows"
 )
 
 var userIP = "http://localhost" + config.Cfg.Post
@@ -313,8 +314,11 @@ func StarGin() {
 
 		//首页刷新
 		needAuth.GET("/indexSX", func(c *gin.Context) {
-			bgiStatus.InitBgiLogStatus()
-			c.JSON(http.StatusOK, "刷新成功")
+			//bgiStatus.InitBgiLogStatus()
+			if err := tools.RestartProgram(); err != nil {
+				autoLog.Sugar.Error(err.Error())
+			}
+			c.JSON(http.StatusOK, "重启中")
 		})
 
 		//查询归档列表查询
@@ -690,10 +694,10 @@ func StarGin() {
 			_ = config.ReloadConfig()
 			time.Sleep(1 * time.Second)
 
-			// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
-			if err := tools.RestartProgram(); err != nil {
-				autoLog.Sugar.Error(err.Error())
-			}
+			//// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
+			//if err := tools.RestartProgram(); err != nil {
+			//	autoLog.Sugar.Error(err.Error())
+			//}
 
 			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "配置保存成功"})
 
@@ -773,12 +777,12 @@ func StarGin() {
 			taskCronController.POST("/AtOnceRun", TaskCron.AtOnceRun)
 		}
 
-		//更新bgi
 		updateBgi := needAuth.Group("/UpdateBgi")
 		{
 			updateBgi.POST("/Upload", BetterGI.UploadBgi)
-			//通过url下载
+			updateBgi.POST("/Download", BetterGI.StartDownloadBgi)
 			updateBgi.GET("/Download", BetterGI.DownloadBgiProgress)
+			updateBgi.GET("/DownloadStatus", BetterGI.GetBgiDownloadStatus)
 		}
 
 		aBgiUpdate := needAuth.Group("/aBgiUpdate")

@@ -38,7 +38,7 @@
       <div class="status-card glass-panel">
         <div class="card-header">
             <h2>🖥️ 运行状态监控</h2>
-            <button class="refresh-btn" @click="indexSXBtn">🔄 刷新</button>
+            <button class="refresh-btn" @click="indexSXBtn">🔄 重启</button>
         </div>
         
         <div class="status-grid">
@@ -610,7 +610,7 @@ const sendImage = () => {
 const indexSXBtn = () => {
     apiMethods.indexSX()
     refreshStatus()
-    message.success('刷新指令已发送')
+    message.success('正在重启中····')
 }
 
 // --- 按钮定义 ---

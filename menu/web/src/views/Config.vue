@@ -153,6 +153,11 @@
                 <a-input-password v-model:value="formData.ScreenRecord.EndScreen" placeholder="根据后端需求填写" class="enhanced-input" />
               </a-form-item>
             </a-col>
+                 <a-col :xs="24" :md="12">
+              <a-form-item label="obs保存文件的地址" class="form-item-enhanced">
+                <a-input v-model:value="formData.ScreenRecord.ObsSavePath" placeholder="ws://..." class="enhanced-input" />
+              </a-form-item>
+            </a-col>
           </a-row>
         </a-card>
 
@@ -401,7 +406,21 @@ const loadConfig = async () => {
       if (data.Control) Object.assign(formData.Control, data.Control)
       if (data.OneRemote) Object.assign(formData.OneRemote, data.OneRemote)
       if (data.ScreenRecord) Object.assign(formData.ScreenRecord, data.ScreenRecord)
-      if (data.Notice) Object.assign(formData.Notice, data.Notice)
+      if (data.Notice) {
+        // 保证来自后端的数值字段被解析为数字类型，避免输入组件将其变为字符串
+        const notice = Object.assign({}, data.Notice)
+        if (notice.TGNotice) {
+          // ChatID 可能来自后端为字符串或数字，强制转为数字（无效时为 0）
+          notice.TGNotice = Object.assign({}, notice.TGNotice)
+          notice.TGNotice.ChatID = Number(notice.TGNotice.ChatID) || 0
+        }
+        if (notice.OneBot) {
+          notice.OneBot = Object.assign({}, notice.OneBot)
+          notice.OneBot.QQNum = Number(notice.OneBot.QQNum) || 0
+          notice.OneBot.groupNum = Number(notice.OneBot.groupNum) || 0
+        }
+        Object.assign(formData.Notice, notice)
+      }
       if (data.Account) Object.assign(formData.Account, data.Account)
       if (data.CommandBot) Object.assign(formData.CommandBot, data.CommandBot)
       if (data.AbgiAiConfig) Object.assign(formData.AbgiAiConfig, data.AbgiAiConfig)
@@ -434,6 +453,17 @@ const handleSubmit = async () => {
       RepoUrl: formData.RepoUrl,
       CommandBot: formData.CommandBot,
       AbgiAiConfig: formData.AbgiAiConfig
+    }
+
+    // 提交前确保某些应该为数值的字段被转换成 Number（避免输入组件或用户输入导致为字符串）
+    if (payload.Notice) {
+      if (payload.Notice.TGNotice) {
+        payload.Notice.TGNotice.ChatID = Number(payload.Notice.TGNotice.ChatID) || 0
+      }
+      if (payload.Notice.OneBot) {
+        payload.Notice.OneBot.QQNum = Number(payload.Notice.OneBot.QQNum) || 0
+        payload.Notice.OneBot.groupNum = Number(payload.Notice.OneBot.groupNum) || 0
+      }
     }
 
     console.log('提交的配置:', payload)

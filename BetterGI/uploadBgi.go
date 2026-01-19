@@ -10,8 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	abgiCopy "github.com/otiai10/copy"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,6 +19,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	abgiCopy "github.com/otiai10/copy"
 )
 
 func GetVersion() (string, error) {
@@ -105,11 +106,21 @@ func UploadBgi(c *gin.Context) {
 	})
 }
 
+type BgiDownloadStatus struct {
+	Status  string
+	Percent float64
+	Current int64
+	Total   int64
+	Error   string
+}
+
 var (
 	downloadLock   sync.Mutex
 	lastInvokeTime time.Time
-	// 2分钟的时间间隔
 	invokeInterval = 5 * time.Minute
+
+	bgiDownloadStatusMu sync.RWMutex
+	bgiDownloadStatus   = BgiDownloadStatus{Status: "idle"}
 )
 
 // DownloadBgi 是 Gin handler：从请求中读取 url（form/json/query），下载压缩包并替换到 ./uploads/BetterGI.zip
@@ -227,7 +238,6 @@ func DownloadBgi(c *gin.Context) {
 //}
 
 func DownloadBgiProgress(c *gin.Context) {
-
 	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
 		autoLog.Sugar.Error("当前版本不是lcb版本，无法更新")
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -236,9 +246,138 @@ func DownloadBgiProgress(c *gin.Context) {
 		return
 	}
 
-	// 加锁检查调用频率
+	bgiDownloadStatusMu.RLock()
+	currentStatus := bgiDownloadStatus
+	bgiDownloadStatusMu.RUnlock()
+
+	if currentStatus.Status != "downloading" {
+		downloadLock.Lock()
+		if time.Since(lastInvokeTime) < invokeInterval && !lastInvokeTime.IsZero() {
+			downloadLock.Unlock()
+			autoLog.Sugar.Warn("操作过于频繁，请等待2分钟后再试")
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"message": "操作过于频繁，请等待2分钟后再试",
+			})
+			return
+		}
+		lastInvokeTime = time.Now()
+		downloadLock.Unlock()
+
+		version, err := GetVersion()
+		if err != nil {
+			autoLog.Sugar.Error("获取版本失败:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		autoLog.Sugar.Infof("当前BGI版本: %s", config.BgiCfg.RunForVersion)
+		autoLog.Sugar.Infof("最新BGI版本: %s", version)
+
+		if version == config.BgiCfg.RunForVersion {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "当前版本已经是最新版本",
+			})
+			return
+		}
+
+		bgiDownloadStatusMu.Lock()
+		bgiDownloadStatus.Status = "downloading"
+		bgiDownloadStatus.Percent = 0
+		bgiDownloadStatus.Current = 0
+		bgiDownloadStatus.Total = 0
+		bgiDownloadStatus.Error = ""
+		bgiDownloadStatusMu.Unlock()
+
+		go runBgiDownload(version)
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "streaming unsupported"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	sentDone := false
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			bgiDownloadStatusMu.RLock()
+			status := bgiDownloadStatus
+			bgiDownloadStatusMu.RUnlock()
+
+			if status.Status == "idle" {
+				return
+			}
+
+			c.SSEvent("progress", gin.H{
+				"percent": fmt.Sprintf("%.2f", status.Percent),
+				"current": status.Current,
+				"total":   status.Total,
+				"status":  status.Status,
+				"error":   status.Error,
+			})
+			flusher.Flush()
+
+			if !sentDone && (status.Status == "done" || status.Status == "error") {
+				sentDone = true
+				if status.Status == "done" {
+					c.SSEvent("done", "success")
+				} else {
+					c.SSEvent("error", status.Error)
+				}
+				flusher.Flush()
+				return
+			}
+		}
+	}
+}
+
+func GetBgiDownloadStatus(c *gin.Context) {
+	bgiDownloadStatusMu.RLock()
+	status := bgiDownloadStatus
+	bgiDownloadStatusMu.RUnlock()
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  status.Status,
+		"percent": fmt.Sprintf("%.2f", status.Percent),
+		"current": status.Current,
+		"total":   status.Total,
+		"error":   status.Error,
+	})
+}
+
+func StartDownloadBgi(c *gin.Context) {
+	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
+		autoLog.Sugar.Error("当前版本不是lcb版本，无法更新")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "当前版本不是lcb版本，无法更新",
+		})
+		return
+	}
+
+	bgiDownloadStatusMu.RLock()
+	currentStatus := bgiDownloadStatus
+	bgiDownloadStatusMu.RUnlock()
+
+	if currentStatus.Status == "downloading" {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "下载任务已在进行中",
+		})
+		return
+	}
+
 	downloadLock.Lock()
-	// 检查是否在2分钟内重复调用
 	if time.Since(lastInvokeTime) < invokeInterval && !lastInvokeTime.IsZero() {
 		downloadLock.Unlock()
 		autoLog.Sugar.Warn("操作过于频繁，请等待2分钟后再试")
@@ -247,24 +386,19 @@ func DownloadBgiProgress(c *gin.Context) {
 		})
 		return
 	}
-	// 更新最后调用时间
 	lastInvokeTime = time.Now()
 	downloadLock.Unlock()
 
-	//判断是否需要更新
-	// 获取最新版本信息
 	version, err := GetVersion()
 	if err != nil {
-		// 记录错误日志并返回错误响应
 		autoLog.Sugar.Error("获取版本失败:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// 记录最新版本信息
+
 	autoLog.Sugar.Infof("当前BGI版本: %s", config.BgiCfg.RunForVersion)
 	autoLog.Sugar.Infof("最新BGI版本: %s", version)
 
-	// 检查当前版本是否为最新版本
 	if version == config.BgiCfg.RunForVersion {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "当前版本已经是最新版本",
@@ -272,69 +406,85 @@ func DownloadBgiProgress(c *gin.Context) {
 		return
 	}
 
-	// 关闭软件（和上传逻辑一致）
+	bgiDownloadStatusMu.Lock()
+	bgiDownloadStatus.Status = "downloading"
+	bgiDownloadStatus.Percent = 0
+	bgiDownloadStatus.Current = 0
+	bgiDownloadStatus.Total = 0
+	bgiDownloadStatus.Error = ""
+	bgiDownloadStatusMu.Unlock()
+
+	go runBgiDownload(version)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "下载任务已启动",
+	})
+}
+
+func runBgiDownload(version string) {
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Errorf("runBgiDownload panic: %v", r)
+			bgiDownloadStatusMu.Lock()
+			bgiDownloadStatus.Status = "error"
+			bgiDownloadStatus.Error = fmt.Sprintf("%v", r)
+			bgiDownloadStatusMu.Unlock()
+		}
+	}()
+
 	control.CloseSoftware()
 
-	// 设置响应头，声明这是一个 SSE 流
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	// 设置内容类型为服务器发送事件
-	dst := filepath.Join("./uploads", "BetterGI.zip")                       // 禁用缓存
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Minute) // 保持长连接
+	dst := filepath.Join("./uploads", "BetterGI.zip")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	// 构建目标文件路径
 
-	// 创建一个10分钟超时的上下文
-	err = downloadFileWithProgress(ctx, GetTeaBaoUpdateUrl(), dst, func(current, total int64) {
-		percent := float64(current) / float64(total) * 100 // 确保在函数返回前取消上下文
-		// 发送 SSE 格式的数据：data: {"percent": 50.5}\n\n
-		// 调用下载函数，并传入进度回调函数
-		c.SSEvent("progress", gin.H{
-			"percent": fmt.Sprintf("%.2f", percent),
-			"current": current,
-			"total":   total, // 使用SSE发送进度事件
-		}) // 保留两位小数的百分比
-		c.Writer.Flush() // 立即推送到前端                      // 当前已下载字节数
-	}) // 文件总字节数
+	err := downloadFileWithProgress(ctx, GetTeaBaoUpdateUrl(), dst, func(current, total int64) {
+		var percent float64
+		if total > 0 {
+			percent = float64(current) / float64(total) * 100
+		}
+
+		bgiDownloadStatusMu.Lock()
+		bgiDownloadStatus.Current = current
+		bgiDownloadStatus.Total = total
+		bgiDownloadStatus.Percent = percent
+		bgiDownloadStatusMu.Unlock()
+	})
 
 	if err != nil {
-		c.SSEvent("error", err.Error())
+		autoLog.Sugar.Error("下载BGI失败:", err)
+		bgiDownloadStatusMu.Lock()
+		bgiDownloadStatus.Status = "error"
+		bgiDownloadStatus.Error = err.Error()
+		bgiDownloadStatusMu.Unlock()
 		return
-		// 如果下载过程中发生错误，发送错误事件
 	}
 
-	c.SSEvent("done", "success")
-
-	// 小延时确保文件系统稳定（保持与 UploadBgi 一致）
 	time.Sleep(1 * time.Second)
 
-	// 更新 bgi（和 upload 的行为一致）
 	err = UpdateBgi()
 	if err != nil {
 		autoLog.Sugar.Error("更新失败:", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": err,
-		})
+		bgiDownloadStatusMu.Lock()
+		bgiDownloadStatus.Status = "error"
+		bgiDownloadStatus.Error = err.Error()
+		bgiDownloadStatusMu.Unlock()
 		return
 	}
 
-	//// 更新仓库
-	//bgiStatus.GitPull()
-	//更新仓库
 	go func() {
 		bgiStatus.GitPull()
 	}()
 
 	config.BgiCfg.RunForVersion = version
-
 	control.OpenSoftware(config.Cfg.BetterGIAddress + "\\BetterGI.exe")
 
 	autoLog.Sugar.Infof("更新成功,请自启bgi,更新版本")
 
-	//重定向
-	c.Redirect(http.StatusFound, "/")
-
+	bgiDownloadStatusMu.Lock()
+	bgiDownloadStatus.Status = "done"
+	bgiDownloadStatus.Percent = 100
+	bgiDownloadStatusMu.Unlock()
 }
 
 // 下载完成后发送成功事件
@@ -443,87 +593,87 @@ func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, on
 	return nil
 }
 
-// downloadFileFromURL 从给定 URL 下载文件并原子写入到 dst（覆盖）。
-// ctx: 下载超时/取消上下文。
-// reqURL: 要下载的文件 URL。
-// dst: 最终目标文件路径（会先写入临时文件再重命名）。
-func downloadFileFromURL(ctx context.Context, reqURL string, dst string) error {
-	// 验证 URL
-	parsed, err := url.ParseRequestURI(reqURL)
-	if err != nil {
-		return fmt.Errorf("invalid url: %w", err)
-	}
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return errors.New("url scheme must be http or https")
-	}
-
-	// 确保目标目录存在
-	dir := filepath.Dir(dst)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("failed to create dir %s: %w", dir, err)
-	}
-
-	// HTTP 请求（使用自定义 client 以便设置超时）
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-	client := &http.Client{
-		// 不在这里设置 Timeout，因为我们使用 ctx 带超时；但为了保险可以设置一个大超时
-		Timeout: 0,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("download request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("download failed: server returned status %s", resp.Status)
-	}
-
-	// 写入临时文件
-	tmpFile, err := os.CreateTemp(dir, "bettergi-*.zip.tmp")
-	if err != nil {
-		return fmt.Errorf("create temp file failed: %w", err)
-	}
-	tmpPath := tmpFile.Name()
-	// 确保临时文件在出错时被移除
-	cleanup := func() {
-		tmpFile.Close()
-		os.Remove(tmpPath)
-	}
-	defer func() {
-		// 如果已经重命名成功则 tmpPath 不存在，不过 Remove 不会报错
-		_ = tmpFile.Close()
-	}()
-
-	// 流式拷贝（不把文件全部读入内存）
-	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
-		cleanup()
-		return fmt.Errorf("writing to temp file failed: %w", err)
-	}
-
-	// 确保写入磁盘
-	if err := tmpFile.Sync(); err != nil {
-		cleanup()
-		return fmt.Errorf("sync temp file failed: %w", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		cleanup()
-		return fmt.Errorf("close temp file failed: %w", err)
-	}
-
-	// 原子替换目标文件（在同一文件系统上，os.Rename 是原子的）
-	if err := os.Rename(tmpPath, dst); err != nil {
-		// 若 Rename 失败，尝试删除临时文件
-		_ = os.Remove(tmpPath)
-		return fmt.Errorf("rename temp to dst failed: %w", err)
-	}
-
-	return nil
-}
+//// downloadFileFromURL 从给定 URL 下载文件并原子写入到 dst（覆盖）。
+//// ctx: 下载超时/取消上下文。
+//// reqURL: 要下载的文件 URL。
+//// dst: 最终目标文件路径（会先写入临时文件再重命名）。
+//func downloadFileFromURL(ctx context.Context, reqURL string, dst string) error {
+//	// 验证 URL
+//	parsed, err := url.ParseRequestURI(reqURL)
+//	if err != nil {
+//		return fmt.Errorf("invalid url: %w", err)
+//	}
+//	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+//		return errors.New("url scheme must be http or https")
+//	}
+//
+//	// 确保目标目录存在
+//	dir := filepath.Dir(dst)
+//	if err := os.MkdirAll(dir, 0o755); err != nil {
+//		return fmt.Errorf("failed to create dir %s: %w", dir, err)
+//	}
+//
+//	// HTTP 请求（使用自定义 client 以便设置超时）
+//	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+//	if err != nil {
+//		return fmt.Errorf("failed to create request: %w", err)
+//	}
+//	client := &http.Client{
+//		// 不在这里设置 Timeout，因为我们使用 ctx 带超时；但为了保险可以设置一个大超时
+//		Timeout: 0,
+//	}
+//
+//	resp, err := client.Do(req)
+//	if err != nil {
+//		return fmt.Errorf("download request failed: %w", err)
+//	}
+//	defer resp.Body.Close()
+//
+//	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+//		return fmt.Errorf("download failed: server returned status %s", resp.Status)
+//	}
+//
+//	// 写入临时文件
+//	tmpFile, err := os.CreateTemp(dir, "bettergi-*.zip.tmp")
+//	if err != nil {
+//		return fmt.Errorf("create temp file failed: %w", err)
+//	}
+//	tmpPath := tmpFile.Name()
+//	// 确保临时文件在出错时被移除
+//	cleanup := func() {
+//		tmpFile.Close()
+//		os.Remove(tmpPath)
+//	}
+//	defer func() {
+//		// 如果已经重命名成功则 tmpPath 不存在，不过 Remove 不会报错
+//		_ = tmpFile.Close()
+//	}()
+//
+//	// 流式拷贝（不把文件全部读入内存）
+//	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+//		cleanup()
+//		return fmt.Errorf("writing to temp file failed: %w", err)
+//	}
+//
+//	// 确保写入磁盘
+//	if err := tmpFile.Sync(); err != nil {
+//		cleanup()
+//		return fmt.Errorf("sync temp file failed: %w", err)
+//	}
+//	if err := tmpFile.Close(); err != nil {
+//		cleanup()
+//		return fmt.Errorf("close temp file failed: %w", err)
+//	}
+//
+//	// 原子替换目标文件（在同一文件系统上，os.Rename 是原子的）
+//	if err := os.Rename(tmpPath, dst); err != nil {
+//		// 若 Rename 失败，尝试删除临时文件
+//		_ = os.Remove(tmpPath)
+//		return fmt.Errorf("rename temp to dst failed: %w", err)
+//	}
+//
+//	return nil
+//}
 
 // 更新bgi
 func UpdateBgi() error {

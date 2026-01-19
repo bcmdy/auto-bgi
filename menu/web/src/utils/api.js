@@ -269,7 +269,8 @@ subscribeScript: (scriptName) => {
       {
         timeout: 10 * 60 * 1000 // 10 分钟
       }
-    )
+    ),
+  getBgiDownloadStatus: () => api.get('/api/UpdateBgi/DownloadStatus')
     
   
 }

@@ -93,7 +93,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { apiMethods } from '@/utils/api'
 
@@ -179,55 +179,85 @@ const refreshBgiVersions = async () => {
   }
 }
 
-/**
- * 核心修改：使用 EventSource 监听后端进度推送
- */
+let bgiTimerId = null
+
+const startBgiPolling = () => {
+  if (bgiTimerId) {
+    clearInterval(bgiTimerId)
+  }
+  bgiTimerId = setInterval(async () => {
+    try {
+      const status = await apiMethods.getBgiDownloadStatus()
+      if (!status) return
+
+      if (typeof status.percent !== 'undefined') {
+        downloadPercent.value = parseFloat(status.percent) || 0
+      }
+
+      if (status.status === 'done') {
+        downloading.value = false
+        downloadPercent.value = 100
+        clearInterval(bgiTimerId)
+        bgiTimerId = null
+        await refreshBgiVersions()
+        message.success('更新包下载完成！')
+      }
+
+      if (status.status === 'error') {
+        downloading.value = false
+        clearInterval(bgiTimerId)
+        bgiTimerId = null
+        note.value = status.error || '下载失败'
+        message.error(note.value)
+      }
+    } catch (err) {
+      console.warn('轮询 BGI 下载状态失败', err)
+    }
+  }, 1000)
+}
+
 const downloadByUrl = () => {
   if (downloading.value) return
-  
   downloading.value = true
   downloadPercent.value = 0
   note.value = ''
+  apiMethods.downloadBgi()
+    .then(() => {
+      startBgiPolling()
+    })
+    .catch((err) => {
+      downloading.value = false
+      message.error(err?.message || '启动下载失败')
+    })
+}
 
-  // 1. 获取基础路径（根据你的环境配置调整）
-  // 假设你的接口前缀是 /api，后端监听 GET /api/download-bgi
-  const sseUrl = '/api/UpdateBgi/Download' 
-  const token = localStorage.getItem('aBgiToken')
-
-  // 2. 开启 SSE 连接
-  const eventSource = new EventSource(sseUrl+"?token=" + encodeURIComponent(token))
-
-  // 监听进度事件 (对应后端的 c.SSEvent("progress", ...))
-  eventSource.addEventListener('progress', (e) => {
-    try {
-      const data = JSON.parse(e.data)
-      downloadPercent.value = parseFloat(data.percent)
-    } catch (err) {
-      console.error("解析进度失败", err)
+const resumeBgiDownloadIfNeeded = async () => {
+  try {
+    const status = await apiMethods.getBgiDownloadStatus()
+    if (!status) return
+    if (status.status === 'downloading') {
+      downloading.value = true
+      if (typeof status.percent !== 'undefined') {
+        downloadPercent.value = parseFloat(status.percent) || 0
+      }
+      startBgiPolling()
     }
-  })
-
-  // 监听完成事件 (对应后端的 c.SSEvent("done", ...))
-  eventSource.addEventListener('done', async () => {
-    message.success('更新包下载完成！')
-    eventSource.close()
-    downloading.value = false
-    downloadPercent.value = 100
-    await refreshBgiVersions()
-  })
-
-  // 监听错误事件
-  eventSource.onerror = (e) => {
-    console.error("SSE Error:", e)
-    message.error('下载连接中断')
-    eventSource.close()
-    downloading.value = false
+  } catch (err) {
+    console.warn('检查 BGI 下载状态失败', err)
   }
 }
 
 onMounted(() => {
   refresh()
   refreshBgiVersions()
+  resumeBgiDownloadIfNeeded()
+})
+
+onUnmounted(() => {
+  if (bgiTimerId) {
+    clearInterval(bgiTimerId)
+    bgiTimerId = null
+  }
 })
 </script>
 
