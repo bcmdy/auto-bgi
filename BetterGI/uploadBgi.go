@@ -289,6 +289,7 @@ func DownloadBgiProgress(c *gin.Context) {
 		bgiDownloadStatusMu.Unlock()
 
 		go runBgiDownload(version)
+
 	}
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
@@ -341,6 +342,7 @@ func DownloadBgiProgress(c *gin.Context) {
 			}
 		}
 	}
+
 }
 
 func GetBgiDownloadStatus(c *gin.Context) {
@@ -480,11 +482,13 @@ func runBgiDownload(version string) {
 	control.OpenSoftware(config.Cfg.BetterGIAddress + "\\BetterGI.exe")
 
 	autoLog.Sugar.Infof("更新成功,请自启bgi,更新版本")
+	control.GetMachineFingerprint("茶包bgi", version)
 
 	bgiDownloadStatusMu.Lock()
 	bgiDownloadStatus.Status = "done"
 	bgiDownloadStatus.Percent = 100
 	bgiDownloadStatusMu.Unlock()
+
 }
 
 // 下载完成后发送成功事件

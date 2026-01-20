@@ -49,6 +49,7 @@
         <div class="section-header">
           <span class="icon">🎀</span>
           <span class="text">茶包BGI 在线更新</span>
+          <button class="help-btn" @click="openDisclaimer" title="免责声明">?</button>
           <button class="refresh-btn" @click="refreshBgiVersions" :disabled="downloading" title="刷新状态">
             <span>↻</span>
           </button>
@@ -87,6 +88,22 @@
 
       <div v-if="note" class="error-note">
         {{ note }}
+      </div>
+      <!-- Disclaimer modal -->
+      <div v-if="showDisclaimer" class="modal-overlay" @click.self="closeDisclaimer">
+        <div class="disclaimer-modal" role="dialog" aria-modal="true">
+          <div class="modal-header">
+            <h3>免责声明</h3>
+            <button class="modal-close" @click="closeDisclaimer" aria-label="关闭">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>请确保bgi的文件夹是默认名字：BetterGI</p>
+            <p>本工具提供“茶包BGI 在线更新”功能仅为方便用户获取更新，开发者和供应方不对因更新引起的任何直接或间接损失承担责任。</p>
+          </div>
+          <div class="modal-footer">
+            <button class="anime-btn secondary" @click="closeDisclaimer">我已知晓</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -259,6 +276,31 @@ onUnmounted(() => {
     bgiTimerId = null
   }
 })
+
+// --- Disclaimer modal state & handlers ---
+const showDisclaimer = ref(false)
+
+const openDisclaimer = () => {
+  showDisclaimer.value = true
+}
+
+const closeDisclaimer = () => {
+  showDisclaimer.value = false
+}
+
+const _onKeydown = (e) => {
+  if (e && e.key === 'Escape') {
+    showDisclaimer.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', _onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', _onKeydown)
+})
 </script>
 
 <style scoped>
@@ -426,5 +468,84 @@ onUnmounted(() => {
   color: #cf1322;
   font-size: 12px;
   text-align: center;
+}
+
+/* Help button near section title */
+.help-btn {
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.06);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  color: #ff69b4;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.disclaimer-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  animation: modalIn 200ms ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.modal-body {
+  margin-top: 12px;
+  color: #444;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.modal-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@keyframes modalIn {
+  from { transform: translateY(-6px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
 }
 </style>

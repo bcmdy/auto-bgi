@@ -61,5 +61,10 @@ func artifactsGroupPurchasing(info Information, isAllDebug bool) {
 	scriptGroupConfig.StartDogFoodOnline(RunDebug, dd, isAllDebug)
 	//fmt.Println(xiaoxi)
 	autoLog.Sugar.Info(xiaoxi)
-	Notice.SentText(xiaoxi)
+	if isAllDebug {
+		Notice.SentText(xiaoxi)
+	} else {
+		Notice.SentText("客官，您遇到4个调试了，如果团购下面还有脚本，将会执行脚本哦，亲")
+	}
+
 }

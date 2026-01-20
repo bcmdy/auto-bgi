@@ -84,7 +84,7 @@ func (m *LogMonitor) Monitor() {
 
 	fmt.Println("====== 日志监控启动 ======")
 	fmt.Println("文件:", m.LogFile)
-	autoLog.Sugar.Infof("文件:%s", m.LogFile)
+	autoLog.Sugar.Infof("当前监控的日志文件:%s", m.LogFile)
 	fmt.Println("关键词:", strings.Join(m.Keywords, ", "))
 	fmt.Println("=========================")
 
@@ -125,7 +125,7 @@ func (m *LogMonitor) Monitor() {
 
 					fmt.Println("====== 日志监控切换 ======")
 					fmt.Println("文件:", m.LogFile)
-					autoLog.Sugar.Infof("文件:%s", m.LogFile)
+					autoLog.Sugar.Infof("正在监控的文件:%s", m.LogFile)
 					fmt.Println("关键词:", strings.Join(m.Keywords, ", "))
 					fmt.Println("=========================")
 

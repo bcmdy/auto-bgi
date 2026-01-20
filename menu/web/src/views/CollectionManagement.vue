@@ -198,8 +198,14 @@
                   
                   <!-- 文件夹节点：显示子节点数量 -->
                   <template v-if="nodeData.is_dir">
-                    <span class="children-count-badge">
+                    <!-- <span class="children-count-badge">
                       📁 {{ nodeData.children ? nodeData.children.length : 0 }} 项
+                    </span> -->
+                    <span 
+                      class="children-count-badge" 
+                      style="margin-left: 8px; background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);"
+                    >
+                      📊 {{ (nodeData.nodeStats || (dataRef && dataRef.nodeStats) || {available: 0, total: 0}).available }}/{{ (nodeData.nodeStats || (dataRef && dataRef.nodeStats) || {available: 0, total: 0}).total }}
                     </span>
                   </template>
                   
@@ -726,6 +732,33 @@ const showHistory = (record) => {
   historyVisible.value = true
 }
 
+const calculateNodeStats = (node) => {
+  let total = 0
+  let available = 0
+
+  if (!node) return { total, available }
+
+  if (!node.is_dir) {
+    // It's a file
+    total = 1
+    if (node.record && node.record.Status === '可采集') {
+      available = 1
+    }
+  } else if (node.children && Array.isArray(node.children)) {
+    // It's a directory
+    node.children.forEach(child => {
+      const childStats = calculateNodeStats(child)
+      total += childStats.total
+      available += childStats.available
+    })
+  }
+
+  // Attach stats to the node
+  node.nodeStats = { total, available }
+  
+  return { total, available }
+}
+
 const refreshData = async () => {
   if (!selectedAccount.value) {
     message.warning('请先选择账户')
@@ -738,6 +771,7 @@ const refreshData = async () => {
     
     // 如果返回的是树形结构
     if (response && typeof response === 'object') {
+      calculateNodeStats(response)
       rawTreeData.value = response
     } else {
       rawTreeData.value = null

@@ -2,8 +2,10 @@ package control
 
 import "C"
 import (
+	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"crypto/sha256"
 	"fmt"
 	"github.com/go-vgo/robotgo"
 	"github.com/tidwall/gjson"
@@ -409,4 +411,56 @@ func CallPython() {
 	}
 
 	cmd.Wait()
+}
+
+// 执行系统命令并获取输出
+func getWmic(target string, property string) string {
+	cmd := exec.Command("wmic", target, "get", property)
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(out), "\n")
+	if len(lines) > 1 {
+		return strings.TrimSpace(lines[1])
+	}
+	return ""
+}
+
+func GetMachineFingerprint(Type, version string) {
+	//捕获异常
+	defer func() {
+		if err := recover(); err != nil {
+			autoLog.Sugar.Errorf("GetMachineFingerprint捕获异常: %v", err)
+		}
+	}()
+
+	// 1. 获取主板 UUID
+	uuid := getWmic("csproduct", "uuid")
+	// 2. 获取 CPU ID
+	cpuID := getWmic("cpu", "processorid")
+	// 3. 获取硬盘序列号 (首个物理硬盘)
+	diskID := getWmic("diskdrive", "serialnumber")
+
+	// 组合原始字符串
+	rawIdentifier := fmt.Sprintf("UUID:%s|CPU:%s|DISK:%s", uuid, cpuID, diskID)
+
+	// SHA256 哈希处理
+	hash := sha256.Sum256([]byte(rawIdentifier))
+
+	UpdateLog := make(map[string]interface{})
+	UpdateLog["machine_fingerprint"] = fmt.Sprintf("%x", hash)
+	UpdateLog["Type"] = Type
+	UpdateLog["version"] = version
+
+	jsonResp, jsonStatus, jsonErr := abgiConstant.PostJSON(abgiConstant.ABgiInfoUrl+"/api/UpdateLog/Add", UpdateLog, nil)
+	if jsonErr != nil {
+		fmt.Printf("JSON 请求失败: %v\n", jsonErr)
+	} else {
+		fmt.Printf("JSON 请求状态码: %d\n", jsonStatus)
+		fmt.Printf("JSON 响应内容: %s\n\n", jsonResp)
+
+	}
+	autoLog.Sugar.Infof("更新记录成功")
+
 }

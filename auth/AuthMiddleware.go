@@ -6,7 +6,7 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		apiKey := c.GetHeader("api_key")
+		apiKey := c.GetHeader("apiKey")
 		if apiKey != "" && apiKey == User.Auth.APIKey {
 			c.Next()
 			return
