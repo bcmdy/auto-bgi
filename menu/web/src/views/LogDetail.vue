@@ -1,6 +1,6 @@
 <template>
     <div class="log-detail-page">
-        <!-- 页面头部 -->
+        <!-- 页面头部 - 已隐藏
         <header class="page-header enhanced-header">
             <div class="header-bg"></div>
             <div class="header-content">
@@ -15,6 +15,7 @@
             </div>
             <div class="header-divider"></div>
         </header>
+        -->
 
         <div class="container">
             <!-- 加载状态 -->
@@ -254,7 +255,8 @@ export default {
     background-color: var(--background-light);
     color: var(--text-color);
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6eb" opacity="0.6"/><circle cx="70" cy="70" r="7" fill="%23ffc0da" opacity="0.5"/></svg>');
-    padding-bottom: 50px;
+    padding-bottom: 0;
+    overflow: hidden; /* 防止滚动条 */
 }
 
 .page-header {
@@ -373,8 +375,9 @@ export default {
 
 .container {
     max-width: 100%;
-    margin: 30px auto;
-    padding: 0 20px;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
 }
 
 .panel {
@@ -388,15 +391,16 @@ export default {
 .log-content-panel {
     padding: 0;
     overflow: hidden;
-    height: calc(100vh - 140px);
-    min-height: 600px;
+    height: 100vh;
+    border-radius: 0;
+    margin-bottom: 0;
 }
 
 .log-iframe {
     width: 100%;
     height: 100%;
     border: none;
-    border-radius: 20px;
+    border-radius: 0;
 }
 
 .loading-text, .no-data-text {

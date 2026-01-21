@@ -80,12 +80,11 @@ func ReadRecord(name string) *FileNode {
 		})
 
 		record.FileName = fileName.String()
-		parse, _ := time.Parse(time.RFC3339, value.Get("cdTime").String())
-		//加8个小时
-		parse = parse.Add(8 * time.Hour)
-		record.CdTime = parse.Format("2006-01-02 15:04:05")
+		parse, _ := time.Parse(time.RFC3339Nano, value.Get("cdTime").String())
+		localTime := parse.Local()
+		record.CdTime = localTime.Format("2006-01-02 15:04:05")
 		//判断收集时间是否到达
-		if time.Now().After(parse) {
+		if time.Now().After(localTime) {
 			record.Status = "可采集"
 		} else {
 			record.Status = "冷却中"
