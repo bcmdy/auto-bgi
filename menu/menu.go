@@ -108,21 +108,7 @@ func init() {
 	models.InitDB()
 	abgiFunction.InitFunction()
 	defer autoLog.Sync()
-	ips, err := tools.GetLocalIPs()
-	if err != nil {
-		autoLog.Sugar.Infof("获取本机IP失败: %v", err)
-	} else {
-		autoLog.Sugar.Infof("浏览器使用本机局域网IP")
-		for _, ip := range ips {
-			if strings.Contains(ip, "192.168") {
-				autoLog.Sugar.Infof("本机局域网IP: %s%s", ip, config.Cfg.Post)
-				userIP = fmt.Sprintf("http://%s%s", ip, config.Cfg.Post)
-			} else {
-				autoLog.Sugar.Infof("本机其他IP: %s%s", ip, config.Cfg.Post)
-			}
 
-		}
-	}
 }
 
 var upgrader = websocket.Upgrader{
@@ -1425,6 +1411,9 @@ func StarGin() {
 		post = ":8082"
 	}
 
+	//判断端口是否被占用
+	post = getAvailablePort(post)
+
 	err = ginServer.Run(post)
 
 	if err != nil {
@@ -1441,15 +1430,40 @@ func StarGin() {
 }
 
 // 检查端口是否可用，不行就+1
-func getAvailablePort(start int) string {
-	port := start
+func getAvailablePort(start string) string {
+
+	start = strings.ReplaceAll(start, ":", "")
+
+	//转成数字
+	port, _ := strconv.Atoi(start)
 
 	for {
 		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 		if err == nil {
 			_ = ln.Close() // 关闭临时占用
-			return fmt.Sprintf("%d", port)
+			autoLog.Sugar.Infof("端口：【%d】可以使用", port)
+			config.Cfg.Post = fmt.Sprintf(":%d", port)
+			userIP = "http://localhost" + config.Cfg.Post
+
+			ips, err := tools.GetLocalIPs()
+			if err != nil {
+				autoLog.Sugar.Infof("获取本机IP失败: %v", err)
+			} else {
+				autoLog.Sugar.Infof("浏览器使用本机局域网IP")
+				for _, ip := range ips {
+					if strings.Contains(ip, "192.168") {
+						autoLog.Sugar.Infof("本机局域网IP: %s%s", ip, config.Cfg.Post)
+						userIP = fmt.Sprintf("http://%s%s", ip, config.Cfg.Post)
+					} else {
+						autoLog.Sugar.Infof("本机其他IP: %s%s", ip, config.Cfg.Post)
+					}
+
+				}
+			}
+
+			return fmt.Sprintf(":%d", port)
 		}
+		autoLog.Sugar.Infof("端口：【%d】被占用", port)
 		port++
 	}
 }

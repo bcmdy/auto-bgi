@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
+	"auto-bgi/control"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
@@ -621,8 +622,20 @@ func CloseSoftware(name string) {
 
 	time.Sleep(5 * time.Second)
 
+	//// 获取当前用户名
+	//username := os.Getenv("USERNAME")
+	//if username == "" {
+	//	username = os.Getenv("USER")
+	//}
+
+	username := control.GetSysTemUser()
+
+	autoLog.Sugar.Infof("当前window用户是：%s", username)
+	// 构建正确的命令
+	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "BetterGI.exe", "/FI", fmt.Sprintf("USERNAME eq %s", username))
+
 	// 创建命令
-	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", name, "/FI", "USERNAME eq %USERNAME%")
+	//cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", name, "/FI", "USERNAME eq %USERNAME%")
 
 	//cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}

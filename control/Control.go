@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -76,14 +77,38 @@ func OpenSoftware(programPath string) {
 
 }
 
+func GetSysTemUser() string {
+	// 优先使用标准库获取
+	u, err := user.Current()
+	if err == nil {
+		// 在 Windows 下，u.Username 会返回 "DOMAIN\User" 格式
+		return u.Username
+	}
+
+	// 备选方案：环境变量拼接
+	domain := os.Getenv("USERDOMAIN")
+	user := os.Getenv("USERNAME")
+	if domain != "" && user != "" {
+		return domain + "\\" + user
+	}
+
+	return user // 实在拿不到就只返用户名
+}
+
 // 关闭软件
 func CloseSoftware() {
 	//关闭软件之前，停止当前脚本/独立任务
 	CancelTaskHotkey()
 	time.Sleep(5 * time.Second)
 
+	username := GetSysTemUser()
+	autoLog.Sugar.Infof("当前window用户是：%s", username)
+
+	// 构建正确的命令
+	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "BetterGI.exe", "/FI", fmt.Sprintf("USERNAME eq %s", username))
+
 	// 创建命令
-	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "BetterGI.exe", "/FI", "USERNAME eq %USERNAME%")
+	//cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "BetterGI.exe", "/FI", "USERNAME eq %USERNAME%")
 
 	//cmd := exec.Command("taskkill", "/F", "/IM", "BetterGI.exe")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
@@ -105,10 +130,15 @@ var CloseYuanShenWg sync.WaitGroup
 
 func CloseYuanShen() {
 	CloseYuanShenWg.Add(3)
+
+	username := GetSysTemUser()
+	autoLog.Sugar.Infof("当前window用户是：%s", username)
+
 	go func() {
 		defer CloseYuanShenWg.Done()
 		// 创建命令用于强制关闭原神进程
-		cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
+		//cmd := exec.Command("taskkill", "/F", "/IM", "YuanShen.exe")
+		cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "YuanShen.exe", "/FI", fmt.Sprintf("USERNAME eq %s", username))
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 		// 执行命令并获取输出
@@ -125,8 +155,8 @@ func CloseYuanShen() {
 	go func() {
 		defer CloseYuanShenWg.Done()
 		// 创建命令用于强制关闭原神启动器进程
-		cmd3 := exec.Command("taskkill", "/F", "/IM", "GenshinImpact.exe")
-
+		//cmd3 := exec.Command("taskkill", "/F", "/IM", "GenshinImpact.exe")
+		cmd3 := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "GenshinImpact.exe", "/FI", fmt.Sprintf("USERNAME eq %s", username))
 		// 执行命令并获取输出
 		_, err3 := cmd3.CombinedOutput()
 
@@ -141,7 +171,8 @@ func CloseYuanShen() {
 	go func() {
 		defer CloseYuanShenWg.Done()
 		// 创建命令用于强制关闭原神启动器进程
-		cmd2 := exec.Command("taskkill", "/F", "/IM", "HYP.exe")
+		//cmd2 := exec.Command("taskkill", "/F", "/IM", "HYP.exe")
+		cmd2 := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "HYP.exe", "/FI", fmt.Sprintf("USERNAME eq %s", username))
 
 		// 执行命令并获取输出
 		_, err2 := cmd2.CombinedOutput()

@@ -384,6 +384,7 @@ func (m *LogMonitor) Monitor() {
 					matches := re.FindStringSubmatch(line)
 					if len(matches) > 1 {
 						BgiLogStatusInfo.Group = matches[1]
+						autoLog.Sugar.Infof("配置组：【%s】开始执行", matches[1])
 						//提取开始时间
 						BgiLogStatusInfo.Timestamp = BgiLogTime(lastLine)
 
@@ -405,7 +406,7 @@ func (m *LogMonitor) Monitor() {
 					matches := re.FindStringSubmatch(line)
 					if len(matches) > 1 {
 						BgiLogStatusInfo.Group = matches[1]
-
+						autoLog.Sugar.Infof("配置组：【%s】结束执行", matches[1])
 						BgiLogStatusInfo.MapTrackingLine = "已经结束"
 						BgiLogStatusInfo.ScriptName = "已经结束"
 						BgiLogStatusInfo.JSProgress = "已经结束"
@@ -419,6 +420,7 @@ func (m *LogMonitor) Monitor() {
 				//查找配置组任务执行
 				if strings.Contains(line, "配置组任务执行: ") {
 					gp := strings.ReplaceAll(line, "配置组任务执行: ", "")
+					autoLog.Sugar.Infof("一条龙进度：【%s】", gp)
 					BgiLogStatusInfo.GroupProgress = gp
 				}
 
@@ -432,6 +434,7 @@ func (m *LogMonitor) Monitor() {
 					}
 					index := GetProjectIndex(BgiLogStatusInfo.ScriptName)
 					BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
+					autoLog.Sugar.Infof("配置组执行进度:%s", fmt.Sprintf("%d/%d", index, len(Projects)))
 				}
 
 				//当前运行路线
@@ -443,6 +446,8 @@ func (m *LogMonitor) Monitor() {
 						index := GetProjectIndex(BgiLogStatusInfo.MapTrackingLine)
 						if index != 0 {
 							BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
+							autoLog.Sugar.Infof("配置组执行进度:%s", fmt.Sprintf("%d/%d", index, len(Projects)))
+
 						}
 					} else {
 						BgiLogStatusInfo.MapTrackingLine = "未找到地图追踪路线"
@@ -452,6 +457,7 @@ func (m *LogMonitor) Monitor() {
 				//js进度
 				if strings.Contains(line, "当前进度") || strings.Contains(line, ": 开始执行") {
 					BgiLogStatusInfo.JSProgress = line
+					autoLog.Sugar.Infof("js进度:%s", line)
 				}
 
 				//原神闪退检测

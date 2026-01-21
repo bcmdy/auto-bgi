@@ -9,6 +9,7 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
+	"auto-bgi/control"
 	"auto-bgi/frpc"
 	"auto-bgi/task"
 	"os"
@@ -111,5 +112,7 @@ func InitFunction() {
 			task.SendMoraleRankTask()
 		}
 	}()
+
+	control.GetSysTemUser()
 
 }
