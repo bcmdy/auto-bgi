@@ -223,9 +223,9 @@ export default {
       return sorted
     })
 
-    setInterval(() => {
-  debugger
-}, 100)
+          setInterval(() => {
+        debugger
+      }, 100)
 
     // 排序方法（不改逻辑）
     const sortBy = (key) => {
