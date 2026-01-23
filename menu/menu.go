@@ -1364,8 +1364,8 @@ func StarGin() {
 	if len(os.Args) > 1 {
 		if os.Args[1] == "OneLong" {
 
-			OneLongService.OneLongTask("")
-			autoLog.Sugar.Infof("一条龙启动")
+			OneLongService.OneLongTask(os.Args[2])
+			autoLog.Sugar.Infof("一条龙启动:%s", os.Args[2])
 		} else if os.Args[1] == "updateJs" {
 			if err := bgiStatus.BatchUpdateScript(); err != "" {
 				autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)

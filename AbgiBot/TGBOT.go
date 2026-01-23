@@ -80,6 +80,8 @@ func InitTG(token, proxy string) error {
 	return nil
 }
 
+var OneLongService OneLong.OneLong
+
 func BotCommand(command string) string {
 	commandMap := map[string]func() string{
 		"联机上线": func() string {
@@ -149,6 +151,46 @@ func BotCommand(command string) string {
 				return "💗取消关机失败💗"
 			}
 			return "💗取消关机成功💗"
+		},
+		"一条龙列表": func() string {
+			oneLongInfo := OneLongService.OneLongAllName()
+			res := "一条龙列表："
+			res += "\n"
+			for _, s := range oneLongInfo {
+				res += s
+				res += "\n"
+			}
+			return res
+		},
+		"帮助": func() string {
+			cmd := "联机上线"
+			cmd += "\n"
+			cmd += "联机下线"
+			cmd += "\n"
+			cmd += "情况"
+			cmd += "\n"
+			cmd += "截图"
+			cmd += "\n"
+			cmd += "开始录屏"
+			cmd += "\n"
+			cmd += "停止录屏"
+			cmd += "\n"
+			cmd += "批量更新脚本"
+			cmd += "\n"
+			cmd += "关闭原神"
+			cmd += "\n"
+			cmd += "关闭bgi"
+			cmd += "\n"
+			cmd += "电脑关机"
+			cmd += "\n"
+			cmd += "取消关机"
+			cmd += "\n"
+			cmd += "启动一条龙xxx"
+			cmd += "\n"
+			cmd += "启动配置组xxx xxx"
+			cmd += "\n"
+			cmd += "一条龙列表"
+			return cmd
 		},
 	}
 

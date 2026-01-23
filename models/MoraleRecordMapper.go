@@ -18,20 +18,6 @@ func AddMoraleRecord(time string, num int, action string) {
 	}
 }
 
-//// 批量新增摩拉记录（根据 time 去重）
-//func BatchAddMoraleRecords(records []MoraleRecord) error {
-//	autoLog.Sugar.Infof("共%d条新记录", len(records))
-//	if len(records) == 0 {
-//		return nil
-//	}
-//	return DB.
-//		Clauses(clause.OnConflict{
-//			Columns:   []clause.Column{{Name: "time"}}, // 冲突字段
-//			DoNothing: true,                            // 已存在则忽略
-//		}).
-//		Create(&records).Error
-//}
-
 // 批量新增摩拉记录（不进行任何去重检查）
 func BatchAddMoraleRecords(records []MoraleRecord) error {
 	autoLog.Sugar.Infof("共%d条新记录", len(records))
@@ -75,4 +61,20 @@ func IsSendMoraleRank() bool {
 	} else {
 		return true
 	}
+}
+
+// 根据时间段查询摩拉总收益
+func MoraLogByTimeSUM(StartTime string, EndTime string) int64 {
+	if StartTime == "" || EndTime == "" {
+		return 0
+	}
+
+	var total int64
+	// 假设 Action 为 "收入" 的算正数
+	DB.Model(&MoraleRecord{}).
+		Where("time BETWEEN ? AND ?", StartTime, EndTime).
+		Select("SUM(num)").
+		Scan(&total)
+
+	return total
 }

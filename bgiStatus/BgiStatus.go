@@ -1517,6 +1517,7 @@ type ExecutionSegment struct {
 	StartTime string
 	EndTime   string
 	Consuming string
+	Mola      int64
 }
 
 type LogAnalysis2Struct struct {
@@ -1609,6 +1610,8 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 					currentStruct.Segments[segIdx].EndTime = t
 					currentStruct.Segments[segIdx].Consuming =
 						tools.CalculateDuration(currentStruct.Segments[segIdx].StartTime, t)
+					logByTimeSUM := models.MoraLogByTimeSUM(currentStruct.Segments[segIdx].StartTime, t)
+					currentStruct.Segments[segIdx].Mola = logByTimeSUM
 				}
 
 				// 🔹统计错误（按子任务聚合）
