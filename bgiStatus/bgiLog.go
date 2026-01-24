@@ -189,6 +189,8 @@ func (m *LogMonitor) Monitor() {
 						//一条龙
 						oneLongName := strings.ReplaceAll(data, "一条龙-", "")
 						autoLog.Sugar.Infof("js日志调用abgi关闭原神启动一条龙" + oneLongName)
+						//// 关闭软件
+						control.CloseSoftware()
 						task.StartOneDragon(oneLongName)
 					}
 
@@ -205,6 +207,8 @@ func (m *LogMonitor) Monitor() {
 
 					oneLongName := strings.ReplaceAll(line, "ABGI启动一条龙：", "")
 					autoLog.Sugar.Infof("js日志调用abgi启动一条龙" + oneLongName)
+					//// 关闭软件
+					control.CloseSoftware()
 					task.StartOneDragon(oneLongName)
 				}
 				//js日志调用abgi启动配置组

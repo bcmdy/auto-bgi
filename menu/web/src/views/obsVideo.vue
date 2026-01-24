@@ -181,9 +181,34 @@
               <span class="card-title">📂 文件列表</span>
               <span class="badge" v-if="videos.length">{{ videos.length }}</span>
             </div>
-            <button class="btn small refresh-icon" @click="fetchVideos" :disabled="loadingStatus.fetchingVideos">
-              <span :class="{'spin': loadingStatus.fetchingVideos}">🔄</span>
-            </button>
+                <div class="header-actions">
+                    <button
+                      class="btn small danger"
+                      @click="confirmDeleteAll"
+                      :disabled="loadingStatus.deletingAll"
+                    >
+                      <span v-if="!loadingStatus.deletingAll">🧹</span>
+                      <span v-else class="mobile-spinner"></span>
+                      <span class="btn-text">清空所有视频</span>
+                    </button>
+
+                    <!-- Sort by modified time (toggle) -->
+                    <button
+                      class="btn small"
+                      :class="{ active: sortDesc }"
+                      @click="toggleSortByModified"
+                      :disabled="loadingStatus.fetchingVideos || videos.length===0"
+                      title="按修改时间倒序排列（切换）"
+                    >
+                      <span v-if="!sortDesc">🕒</span>
+                      <span v-else>🔽</span>
+                      <span class="btn-text">排序</span>
+                    </button>
+
+                    <button class="btn small refresh-icon" @click="fetchVideos" :disabled="loadingStatus.fetchingVideos">
+                      <span :class="{'spin': loadingStatus.fetchingVideos}">🔄 刷新</span>
+                    </button>
+                  </div>
           </div>
 
           <div class="video-list custom-scroll">
@@ -192,7 +217,7 @@
                <p class="loading-text">加载文件中...</p>
             </div>
 
-            <transition-group name="list" tag="div" v-else-if="videos.length > 0">
+            <transition-group name="list" tag="div" v-if="!loadingStatus.fetchingVideos && videos.length > 0">
               <div 
                 v-for="video in videos" 
                 :key="video.name" 
@@ -207,6 +232,7 @@
                   <div class="video-title">{{ video.name }}</div>
                   <div class="video-meta">
                     <span class="meta-tag size">{{ video.sizeMB.toFixed(1) }}MB</span>
+                    <span class="meta-tag time" :title="video.modifiedTime">{{ formatModifiedTime(video.modifiedTime) }}</span>
                   </div>
                 </div>
                 <div class="video-actions">
@@ -221,7 +247,7 @@
               </div>
             </transition-group>
 
-            <div v-else class="empty-list">
+            <div v-else-if="!loadingStatus.fetchingVideos && videos.length === 0" class="empty-list">
               <div class="empty-icon">📭</div>
               <h3>暂无文件</h3>
             </div>
@@ -234,7 +260,9 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue'
+import dayjs from 'dayjs'
 import { apiMethods } from '@/utils/api'
+import { Modal, notification } from 'ant-design-vue'
 
 function getToken() {
   return localStorage.getItem('aBgiToken') || ''
@@ -256,6 +284,7 @@ const isObsConnected = ref(false) // 新增：连接状态
 const isRecording = ref(false)
 const isReplayBufferActive = ref(false)
 const videos = ref([])
+const originalVideos = ref([]) // keep original order from server
 const currentVideo = ref('')
 const currentVideoName = ref('')
 const videoRef = ref(null)
@@ -272,7 +301,8 @@ const loadingStatus = reactive({
   savingReplay: false,
   fetchingVideos: false,
   loadingVideo: false,
-  deletingVideo: false
+  deletingVideo: false,
+  deletingAll: false
 })
 
 const MobileSpinner = {
@@ -435,7 +465,10 @@ async function fetchVideos() {
   try {
     const res = await apiMethods.GetVideoInfo()
     if (res.status === 'success') {
-      videos.value = res.msg || [] 
+      // 保存原始服务器顺序，后续可用于切换排序/恢复
+      originalVideos.value = res.msg || []
+      // 根据当前排序开关决定展示顺序
+      applySortIfNeeded()
     }
   } catch (err) {
     console.error(err)
@@ -479,20 +512,83 @@ async function playVideo(name) {
 }
 
 async function DeleteVideo(name) {
-  if (!confirm(`确认要删除 "${name}" 吗？(>_<)`)) return
-  deletingVideoName.value = name
-  loadingStatus.deletingVideo = true
+  Modal.confirm({
+    title: `确认删除 "${name}" 吗？`,
+    content: '此操作不可恢复',
+    okText: '确认',
+    cancelText: '取消',
+    onOk: async () => {
+      deletingVideoName.value = name
+      loadingStatus.deletingVideo = true
+      try {
+        const res = await apiMethods.DeleteVideo(name)
+        if (res && res.status === 'success') {
+          notification.success({ message: '删除成功' })
+          fetchVideos()
+          if (currentVideo.value === name) closePlayer()
+        } else if (res && res.message) {
+          notification.error({ message: res.message })
+        }
+      } catch (err) {
+        console.error(err)
+        notification.error({ message: '删除失败，请检查后端或网络' })
+      } finally {
+        loadingStatus.deletingVideo = false
+        deletingVideoName.value = ''
+      }
+    }
+  })
+}
+
+async function confirmDeleteAll() {
+  if (!videos.value || videos.value.length === 0) {
+    notification.info({ message: '当前没有视频可删除' })
+    return
+  }
+
+  // 第一次确认
+  Modal.confirm({
+    title: '确认清空所有视频吗？',
+    content: '此操作将删除服务器上所有视频，无法恢复。',
+    okText: '下一步',
+    cancelText: '取消',
+    onOk() {
+      // 第二次更强烈确认
+      Modal.confirm({
+        title: '最终确认：彻底删除所有视频？',
+        content: '这是不可逆操作，确定要继续吗？',
+        okText: '确认删除',
+        okType: 'danger',
+        cancelText: '取消',
+        async onOk() {
+          await DeleteAllVideos()
+        }
+      })
+    }
+  })
+}
+
+async function DeleteAllVideos() {
+  loadingStatus.deletingAll = true
   try {
-    const res = await apiMethods.DeleteVideo(name)
-    if (res.status === 'success') {
-      fetchVideos()
-      if (currentVideo.value === name) closePlayer()
+    const res = await apiMethods.DeleteAllVideo()
+    if (res && res.status === 'success') {
+      notification.success({ message: res.message || '已删除所有视频' })
+
+      closePlayer()
+    } else if (res && res.message) {
+      notification.error({ message: res.message })
+    } else {
+      notification.error({ message: '删除失败，未知响应' })
     }
   } catch (err) {
     console.error(err)
+    notification.error({ message: '删除失败，请检查后端或网络' })
   } finally {
-    loadingStatus.deletingVideo = false
-    deletingVideoName.value = ''
+    loadingStatus.deletingAll = false
+          //延迟
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      await fetchVideos()
   }
 }
 
@@ -509,6 +605,42 @@ onMounted(() => {
   getReplayBufferStatus()
   fetchVideos()
 })
+
+// 排序开关：按 modifiedTime 倒序（最新在前）
+const sortDesc = ref(false)
+
+function applySortIfNeeded() {
+  if (!sortDesc.value) {
+    videos.value = originalVideos.value.slice()
+    return
+  }
+
+  // 如果服务器返回的项包含 modifiedTime 字段，则依据它排序
+  videos.value = originalVideos.value.slice().sort((a, b) => {
+    const ta = a.modifiedTime ? new Date(a.modifiedTime).getTime() : 0
+    const tb = b.modifiedTime ? new Date(b.modifiedTime).getTime() : 0
+    return tb - ta // 倒序：新的排在前面
+  })
+}
+
+function toggleSortByModified() {
+  sortDesc.value = !sortDesc.value
+  applySortIfNeeded()
+}
+
+// 格式化 modifiedTime，兼容 ISO 或 已经格式化为 "YYYY-MM-DD HH:mm:ss" 的字符串
+function formatModifiedTime(ts) {
+  if (!ts) return ''
+  // 如果已经是类似 "YYYY-MM-DD HH:mm:ss" 的简洁格式，直接返回
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(ts)) {
+    return ts
+  }
+  try {
+    return dayjs(ts).format('YYYY-MM-DD HH:mm:ss')
+  } catch (e) {
+    return ts || ''
+  }
+}
 </script>
 
 <style scoped>
@@ -701,7 +833,7 @@ onMounted(() => {
 .list-card { height: 100%; }
 .video-list { flex: 1; overflow-y: auto; padding: 10px; }
 .video-item {
-  display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px;
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px; margin-bottom: 8px;
   background: rgba(255,255,255,0.6); border-radius: 12px; cursor: pointer; transition: all 0.2s;
   border: 1px solid transparent;
 }
@@ -709,7 +841,16 @@ onMounted(() => {
 .video-item.active { background: var(--pink-light); border-color: var(--pink-deep); }
 .video-thumbnail { width: 50px; height: 50px; background: var(--pink-bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
 .video-info { flex: 1; min-width: 0; }
-.video-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.video-title {
+  font-weight: bold;
+  font-size: 0.9rem;
+  /* allow long file names to wrap to next line so more of the name is visible */
+  white-space: normal;
+  word-break: break-all; /* break long continuous strings */
+  overflow: visible;
+  text-overflow: unset;
+  margin-bottom: 4px;
+}
 .video-meta { display: flex; gap: 8px; font-size: 0.75rem; color: var(--text-light); }
 .meta-tag { background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; }
 .delete-btn { background: #ffebee; color: #ff5252; }

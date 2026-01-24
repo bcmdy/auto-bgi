@@ -5,16 +5,11 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
-	"auto-bgi/control"
 )
 
 // 启动一条龙
 func (o *OneLong) OneLongTask(longName string) {
 	autoLog.Sugar.Info("开始执行一条龙任务")
-
-	// 3. 关闭软件（同步，后续任务依赖此步骤）
-	control.CloseSoftware()
-	autoLog.Sugar.Info("软件已关闭")
 
 	// 4. 批量更新脚本
 	if config.Cfg.OneLong.AutoUpdateJs {

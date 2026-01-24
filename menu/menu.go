@@ -1050,6 +1050,8 @@ func StarGin() {
 				}
 				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "删除成功"})
 			})
+			//清空所有视频
+			abgiObsController.POST("/DeleteAllVideo", videoInfoService.DeleteAllVideo)
 
 			//启动流
 			abgiObsController.GET("/StartStream", func(context *gin.Context) {
@@ -1373,8 +1375,9 @@ func StarGin() {
 	})
 
 	if len(os.Args) > 1 {
-		if os.Args[1] == "OneLong" {
-
+		if os.Args[1] == "OneLong" { // 3. 关闭软件（同步，后续任务依赖此步骤）
+			control.CloseSoftware()
+			autoLog.Sugar.Info("软件已关闭")
 			OneLongService.OneLongTask(os.Args[2])
 			autoLog.Sugar.Infof("一条龙启动:%s", os.Args[2])
 		} else if os.Args[1] == "updateJs" {

@@ -223,6 +223,8 @@ subscribeScript: (scriptName) => {
   GetVideoInfo: () => api.get('/api/abgiObs/GetVideoInfo'),
   //删除视频
   DeleteVideo: (filePath) => api.post('/api/abgiObs/DeleteVideo?videoName='+filePath),
+  // 删除所有视频
+  DeleteAllVideo: () => api.post('/api/abgiObs/DeleteAllVideo'),
 
   // 定时任务管理
   getTaskCronList: () => api.get('/api/taskCron/list'),

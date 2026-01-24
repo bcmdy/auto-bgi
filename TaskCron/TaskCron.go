@@ -48,6 +48,9 @@ func InitTaskCron() {
 	task = make(map[string]func(string))
 	task["一条龙"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+
+		autoLog.Sugar.Info("软件已关闭")
+
 		taskOneLong.OneLongTask(data)
 	}
 	task["配置组"] = func(data string) {

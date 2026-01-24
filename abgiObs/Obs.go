@@ -68,8 +68,10 @@ func updateFileName(OutputPath, videoName string) {
 	if videoName == "" {
 		return
 	}
+	//获取文件后缀
+	str5 := filepath.Ext(OutputPath)
 
-	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02-15-01")+".mkv")
+	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02-15-01")+str5)
 
 	if OutputPath == "" {
 		return

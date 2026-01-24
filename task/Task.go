@@ -80,11 +80,11 @@ func StartOneDragon(name string) {
 
 	autoLog.Sugar.Infof("准备启动一条龙：%s", name)
 
-	// 关闭软件
-	control.CloseSoftware()
+	//// 关闭软件
+	//control.CloseSoftware()
 
 	// 延迟确保关闭完成
-	delay := 3 * time.Second
+	delay := 2 * time.Second
 	autoLog.Sugar.Infof("等待 %v 后启动...", delay)
 	time.Sleep(delay)
 

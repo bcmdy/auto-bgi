@@ -4,16 +4,16 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/tools"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 type VideoInfo struct {
-	Name         string    `json:"name"`
-	Path         string    `json:"path"`
-	SizeMB       float64   `json:"sizeMB"`
-	ModifiedTime time.Time `json:"modifiedTime"`
+	Name         string  `json:"name"`
+	Path         string  `json:"path"`
+	SizeMB       float64 `json:"sizeMB"`
+	ModifiedTime string  `json:"modifiedTime"`
 }
 
 // GetAllRecordingsInfo 获取录制视频列表
@@ -40,7 +40,7 @@ func (V *VideoInfo) GetAllRecordingsInfo(obsPath string) ([]VideoInfo, error) {
 				Name:         info.Name(),
 				Path:         path,
 				SizeMB:       finalSizeMB,
-				ModifiedTime: info.ModTime(),
+				ModifiedTime: info.ModTime().Format("2006-01-02 15:04:05"),
 			})
 		}
 		return nil
@@ -69,4 +69,19 @@ func (V *VideoInfo) DeleteVideo(filename string) error {
 	}
 
 	return nil
+}
+
+func (V *VideoInfo) DeleteAllVideo(context *gin.Context) {
+	err := DeleteVideosByAge(0)
+	if err != nil {
+		context.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	context.JSON(200, gin.H{
+		"message": "删除所有视频成功",
+	})
+	return
+
 }
