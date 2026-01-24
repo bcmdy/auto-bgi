@@ -214,6 +214,11 @@
               <a-input-password v-model:value="formData.Notice.OneBot.QQNum" class="enhanced-input"><template #prefix>🐧</template></a-input-password>
             </a-form-item>
           </div>
+          <!-- 新增：米游社签到推送按钮 -->
+          <div class="mys-push-section">
+            <a-button type="default" @click="handleMysPush" :loading="mysPushLoading">设置为米游社签到推送</a-button>
+            <div class="help-text" style="margin-top:8px">需要先保存配置</div>
+          </div>
         </a-card>
 
         <a-card title="命令机器人" class="config-card">
@@ -283,6 +288,7 @@ import { apiMethods } from '@/utils/api'
 const router = useRouter()
 const formRef = ref()
 const loading = ref(false)
+const mysPushLoading = ref(false)
 const configOptions = ref([])
 
 // 表单数据 - 保持你的原始结构不变
@@ -476,6 +482,26 @@ const handleSubmit = async () => {
     message.error('保存失败: ' + error.message)
   } finally {
     loading.value = false
+  }
+}
+
+// 米游社推送设置
+const handleMysPush = async () => {
+  mysPushLoading.value = true
+  try {
+    const noticeType = formData.Notice.Type || ''
+    const res = await apiMethods.mysPush(noticeType)
+    // api.js 的响应拦截器返回的是 response.data，后端可能返回 { status, message }
+    if (res && (res.status === 200 || res.status === '200')) {
+      message.success('米游社签到推送设置成功')
+    } else {
+      message.success('操作已发送，后端返回: ' + (res?.message || JSON.stringify(res)))
+    }
+  } catch (error) {
+    console.error('设置米游社签到推送失败', error)
+    message.error('设置米游社签到推送失败: ' + (error?.message || error))
+  } finally {
+    mysPushLoading.value = false
   }
 }
 

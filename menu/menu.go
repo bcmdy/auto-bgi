@@ -7,6 +7,7 @@ import (
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/CDCollectionManagement"
 	"auto-bgi/JsAPI"
+	"auto-bgi/Mihoyo"
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
 	"auto-bgi/OneLong"
@@ -746,8 +747,6 @@ func StarGin() {
 		//米游社手动签到
 		needAuth.POST("/mysSignIn", func(c *gin.Context) {
 
-			//task.MiYouSheSign()
-
 			go func() {
 				control.CallPython()
 			}()
@@ -755,6 +754,9 @@ func StarGin() {
 			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "签到成功"})
 
 		})
+
+		//米游社通知配置
+		needAuth.POST("/mysPush", Mihoyo.UpdatePushConfig)
 
 		//定时任务
 		taskCronController := needAuth.Group("/taskCron")

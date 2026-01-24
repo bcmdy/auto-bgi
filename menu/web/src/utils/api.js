@@ -102,6 +102,8 @@ export const apiMethods = {
 
   // 米游社手动签到
   mysSignIn: () => api.post('/api/mysSignIn'),
+  // 设置米游社签到推送（将 NoticeType 发送到后端）
+  mysPush: (NoticeType) => api.post('/api/mysPush?NoticeType=' + encodeURIComponent(NoticeType)),
   
   // 系统操作
   startOneLong: (data) => api.post('/api/oneLong/startOneLong', data),
