@@ -71,7 +71,10 @@ func InitTG(token, proxy string) error {
 			// 回复消息
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, Message)
 
-			bot.Send(msg)
+			_, err := bot.Send(msg)
+			if err != nil {
+				return
+			}
 
 		}
 	}()

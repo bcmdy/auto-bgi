@@ -70,9 +70,19 @@ func InitFeiShuBot() {
 //   - MessageId: 需要回复的消息ID
 func send(MessageId, content string) {
 
-	all := strings.ReplaceAll(content, "\n\t", "")
-	s := `{"text":"content"}`
-	res := strings.ReplaceAll(s, "content", all)
+	//all := strings.ReplaceAll(content, "\n\t", "")
+	//s := `{"text":"content"}`
+	//res := strings.ReplaceAll(s, "content", all)
+
+	msgMap := map[string]string{
+		"text": content,
+	}
+	msgBytes, err := json.Marshal(msgMap)
+	if err != nil {
+		fmt.Printf("JSON 序列化失败: %v\n", err)
+		return
+	}
+	res := string(msgBytes)
 
 	// 使用构建器模式创建回复消息请求
 	req := larkim.NewReplyMessageReqBuilder().
@@ -83,7 +93,7 @@ func send(MessageId, content string) {
 			// 设置消息内容，使用JSON格式
 			Content(res).
 			// 设置消息类型为文本
-			MsgType(`text`).
+			MsgType(larkim.MsgTypeText).
 			// 设置为在原消息线程中回复
 			ReplyInThread(true).
 			// 设置请求的唯一标识符

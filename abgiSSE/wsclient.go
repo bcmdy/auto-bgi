@@ -4,6 +4,7 @@ import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/control"
 	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
@@ -11,7 +12,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"sync"
+	"time"
 )
 
 type AbgiClient struct {
@@ -111,7 +116,8 @@ func (c *AbgiClient) listen() {
 		var info Information
 		err = json.Unmarshal(msg, &info)
 		if err != nil {
-			log.Println("解析消息失败:", err)
+			log.Println()
+			autoLog.Sugar.Infof("未知消息:%s", msg)
 			continue
 		}
 
@@ -119,20 +125,67 @@ func (c *AbgiClient) listen() {
 			//联机狗粮
 			autoLog.Sugar.Infof("联机启动")
 			artifactsGroupPurchasing(info, true)
-		} else if info.Status == "2" {
 
-			//处理图片消息
-			HandleImg(info)
+			//启动配置组
+			err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
+			if err2 != nil {
+				autoLog.Sugar.Errorf("启动配置组失败: %v", err)
+				return
+			}
+
+		} else if info.Status == "3" {
+
+			autoLog.Sugar.Infof("联机准备")
+			artifactsGroupPurchasing(info, true)
+
+			////处理图片消息
+			//HandleImg(info)
 
 		} else if info.Status == "4" {
 			//联机启动-全部调试调试
 			autoLog.Sugar.Infof("联机启动-非备用组4个调试")
 			artifactsGroupPurchasing(info, false)
+
+			//启动配置组
+			err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
+			if err2 != nil {
+				autoLog.Sugar.Errorf("启动配置组失败: %v", err)
+				return
+			}
+
 		} else {
 			autoLog.Sugar.Infof("收到消息:%s", info.Msg)
 		}
 
 	}
+}
+
+// StartGroups 启动配置组
+func startGroups(names []string) error {
+	control.CloseSoftware()
+	time.Sleep(1 * time.Second)
+
+	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
+
+	// 检查文件是否存在
+	if _, err := os.Stat(betterGIPath); err != nil {
+		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
+		return err
+	}
+
+	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
+
+	cmd := exec.Command(betterGIPath, args...)
+
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	err := cmd.Start()
+	if err != nil {
+		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
+		return err
+	}
+	autoLog.Sugar.Infof("启动配置组成功: %v", names)
+	return nil
 }
 
 // Send 发送消息

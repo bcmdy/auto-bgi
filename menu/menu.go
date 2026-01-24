@@ -287,6 +287,17 @@ func StarGin() {
 			//举报炸弹
 			abgiWs.POST("/reportBomb", abgiSSE.ReportBomb)
 
+			//发送消息
+			abgiWs.POST("/sendMessage", func(context *gin.Context) {
+				value := context.Query("msg")
+				err := abgiSSE.Send(value)
+				if err != nil {
+					context.JSON(http.StatusBadRequest, gin.H{"status": "received", "data": err.Error()})
+					return
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "received", "data": "发送成功"})
+			})
+
 		}
 		//ArtifactsBulkSupply.UpdateRevenue("174300")
 

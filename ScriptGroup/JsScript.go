@@ -135,11 +135,11 @@ func (s *ScriptGroupConfig) StartDogFoodOnline(runDebug bool, data []map[string]
 
 		autoLog.Sugar.Errorf("写入 狗粮联机配置组[%s]失败:%d", config.Cfg.Account.GouLangGroupName, err)
 	}
-
-	//启动配置组
-	err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
-	if err2 != nil {
-		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
-		return
-	}
+	//
+	////启动配置组
+	//err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
+	//if err2 != nil {
+	//	autoLog.Sugar.Errorf("启动配置组失败: %v", err)
+	//	return
+	//}
 }

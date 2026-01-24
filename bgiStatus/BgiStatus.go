@@ -1045,7 +1045,7 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				autoLog.Sugar.Infof("分析完毕")
+				//autoLog.Sugar.Infof("分析完毕")
 				// 🔹文件结束时检查是否有未结束的配置组
 				if currentStruct != nil {
 					logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)
@@ -1501,6 +1501,8 @@ var errorKeywords = []string{
 	"传送点未激活或不存在",
 	"疑似卡死，尝试脱离...",
 	"此追踪脚本未正常走完！",
+	"执行超时，放弃此次追踪",
+	"路径点执行超时，放弃整条路径",
 }
 
 func isErrorLine(line string) (matched string, ok bool) {
@@ -1568,7 +1570,7 @@ func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				autoLog.Sugar.Infof("分析完毕")
+				//autoLog.Sugar.Infof("分析完毕")
 				// 🔹文件结束时检查是否有未结束的配置组
 				if currentStruct != nil {
 					logAnalysis2Structs = append(logAnalysis2Structs, *currentStruct)

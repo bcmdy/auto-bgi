@@ -98,8 +98,29 @@
                                         <span class="duration-arrow">→</span>
                                         <span class="time-badge end">{{ seg.EndTime }}</span>
                                         <span class="duration-badge">{{ seg.Consuming }}</span>
+                                        <span class="duration-badge" style="
+                                        background-color: #fce44d; 
+                                        color: #855f2d;
+                                        padding: 2px 10px; 
+                                        border-radius: 20px; 
+                                        display: inline-flex; 
+                                        align-items: center; 
+                                        font-weight: bold;
+                                        border: 1px solid #e09b40;">
+                                        
+                                        <svg t="1769046672535" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1697" width="18" height="18" style="margin-right: 5px;">
+                                            <path d="M443.904 623.104a281.6 278.016 90 1 0 556.032 0 281.6 278.016 90 1 0-556.032 0Z" fill="#E09B40" p-id="1698"></path>
+                                            <path d="M721.92 604.672m-278.016 0a278.016 278.016 0 1 0 556.032 0 278.016 278.016 0 1 0-556.032 0Z" fill="#FFD151" p-id="1699"></path>
+                                            <path d="M562.688 740.352l159.744-332.288 33.792-79.36c-11.264-1.536-23.04-2.56-34.304-2.56-153.6 0-278.016 124.416-278.016 278.016 0 71.168 27.136 135.68 70.656 184.832l48.128-48.64z" fill="#FFDD99" p-id="1700"></path>
+                                            <path d="M721.92 604.672m-231.424 0a231.424 231.424 0 1 0 462.848 0 231.424 231.424 0 1 0-462.848 0Z" fill="#D39548" p-id="1701"></path>
+                                            <path d="M491.52 612.352a230.912 223.744 0 1 0 461.824 0 230.912 223.744 0 1 0-461.824 0Z" fill="#E6B141" p-id="1702"></path>
+                                            <path d="M662.016 686.592l33.28 10.752 33.28 6.144 40.448-8.704v13.824l-37.376 12.8-34.816-8.704zM668.672 549.376l33.792-10.752 32.768-6.144 40.96 8.192V527.36l-37.376-13.312-35.328 9.216z" fill="#D39548" p-id="1703"></path>
+                                            <path d="M177.152 657.408c1.536 1.024 3.584 2.048 5.12 2.56l9.728-16.896c-1.536-1.024-3.584-1.536-5.12-2.56l-9.728 16.896z" fill="#EFC04B" p-id="1711"></path>
+                                        </svg>
+                                        &nbsp;{{ seg.Mola }}
+                                    </span>
                                     </div>
-                                    </div>
+                                </div>
                                
                                 </div>
                             </div>

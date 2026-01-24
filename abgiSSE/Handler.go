@@ -59,7 +59,6 @@ func artifactsGroupPurchasing(info Information, isAllDebug bool) {
 	}
 	time.Sleep(500 * time.Millisecond)
 	scriptGroupConfig.StartDogFoodOnline(RunDebug, dd, isAllDebug)
-	//fmt.Println(xiaoxi)
 	autoLog.Sugar.Info(xiaoxi)
 	if isAllDebug {
 		Notice.SentText(xiaoxi)
