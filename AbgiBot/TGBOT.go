@@ -64,6 +64,13 @@ func InitTG(token, proxy string) error {
 	go func() {
 		for update := range updates {
 			fmt.Println("=========", update.Message.Text)
+			//先回复指令发送成功
+			// 回复消息
+			msg2 := tgbotapi.NewMessage(update.Message.Chat.ID, "指令已接收")
+			_, err := bot.Send(msg2)
+			if err != nil {
+				return
+			}
 
 			Message := BotCommand(update.Message.Text)
 			fmt.Println(Message)
@@ -71,7 +78,7 @@ func InitTG(token, proxy string) error {
 			// 回复消息
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, Message)
 
-			_, err := bot.Send(msg)
+			_, err = bot.Send(msg)
 			if err != nil {
 				return
 			}
@@ -164,6 +171,12 @@ func BotCommand(command string) string {
 				res += "\n"
 			}
 			return res
+		},
+		"米游社签到": func() string {
+			go func() {
+				control.CallPython()
+			}()
+			return "签到成功"
 		},
 		"帮助": func() string {
 			cmd := "联机上线"

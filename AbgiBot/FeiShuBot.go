@@ -44,6 +44,9 @@ func InitFeiShuBot() {
 			}
 			data := strings.ReplaceAll(m["text"], "@_user_1 ", "")
 
+			//	//先回复指令发送成功
+			send(*event.Event.Message.MessageId, "指令已接收")
+
 			fmt.Printf("收到消息: %s\n", data)
 			fmt.Println("回话id", event.Event.Message.MessageId)
 			command := BotCommand(data)

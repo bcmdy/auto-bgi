@@ -820,7 +820,10 @@ func StarGin() {
 			//查询地图追踪配置
 			scriptGroup.GET("/ConfigPathing", func(c *gin.Context) {
 
-				scriptGroupConfig.ListPathingUpdatePaths()
+				err := scriptGroupConfig.ListPathingUpdatePaths()
+				if err != nil {
+					return
+				}
 
 				UpdatePathData := config.Cfg.UpdatePath
 
@@ -1003,7 +1006,7 @@ func StarGin() {
 				context.JSON(http.StatusOK, gin.H{"status": "success", "msg": "停止回放缓冲区"})
 			})
 
-			////获取重放缓冲区状态
+			//获取重放缓冲区状态
 			abgiObsController.GET("/GetReplayBufferStatus", func(context *gin.Context) {
 				time.Sleep(3 * time.Second)
 				status, err := abgiObs.GetReplayBufferStatus()
@@ -1113,9 +1116,9 @@ func StarGin() {
 	//测试
 	ginServer.GET("/api/test", CDCollectionManagement.CDCollectionRead)
 	////妙妙屋
-	//ABGIHoui()
+	ABGIHoui()
 
-	ABGIHouiPort("10086")
+	//ABGIHouiPort("10086")
 
 	ginServer.GET("/api/abgiObs/PlayVideoStream", func(c *gin.Context) {
 		token := c.Query("tk")

@@ -38,7 +38,12 @@ func InitFrp() {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tempDir) // 退出时清理
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			fmt.Printf("清理临时目录失败: %v\n", err)
+		}
+	}(tempDir) // 退出时清理
 
 	fmt.Println("正在初始化运行环境...")
 
