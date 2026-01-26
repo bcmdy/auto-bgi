@@ -61,6 +61,7 @@ func Online(c *gin.Context) {
 		return
 
 	}
+	ABgiSeeStatus = "在线"
 	c.String(http.StatusOK, "连接成功")
 }
 

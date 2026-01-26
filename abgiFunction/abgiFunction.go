@@ -5,6 +5,7 @@ import (
 	"auto-bgi/OneLong"
 	"auto-bgi/TaskCron"
 	"auto-bgi/abgiObs"
+	"auto-bgi/abgiSSE"
 	"auto-bgi/auth"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
@@ -113,6 +114,7 @@ func InitFunction() {
 		}
 	}()
 
+	abgiSSE.Status()
 	control.GetSysTemUser()
 
 }

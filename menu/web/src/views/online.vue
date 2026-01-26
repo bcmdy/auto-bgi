@@ -26,9 +26,10 @@
           </div>
           <div class="status-badge" @click="fetchOnlineStatus" :title="statusLoading ? '正在刷新' : '点击刷新'">
             <span v-if="statusLoading">刷新中...</span>
-            <span v-else-if="onlineStatus === true" class="badge-online">在线</span>
+            <span class="badge-online">{{ onlineStatus }}</span>  
+            <!-- <span v-else-if="onlineStatus === true" class="badge-online">在线</span>
             <span v-else-if="onlineStatus === false" class="badge-offline">离线</span>
-            <span v-else class="badge-unknown">未知</span>
+            <span v-else class="badge-unknown">未知</span> -->
           </div>
         </div>
 
@@ -252,11 +253,11 @@ const fetchOnlineDetail = async () => {
 }
 
 const fetchOnlineStatus = async () => {
-  statusLoading.value = true
+  statusLoading.value = "未知"
   try {
     const res = await api.get('/api/abgiSSE/getOnlineStatus')
     // 接口返回 true/false；确保布尔值
-    onlineStatus.value = !!res
+    onlineStatus.value = res
   } catch (e) {
     console.error('获取在线状态失败', e)
     message.error('获取在线状态失败')

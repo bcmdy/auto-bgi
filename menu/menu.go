@@ -264,6 +264,7 @@ func StarGin() {
 
 			//下线
 			abgiWs.POST("/disconnect", func(c *gin.Context) {
+				abgiSSE.ABgiSeeStatus = "手动下线"
 				abgiSSE.Close()
 			})
 
@@ -281,7 +282,8 @@ func StarGin() {
 
 			//获取联机状态
 			abgiWs.GET("/getOnlineStatus", func(context *gin.Context) {
-				onlineStatus := abgiSSE.Status()
+
+				onlineStatus := abgiSSE.ABgiSeeStatus
 				context.JSON(http.StatusOK, onlineStatus)
 			})
 
@@ -757,6 +759,7 @@ func StarGin() {
 
 		//米游社通知配置
 		needAuth.POST("/mysPush", Mihoyo.UpdatePushConfig)
+		needAuth.GET("/ReadCk", Mihoyo.ReadCK)
 
 		//定时任务
 		taskCronController := needAuth.Group("/taskCron")

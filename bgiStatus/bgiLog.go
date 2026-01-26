@@ -364,6 +364,7 @@ func (m *LogMonitor) Monitor() {
 					num := re.FindString(line)
 
 					abgiSSE.WriteDogFoodNum(num)
+					abgiSSE.ABgiSeeStatus = "联机结束"
 				}
 
 				if strings.Contains(line, "abgi联机排行榜") {

@@ -52,6 +52,8 @@ var RunDebug bool
 
 var RunCount = 0
 
+var ABgiSeeStatus = "未知"
+
 // Connect 连接 WebSocket 服务器
 func Connect(url string, runDebug bool, headers http.Header) (err error) {
 
@@ -125,6 +127,7 @@ func (c *AbgiClient) listen() {
 			//联机狗粮
 			autoLog.Sugar.Infof("联机启动")
 			artifactsGroupPurchasing(info, true)
+			ABgiSeeStatus = "联机中"
 
 			//启动配置组
 			err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
@@ -135,9 +138,15 @@ func (c *AbgiClient) listen() {
 
 		} else if info.Status == "3" {
 
-			autoLog.Sugar.Infof("联机准备")
-			artifactsGroupPurchasing(info, true)
-
+			//autoLog.Sugar.Infof("联机准备")
+			//artifactsGroupPurchasing(info, true)
+			//ABgiSeeStatus = "联机中"
+			////启动配置组
+			//err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
+			//if err2 != nil {
+			//	autoLog.Sugar.Errorf("启动配置组失败: %v", err)
+			//	return
+			//}
 			////处理图片消息
 			//HandleImg(info)
 
@@ -145,7 +154,7 @@ func (c *AbgiClient) listen() {
 			//联机启动-全部调试调试
 			autoLog.Sugar.Infof("联机启动-非备用组4个调试")
 			artifactsGroupPurchasing(info, false)
-
+			ABgiSeeStatus = "联机中"
 			//启动配置组
 			err2 := startGroups([]string{config.Cfg.Account.GouLangGroupName})
 			if err2 != nil {
@@ -199,12 +208,12 @@ func Send(message string) error {
 }
 
 // Status 返回当前连接状态
-
-func Status() bool {
+func Status() {
 	if abgiClient == nil {
-		return false
+		ABgiSeeStatus = "离线"
+	} else {
+		ABgiSeeStatus = "在线"
 	}
-	return true
 }
 
 type OnlineUser struct {
