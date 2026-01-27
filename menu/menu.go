@@ -116,14 +116,16 @@ func init() {
 		err := Update()
 		if err != nil {
 			autoLog.Sugar.Errorf("更新aBgi失败: %v", err)
+		} else {
+			go func() {
+				// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
+				if err := tools.RestartProgram(); err != nil {
+					autoLog.Sugar.Error(err.Error())
+					//return fmt.Errorf("重启程序失败: %v", err)
+				}
+			}()
 		}
-		go func() {
-			// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
-			if err := tools.RestartProgram(); err != nil {
-				autoLog.Sugar.Error(err.Error())
-				//return fmt.Errorf("重启程序失败: %v", err)
-			}
-		}()
+
 	}
 
 	TaskCron.TmStart()

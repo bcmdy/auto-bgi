@@ -52,7 +52,7 @@ func (tm *TaskManager) deleteFromDB(id int) {
 
 	//查询
 	var task models.TaskCron
-	err := tm.db.Where("entry_id = ?", id).First(&task).Error
+	err := tm.db.Where("id = ?", id).First(&task).Error
 	if err != nil {
 		autoLog.Sugar.Errorf("任务不存在（DB）: %v,%d", err, id)
 		return
