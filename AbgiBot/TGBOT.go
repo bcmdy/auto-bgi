@@ -206,6 +206,8 @@ func BotCommand(command string) string {
 			cmd += "启动配置组xxx xxx"
 			cmd += "\n"
 			cmd += "一条龙列表"
+			cmd += "\n"
+			cmd += "米游社签到"
 			return cmd
 		},
 	}

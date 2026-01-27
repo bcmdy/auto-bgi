@@ -110,6 +110,24 @@ func init() {
 	abgiFunction.InitFunction()
 	defer autoLog.Sync()
 
+	//
+	TaskCron.Task["更新aBgi"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：更新aBgi-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		err := Update()
+		if err != nil {
+			autoLog.Sugar.Errorf("更新aBgi失败: %v", err)
+		}
+		go func() {
+			// 调用 run_auto_bgi.vbs 脚本来启动新的 auto-bgi.exe 程序
+			if err := tools.RestartProgram(); err != nil {
+				autoLog.Sugar.Error(err.Error())
+				//return fmt.Errorf("重启程序失败: %v", err)
+			}
+		}()
+	}
+
+	TaskCron.TmStart()
+
 }
 
 var upgrader = websocket.Upgrader{
@@ -705,7 +723,7 @@ func StarGin() {
 
 		oneLongController := needAuth.Group("/oneLong")
 		{
-			//启动一条龙
+			//启动
 			oneLongController.POST("/startOneLong", func(c *gin.Context) {
 
 				var name string
@@ -1151,21 +1169,13 @@ func StarGin() {
 	})
 
 	//桌面图片
-	ginServer.GET("/api/aBgiJt", func(c *gin.Context) {
-		token := c.Query("tk")
-		_, err2 := auth.ParseToken(token)
-		if err2 != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
-			return
-		}
+	needAuth.GET("/aBgiJt", func(c *gin.Context) {
 
 		//截图
 		err := control.ScreenShot("./img/abgi/jt.jpg")
 		if err != nil {
 			c.JSON(400, "截图失败")
 		}
-		////睡眠500毫秒
-		//time.Sleep(1000 * time.Millisecond)
 
 		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})

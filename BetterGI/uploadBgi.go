@@ -489,6 +489,14 @@ func runBgiDownload(version string) {
 	bgiDownloadStatus.Percent = 100
 	bgiDownloadStatusMu.Unlock()
 
+	//重启aBgi
+	time.Sleep(10 * time.Second)
+	autoLog.Sugar.Infof("准备重启abgi")
+	if err := tools.RestartProgram(); err != nil {
+		autoLog.Sugar.Errorf("重启程序失败: %v", err)
+		autoLog.Sugar.Error(err.Error())
+	}
+
 }
 
 // 下载完成后发送成功事件

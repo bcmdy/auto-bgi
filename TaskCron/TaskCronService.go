@@ -33,7 +33,7 @@ func CronAdd(c *gin.Context) {
 		c.String(400, "参数错误: %v", err)
 		return
 	}
-	fn, ok := task[taskCron.Name]
+	fn, ok := Task[taskCron.Name]
 	if !ok {
 		c.String(400, "任务名称不存在")
 		return
@@ -60,7 +60,7 @@ func CronRemove(c *gin.Context) {
 
 func GetTask(context *gin.Context) {
 	var taskList []string
-	for k := range task {
+	for k := range Task {
 		taskList = append(taskList, k)
 	}
 	context.JSON(200, taskList)
@@ -151,7 +151,7 @@ func AtOnceRun(c *gin.Context) {
 		return
 	}
 
-	f := task[typeName]
+	f := Task[typeName]
 	f(data)
 
 	c.String(200, "任务已执行")

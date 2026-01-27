@@ -52,9 +52,9 @@ func (tm *TaskManager) deleteFromDB(id int) {
 
 	//查询
 	var task models.TaskCron
-	err := tm.db.Where("id = ?", id).First(&task).Error
+	err := tm.db.Where("entry_id = ?", id).First(&task).Error
 	if err != nil {
-		autoLog.Sugar.Errorf("任务不存在（DB）: %v", err)
+		autoLog.Sugar.Errorf("任务不存在（DB）: %v,%d", err, id)
 		return
 	}
 
@@ -101,7 +101,7 @@ func (tm *TaskManager) loadTasksFromDB() {
 			continue
 		}
 
-		fn, ok := task[tasks[i].Name]
+		fn, ok := Task[tasks[i].Name]
 		if !ok {
 			//fmt.Printf("跳过未知任务函数[%s] (EntryID: %d)\n", t.Name, t.EntryID)
 			autoLog.Sugar.Infof("跳过未知任务函数[%s] (EntryID: %d)\n", tasks[i].Name, tasks[i].EntryID)
@@ -259,7 +259,7 @@ func (tm *TaskManager) Update(req models.TaskCron) (cron.EntryID, error) {
 	}
 
 	// 根据旧任务的 Name 找到对应函数
-	fn, ok := task[oldTask.Name]
+	fn, ok := Task[oldTask.Name]
 	if !ok {
 		return 0, fmt.Errorf("任务函数不存在: name=%s", oldTask.Name)
 	}
@@ -334,7 +334,7 @@ func (tm *TaskManager) ResumeByDBID(dbid int) (cron.EntryID, error) {
 	//	return 0, fmt.Errorf("任务当前已是运行状态")
 	//}
 
-	fn, ok := task[t.Name]
+	fn, ok := Task[t.Name]
 	if !ok {
 		return 0, fmt.Errorf("任务函数不存在: %s", t.Name)
 	}

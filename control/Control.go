@@ -363,10 +363,40 @@ func HttpGet(url string) error {
 	return fmt.Errorf("状态码: %d", resp.StatusCode)
 }
 
-// 按键
-// 完善后的按键映射
 func mapHotkey(key string) string {
 	switch key {
+	// --- 重点补充：小键盘 (Robotgo 专用映射) ---
+	case "NumPad0":
+		return "numpad_0"
+	case "NumPad1":
+		return "numpad_1"
+	case "NumPad2":
+		return "numpad_2"
+	case "NumPad3":
+		return "numpad_3"
+	case "NumPad4":
+		return "numpad_4"
+	case "NumPad5":
+		return "numpad_5"
+	case "NumPad6":
+		return "numpad_6"
+	case "NumPad7":
+		return "numpad_7"
+	case "NumPad8":
+		return "numpad_8"
+	case "NumPad9":
+		return "numpad_9"
+	case "Decimal":
+		return "numpad_dot"
+	case "Add":
+		return "+"
+	case "Subtract":
+		return "-"
+	case "Multiply":
+		return "*"
+	case "Divide":
+		return "/"
+
 	// --- OEM 符号键 ---
 	case "OemOpenBrackets":
 		return "["
@@ -389,11 +419,9 @@ func mapHotkey(key string) string {
 	case "OemQuestion":
 		return "/"
 	case "Oem3":
-		return "`" // 位于 Esc 下方的波浪线键
-	case "Oem7":
-		return "'" // 某些驱动下引号的另一种表示
+		return "`"
 
-	// --- 主键盘数字键 (处理常见的 D1, D2 格式) ---
+	// --- 顶部数字键 ---
 	case "D1":
 		return "1"
 	case "D2":
@@ -415,66 +443,37 @@ func mapHotkey(key string) string {
 	case "D0":
 		return "0"
 
-	// --- 小键盘 (Numpad) ---
-	case "NumPad0":
-		return "0"
-	case "NumPad1":
-		return "1"
-	case "NumPad2":
-		return "2"
-	case "NumPad3":
-		return "3"
-	case "NumPad4":
-		return "4"
-	case "NumPad5":
-		return "5"
-	case "NumPad6":
-		return "6"
-	case "NumPad7":
-		return "7"
-	case "NumPad8":
-		return "8"
-	case "NumPad9":
-		return "9"
-	case "Decimal":
-		return "."
-	case "Add":
-		return "+"
-	case "Subtract":
-		return "-"
-	case "Multiply":
-		return "*"
-	case "Divide":
-		return "/"
-
-	// --- 功能与控制键 (适配 robotgo 的小写习惯) ---
+	// --- 特殊控制键 ---
 	case "Return":
 		return "enter"
 	case "Back":
 		return "backspace"
+	case "Space":
+		return "space"
+	case "Tab":
+		return "tab"
 	case "Capital":
 		return "capslock"
-	case "Escape":
-		return "esc"
-	case "LMenu":
-		return "alt"
-	case "LControl":
-		return "ctrl"
-	case "LWin":
-		return "command"
-	case "LShift":
-		return "shift"
 
 	default:
-		// 自动处理：将 "A" 转换为 "a", "F1" 转换为 "f1"
-		// robotgo 在处理普通按键时通常更喜欢小写
 		return strings.ToLower(key)
 	}
 }
 
 func pressKey(key string) {
 	hotkey := mapHotkey(key)
-	robotgo.KeyTap(hotkey)
+	err := robotgo.KeyTap(hotkey)
+	if err != nil {
+		autoLog.Sugar.Errorf("按键失败: %v", err)
+	}
+}
+
+func PressKey(key string) {
+	hotkey := mapHotkey(key)
+	err := robotgo.KeyTap(hotkey)
+	if err != nil {
+		autoLog.Sugar.Errorf("按键失败: %v", err)
+	}
 }
 
 // CancelTaskHotkey 停止当前脚本/独立任务
