@@ -163,6 +163,22 @@ func modifyChaBao(path string, oneDragonStruct OneDragonStruct) {
 	}
 }
 
+// SetOneDragonAllStatus 设置指定一条龙配置的所有任务状态
+// path: 配置文件名（需包含.json后缀），例如 "Default.json"
+// enabled: true为全部启动，false为全部关闭
+func SetOneDragonAllStatus(path string, enabled bool) {
+	// 1. 读取现有配置
+	oneDragonConfig := readOneDragonConfig(path)
+
+	// 2. 遍历修改状态
+	for i := range oneDragonConfig.TaskEnabledList {
+		oneDragonConfig.TaskEnabledList[i].Enabled = enabled
+	}
+
+	// 3. 保存配置
+	ModifyOneDragonConfig(path, oneDragonConfig)
+}
+
 func modifyYaDan(path string, oneDragonStruct OneDragonStruct) {
 	configData, _ := os.ReadFile(path)
 	data := configData
