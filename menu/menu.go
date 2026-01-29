@@ -1138,8 +1138,8 @@ func StarGin() {
 
 	//测试
 	ginServer.GET("/api/test", CDCollectionManagement.CDCollectionRead)
-	////妙妙屋
-	ABGIHoui()
+	//////妙妙屋
+	//ABGIHoui()
 
 	//ABGIHouiPort("10086")
 

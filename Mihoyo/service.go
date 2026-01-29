@@ -23,3 +23,13 @@ func UpdatePushConfig(context *gin.Context) {
 	})
 	return
 }
+
+// 读取ck
+func ReadCK(context *gin.Context) {
+
+	ck := CK()
+	context.JSON(200, gin.H{
+		"status":  200,
+		"message": ck,
+	})
+}

@@ -75,3 +75,9 @@ func update(res map[string]interface{}) (string, error) {
 	}
 	return "配置文件保存成功", nil
 }
+
+// 读取ck
+func CK() string {
+
+	return config.BgiCfg.MiYouSheConfigCookie
+}
