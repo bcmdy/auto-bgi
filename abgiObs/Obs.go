@@ -3,16 +3,19 @@ package abgiObs
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"bytes"
 	"fmt"
 	"github.com/andreykaipov/goobs"
 	"github.com/andreykaipov/goobs/api/requests/outputs"
 	"github.com/andreykaipov/goobs/api/requests/record"
 	"github.com/andreykaipov/goobs/api/requests/stream"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -295,14 +298,22 @@ func StartReplayBuffer() (err error) {
 }
 
 // 停止回放缓存
-func StopReplayBuffer() error {
+func StopReplayBuffer() (err error) {
 	//捕获错误
 	defer func() {
 		if r := recover(); r != nil {
 			autoLog.Sugar.Errorf("⚠️ 停止回放缓冲区失败: %v", r)
-
+			err = fmt.Errorf("停止回放缓冲区时发生未知错误: %v", r)
 		}
 	}()
+
+	if client == nil {
+		autoLog.Sugar.Error("OBS客户端未连接,准备重连")
+		err := EnsureConnected()
+		if err != nil {
+			return fmt.Errorf("重连还是不行,OBS客户端未连接:%s", err)
+		}
+	}
 
 	buffer, err := client.Outputs.StopReplayBuffer(&outputs.StopReplayBufferParams{})
 	if err != nil {
@@ -385,34 +396,99 @@ func StartStream() error {
 //-portable --disable-shutdown-check
 
 func Shutdown() {
-	if client == nil {
-		return
-	}
-	// 停止录制
-	_, err := client.Record.StopRecord(&record.StopRecordParams{})
-	if err != nil {
-		autoLog.Sugar.Errorf("停止录制失败: %v", err)
-	}
-	// 停止流
-	_, err = client.Stream.StopStream(&stream.StopStreamParams{})
-	if err != nil {
-		autoLog.Sugar.Errorf("停止流失败: %v", err)
+	autoLog.Sugar.Infof("开始执行 OBS 关闭流程...")
+
+	// 1. 尝试通过 WebSocket 停止录制/推流
+	if client != nil {
+		// 停止录制
+		autoLog.Sugar.Infof("正在尝试停止录制...")
+		_, err := client.Record.StopRecord(&record.StopRecordParams{})
+		if err != nil && !strings.Contains(err.Error(), "OutputNotRunning") {
+			autoLog.Sugar.Errorf("停止录制失败: %v", err)
+		} else {
+			autoLog.Sugar.Infof("录制已停止或未运行，等待写入...")
+			time.Sleep(2 * time.Second)
+		}
+
+		// 停止流
+		autoLog.Sugar.Infof("正在尝试停止推流...")
+		_, err = client.Stream.StopStream(&stream.StopStreamParams{})
+		if err != nil && !strings.Contains(err.Error(), "OutputNotRunning") {
+			autoLog.Sugar.Errorf("停止流失败: %v", err)
+		} else {
+			autoLog.Sugar.Infof("推流已停止或未运行，等待...")
+			time.Sleep(2 * time.Second)
+		}
+
+		//关闭回放缓存
+		autoLog.Sugar.Infof("正在尝试停止回放缓存...")
+		_, err = client.Outputs.StopReplayBuffer(&outputs.StopReplayBufferParams{})
+		if err != nil && !strings.Contains(err.Error(), "OutputNotRunning") {
+			autoLog.Sugar.Errorf("关闭回放缓冲区失败: %v", err)
+		} else {
+			autoLog.Sugar.Infof("回放缓存已停止或未运行，等待...")
+			time.Sleep(2 * time.Second)
+		}
+
+		// 断开连接
+		autoLog.Sugar.Infof("正在断开 WebSocket 连接...")
+		err = client.Disconnect()
+		if err != nil {
+			autoLog.Sugar.Errorf("断开OBS连接失败: %v", err)
+		}
+		// 关键：置空 client，以便下次重连
+		client = nil
+		autoLog.Sugar.Infof("已断开与 OBS 的连接")
+	} else {
+		autoLog.Sugar.Infof("OBS WebSocket 未连接，跳过停止操作")
 	}
 
-	//关闭回放缓存
-	_, err = client.Outputs.StopReplayBuffer(&outputs.StopReplayBufferParams{})
-	if err != nil {
-		autoLog.Sugar.Errorf("关闭回放缓冲区失败: %v", err)
+	// 2. 优雅关闭 OBS 进程并等待
+	autoLog.Sugar.Infof("正在尝试关闭 OBS 进程...")
+	closeProcessWithRetry("obs64.exe")
+	closeProcessWithRetry("obs32.exe")
+
+	autoLog.Sugar.Infof("OBS 关闭流程结束")
+}
+
+// 尝试优雅关闭，如果超时则强制关闭
+func closeProcessWithRetry(processName string) {
+	// 发送优雅关闭信号
+	cmd := exec.Command("taskkill", "/IM", processName)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	_ = cmd.Run()
+
+	// 循环检查进程是否还在运行
+	maxRetries := 15
+	for i := 0; i < maxRetries; i++ {
+		if !isProcessRunning(processName) {
+			autoLog.Sugar.Infof("进程 %s 已成功关闭", processName)
+			return
+		}
+		if i%5 == 0 { // 每5秒打印一次等待日志
+			autoLog.Sugar.Infof("等待进程 %s 关闭中...", processName)
+		}
+		time.Sleep(1 * time.Second)
 	}
 
-	time.Sleep(5 * time.Second)
+	// 如果还在运行，强制关闭
+	autoLog.Sugar.Warnf("进程 %s 未响应，尝试强制关闭...", processName)
+	cmdForce := exec.Command("taskkill", "/F", "/IM", processName)
+	cmdForce.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	_ = cmdForce.Run()
+}
 
-	err = client.Disconnect()
+// 检查进程是否在运行
+func isProcessRunning(processName string) bool {
+	cmd := exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s", processName))
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
 	if err != nil {
-		autoLog.Sugar.Errorf("关闭obs失败: %v", err)
+		return false
 	}
-	autoLog.Sugar.Infof("obs关闭成功")
-
+	return strings.Contains(out.String(), processName)
 }
 
 // days: 0 代表删除所有视频，大于 0 代表删除修改时间在 N 天前的文件
