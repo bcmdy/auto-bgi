@@ -194,6 +194,20 @@ func InitTaskCron() {
 		autoLog.Sugar.Infof("定时任务启动：关闭obs-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		abgiObs.Shutdown()
 	}
+	Task["开启obs回放缓存"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：开启obs回放缓存-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		err := abgiObs.StartReplayBuffer()
+		if err != nil {
+			autoLog.Sugar.Errorf("开启obs回放缓存失败: %v", err)
+		}
+	}
+	Task["关闭obs回放缓存"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：关闭obs回放缓存-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		err := abgiObs.StopReplayBuffer()
+		if err != nil {
+			autoLog.Sugar.Errorf("关闭obs回放缓存失败: %v", err)
+		}
+	}
 	Task["更新aBgi"] = func(data string) {
 
 	}
