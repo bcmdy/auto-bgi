@@ -3,10 +3,13 @@ package BetterGI
 import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"os"
-	"strings"
 )
 
 type OneDragonStruct struct {
@@ -88,6 +91,13 @@ func chaBao(path string) OneDragonStruct {
 		return true
 	})
 
+	// 排序，防止读取时乱序（例如1, 10, 2）
+	sort.Slice(taskEnAbleDs, func(i, j int) bool {
+		id1, _ := strconv.Atoi(taskEnAbleDs[i].Index)
+		id2, _ := strconv.Atoi(taskEnAbleDs[j].Index)
+		return id1 < id2
+	})
+
 	return OneDragonStruct{
 		Name:            name,
 		TaskEnabledList: taskEnAbleDs,
@@ -130,17 +140,19 @@ func modifyChaBao(path string, oneDragonStruct OneDragonStruct) {
 	data := configData
 	//修改任务
 	var err error
+
+	// 使用Map一次性替换，避免残留旧Key
+	taskListMap := make(map[string]interface{})
 	for _, task := range oneDragonStruct.TaskEnabledList {
-
-		data, err = sjson.SetBytes(data, "TaskEnabledList."+task.Index+".Item1", task.Enabled)
-		if err != nil {
-
-			autoLog.Sugar.Errorf("修改Item1失败:%d", err)
+		taskListMap[task.Index] = map[string]interface{}{
+			"Item1": task.Enabled,
+			"Item2": task.Name,
 		}
-		data, err = sjson.SetBytes(data, "TaskEnabledList."+task.Index+".Item2", task.Name)
-		if err != nil {
-			autoLog.Sugar.Errorf("修改Item2失败:%d", err)
-		}
+	}
+
+	data, err = sjson.SetBytes(data, "TaskEnabledList", taskListMap)
+	if err != nil {
+		autoLog.Sugar.Errorf("修改TaskEnabledList失败:%d", err)
 	}
 
 	// 写回文件

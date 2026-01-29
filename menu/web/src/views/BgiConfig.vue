@@ -98,6 +98,10 @@
             </div>
             
             <div class="detail-actions">
+              <div class="batch-btns">
+                <a-button class="cute-btn" @click="enableAll">✅ 全部开启</a-button>
+                <a-button class="cute-btn" @click="disableAll">⛔ 全部关闭</a-button>
+              </div>
               <a-button 
                 type="primary" 
                 @click="saveConfig" 
@@ -219,6 +223,14 @@ const moveDown = (index) => {
   const tmpE = ve[index + 1]
   ve[index + 1] = ve[index]
   ve[index] = tmpE
+}
+
+const enableAll = () => {
+  visibleEnabled.value = visibleEnabled.value.map(() => true)
+}
+
+const disableAll = () => {
+  visibleEnabled.value = visibleEnabled.value.map(() => false)
 }
 
 onMounted(() => {
@@ -517,6 +529,28 @@ const goHome = () => {
   margin-top: 20px;
   padding-top: 10px;
   border-top: 1px dashed rgba(255, 105, 180, 0.2);
+}
+
+.batch-btns {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cute-btn {
+  flex: 1;
+  border-radius: 20px !important;
+  border: 1px solid #ffe4e1 !important;
+  color: #666;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.cute-btn:hover {
+  color: var(--deep-pink);
+  border-color: var(--deep-pink) !important;
+  background-color: var(--soft-pink);
+  transform: translateY(-2px);
 }
 
 .save-btn {
