@@ -27,7 +27,9 @@ import (
 	"auto-bgi/tools"
 	"auto-bgi/warehouse"
 	"bufio"
+	"crypto/md5"
 	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -61,13 +63,19 @@ var favicon embed.FS
 var iconData []byte
 
 func OnReady() {
-	// 确保程序只启动一个
-	_, errMutex := windows.CreateMutex(nil, false, windows.StringToUTF16Ptr("Global\\AutoBgiSingleInstanceMutex"))
+	// 获取当前程序所在目录，计算哈希，确保同一目录下只启动一个
+	exePath, _ := os.Executable()
+	dir := filepath.Dir(exePath)
+	hasher := md5.New()
+	hasher.Write([]byte(dir))
+	mutexName := "Global\\AutoBgiMutex_" + hex.EncodeToString(hasher.Sum(nil))
+
+	_, errMutex := windows.CreateMutex(nil, false, windows.StringToUTF16Ptr(mutexName))
 	if errMutex == windows.ERROR_ALREADY_EXISTS {
 		notification := toast.Notification{
 			AppID:   "AutoBGI",
 			Title:   "重复启动",
-			Message: "程序已经在运行了！",
+			Message: "该目录下的程序已经在运行了！",
 		}
 		notification.Push()
 		os.Exit(0)
