@@ -1159,9 +1159,7 @@ func StarGin() {
 	//测试
 	ginServer.GET("/api/test", CDCollectionManagement.CDCollectionRead)
 	//////妙妙屋
-	//ABGIHoui()
-
-	//ABGIHouiPort("10086")
+	ABGIHoui()
 
 	ginServer.GET("/api/abgiObs/PlayVideoStream", func(c *gin.Context) {
 		token := c.Query("tk")
@@ -1469,6 +1467,8 @@ func StarGin() {
 
 	//判断端口是否被占用
 	post = getAvailablePort(post)
+
+	ABGIHouiPort(post)
 
 	err = ginServer.Run(post)
 

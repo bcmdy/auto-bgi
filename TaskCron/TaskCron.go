@@ -211,6 +211,14 @@ func InitTaskCron() {
 		}
 	}
 	Task["一条龙全部开启/关闭"] = func(data string) {
+		//备份
+		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006-01-02-15-04-05")+".zip", true)
+		if err4 != nil {
+			autoLog.Sugar.Errorf("备份失败: %v", err4)
+			return
+		}
+		autoLog.Sugar.Info("备份成功")
+
 		autoLog.Sugar.Infof("定时任务启动：一条龙全部开启/关闭-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		split := strings.Split(data, "-")
 		if len(split) == 2 {

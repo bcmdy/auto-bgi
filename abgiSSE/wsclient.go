@@ -78,13 +78,7 @@ func Connect(url string, runDebug bool, headers http.Header) (err error) {
 	if RunCount <= 2 {
 		if !abgiConstant.IsVipUser(config.Cfg.Account.Uid) {
 			autoLog.Sugar.Infof("今日第%d次上线", RunCount)
-			if runDebug {
-				autoLog.Sugar.Infof("调试上线，直接等于2，你还能上线一次")
-				RunCount = 2
-			} else {
-				RunCount++
-			}
-
+			RunCount++
 		}
 
 	} else {
