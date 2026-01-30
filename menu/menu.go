@@ -725,7 +725,7 @@ func StarGin() {
 
 		oneLongController := needAuth.Group("/oneLong")
 		{
-			//启动
+			//启动一条龙
 			oneLongController.POST("/startOneLong", func(c *gin.Context) {
 
 				var name string
@@ -1466,8 +1466,12 @@ func StarGin() {
 }
 
 // 检查端口是否可用，不行就+1
+// getAvailablePort 函数用于获取一个可用的端口号
+// 参数 start 是起始端口号的字符串形式
+// 返回值是一个字符串形式的可用端口号
 func getAvailablePort(start string) string {
 
+	// 移除字符串中的冒号，只保留数字部分
 	start = strings.ReplaceAll(start, ":", "")
 
 	//转成数字

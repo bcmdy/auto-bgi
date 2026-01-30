@@ -37,3 +37,33 @@ func (o *OneLong) OneLongTask(longName string) {
 
 	autoLog.Sugar.Info("一条龙任务执行完成")
 }
+
+func (o *OneLong) PlanTask(PlanName string) {
+	autoLog.Sugar.Info("开始执行计划表任务")
+
+	// 4. 批量更新脚本
+	if config.Cfg.OneLong.AutoUpdateJs {
+		autoLog.Sugar.Info("开始批量更新脚本")
+		if err := bgiStatus.BatchUpdateScript(); err != "" {
+			autoLog.Sugar.Errorf("批量更新脚本失败: %v", err)
+
+		}
+	} else {
+		autoLog.Sugar.Info("自动更新js已关闭")
+	}
+
+	//是否开启obs回放缓存
+	if config.Cfg.Control.OBSReplayBuffer {
+		autoLog.Sugar.Info("开启回放obs缓存")
+		err := abgiObs.StartReplayBuffer()
+		if err != nil {
+			autoLog.Sugar.Errorf("回放obs缓存失败: %v", err)
+		}
+	} else {
+		autoLog.Sugar.Info("不开启回放obs缓存")
+	}
+
+	o.StartOneLongPlan(PlanName)
+
+	autoLog.Sugar.Info("一条龙任务执行完成")
+}

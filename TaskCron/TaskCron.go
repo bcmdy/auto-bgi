@@ -1,6 +1,7 @@
 package TaskCron
 
 import (
+	"auto-bgi/BetterGI"
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
 	"auto-bgi/abgiObs"
@@ -50,10 +51,11 @@ func InitTaskCron() {
 	//Task = make(map[string]func(string))
 	Task["一条龙"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
-
-		autoLog.Sugar.Info("软件已关闭")
-
 		taskOneLong.OneLongTask(data)
+	}
+	Task["计划表(茶包)"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：计划表-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		taskOneLong.StartOneLongPlan(data)
 	}
 	Task["配置组"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：配置组-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
@@ -207,6 +209,17 @@ func InitTaskCron() {
 		if err != nil {
 			autoLog.Sugar.Errorf("关闭obs回放缓存失败: %v", err)
 		}
+	}
+	Task["一条龙全部开启/关闭"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：一条龙全部开启/关闭-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		split := strings.Split(data, "-")
+		if len(split) == 2 {
+			BetterGI.SetOneDragonAllStatus(split[0]+".json", split[1] == "开启")
+			autoLog.Sugar.Infof("一条龙全部开启/关闭成功")
+		} else {
+			autoLog.Sugar.Errorf("一条龙全部开启/关闭参数错误")
+		}
+
 	}
 	Task["更新aBgi"] = func(data string) {
 

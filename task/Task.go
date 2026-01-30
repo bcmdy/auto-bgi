@@ -80,9 +80,6 @@ func StartOneDragon(name string) {
 
 	autoLog.Sugar.Infof("准备启动一条龙：%s", name)
 
-	//// 关闭软件
-	//control.CloseSoftware()
-
 	// 延迟确保关闭完成
 	delay := 2 * time.Second
 	autoLog.Sugar.Infof("等待 %v 后启动...", delay)
@@ -199,4 +196,26 @@ func ClearRunCount() {
 	// 阻塞主线程停止
 	select {}
 
+}
+
+func StartOneDragonPlan(PlanName string) {
+	autoLog.Sugar.Infof("准备启动计划表：%s", PlanName)
+
+	// 延迟确保关闭完成
+	delay := 2 * time.Second
+	autoLog.Sugar.Infof("等待 %v 后启动...", delay)
+	time.Sleep(delay)
+
+	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
+	if _, err := os.Stat(betterGIPath); err != nil {
+		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
+		return
+	}
+	err := exec.Command("cmd", "/C", "start", "", betterGIPath, "--startContinuousOneDragon", PlanName).Start()
+	if err != nil {
+		autoLog.Sugar.Errorf("启动计划表失败: %v", err)
+		return
+	}
+
+	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startContinuousOneDragon", PlanName)
 }

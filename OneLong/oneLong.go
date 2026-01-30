@@ -32,6 +32,18 @@ func (o *OneLong) StartOneLong(longName string) {
 
 }
 
+// 启动计划表
+func (o *OneLong) StartOneLongPlan(PlanName string) {
+	// 关闭软件（同步，后续任务依赖此步骤）
+	control.CloseSoftware()
+
+	autoLog.Sugar.Infof("启动计划表: %s", PlanName)
+
+	task.StartOneDragonPlan(PlanName)
+
+	autoLog.Sugar.Info("计划表启动完毕")
+}
+
 // 判断是否是公版还是茶包s
 func (o *OneLong) IsChaBaoBgi(longName string) string {
 	typ, err := DetectJsonType(longName)
