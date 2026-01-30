@@ -61,6 +61,18 @@ var favicon embed.FS
 var iconData []byte
 
 func OnReady() {
+	// 确保程序只启动一个
+	_, errMutex := windows.CreateMutex(nil, false, windows.StringToUTF16Ptr("Global\\AutoBgiSingleInstanceMutex"))
+	if errMutex == windows.ERROR_ALREADY_EXISTS {
+		notification := toast.Notification{
+			AppID:   "AutoBGI",
+			Title:   "重复启动",
+			Message: "程序已经在运行了！",
+		}
+		notification.Push()
+		os.Exit(0)
+	}
+
 	// 设置托盘图标
 	var err error
 	iconData, err = favicon.ReadFile("favicon.ico") // 这里使用 embed.FS 的 ReadFile 方法
