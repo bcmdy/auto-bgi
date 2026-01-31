@@ -14,7 +14,7 @@
       <span class="mascot-emoji">👧</span>
       <span class="mascot-tip">Back</span>
     </div>
-    
+
     <div class="main-container">
       <div class="page-header">
         <div class="header-left">
@@ -26,12 +26,12 @@
         <div class="config-select-box">
           <span class="label-prefix">当前配置：</span>
           <a-select
-            v-model:value="currentName"
-            :options="configList.map(n => ({ value: n, label: n }))"
-            placeholder="请选择配置目录..."
-            class="cute-select"
-            @change="selectConfig"
-            allow-clear
+              v-model:value="currentName"
+              :options="configList.map(n => ({ value: n, label: n }))"
+              placeholder="请选择配置目录..."
+              class="cute-select"
+              @change="selectConfig"
+              allow-clear
           />
         </div>
       </div>
@@ -44,7 +44,7 @@
               <span>{{ currentName ? `配置：${currentName}` : '等待选择...' }}</span>
             </div>
           </template>
-          
+
           <div v-if="!currentName" class="placeholder">
             <div class="empty-state">
               <div class="empty-icon">🎐</div>
@@ -62,31 +62,31 @@
                         <div class="item-index-badge">{{ index + 1 }}</div>
                         <div class="task-name" :title="item.Name">{{ item.Name }}</div>
                         <div class="task-switch">
-                           <a-switch 
-                            v-model:checked="visibleEnabled[index]" 
-                            checked-children="开" 
-                            un-checked-children="关"
-                            class="cute-switch"
+                          <a-switch
+                              v-model:checked="visibleEnabled[index]"
+                              checked-children="开"
+                              un-checked-children="关"
+                              class="cute-switch"
                           />
                         </div>
                       </div>
-                      
+
                       <div class="item-right">
-                        <a-button 
-                          type="text"
-                          class="action-btn up-btn" 
-                          @click="moveUp(index)" 
-                          :disabled="index===0"
-                          title="上移"
+                        <a-button
+                            type="text"
+                            class="action-btn up-btn"
+                            @click="moveUp(index)"
+                            :disabled="index===0"
+                            title="上移"
                         >
                           ⬆
                         </a-button>
-                        <a-button 
-                          type="text"
-                          class="action-btn down-btn" 
-                          @click="moveDown(index)" 
-                          :disabled="index===visibleTasks.length-1"
-                          title="下移"
+                        <a-button
+                            type="text"
+                            class="action-btn down-btn"
+                            @click="moveDown(index)"
+                            :disabled="index===visibleTasks.length-1"
+                            title="下移"
                         >
                           ⬇
                         </a-button>
@@ -96,19 +96,19 @@
                 </template>
               </a-list>
             </div>
-            
+
             <div class="detail-actions">
               <div class="batch-btns">
                 <a-button class="cute-btn" @click="enableAll">✅ 全部开启</a-button>
                 <a-button class="cute-btn" @click="disableAll">⛔ 全部关闭</a-button>
               </div>
-              <a-button 
-                type="primary" 
-                @click="saveConfig" 
-                :loading="saving" 
-                class="save-btn" 
-                size="large"
-                block
+              <a-button
+                  type="primary"
+                  @click="saveConfig"
+                  :loading="saving"
+                  class="save-btn"
+                  size="large"
+                  block
               >
                 {{ saving ? '保存中...' : '💾 保存当前配置' }}
               </a-button>
@@ -178,10 +178,9 @@ const saveConfig = async () => {
         Name: t.Name,
         Enabled: !!visibleEnabled.value[idx]
       }
-      // 只有当原始条目包含 Index（非空）时，才更新 Index 为新的顺序值；否则不发送 Index 字段
+      // 保持原始 Index，不重新排序
       if (t.Index !== undefined && t.Index !== null && t.Index !== '') {
-        // 后端接收字符串类型的 Index，使用 1-based 的序号并转为字符串
-        item.Index = String(idx + 1)
+        item.Index = t.Index
       }
       return item
     })
@@ -250,7 +249,7 @@ const goHome = () => {
   --deep-pink: #ff69b4;
   --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(255, 255, 255, 0.9);
-  
+
   position: relative;
   /* 柔和的渐变背景 */
   background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
@@ -414,15 +413,15 @@ const goHome = () => {
   width: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #fff0f5; 
+  background: #fff0f5;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #ffb6c1; 
+  background: #ffb6c1;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #ff69b4; 
+  background: #ff69b4;
 }
 
 /* 列表项样式重写 */
@@ -630,11 +629,11 @@ const goHome = () => {
   .bgi-config-page {
     padding: 10px;
   }
-  
+
   .card-detail {
     border-radius: 16px !important;
   }
-  
+
   :deep(.ant-card-body) {
     padding: 12px !important;
   }
@@ -659,7 +658,7 @@ const goHome = () => {
     width: 32px;
     height: 32px;
   }
-  
+
   .mascot {
     right: 15px;
     bottom: 15px;

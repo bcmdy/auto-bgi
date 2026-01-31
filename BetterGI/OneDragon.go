@@ -5,6 +5,7 @@ import (
 	"auto-bgi/config"
 	"encoding/json"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -90,6 +91,11 @@ func chaBao(path string) OneDragonStruct {
 		return true
 	})
 
+	// 按 Index 字典序排序，保持类似 "1", "10", "11", "2" 的顺序
+	sort.Slice(taskEnAbleDs, func(i, j int) bool {
+		return taskEnAbleDs[i].Index < taskEnAbleDs[j].Index
+	})
+
 	return OneDragonStruct{
 		Name:            name,
 		TaskEnabledList: taskEnAbleDs,
@@ -135,21 +141,29 @@ func modifyChaBao(path string, oneDragonStruct OneDragonStruct) {
 
 	// 手动构造有序的 JSON Object 字符串，保证写入顺序与传入切片一致
 	var builder strings.Builder
-	builder.WriteString("{")
+	builder.WriteString("{\n")
 	for i, task := range oneDragonStruct.TaskEnabledList {
 		if i > 0 {
-			builder.WriteString(",")
+			builder.WriteString(",\n")
 		}
-		// Key
-		builder.WriteString(`"` + task.Index + `":`)
-		// Value
-		itemBytes, _ := json.Marshal(map[string]interface{}{
-			"Item1": task.Enabled,
-			"Item2": task.Name,
-		})
-		builder.Write(itemBytes)
+		// Key (Indent 4 spaces)
+		builder.WriteString(`    "` + task.Index + `": {`)
+		// Value (Indent 6 spaces)
+		builder.WriteString("\n      ")
+		builder.WriteString(`"Item1": `)
+		if task.Enabled {
+			builder.WriteString("true")
+		} else {
+			builder.WriteString("false")
+		}
+		builder.WriteString(",\n      ")
+		builder.WriteString(`"Item2": `)
+		nameBytes, _ := json.Marshal(task.Name)
+		builder.Write(nameBytes)
+		// Close object (Indent 4 spaces)
+		builder.WriteString("\n    }")
 	}
-	builder.WriteString("}")
+	builder.WriteString("\n  }")
 
 	data, err = sjson.SetRawBytes(data, "TaskEnabledList", []byte(builder.String()))
 	if err != nil {
