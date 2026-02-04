@@ -178,7 +178,7 @@ export const apiMethods = {
   //获取脚本列表
   getJsNames: () => api.get('/api/jsNames'),
   //重置仓库
-  resetRepo: () => api.post('/api/resetRepo'),
+  resetRepo: () => api.post('/api/repo/resetRepo'),
   //查询所有脚本
   getAllScripts: (search) => api.get('/api/jsNamesAll?search=' + search),
 

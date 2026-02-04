@@ -17,7 +17,6 @@ ABGIConstant.go
 archive.db
 *.toml
 GameInfo.json
-go.mod
 jt.jpg
 logging.log
 *.7z

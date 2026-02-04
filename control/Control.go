@@ -500,7 +500,6 @@ func PressEsc() {
 
 // 调用Python
 func CallPython() {
-	//捕获异常
 	defer func() {
 		if err := recover(); err != nil {
 			autoLog.Sugar.Errorf("CallPython捕获异常: %v", err)
@@ -508,16 +507,23 @@ func CallPython() {
 	}()
 
 	cmd := exec.Command("MihoyoBBSTools\\venv\\python.exe", "MihoyoBBSTools\\main.py")
+
+	// --- 关键代码：隐藏黑窗口 ---
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,       // 隐藏窗口
+		CreationFlags: 0x08000000, // CREATE_NO_WINDOW 标志
+	}
+	// --------------------------
+
 	stdout, _ := cmd.StdoutPipe()
 	cmd.Start()
 
 	buf := make([]byte, 1024)
 	for {
-		n, _ := stdout.Read(buf)
-		if n == 0 {
+		n, err := stdout.Read(buf)
+		if n == 0 || err != nil {
 			break
 		}
-		//fmt.Print(string(buf[:n]))
 		autoLog.Sugar.Infof(string(buf[:n]))
 	}
 

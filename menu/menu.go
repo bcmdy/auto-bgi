@@ -704,7 +704,7 @@ func StarGin() {
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": cfg})
 		})
 
-		//abgi配置保存
+		//aBgi配置保存
 		needAuth.POST("/saveConfig", func(c *gin.Context) {
 			var newConfig config.Config
 

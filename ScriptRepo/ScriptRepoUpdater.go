@@ -1,6 +1,7 @@
 package ScriptRepo
 
 import (
+	"auto-bgi/autoLog"
 	myConfig "auto-bgi/config"
 	"encoding/json"
 	"errors"
@@ -45,6 +46,7 @@ func updateCenterRepoByGit(repoUrl string) (string, bool, error) {
 	if repoUrl == "" {
 		return "", false, errors.New("仓库 URL 不能为空")
 	}
+	autoLog.Sugar.Infof("更新仓库：%s", repoUrl)
 
 	reposPath := filepath.Join(myConfig.Cfg.BetterGIAddress, "Repos")
 	repoPath := filepath.Join(reposPath, "bettergi-scripts-list-git")
