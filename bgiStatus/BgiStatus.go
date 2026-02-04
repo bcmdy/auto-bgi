@@ -1020,28 +1020,41 @@ func GetFileNameDate(filePath string) string {
 }
 
 // 日志分析
+// GroupTime 函数用于分析日志文件并按配置组进行分组统计
+// 参数:
+//
+//	fileName - 日志文件名
+//
+// 返回值:
+//
+//	[]LogAnalysis2Struct - 分析结果的结构体切片
 func GroupTime(fileName string) []LogAnalysis2Struct {
+	// 构建完整的日志文件路径
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
 	fullPath := filepath.Join(filePath, fileName)
-	date := GetFileNameDate(fileName)
+	date := GetFileNameDate(fileName) // 从文件名中提取日期
 
+	// 打开日志文件
 	file, err := os.Open(fullPath)
 	if err != nil {
-		fmt.Println("无法打开日志文件:", err)
+		fmt.Println("GroupTime无法打开日志文件:", err)
 		return nil
 	}
-	defer file.Close()
+	defer file.Close() // 确保文件在函数结束时关闭
 
+	// 创建文件读取器
 	reader := bufio.NewReader(file)
 
 	// 🔹正则提前编译（避免循环里重复编译）
 	startRegexp := regexp.MustCompile(`配置组 "(.*?)" 加载完成`)
 	endRegexp := regexp.MustCompile(`配置组 "(.*?)" 执行结束`)
 
+	// 初始化变量
 	var logAnalysis2Structs []LogAnalysis2Struct
 	var currentStruct *LogAnalysis2Struct
 	var lastLine string
 
+	// 逐行读取文件内容
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -1123,6 +1136,7 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 
 		// 🔹追加分段
 		m.Segments = append(m.Segments, s.Segments...)
+		// 将合并后的结果转换为切片
 
 	}
 
@@ -1402,14 +1416,46 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 		return "", err
 	}
 
-	// 计算预计结束时间
-	expectedEnd := start.Add(duration)
+	//// 计算预计结束时间
+	//expectedEnd := start.Add(duration)
+
+	//查询已经运行了多少
+	groupTime := GroupTime(filepath.Base(filename))
+	sumExecuteTime, _ := time.ParseDuration("0s")
+	for _, groupMap := range groupTime {
+		if groupMap.GroupName != groupName {
+			continue
+		}
+		executeTime, _ := time.ParseDuration("0s")
+		for _, segment := range groupMap.Segments {
+			if segment.Consuming != "" {
+				duration, err := time.ParseDuration(segment.Consuming)
+				if err != nil {
+					autoLog.Sugar.Errorf("解析时间失败: %v", err)
+					continue
+				}
+				executeTime += duration
+
+			}
+
+		}
+		sumExecuteTime += executeTime
+	}
 
 	// 返回格式化为 "15:04:05.000"
 	startTime = start.Format("15:04:05")
+	//字符串转时间
+	//减去运行时长
+	d := duration - sumExecuteTime
+	//expectedEnd := start.Add(d)
+
+	parse, _ := time.Parse("2006-01-02 15:04:05", fileDate+" "+startTime)
+	expectedEnd := parse.Add(d)
+
 	return "【时间：" + fileDate + " " + startTime + "】\n" +
 		"【时长：" + archiveRecords.ExecuteTime + "】\n" +
-		"【预计：" + fileDate + " " + expectedEnd.Format("15:04:05") + "】", nil
+		"【已经运行：" + sumExecuteTime.String() + "】\n" +
+		"【预计：" + expectedEnd.Format("2006-01-02 15:04:05") + "】", nil
 }
 
 // ListArchive 归档查询
