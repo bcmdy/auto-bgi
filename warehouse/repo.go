@@ -1,17 +1,21 @@
 package warehouse
 
 import (
+	"auto-bgi/ScriptRepo"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
-	"github.com/gin-gonic/gin"
-	otiai10Copy "github.com/otiai10/copy"
 	"os"
 	"path/filepath"
+
+	"github.com/gin-gonic/gin"
+	otiai10Copy "github.com/otiai10/copy"
 )
 
 //
 
 func RepoReset(context *gin.Context) {
+	ScriptRepo.RepoLock.Lock()
+	defer ScriptRepo.RepoLock.Unlock()
 	reposPath := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git")
 	err := os.RemoveAll(reposPath)
 	if err != nil {
@@ -22,6 +26,8 @@ func RepoReset(context *gin.Context) {
 }
 
 func SubscribeScript(context *gin.Context) {
+	ScriptRepo.RepoLock.Lock()
+	defer ScriptRepo.RepoLock.Unlock()
 	ScriptName := context.Query("ScriptName")
 	ReposScriptPath := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "js", ScriptName)
 

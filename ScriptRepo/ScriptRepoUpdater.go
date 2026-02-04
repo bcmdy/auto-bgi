@@ -6,6 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
+
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -13,15 +22,10 @@ import (
 	otiai10Copy "github.com/otiai10/copy"
 	"github.com/tidwall/gjson"
 	"golang.org/x/term"
-	"io"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 var proxyOptions = transport.ProxyOptions{}
+var RepoLock sync.Mutex
 
 func proxyInit() {
 	if myConfig.Cfg.Notice.TGNotice.Proxy != "" && myConfig.BgiCfg.SelectedChannelName == "GitHub" {
@@ -33,6 +37,8 @@ func proxyInit() {
 }
 
 func UpdateRepoGit() (string, bool, error) {
+	RepoLock.Lock()
+	defer RepoLock.Unlock()
 	proxyInit()
 
 	repoUrl := myConfig.BgiCfg.RepoUrl

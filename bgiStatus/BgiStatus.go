@@ -14,11 +14,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/agnivade/levenshtein"
-	"github.com/fsnotify/fsnotify"
-	"github.com/otiai10/copy"
-	"github.com/robfig/cron/v3"
-	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"os"
@@ -30,6 +25,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/agnivade/levenshtein"
+	"github.com/fsnotify/fsnotify"
+	"github.com/otiai10/copy"
+	"github.com/robfig/cron/v3"
+	"github.com/tidwall/gjson"
 )
 
 // 检查 程序 是否在运行
@@ -1227,6 +1228,8 @@ func GitPull() {
 }
 
 func UpdateJs(jsName string) (string, error) {
+	ScriptRepo.RepoLock.Lock()
+	defer ScriptRepo.RepoLock.Unlock()
 
 	repoDir := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "js")
 
@@ -1797,6 +1800,9 @@ func JsNamesInfo() []JsNamesInfoStruct {
 
 	GitPull()
 	time.Sleep(1)
+
+	ScriptRepo.RepoLock.Lock()
+	defer ScriptRepo.RepoLock.Unlock()
 
 	// 获取本地所有订阅脚本目录
 	scriptDir := filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript")

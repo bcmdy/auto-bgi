@@ -43,21 +43,25 @@
     </header>
 
     <section class="quick-actions">
-      <div class="action-item jelly-hover" @click="batchUpdate">
-        <div class="action-icon bg-pink">🚀</div>
-        <span class="action-text">一键升级</span>
+      <div class="action-item jelly-hover" @click="batchUpdate" :class="{ 'disabled-action': isGlobalLoading }">
+        <div class="action-icon bg-pink">
+          <span :class="{ 'loading-spin': isBatchUpdating }">{{ isBatchUpdating ? '🌀' : '🚀' }}</span>
+        </div>
+        <span class="action-text">{{ isBatchUpdating ? '升级中(2-5m)...' : '一键升级' }}</span>
       </div>
-      <div class="action-item jelly-hover" @click="openSubscribeModal">
+      <div class="action-item jelly-hover" @click="!isGlobalLoading && openSubscribeModal()" :class="{ 'disabled-action': isGlobalLoading }">
         <div class="action-icon bg-purple">🎀</div>
         <span class="action-text">签订契约</span>
       </div>
-      <div class="action-item jelly-hover" @click="resetRepo">
+      <div class="action-item jelly-hover" @click="!isGlobalLoading && resetRepo()" :class="{ 'disabled-action': isGlobalLoading }">
         <div class="action-icon bg-yellow">💫</div>
         <span class="action-text">重置仓库</span>
       </div>
-      <div class="action-item jelly-hover" @click="loadPluginList">
-        <div class="action-icon bg-blue">🌀</div>
-        <span class="action-text">刷新列表</span>
+      <div class="action-item jelly-hover" @click="!isGlobalLoading && loadPluginList()" :class="{ 'disabled-action': isGlobalLoading }">
+        <div class="action-icon bg-blue">
+           <span :class="{ 'loading-spin': isRefreshing }">🌀</span>
+        </div>
+        <span class="action-text">{{ isRefreshing ? '刷新中(2-5m)...' : '刷新列表' }}</span>
       </div>
     </section>
 
@@ -98,11 +102,11 @@
           <div class="card-action" v-if="item.Mark === '有更新' || isUpdating[item.Name]">
               <button 
                 class="btn-update" 
-                :disabled="isUpdating[item.Name]"
+                :disabled="isGlobalLoading || isUpdating[item.Name]"
                 @click="updatePlugin(item.Name)"
               >
                 <span v-if="isUpdating[item.Name]" class="loading-spin">🍬</span>
-                {{ isUpdating[item.Name] ? '升级中...' : '✨ 立即升级' }}
+                {{ isUpdating[item.Name] ? '升级中(2-5m)...' : '✨ 立即升级' }}
               </button>
           </div>
         </div>
@@ -193,6 +197,8 @@ export default {
     const showModal = ref(false)
     const subscribeInput = ref('')
     const subInputRef = ref(null)
+    const isRefreshing = ref(false)
+    const isBatchUpdating = ref(false)
 
     // 搜索脚本相关状态
     const searchList = ref([])
@@ -201,6 +207,8 @@ export default {
     let searchTimer = null
 
     // --- 计算属性 ---
+    const isGlobalLoading = computed(() => isRefreshing.value || isBatchUpdating.value)
+
     const updateCount = computed(() => {
       return pluginData.value.filter(i => i.Mark === '有更新').length
     })
@@ -230,16 +238,21 @@ export default {
     // --- 方法 ---
 
     const loadPluginList = async () => {
+      if (isRefreshing.value) return
+      isRefreshing.value = true
       try {
         const data = await apiMethods.getJsNames()
         pluginData.value = data.data || []
       } catch (e) {
         console.error(e)
         pluginData.value = []
+      } finally {
+        isRefreshing.value = false
       }
     }
 
     const updatePlugin = async (name) => {
+      if (isGlobalLoading.value) return
       if (!name) return
       isUpdating[name] = true
       try {
@@ -253,19 +266,24 @@ export default {
     }
 
     const batchUpdate = async () => {
+      if (isGlobalLoading.value) return
       if (updateCount.value === 0) return alert('当前没有需要更新的脚本哦~')
       if (!confirm(`准备好批量更新 ${updateCount.value} 个脚本了吗？`)) return
       
+      isBatchUpdating.value = true
       try {
         await apiMethods.batchUpdate()
-        alert('请求已发送，正在努力更新中...')
+        alert('请求已发送，正在努力更新中... (可能需要2-5分钟)')
         loadPluginList()
       } catch (e) {
         alert('操作失败')
+      } finally {
+        isBatchUpdating.value = false
       }
     }
 
     const resetRepo = async () => {
+      if (isGlobalLoading.value) return
       if (!confirm('⚠️ 警告：重置仓库会覆盖本地修改，真的要重置吗？')) return
       try {
         await apiMethods.resetRepo()
@@ -278,6 +296,7 @@ export default {
 
     // --- 订阅/搜索模态框逻辑 ---
     const openSubscribeModal = () => {
+      if (isGlobalLoading.value) return
       subscribeInput.value = ''
       searchList.value = []
       showSearchResult.value = false
@@ -381,6 +400,8 @@ export default {
       searchList,
       showSearchResult,
       isSearchingScript,
+      isRefreshing,
+      isGlobalLoading,
       // 方法
       loadPluginList,
       updatePlugin,
@@ -595,6 +616,14 @@ export default {
 
 .jelly-hover:active .action-icon {
   transform: scale(0.9);
+}
+
+.disabled-action {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.disabled-action:active .action-icon {
+  transform: none;
 }
 
 .bg-pink { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%); }

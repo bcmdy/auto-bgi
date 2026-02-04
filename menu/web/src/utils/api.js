@@ -172,13 +172,13 @@ export const apiMethods = {
 
   //脚本组管理
   //批量更新脚本
-  batchUpdate: () => api.post('/api/batchUpdate'),
+  batchUpdate: () => api.post('/api/batchUpdate', null, { timeout: 5 * 60 * 1000 }),
   //更新指定脚本
-  updateJs: (name) => api.post(`/api/updateJs/${name}`),
+  updateJs: (name) => api.post(`/api/updateJs/${name}`, null, { timeout: 5 * 60 * 1000 }),
   //获取脚本列表
-  getJsNames: () => api.get('/api/jsNames'),
+  getJsNames: () => api.get('/api/jsNames', { timeout: 5 * 60 * 1000 }),
   //重置仓库
-  resetRepo: () => api.post('/api/repo/resetRepo'),
+  resetRepo: () => api.post('/api/repo/resetRepo', null, { timeout: 5 * 60 * 1000 }),
   //查询所有脚本
   getAllScripts: (search) => api.get('/api/jsNamesAll?search=' + search),
 
