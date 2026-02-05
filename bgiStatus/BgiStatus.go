@@ -1267,6 +1267,14 @@ func UpdateJs(jsName string) (string, error) {
 	// 备份路径
 	backupRoot := filepath.Join("backups", jsName)
 
+	//先删除旧备份文件
+	err = os.RemoveAll(backupRoot)
+	if err != nil {
+		autoLog.Sugar.Errorf("旧文件删除失败：%s,错误：%s", jsName, err)
+		return "", err
+	}
+	autoLog.Sugar.Infof("旧文件删除成功")
+
 	// 开始备份
 	for _, pattern := range files {
 		fullPattern := filepath.Join(targetPath, pattern)
