@@ -356,7 +356,7 @@ abgi会根据关键字自动录制回放。
 在程序目录下执行：
 
 ```bash
-auto-bgi.exe OneLong
+auto-bgi.exe OneLong 一条龙名字
 ```
 作用：**软件启动，直接启动bgi运行一条龙**
 
