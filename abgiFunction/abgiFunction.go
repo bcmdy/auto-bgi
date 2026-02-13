@@ -2,6 +2,7 @@ package abgiFunction
 
 import (
 	"auto-bgi/AbgiBot"
+	"auto-bgi/BetterGI"
 	"auto-bgi/OneLong"
 	"auto-bgi/TaskCron"
 	"auto-bgi/abgiObs"
@@ -117,4 +118,5 @@ func InitFunction() {
 	abgiSSE.Status()
 	control.GetSysTemUser()
 
+	go BetterGI.CheckRedBlood()
 }

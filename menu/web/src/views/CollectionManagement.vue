@@ -147,7 +147,7 @@
                   <div class="pickup-stats">
                     <div class="stat-item">
                       <span class="stat-label">采集种类：</span>
-                      <span class="stat-value">{{ Object.keys(record.Item).length }} 种</span>
+                      <span class="stat-value">{{ Object.keys(flattenItems(record.Item)).length }} 种</span>
                     </div>
                     <div class="stat-item">
                       <span class="stat-label">总采集量：</span>
@@ -156,15 +156,18 @@
                   </div>
                   
                   <div class="pickup-items">
-                    <a-tag 
-                      v-for="(count, itemName) in sortedItems(record.Item)" 
-                      :key="itemName"
-                      :color="getItemTagColor(itemName)"
-                      class="pickup-item-tag"
-                    >
-                      <span class="item-name">{{ itemName }}</span>
-                      <span class="item-count">× {{ count }}</span>
-                    </a-tag>
+                    <div class="pickup-category" v-for="(items, category) in groupItemsByCategory(record.Item)" :key="category" style="margin-bottom:8px;">
+                      <span class="category-label" style="font-weight:700; margin-right:8px;">{{ category }}：</span>
+                      <div v-for="([itemName, count]) in sortedEntries(items)" :key="itemName" style="display:inline-block; margin-right:6px;">
+                        <a-tag
+                          :color="getItemTagColor(itemName)"
+                          class="pickup-item-tag"
+                        >
+                          <span class="item-name">{{ itemName }}</span>
+                          <span class="item-count">× {{ count }}</span>
+                        </a-tag>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </a-timeline-item>
@@ -190,7 +193,7 @@
           :selectable="false"
           class="collection-tree"
         >
-          <template #title="{ title, key, dataRef, ...nodeData }">
+          <template #title="{ title, dataRef, ...nodeData }">
             <div class="tree-node-wrapper" :class="`node-type-${nodeData.is_dir ? 'folder' : 'file'}`">
               <div class="node-main">
                 <div class="node-header">
@@ -231,15 +234,15 @@
                       <!-- 显示最近一次采集历史 -->
                       <div v-if="nodeData.record?.History && Array.isArray(nodeData.record.History) && nodeData.record.History.length > 0" class="latest-collect">
                         <span class="latest-label">📌 最近采集（{{ nodeData.record.History.length }}次记录）：</span>
-                        <a-tag 
-                          v-for="(count, itemName) in nodeData.record.History[0].Item" 
-                          :key="itemName"
-                          :color="getItemTagColor(itemName)"
-                          size="small"
-                          class="item-mini-tag"
-                        >
-                          {{ itemName }} ×{{ count }}
-                        </a-tag>
+                                <a-tag 
+                                  v-for="(count, itemName) in flattenItems(nodeData.record.History[0].Item)" 
+                                  :key="itemName"
+                                  :color="getItemTagColor(itemName)"
+                                  size="small"
+                                  class="item-mini-tag"
+                                >
+                                  {{ itemName }} ×{{ count }}
+                                </a-tag>
                       </div>
                       <div v-else class="latest-collect">
                         <span class="latest-label">📌 采集历史：</span>
@@ -273,7 +276,7 @@
             </div>
           </template>
           
-          <template #icon="{ dataRef, ...nodeData }">
+          <template #icon="{ ...nodeData }">
             <span class="tree-node-icon" :class="`icon-${nodeData.is_dir ? 'folder' : 'file'}`">
               <template v-if="nodeData.is_dir">📁</template>
               <template v-else-if="!nodeData.is_dir && nodeData.record && nodeData.record.FileName">
@@ -370,7 +373,7 @@
               <div class="items-label">采集物品：</div>
               <div class="items-tags">
                 <a-tag 
-                  v-for="(count, itemName) in record.Item" 
+                  v-for="(count, itemName) in flattenItems(record.Item)" 
                   :key="itemName" 
                   :color="getItemTagColor(itemName)"
                   class="item-tag"
@@ -429,6 +432,22 @@ const formatCountdown = (countdown) => {
   return `${seconds}秒`
 }
 
+// 计算日期差值（今天/昨天/前天/N 天前）
+const formatDateDiff = (dateStr) => {
+  try {
+    const date = dayjs(dateStr)
+    const today = dayjs()
+    const diff = today.diff(date, 'day')
+
+    if (diff === 0) return '今天'
+    if (diff === 1) return '昨天'
+    if (diff === 2) return '前天'
+    return `${diff} 天前`
+  } catch (e) {
+    return dateStr || ''
+  }
+}
+
 // 获取倒计时样式类
 const getCountdownClass = (countdown) => {
   if (countdown <= 0) return 'countdown-available'
@@ -460,20 +479,6 @@ const calculateAvgTime = (history) => {
   return Math.round(total / history.length)
 }
 
-// 计算总采集量
-const calculateTotalItems = (history) => {
-  if (!history || !Array.isArray(history) || history.length === 0) return 0
-  let total = 0
-  history.forEach(record => {
-    if (record.Item && typeof record.Item === 'object') {
-      Object.values(record.Item).forEach(count => {
-        total += (count || 0)
-      })
-    }
-  })
-  return total
-}
-
 // 物品标签颜色
 const getItemTagColor = (itemName) => {
   const colorMap = {
@@ -499,31 +504,96 @@ const getItemTagColor = (itemName) => {
   return colorMap[itemName] || 'blue'
 }
 
-// 计算每日总采集量
-const calculateDailyTotal = (items) => {
-  return Object.values(items).reduce((sum, count) => sum + count, 0)
+// 将 Item 扁平化（支持旧格式扁平 map 和新格式按分类的 map）
+const flattenItems = (items) => {
+  if (!items || typeof items !== 'object') return {}
+
+  const flat = {}
+
+  Object.entries(items).forEach(([key, val]) => {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      // 可能是分类下的物品列表
+      Object.entries(val).forEach(([subName, subCount]) => {
+        const cnt = Number(subCount) || 0
+        if (!flat[subName]) flat[subName] = 0
+        flat[subName] += cnt
+      })
+    } else {
+      const cnt = Number(val) || 0
+      if (!flat[key]) flat[key] = 0
+      flat[key] += cnt
+    }
+  })
+
+  return flat
 }
 
-// 按数量排序物品
+// 计算每日总采集量（兼容扁平或按分类的 Item）
+const calculateDailyTotal = (items) => {
+  const flat = flattenItems(items)
+  return Object.values(flat).reduce((sum, count) => sum + (Number(count) || 0), 0)
+}
+
+// 按数量排序物品（先扁平化再排序）
 const sortedItems = (items) => {
+  const flat = flattenItems(items)
   return Object.fromEntries(
-    Object.entries(items).sort((a, b) => b[1] - a[1])
+    Object.entries(flat).sort((a, b) => (b[1] || 0) - (a[1] || 0))
   )
 }
 
-// 计算日期差值
-const formatDateDiff = (dateStr) => {
-  const date = dayjs(dateStr)
-  const today = dayjs()
-  const diff = today.diff(date, 'day')
-  
-  if (diff === 0) return '今天'
-  if (diff === 1) return '昨天'
-  if (diff === 2) return '前天'
-  return `${diff} 天前`
+// 将 items 按分类分组，若原数据已按分类返回原结构；若为扁平结构则放到默认分类 '采集'
+const groupItemsByCategory = (items) => {
+  if (!items || typeof items !== 'object') return {}
+
+  // 检查是否有分类结构（value 为 object 且非数组）
+  let hasCategory = false
+  Object.values(items).forEach(v => {
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      hasCategory = true
+    }
+  })
+
+  const groups = {}
+  if (hasCategory) {
+    Object.entries(items).forEach(([cat, val]) => {
+      groups[cat] = {}
+      if (val && typeof val === 'object') {
+        Object.entries(val).forEach(([name, cnt]) => {
+          groups[cat][name] = Number(cnt) || 0
+        })
+      }
+    })
+  } else {
+    // 扁平数据归为默认分类
+    groups['采集'] = {}
+    Object.entries(items).forEach(([name, cnt]) => {
+      groups['采集'][name] = Number(cnt) || 0
+    })
+  }
+
+  return groups
 }
 
+// 将对象转换为按数量排序的 [name,count] 数组
+const sortedEntries = (obj) => {
+  return Object.entries(obj || {}).sort((a, b) => (b[1] || 0) - (a[1] || 0))
+}
 
+// 计算总采集量（兼容分类格式）
+const calculateTotalItems = (history) => {
+  if (!history || !Array.isArray(history) || history.length === 0) return 0
+  let total = 0
+  history.forEach(record => {
+    if (record.Item && typeof record.Item === 'object') {
+      const flat = flattenItems(record.Item)
+      Object.values(flat).forEach(count => {
+        total += (Number(count) || 0)
+      })
+    }
+  })
+  return total
+}
 
 // 获取所有账户列表
 const fetchAccountList = async () => {
@@ -2130,6 +2200,26 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.pickup-category {
+  display: block; /* ensure each category occupies its own line */
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.category-label {
+  display: inline-block;
+  min-width: 72px;
+  margin-right: 8px;
+  vertical-align: middle;
+  color: #333;
+}
+
+.pickup-category .pickup-item-tag {
+  display: inline-block; /* keep tags inline within category */
+  margin-right: 6px;
+  margin-bottom: 6px;
 }
 
 .pickup-item-tag {

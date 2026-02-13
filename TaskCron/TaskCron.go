@@ -12,6 +12,7 @@ import (
 	"auto-bgi/control"
 	"auto-bgi/models"
 	taskTask "auto-bgi/task"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"os/exec"
@@ -52,6 +53,11 @@ func InitTaskCron() {
 	Task["一条龙"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		taskOneLong.OneLongTask(data)
+
+		go func() {
+			Notice.SentText(fmt.Sprintf("定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data))
+			Notice.SendScreenshot()
+		}()
 	}
 	Task["计划表(茶包)"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：计划表-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)

@@ -1,6 +1,7 @@
 package CDCollectionManagement
 
 import (
+	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/tools"
@@ -8,6 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -121,13 +123,15 @@ func PrintTree(node *FileNode, recordMap map[string]Record) {
 	return
 }
 
+// 调整后的拾取记录结构：外层map是分类，内层map是物品名-数量
 type PickupRecord struct {
 	Date string
-	Item map[string]int
+	Item map[string]map[string]int // 结构：{"采集": {"晶蝶": 5, "铁块": 3}, "怪物掉落": {"史莱姆凝液": 10}}
 }
 
-// 读取拾取记录
+// 读取拾取记录（修复覆盖问题+完善分类逻辑）
 func ReadPickupRecord(name string) []PickupRecord {
+	// 1. 读取JSON文件
 	data, err := os.ReadFile(filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "record", name, "拾取记录.json"))
 	if err != nil {
 		autoLog.Sugar.Errorf("读取record.json失败: %v", err)
@@ -136,20 +140,63 @@ func ReadPickupRecord(name string) []PickupRecord {
 
 	var pickupRecords []PickupRecord
 	result := gjson.Parse(string(data))
+
+	// 2. 遍历每条拾取记录
 	result.ForEach(func(key, value gjson.Result) bool {
 		pickupRecord := PickupRecord{
 			Date: gjson.Get(value.String(), "date").String(),
-			Item: make(map[string]int),
+			Item: make(map[string]map[string]int), // 初始化外层分类map
 		}
+
+		// 3. 解析当前记录的所有物品
 		items := gjson.Get(value.String(), "items")
 		items.ForEach(func(k, v gjson.Result) bool {
-			pickupRecord.Item[k.String()] = int(v.Int())
+			// 3.1 获取物品名和数量
+			itemName := k.String()
+			itemCount := int(v.Int())
+
+			// 3.2 获取物品分类（从常量映射表读取，无匹配则为"未知"）
+			category := abgiConstant.MaterialCategoryMap[itemName]
+			categoryStr := string(category)
+			if categoryStr == "" {
+				categoryStr = "未知"
+				autoLog.Sugar.Warnf("物品[%s]未匹配到分类，默认归为'未知'", itemName)
+			}
+
+			if strings.Contains(itemName, "蟹") {
+				itemName = "螃蟹"
+			} else if strings.Contains(itemName, "晶蝶") {
+				itemName = "晶蝶"
+			} else if strings.Contains(itemName, "蜥") {
+				itemName = "蜥"
+			} else if strings.Contains(itemName, "鳗") {
+				itemName = "鳗肉"
+			}
+
+			// 3.4 添加物品到分类
+			// 如果该分类还未初始化内层map，先初始化
+			if pickupRecord.Item[categoryStr] == nil {
+				pickupRecord.Item[categoryStr] = make(map[string]int)
+			}
+			// 向该分类的内层map添加物品-数量（支持同一分类多个物品）
+			pickupRecord.Item[categoryStr][itemName] = itemCount
+
+			// 3.3 核心修复：避免同一分类下物品被覆盖
+			// 如果该分类还未初始化内层map，先初始化
+			if pickupRecord.Item[categoryStr] == nil {
+				pickupRecord.Item[categoryStr] = make(map[string]int)
+			}
+			// 向该分类的内层map添加物品-数量（支持同一分类多个物品）
+			pickupRecord.Item[categoryStr][itemName] = itemCount
+
 			return true
 		})
+
+		// 4. 将当前记录加入结果列表
 		pickupRecords = append(pickupRecords, pickupRecord)
 		return true
-
 	})
+
 	return pickupRecords
 }
 
