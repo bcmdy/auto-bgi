@@ -107,11 +107,14 @@
             <div class="switch-item">
                <a-checkbox v-model:checked="formData.Control.SendWeChatImage" class="enhanced-checkbox">📸 每小时发截图</a-checkbox>
             </div>
-            <div class="switch-item">
+            <!-- <div class="switch-item">
                <a-checkbox v-model:checked="formData.Control.AbgiScreen" class="enhanced-checkbox">🖥️ 实时屏幕 (高功耗)</a-checkbox>
-            </div>
+            </div> -->
             <div class="switch-item">
                <a-checkbox v-model:checked="formData.Control.IsCloseYuanShen" class="enhanced-checkbox">❌ BGI关闭时关闭原神</a-checkbox>
+            </div>
+             <div class="switch-item">
+               <a-checkbox v-model:checked="formData.Control.IsRedBlood" class="enhanced-checkbox">❌ 是否开启血条检测</a-checkbox>
             </div>
           </div>
         </a-card>
@@ -305,7 +308,8 @@ const formData = reactive({
     IsCloseYuanShen: false,
     SendWeChatImage: false,
     AbgiScreen: false,
-    OBSReplayBuffer: false
+    OBSReplayBuffer: false,
+    IsRedBlood: false,
   },
   OneRemote: {
     IsMonitor: false,

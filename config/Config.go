@@ -89,6 +89,7 @@ type Control struct {
 	StartOpenBrowser bool `json:"StartOpenBrowser" comment:"是否开启启动时打开浏览器"`
 	AbgiScreen       bool `json:"AbgiScreen" comment:"是否开启bgi实时屏幕"`
 	OBSReplayBuffer  bool `json:"OBSReplayBuffer" comment:"一条龙启动是否开启OBS重放缓冲"`
+	IsRedBlood       bool `json:"IsRedBlood" comment:"是否开启血条检测"`
 }
 
 type oneLong struct {

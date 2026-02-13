@@ -156,7 +156,7 @@
                   </div>
                   
                   <div class="pickup-items">
-                    <div class="pickup-category" v-for="(items, category) in groupItemsByCategory(record.Item)" :key="category" style="margin-bottom:8px;">
+                    <div class="pickup-category" v-for="([category, items]) in getSortedCategoryEntries(record.Item)" :key="category" style="margin-bottom:8px;">
                       <span class="category-label" style="font-weight:700; margin-right:8px;">{{ category }}：</span>
                       <div v-for="([itemName, count]) in sortedEntries(items)" :key="itemName" style="display:inline-block; margin-right:6px;">
                         <a-tag
@@ -372,15 +372,15 @@
             <div class="history-item-body">
               <div class="items-label">采集物品：</div>
               <div class="items-tags">
-                <a-tag 
-                  v-for="(count, itemName) in flattenItems(record.Item)" 
-                  :key="itemName" 
-                  :color="getItemTagColor(itemName)"
-                  class="item-tag"
-                >
-                  <span class="item-name">{{ itemName }}</span>
-                  <span class="item-count">× {{ count }}</span>
-                </a-tag>
+                <div v-for="([category, items]) in getSortedCategoryEntries(record.Item)" :key="category" style="margin-bottom:6px;">
+                  <span class="category-label" style="font-weight:700; margin-right:8px;">{{ category }}：</span>
+                  <template v-for="([itemName, count]) in sortedEntries(items)" :key="itemName">
+                    <a-tag :color="getItemTagColor(itemName)" class="item-tag">
+                      <span class="item-name">{{ itemName }}</span>
+                      <span class="item-count">× {{ count }}</span>
+                    </a-tag>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
@@ -578,6 +578,35 @@ const groupItemsByCategory = (items) => {
 // 将对象转换为按数量排序的 [name,count] 数组
 const sortedEntries = (obj) => {
   return Object.entries(obj || {}).sort((a, b) => (b[1] || 0) - (a[1] || 0))
+}
+
+// 根据用户指定顺序对分类排序：蒙德-璃月-稻妻-枫丹-纳塔-挪德，其它放后面
+const getSortedCategoryEntries = (items) => {
+  const groups = groupItemsByCategory(items)
+  const entries = Object.entries(groups)
+
+  const regionOrder = ["通用","肉类","其他",'蒙德', '璃月', '稻妻', "须弥",'枫丹', '纳塔', '挪德']
+
+  const getRank = (cat) => {
+    for (let i = 0; i < regionOrder.length; i++) {
+      if (cat && cat.indexOf(regionOrder[i]) !== -1) return i
+    }
+    // 次优规则：特产也归到对应地区（例如 '蒙德特产' 包含 '蒙德'）
+    for (let i = 0; i < regionOrder.length; i++) {
+      if (cat && cat.indexOf(regionOrder[i].replace(/.$/, '')) !== -1) return i
+    }
+    return regionOrder.length + 1
+  }
+
+  entries.sort((a, b) => {
+    const ra = getRank(a[0])
+    const rb = getRank(b[0])
+    if (ra !== rb) return ra - rb
+    // 同一 rank 的按中文名称排序，保证稳定性
+    return a[0].localeCompare(b[0], 'zh-Hans-CN')
+  })
+
+  return entries
 }
 
 // 计算总采集量（兼容分类格式）
