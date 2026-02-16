@@ -4,6 +4,7 @@ import (
 	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/control"
+	"fmt"
 	"github.com/vcaesar/screenshot"
 	"image"
 	"time"
@@ -16,6 +17,8 @@ var (
 	regionW = 300 // 血条区域宽度
 	regionH = 40  // 血条区域高度
 )
+
+var CheckRedBloodSum = 0
 
 // 红血检测
 func CheckRedBlood() {
@@ -34,9 +37,10 @@ func CheckRedBlood() {
 			autoLog.Sugar.Infof("检测到红血条。")
 			// TODO: 检测到红色血条，执行相关操作
 			control.PressKey("z")
-			Notice.SentText("检测到红血条，自动按Z键")
+			CheckRedBloodSum++
+			Notice.SentText(fmt.Sprintf("检测到红血条，自动按Z键，第%d次", CheckRedBloodSum))
 		}
-		time.Sleep(3000 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 
@@ -75,7 +79,7 @@ func hasRedBlood(rect image.Rectangle) bool {
 
 	// 红色占比阈值（血条非常合适）
 	//fmt.Println(ratio >= 0.05)
-	return ratio > 0.02
+	return ratio > 0.01
 }
 
 // 红色判定规则（为血条调优）

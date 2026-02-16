@@ -84,14 +84,14 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"流沙鳗鳗": OtherCollect, "藤纹陆鳗鳗": OtherCollect,
 
 	"红角蜥": OtherCollect, "蓝角蜥": OtherCollect, "绿角蜥": OtherCollect, "蜥蜴尾巴": OtherCollect, "青蛙": OtherCollect, "蓝蛙": OtherCollect, "赤尾蜥": OtherCollect, "嗜髄蜥": OtherCollect,
-	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect,
+	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect,
 
 	"吉光虫": OtherCollect, "燃素蜜虫": OtherCollect, "固晶甲虫": OtherCollect, "月萤虫": OtherCollect, "鳅鳅宝玉": OtherCollect,
 	"卷心菜": OtherCollect, "冰雾花": OtherCollect, "金鰍鰍": OtherCollect, "番茄": OtherCollect, "土豆": OtherCollect, "小麦": OtherCollect,
 
 	//肉类采集
 	"禽肉": MeatCollect, "神秘的肉": MeatCollect, "兽肉": MeatCollect, "鱼肉": MeatCollect,
-	"鸟": MeatCollect, "鱼": MeatCollect, "鲈鱼": MeatCollect, "黑背鲈鱼": MeatCollect,
+	"鸟": MeatCollect, "鱼": MeatCollect, "鲈鱼": MeatCollect, "黑背鲈鱼": MeatCollect, "蓝鳍鲈鱼": MeatCollect,
 
 	//蒙德采集
 	"奇异的「牙齿」": MondstadtCollect, "冷鲜肉": MondstadtCollect, "金鱼草": MondstadtCollect,

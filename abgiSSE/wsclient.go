@@ -1,6 +1,7 @@
 package abgiSSE
 
 import (
+	"auto-bgi/Notice"
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -11,6 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -105,6 +107,11 @@ func Connect(url string, runDebug bool, headers http.Header) (err error) {
 	return nil
 }
 
+func CheckNetwork() bool {
+	_, err := net.LookupHost("www.baidu.com")
+	return err == nil
+}
+
 func (c *AbgiClient) listen() {
 	for {
 		_, msg, err := c.Conn.ReadMessage()
@@ -113,6 +120,12 @@ func (c *AbgiClient) listen() {
 			// 关闭连接
 			c.Conn.Close()
 			abgiClient = nil
+			//判断是否是因为断网导致重连
+			if !CheckNetwork() {
+				autoLog.Sugar.Error("网络断开，导致下线，开始重连（下次更新）")
+				Notice.SentText("网络断开，导致下线，开始重连（下次更新）")
+				return
+			}
 			return
 		}
 		var info Information

@@ -31,6 +31,7 @@ import Update from '../views/Update.vue'
 import CollectionManagement from '../views/CollectionManagement.vue'
 import LogDetail from '../views/LogDetail.vue'
 import Morale from '../views/Morale.vue'
+import MyBag from '../views/MyBag.vue'
 
 // 路由配置
 const routes = [
@@ -52,6 +53,7 @@ const routes = [
   { path: '/error', component: Error, meta: { requiresAuth: true } },
   { path: '/CalculateTaskEnabledList', component: CalculateTaskEnabledList, meta: { requiresAuth: true } },
   { path: '/BagStatistics', component: BagStatistics, meta: { requiresAuth: true } },
+  { path: '/MyBag', component: MyBag, meta: { requiresAuth: true } },
   { path: '/MaterialTrend', component: MaterialTrend, meta: { requiresAuth: true } },
   { path: '/Gitlog', component: Gitlog, meta: { requiresAuth: true } },
   { path: '/Online', component: Online, meta: { requiresAuth: true } },

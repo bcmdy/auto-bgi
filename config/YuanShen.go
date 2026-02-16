@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -277,3 +278,177 @@ func GetTravelsDiaryDetailAsync(month int, type_ int, page int) (TravelsDiaryDet
 //		autoLog.Sugar.Errorf("原神签到失败: %v\n", res["message"].(string))
 //	}
 //}
+
+type ChildNode struct {
+	ID         int64
+	Name       string
+	Icon       string
+	ParentID   int64
+	ParentName string
+	Number     int64
+}
+
+// 定义API返回的JSON结构（适配接口返回格式）
+type TreeResponse struct {
+	Retcode int    `json:"retcode"`
+	Message string `json:"message"`
+	Data    struct {
+		Tree []struct {
+			ID       int64  `json:"id"`
+			Name     string `json:"name"`
+			Icon     string `json:"icon"`
+			Children []struct {
+				ID       int64  `json:"id"`
+				Name     string `json:"name"`
+				Icon     string `json:"icon"`
+				ParentId int64  `json:"parent_id"`
+			} `json:"children"`
+			// 其他字段可根据实际返回补充，这里只保留核心字段
+		} `json:"tree"`
+	} `json:"data"`
+}
+
+type TreeResponse2 struct {
+	Retcode int    `json:"retcode"`
+	Message string `json:"message"`
+	Data    struct {
+		MaterialInfo map[string]int64 `json:"material_info"`
+	} `json:"data"`
+}
+
+// 获取背包信息
+func GetBagInfo() map[string][]ChildNode {
+	// 捕获异常
+	defer func() {
+		if r := recover(); r != nil {
+			autoLog.Sugar.Errorf("旅行札记收入详情异常详情: %v\n", r)
+		}
+	}()
+
+	// 1. 构建请求
+	req, err := http.NewRequest("GET", "https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v2/map/label/tree?map_id=2&app_sn=ys_obc&lang=zh-cn", nil)
+	if err != nil {
+		fmt.Printf("创建请求失败: %v\n", err)
+		return nil
+	}
+
+	// 设置请求头（补充必要的User-Agent，提升兼容性）
+	req.Header.Set("cookie", BgiCfg.MiYouSheConfigCookie)
+	req.Header.Set("Referer", "https://webstatic.mihoyo.com/")
+	req.Header.Set("X-Requested-With", "com.mihoyo.hyperion")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+	// 2. 发送请求
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("发送请求失败: %v\n", err)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	// 3. 检查响应状态码
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("请求返回非200状态码: %d\n", resp.StatusCode)
+		return nil
+	}
+
+	// 4. 读取响应体
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("读取响应体失败: %v\n", err)
+		return nil
+	}
+
+	// 可选：打印原始响应（调试用）
+	// fmt.Println("原始响应数据:", string(body))
+
+	// 5. 解析JSON响应
+	var treeResp TreeResponse
+	err = json.Unmarshal(body, &treeResp)
+	if err != nil {
+		fmt.Printf("JSON解析失败: %v\n", err)
+		return nil
+	}
+
+	// 6. 检查接口返回状态
+	if treeResp.Retcode != 0 {
+		fmt.Printf("接口返回错误: retcode=%d, message=%s\n", treeResp.Retcode, treeResp.Message)
+		return nil
+	}
+
+	// 7. 转换为ChildNode结构体列表
+	var childNodes []ChildNode
+	for _, node := range treeResp.Data.Tree {
+		for _, child := range node.Children {
+			//fmt.Println(child)
+			childNodes = append(childNodes, ChildNode{
+				ID:         child.ID,
+				Name:       child.Name,
+				Icon:       child.Icon,
+				ParentID:   node.ID,
+				ParentName: node.Name,
+			})
+
+		}
+	}
+
+	//数量请求
+	// 1. 构建请求
+	req2, err2 := http.NewRequest("GET", "https://api-takumi.mihoyo.com/common/map_user/ys_obc/v1/user/sync_game_material_info?map_id=2&app_sn=ys_obc&lang=zh-cn", nil)
+	if err2 != nil {
+		fmt.Printf("创建请求失败: %v\n", err2)
+		return nil
+	}
+
+	// 设置请求头（补充必要的User-Agent，提升兼容性）
+	req2.Header.Set("cookie", BgiCfg.MiYouSheConfigCookie)
+	req2.Header.Set("Referer", "https://webstatic.mihoyo.com/")
+	req2.Header.Set("X-Requested-With", "com.mihoyo.hyperion")
+	req2.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+	// 2. 发送请求
+	client2 := &http.Client{}
+	resp2, err2 := client2.Do(req2)
+	if err2 != nil {
+		fmt.Printf("发送请求失败: %v\n", err2)
+		return nil
+	}
+	defer resp2.Body.Close()
+
+	// 3. 检查响应状态码
+	if resp2.StatusCode != http.StatusOK {
+		fmt.Printf("请求返回非200状态码: %d\n", resp2.StatusCode)
+		return nil
+	}
+
+	// 4. 读取响应体
+	body2, err2 := ioutil.ReadAll(resp2.Body)
+	if err2 != nil {
+		fmt.Printf("读取响应体失败: %v\n", err2)
+		return nil
+	}
+	var treeResp2 TreeResponse2
+
+	err = json.Unmarshal(body2, &treeResp2)
+	if err != nil {
+		fmt.Printf("JSON解析失败: %v\n", err)
+		return nil
+	}
+
+	mapData := make(map[string][]ChildNode)
+
+	// 8. 输出解析结果（可选，验证用）
+	fmt.Printf("成功解析到 %d 个背包标签节点\n", len(childNodes))
+	for _, cn := range childNodes { // 只打印前5个示例
+		aa := treeResp2.Data.MaterialInfo[strconv.FormatInt(cn.ID, 10)]
+		cn.Number = aa
+		if cn.ParentName == "区域特产" || cn.ParentName == "木材" || cn.ParentName == "矿物" || cn.ParentName == "背包/素材" || cn.ParentName == "贵重收集物" {
+			mapData[cn.ParentName] = append(mapData[cn.ParentName], cn)
+		}
+		//fmt.Printf("节点ID: %d, 名称: %s, 类型: %s 数量：%d，\n", cn.ID, cn.Name, cn.ParentName, aa)
+
+	}
+
+	return mapData
+}

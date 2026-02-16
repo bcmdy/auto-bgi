@@ -118,5 +118,9 @@ func InitFunction() {
 	abgiSSE.Status()
 	control.GetSysTemUser()
 
-	go BetterGI.CheckRedBlood()
+	if config.Cfg.Control.IsRedBlood {
+		go BetterGI.CheckRedBlood()
+		//go Ocr.PaddleOCR()
+	}
+
 }

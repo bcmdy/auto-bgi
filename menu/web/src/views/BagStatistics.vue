@@ -34,6 +34,9 @@
           <button @click="openEatStatisticsModal" class="kawaii-btn eat-btn icon-btn">
             💊 <span class="btn-text">吃药查看</span>
           </button>
+          <button @click="goMyBag" class="kawaii-btn bag-btn icon-btn">
+            🎒 <span class="btn-text">我的背包</span>
+          </button>
           <button @click="goMoralePage" class="kawaii-btn morale-btn icon-btn">
             💰 <span class="btn-text">摩拉收益</span>
           </button>
@@ -479,6 +482,7 @@ export default {
 
     goHome() { this.$router.push('/'); },
     goBagStatisticsTrend() { this.$router.push('/MaterialTrend'); },
+  goMyBag() { this.$router.push('/MyBag'); },
     goMoralePage() { this.$router.push('/Morale'); },
 
     // 修改：item 变为可选参数，支持按钮直接点击

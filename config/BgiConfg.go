@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/tidwall/gjson"
 	"os"
 	"path/filepath"
@@ -66,6 +67,7 @@ func ReadBgiConfig() {
 	BgiCfg.RunForVersion = gjson.Get(data, "commonConfig.runForVersion").String()
 
 	BgiCfg.MiYouSheConfigCookie = strings.ReplaceAll(gjson.Get(data, "otherConfig.miyousheConfig.cookie").String(), " ", "")
+	fmt.Println(BgiCfg.MiYouSheConfigCookie)
 
 	//selectedChannelName：仓库
 	BgiCfg.SelectedChannelName = gjson.Get(data, "scriptConfig.selectedChannelName").String()

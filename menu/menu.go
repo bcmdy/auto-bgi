@@ -455,6 +455,12 @@ func StarGin() {
 				context.JSON(http.StatusOK, statistics)
 			})
 
+			//查询米游社背包信息
+			BagStatistics.GET("/getBagInfo", func(context *gin.Context) {
+				getBagInfo := config.GetBagInfo()
+				context.JSON(http.StatusOK, getBagInfo)
+			})
+
 			// 删除关注的材料
 			BagStatistics.DELETE("/DELETE", BackpackStatistics.DeleteService)
 			//添加关注的材料
