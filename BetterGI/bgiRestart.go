@@ -79,7 +79,7 @@ func hasRedBlood(rect image.Rectangle) bool {
 
 	// 红色占比阈值（血条非常合适）
 	//fmt.Println(ratio >= 0.05)
-	return ratio > 0.01
+	return ratio > 0.015
 }
 
 // 红色判定规则（为血条调优）
