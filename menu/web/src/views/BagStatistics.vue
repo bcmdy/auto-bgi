@@ -303,7 +303,7 @@ export default {
   name: 'BagStatistics',
   data() {
     return {
-      title: '背包统计',
+      title: '旅行者札记',
       items: [],
       selectedMaterials: [],
       allOre: ["萃凝晶", "水晶块", "星银矿石", "紫晶块", "白铁块", "铁块", "魔晶块", "石珀", "虹滴晶"],
