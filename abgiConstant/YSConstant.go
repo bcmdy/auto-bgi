@@ -74,17 +74,16 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"甜甜花": TeyvatCollect, "薄荷": TeyvatCollect, "树莓": TeyvatCollect, "蘑菇": TeyvatCollect,
 	"松茸": TeyvatCollect, "松果": TeyvatCollect, "苹果": TeyvatCollect, "日落果": TeyvatCollect,
 	"胡萝卜": TeyvatCollect, "白萝卜": TeyvatCollect, "鸟蛋": TeyvatCollect,
-	"冰雾花花朵": TeyvatCollect, "烈焰花花蕊": TeyvatCollect, "电气水晶": TeyvatCollect,
+	"冰雾花花朵": TeyvatCollect, "烈焰花花蕊": TeyvatCollect, "电气水晶": TeyvatCollect, "烈焰花": TeyvatCollect,
 
 	//其他采集
 	"晶蝶": OtherCollect, "岩晶蝶": OtherCollect, "草晶蝶": OtherCollect, "风晶蝶": OtherCollect, "晶核": OtherCollect, "水晶蝶": OtherCollect, "雷晶蝶": OtherCollect,
 
 	"螃蟹": OtherCollect, "太阳蟹": OtherCollect, "海蓝蟹": OtherCollect, "薄红蟹": OtherCollect, "黃金蟹": OtherCollect,
-	"黃金鲈鱼": OtherCollect, "蓝鲭鲈鱼": OtherCollect, "鳗肉": OtherCollect, "将军蟹": OtherCollect, "赤鰭陆鳗鳗": OtherCollect,
-	"流沙鳗鳗": OtherCollect, "藤纹陆鳗鳗": OtherCollect,
+	"将军蟹": OtherCollect,
 
 	"红角蜥": OtherCollect, "蓝角蜥": OtherCollect, "绿角蜥": OtherCollect, "蜥蜴尾巴": OtherCollect, "青蛙": OtherCollect, "蓝蛙": OtherCollect, "赤尾蜥": OtherCollect, "嗜髄蜥": OtherCollect,
-	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect,
+	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect, "角蜥": CategoryDrop,
 
 	"吉光虫": OtherCollect, "燃素蜜虫": OtherCollect, "固晶甲虫": OtherCollect, "月萤虫": OtherCollect, "鳅鳅宝玉": OtherCollect,
 	"卷心菜": OtherCollect, "冰雾花": OtherCollect, "金鰍鰍": OtherCollect, "番茄": OtherCollect, "土豆": OtherCollect, "小麦": OtherCollect,
@@ -92,12 +91,14 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	//肉类采集
 	"禽肉": MeatCollect, "神秘的肉": MeatCollect, "兽肉": MeatCollect, "鱼肉": MeatCollect,
 	"鸟": MeatCollect, "鱼": MeatCollect, "鲈鱼": MeatCollect, "黑背鲈鱼": MeatCollect, "蓝鳍鲈鱼": MeatCollect,
+	"鳗肉": MeatCollect, "黃金鲈鱼": MeatCollect, "蓝鲭鲈鱼": MeatCollect, "赤鰭陆鳗鳗": MeatCollect,
+	"流沙鳗鳗": MeatCollect, "藤纹陆鳗鳗": MeatCollect,
 
 	//蒙德采集
-	"奇异的「牙齿」": MondstadtCollect, "冷鲜肉": MondstadtCollect, "金鱼草": MondstadtCollect,
+	"奇异的「牙齿」": MondstadtCollect, "冷鲜肉": MondstadtCollect, "金鱼草": MondstadtCollect, " 奇异的牙齿": MondstadtCollect,
 
 	//璃月采集
-	"沉玉仙茗": LiyueCollect, "莲蓬": LiyueCollect, "马尾": LiyueCollect, "竹笋": LiyueCollect,
+	"沉玉仙茗": LiyueCollect, "莲蓬": LiyueCollect, "马尾": LiyueCollect, "竹笋": LiyueCollect, "金鳅鳅": LiyueCollect,
 
 	//稻妻采集
 	"海草": InazumaCollect, "堇瓜": InazumaCollect,
@@ -183,7 +184,7 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"横行霸者的利齿": CategoryDrop, "破旧的刀镡": CategoryDrop, "镶边红绸": CategoryDrop, "浮游晶化核": CategoryDrop, "老练的坚齿": CategoryDrop,
 	"藏银鸦印": CategoryDrop, "褪色红绸": CategoryDrop, "寻宝鸦印": CategoryDrop, "异色结晶石": CategoryDrop, "浮游幽核": CategoryDrop,
 	"稚嫩的尖齿": CategoryDrop, "磨损的执凭": CategoryDrop, "龙冠武士的金哨": CategoryDrop, "战士的铁哨": CategoryDrop, "卫从的木哨": CategoryDrop,
-	"精制机轴": CategoryDrop, "加固机轴": CategoryDrop, "角蜥": CategoryDrop, "毁损机轴": CategoryDrop, "霜镌的执凭": CategoryDrop,
+	"精制机轴": CategoryDrop, "加固机轴": CategoryDrop, "毁损机轴": CategoryDrop, "霜镌的执凭": CategoryDrop,
 	"精致的执凭": CategoryDrop, "深黯的勾喙": CategoryDrop, "深黯的怪核": CategoryDrop, "深黯的裂眼": CategoryDrop,
 
 	"调查": CategoryOther, "激活": CategoryOther, "小怪": CategoryOther, "精英": CategoryOther, "钓鱼点": CategoryOther,

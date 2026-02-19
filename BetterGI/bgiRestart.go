@@ -40,7 +40,7 @@ func CheckRedBlood() {
 			CheckRedBloodSum++
 			Notice.SentText(fmt.Sprintf("检测到红血条，自动按Z键，第%d次", CheckRedBloodSum))
 		}
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 	}
 }
 
