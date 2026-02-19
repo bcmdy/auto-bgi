@@ -171,6 +171,8 @@ func ReadPickupRecord(name string) []PickupRecord {
 				itemName = "蜥"
 			} else if strings.Contains(itemName, "鳗") {
 				itemName = "鳗肉"
+			} else if strings.Contains(itemName, "鲈") {
+				itemName = "鲈鱼"
 			}
 
 			// 3.4 添加物品到分类

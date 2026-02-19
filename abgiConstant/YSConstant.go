@@ -77,13 +77,13 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"冰雾花花朵": TeyvatCollect, "烈焰花花蕊": TeyvatCollect, "电气水晶": TeyvatCollect, "烈焰花": TeyvatCollect,
 
 	//其他采集
-	"晶蝶": OtherCollect, "岩晶蝶": OtherCollect, "草晶蝶": OtherCollect, "风晶蝶": OtherCollect, "晶核": OtherCollect, "水晶蝶": OtherCollect, "雷晶蝶": OtherCollect,
+	"晶蝶": OtherCollect, "岩晶蝶": OtherCollect, "草晶蝶": OtherCollect, "风晶蝶": OtherCollect, "晶核": OtherCollect, "水晶蝶": OtherCollect, "雷晶蝶": OtherCollect, "火晶蝶": OtherCollect,
 
 	"螃蟹": OtherCollect, "太阳蟹": OtherCollect, "海蓝蟹": OtherCollect, "薄红蟹": OtherCollect, "黃金蟹": OtherCollect,
 	"将军蟹": OtherCollect,
 
 	"红角蜥": OtherCollect, "蓝角蜥": OtherCollect, "绿角蜥": OtherCollect, "蜥蜴尾巴": OtherCollect, "青蛙": OtherCollect, "蓝蛙": OtherCollect, "赤尾蜥": OtherCollect, "嗜髄蜥": OtherCollect,
-	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect, "角蜥": CategoryDrop,
+	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect, "角蜥": CategoryDrop, "嗜髓蜥": CategoryOther,
 
 	"吉光虫": OtherCollect, "燃素蜜虫": OtherCollect, "固晶甲虫": OtherCollect, "月萤虫": OtherCollect, "鳅鳅宝玉": OtherCollect,
 	"卷心菜": OtherCollect, "冰雾花": OtherCollect, "金鰍鰍": OtherCollect, "番茄": OtherCollect, "土豆": OtherCollect, "小麦": OtherCollect,
@@ -92,7 +92,7 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"禽肉": MeatCollect, "神秘的肉": MeatCollect, "兽肉": MeatCollect, "鱼肉": MeatCollect,
 	"鸟": MeatCollect, "鱼": MeatCollect, "鲈鱼": MeatCollect, "黑背鲈鱼": MeatCollect, "蓝鳍鲈鱼": MeatCollect,
 	"鳗肉": MeatCollect, "黃金鲈鱼": MeatCollect, "蓝鲭鲈鱼": MeatCollect, "赤鰭陆鳗鳗": MeatCollect,
-	"流沙鳗鳗": MeatCollect, "藤纹陆鳗鳗": MeatCollect,
+	"流沙鳗鳗": MeatCollect, "藤纹陆鳗鳗": MeatCollect, "赤鳍陆鳗鳗": MeatCollect, "深海鳗鳗": MeatCollect,
 
 	//蒙德采集
 	"奇异的「牙齿」": MondstadtCollect, "冷鲜肉": MondstadtCollect, "金鱼草": MondstadtCollect, " 奇异的牙齿": MondstadtCollect,
