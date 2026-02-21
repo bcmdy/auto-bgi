@@ -5,7 +5,6 @@ import (
 	"auto-bgi/config"
 	"encoding/json"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -89,11 +88,6 @@ func chaBao(path string) OneDragonStruct {
 		taskEnAbleDs = append(taskEnAbleDs, taskEnabled)
 
 		return true
-	})
-
-	// 按 Index 字典序排序，保持类似 "1", "10", "11", "2" 的顺序
-	sort.Slice(taskEnAbleDs, func(i, j int) bool {
-		return taskEnAbleDs[i].Index < taskEnAbleDs[j].Index
 	})
 
 	return OneDragonStruct{

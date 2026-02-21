@@ -37,84 +37,94 @@
       </div>
 
       <div class="config-detail-row">
-        <a-card :bordered="false" class="card-detail glass-card">
-          <template #title>
-            <div class="card-header">
-              <span class="header-icon">📂</span>
-              <span>{{ currentName ? `配置：${currentName}` : '等待选择...' }}</span>
-            </div>
-          </template>
+        <a-spin :spinning="loading" tip="加载中...">
+          <a-card :bordered="false" class="card-detail glass-card">
+            <template #title>
+              <div class="card-header">
+                <span class="header-icon">📂</span>
+                <span>{{ currentName ? `配置（尽量在bgi关闭的时候修改）：${currentName}` : '等待选择...' }}</span>
+              </div>
+            </template>
 
-          <div v-if="!currentName" class="placeholder">
-            <div class="empty-state">
-              <div class="empty-icon">🎐</div>
-              <p>请在上方选择配置名以查看详情哦~</p>
+            <div v-if="!currentName" class="placeholder">
+              <div class="empty-state">
+                <div class="empty-icon">🎐</div>
+                <p>请在上方选择配置名以查看详情哦~</p>
+              </div>
             </div>
-          </div>
 
-          <div v-else>
-            <div class="task-scroll custom-scrollbar">
-              <a-list :dataSource="visibleTasks" :split="false">
-                <template #renderItem="{ item, index }">
-                  <a-list-item class="cute-list-item">
-                    <div class="item-content-wrapper">
-                      <div class="item-left">
-                        <div class="item-index-badge">{{ index + 1 }}</div>
-                        <div class="task-name" :title="item.Name">{{ item.Name }}</div>
-                        <div class="task-switch">
-                          <a-switch
-                              v-model:checked="visibleEnabled[index]"
-                              checked-children="开"
-                              un-checked-children="关"
-                              class="cute-switch"
-                          />
+            <div v-else>
+              <div class="task-scroll custom-scrollbar">
+                <a-list :dataSource="visibleTasks" :split="false">
+                  <template #renderItem="{ item, index }">
+                    <a-list-item class="cute-list-item">
+                      <div
+                        class="item-content-wrapper"
+                        :class="{ dragging: draggingIndex === index }"
+                        draggable="true"
+                        @dragstart="onDragStart(index)"
+                        @dragend="onDragEnd"
+                        @drop="onDrop(index)"
+                        @dragover.prevent
+                      >
+                        <div class="item-left">
+                          <div class="item-index-badge">{{ index + 1 }}</div>
+                          <div class="task-name" :title="item.Name">{{ item.Name }}</div>
+                          <div class="task-switch">
+                            <a-switch
+                                v-model:checked="visibleEnabled[index]"
+                                checked-children="开"
+                                un-checked-children="关"
+                                class="cute-switch"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="item-right">
+                          <a-button
+                              type="text"
+                              class="action-btn up-btn"
+                              @click="moveUp(index)"
+                              :disabled="index===0"
+                              title="上移"
+                          >
+                            ⬆
+                          </a-button>
+                          <a-button
+                              type="text"
+                              class="action-btn down-btn"
+                              @click="moveDown(index)"
+                              :disabled="index===visibleTasks.length-1"
+                              title="下移"
+                          >
+                            ⬇
+                          </a-button>
                         </div>
                       </div>
-
-                      <div class="item-right">
-                        <a-button
-                            type="text"
-                            class="action-btn up-btn"
-                            @click="moveUp(index)"
-                            :disabled="index===0"
-                            title="上移"
-                        >
-                          ⬆
-                        </a-button>
-                        <a-button
-                            type="text"
-                            class="action-btn down-btn"
-                            @click="moveDown(index)"
-                            :disabled="index===visibleTasks.length-1"
-                            title="下移"
-                        >
-                          ⬇
-                        </a-button>
-                      </div>
-                    </div>
-                  </a-list-item>
-                </template>
-              </a-list>
-            </div>
-
-            <div class="detail-actions">
-              <div class="batch-btns">
-                <a-button class="cute-btn" @click="enableAll">✅ 全部开启</a-button>
-                <a-button class="cute-btn" @click="disableAll">⛔ 全部关闭</a-button>
+                    </a-list-item>
+                  </template>
+                </a-list>
               </div>
-              <a-button
-                  type="primary"
-                  @click="saveConfig"
-                  :loading="saving"
-                  class="save-btn"
-                  size="large"
-                  block
-              >
-                {{ saving ? '保存中...' : '💾 保存当前配置' }}
-              </a-button>
+
+              <div class="detail-actions">
+                <div class="batch-btns">
+                  <a-button class="cute-btn" @click="enableAll">✅ 全部开启</a-button>
+                  <a-button class="cute-btn" @click="disableAll">⛔ 全部关闭</a-button>
+                </div>
+                <a-button
+                    type="primary"
+                    @click="saveConfig"
+                    :loading="saving"
+                    class="save-btn"
+                    size="large"
+                    block
+                >
+                  {{ saving ? '保存中...' : '💾 保存当前配置' }}
+                </a-button>
+              </div>
             </div>
-          </div>
-        </a-card>
+          </a-card>
+        </a-spin>
       </div>
     </div>
   </div>
@@ -136,6 +146,8 @@ const visibleTasks = ref([])
 // visibleEnabled 保存每一项的启用状态的副本
 const visibleEnabled = ref([])
 const saving = ref(false)
+const loading = ref(false)
+const draggingIndex = ref(null)
 const router = useRouter()
 
 const loadConfigList = async () => {
@@ -150,6 +162,13 @@ const loadConfigList = async () => {
 
 const selectConfig = async (name) => {
   currentName.value = name
+  if (!name) {
+    taskList.value = []
+    visibleTasks.value = []
+    visibleEnabled.value = []
+    return
+  }
+  loading.value = true
   try {
     const res = await apiMethods.findBgiConfig(name)
     const data = res.msg || {}
@@ -162,6 +181,8 @@ const selectConfig = async (name) => {
   } catch (err) {
     console.error(err)
     message.error('读取配置失败')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -171,6 +192,7 @@ const saveConfig = async () => {
     return
   }
   saving.value = true
+  loading.value = true
   try {
     // 构造按当前 visibleTasks 顺序的 TaskEnabledList，但不修改原始 taskList
     const orderedList = visibleTasks.value.map((t, idx) => {
@@ -195,6 +217,7 @@ const saveConfig = async () => {
     message.error('保存失败')
   } finally {
     saving.value = false
+    loading.value = false
   }
 }
 
@@ -230,6 +253,30 @@ const enableAll = () => {
 
 const disableAll = () => {
   visibleEnabled.value = visibleEnabled.value.map(() => false)
+}
+
+const onDragStart = (index) => {
+  draggingIndex.value = index
+}
+
+const onDragEnd = () => {
+  draggingIndex.value = null
+}
+
+const onDrop = (index) => {
+  if (draggingIndex.value === null || draggingIndex.value === index) {
+    draggingIndex.value = null
+    return
+  }
+  const from = draggingIndex.value
+  const to = index
+  const vt = visibleTasks.value
+  const ve = visibleEnabled.value
+  const movedTask = vt.splice(from, 1)[0]
+  vt.splice(to, 0, movedTask)
+  const movedEnabled = ve.splice(from, 1)[0]
+  ve.splice(to, 0, movedEnabled)
+  draggingIndex.value = null
 }
 
 onMounted(() => {
@@ -448,6 +495,12 @@ const goHome = () => {
   justify-content: space-between;
   width: 100%;
   padding: 12px 16px;
+}
+
+.item-content-wrapper.dragging {
+  opacity: 0.8;
+  transform: scale(1.01);
+  box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
 }
 
 .item-left {
