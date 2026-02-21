@@ -181,7 +181,7 @@ func ReadPickupRecord(name string) []PickupRecord {
 				pickupRecord.Item[categoryStr] = make(map[string]int)
 			}
 			// 向该分类的内层map添加物品-数量（支持同一分类多个物品）
-			pickupRecord.Item[categoryStr][itemName] = itemCount
+			pickupRecord.Item[categoryStr][itemName] = pickupRecord.Item[categoryStr][itemName] + itemCount
 
 			// 3.3 核心修复：避免同一分类下物品被覆盖
 			// 如果该分类还未初始化内层map，先初始化
@@ -189,7 +189,7 @@ func ReadPickupRecord(name string) []PickupRecord {
 				pickupRecord.Item[categoryStr] = make(map[string]int)
 			}
 			// 向该分类的内层map添加物品-数量（支持同一分类多个物品）
-			pickupRecord.Item[categoryStr][itemName] = itemCount
+			pickupRecord.Item[categoryStr][itemName] = pickupRecord.Item[categoryStr][itemName] + itemCount
 
 			return true
 		})
