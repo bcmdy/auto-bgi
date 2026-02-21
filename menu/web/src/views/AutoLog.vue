@@ -337,6 +337,7 @@ const loading = ref(false)
 const logs = ref([])
 const levelFilter = ref('ALL')
 const windowWidth = ref(window.innerWidth)
+const windowHeight = ref(window.innerHeight)
 const mobileCurrentPage = ref(1)
 const mobilePageSize = ref(10)
 const autoRefresh = ref(false)
@@ -383,26 +384,22 @@ const tablePagination = computed(() => ({
 // 响应式表格滚动高度
 const tableScroll = computed(() => {
   const screenWidth = windowWidth.value
-  let y = 'calc(100vh - 480px)' // 默认PC端高度
-
+  const screenHeight = windowHeight.value
+  let offset = 480
   if (screenWidth <= 992) {
-    y = 'calc(100vh - 500px)' // 平板调整
+    offset = 500
   }
-
   if (screenWidth <= 768) {
-    y = 'calc(100vh - 520px)' // 移动端调整
+    offset = 520
   }
-
   if (screenWidth <= 480) {
-    y = 'calc(100vh - 500px)' // 小屏幕进一步调整
+    offset = 500
   }
-
-  // 确保最小高度
   const minHeight = 200
-  const calculatedHeight = Math.max(minHeight, parseInt(y) || minHeight)
-
+  const availableHeight = screenHeight - offset
+  const calculatedHeight = Math.max(minHeight, availableHeight)
   return {
-    x: Math.min(800, screenWidth - 40), // 根据屏幕宽度调整水平滚动
+    x: Math.min(800, screenWidth - 40),
     y: calculatedHeight
   }
 })
@@ -648,6 +645,7 @@ const clearLogs = () => {
 // 窗口大小变化处理
 const handleResize = () => {
   windowWidth.value = window.innerWidth
+  windowHeight.value = window.innerHeight
 }
 
 onMounted(() => {

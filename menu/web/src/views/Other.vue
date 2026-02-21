@@ -149,7 +149,7 @@
                                 <!-- 收入汇总 -->
                                 <div  class="group-content" >
                                     <h4 class="section-title" style="cursor: pointer;" @click="lookIncome">💰 查询收入汇总</h4>
-                                    <div class="error-summary income" v-html="formatMap(group.SumIncome)"></div>
+                                    <div class="error-summary income" v-html="formatIncomeMap(group.SumIncome)"></div>
                                 </div>
 
 
@@ -177,7 +177,7 @@
                                                 </div>
                                                 <div class="task-income">
                                                     <strong>💰 收入：</strong>
-                                                    <div class="income-content" v-html="formatMap(sub.Income)"></div>
+                                                    <div class="income-content" v-html="formatIncomeMap(sub.Income)"></div>
                                                 </div>
                                                 <div class="task-errors">
                                                     <strong>⚠️ 错误：</strong>
@@ -377,6 +377,20 @@ export default {
             return Object.entries(mapData)
                 .map(([k, v]) => `- ${k}：${v}`)
                 .join('<br>')
+        },
+
+        // 格式化收入映射数据并按数值从大到小排序
+        formatIncomeMap(mapData) {
+            if (!mapData || Object.keys(mapData).length === 0) {
+                return '(无记录)'
+            }
+            return Object.entries(mapData)
+                .sort((a, b) => Number(b[1]) - Number(a[1]))
+                .map(
+                    ([k, v]) =>
+                        `<span style="display:inline-block;margin:4px 10px 4px 0;padding:4px 10px;border-radius:14px;border:1px solid #ffc0da;background:rgba(255,246,251,0.9);white-space:nowrap;">${k}：${v}</span>`
+                )
+                .join('')
         },
 
         // 格式化文件名显示
