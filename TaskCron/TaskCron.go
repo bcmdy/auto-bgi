@@ -91,8 +91,10 @@ func InitTaskCron() {
 		autoLog.Sugar.Info("备份成功")
 	}
 	Task["定时关机"] = func(data string) {
-		abgiObs.Shutdown()
+
 		autoLog.Sugar.Infof("定时任务启动：定时关机-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		control.CloseSoftware()
+		abgiObs.Shutdown()
 		cmd := exec.Command("shutdown", "/s", "/t", "60")
 		err := cmd.Run()
 		if err != nil {
@@ -102,7 +104,10 @@ func InitTaskCron() {
 		}
 	}
 	Task["定时重启"] = func(data string) {
+
 		autoLog.Sugar.Infof("定时任务启动：定时重启-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		control.CloseSoftware()
+		abgiObs.Shutdown()
 		cmd := exec.Command("shutdown", "/r", "/t", "60")
 		err := cmd.Run()
 		if err != nil {

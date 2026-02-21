@@ -95,7 +95,7 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"流沙鳗鳗": MeatCollect, "藤纹陆鳗鳗": MeatCollect, "赤鳍陆鳗鳗": MeatCollect, "深海鳗鳗": MeatCollect,
 
 	//蒙德采集
-	"奇异的「牙齿」": MondstadtCollect, "冷鲜肉": MondstadtCollect, "金鱼草": MondstadtCollect, " 奇异的牙齿": MondstadtCollect,
+	"奇异的「牙齿」": MondstadtCollect, "冷鲜肉": MondstadtCollect, "金鱼草": MondstadtCollect, "奇异的牙齿": MondstadtCollect,
 
 	//璃月采集
 	"沉玉仙茗": LiyueCollect, "莲蓬": LiyueCollect, "马尾": LiyueCollect, "竹笋": LiyueCollect, "金鳅鳅": LiyueCollect,

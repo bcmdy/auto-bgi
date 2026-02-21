@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"auto-bgi/auth"
 	"auto-bgi/config"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -41,6 +42,7 @@ func GetIndex(context *gin.Context) {
 	data["progress"] = info.ConfigurationGroupExecutionProgress
 	data["running"] = info.Running
 	data["jsProgress"] = info.JSProgress
+	data["title"] = auth.User.SysConfig.SystemName
 	//data["version"] = Version
 	//data["isUpdate"] = Version != ABgi.GetCurrentVersion()
 
