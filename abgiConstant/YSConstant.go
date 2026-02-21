@@ -83,7 +83,7 @@ var MaterialCategoryMap = map[string]MaterialCategory{
 	"将军蟹": OtherCollect,
 
 	"红角蜥": OtherCollect, "蓝角蜥": OtherCollect, "绿角蜥": OtherCollect, "蜥蜴尾巴": OtherCollect, "青蛙": OtherCollect, "蓝蛙": OtherCollect, "赤尾蜥": OtherCollect, "嗜髄蜥": OtherCollect,
-	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect, "角蜥": CategoryDrop, "嗜髓蜥": CategoryDrop,
+	"萤火虫": OtherCollect, "发光髓": OtherCollect, "蝴蝶": OtherCollect, "蝴蝶的翅膀": OtherCollect, "泥蛙": OtherCollect, "角蜥": OtherCollect, "嗜髓蜥": OtherCollect,
 
 	"吉光虫": OtherCollect, "燃素蜜虫": OtherCollect, "固晶甲虫": OtherCollect, "月萤虫": OtherCollect, "鳅鳅宝玉": OtherCollect,
 	"卷心菜": OtherCollect, "冰雾花": OtherCollect, "金鰍鰍": OtherCollect, "番茄": OtherCollect, "土豆": OtherCollect, "小麦": OtherCollect,
