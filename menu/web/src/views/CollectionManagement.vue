@@ -25,16 +25,25 @@
             </a-select-option>
           </a-select>
           
-          
-          <a-button 
-            @click="refreshData" 
-            :loading="loading"
-            type="primary"
-            class="refresh-btn"
-          >
-            <template #icon><span v-if="!loading">🔄</span></template>
-            {{ loading ? '刷新数据' : '刷新' }}
-          </a-button>
+          <div class="vertical-btns">
+            <a-button 
+              @click="refreshData" 
+              :loading="loading"
+              type="primary"
+              class="refresh-btn"
+            >
+              <template #icon><span v-if="!loading">🔄</span></template>
+              {{ loading ? '刷新数据' : '刷新' }}
+            </a-button>
+
+            <a-button
+              @click="goHome"
+              type="default"
+              class="back-home-btn"
+            >
+              🏠 回到首页
+            </a-button>
+          </div>
         </a-space>
       </div>
     </div>
@@ -396,6 +405,7 @@
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { apiMethods } from '@/utils/api'
 import dayjs from 'dayjs'
@@ -462,6 +472,13 @@ const startCountdownTimer = () => {
   countdownTimer = setInterval(() => {
     currentTime.value = dayjs()
   }, 1000) // 每秒1秒更新
+}
+
+const router = useRouter()
+
+const goHome = () => {
+  // 跳转到首页
+  router.push('/')
 }
 
 // 停止倒计时定时器
@@ -1586,6 +1603,25 @@ onUnmounted(() => {
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 2px solid #f0f0f0;
+}
+
+/* 垂直按钮组（刷新 + 回到首页） */
+.vertical-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.back-home-btn {
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  color: #333;
+  font-weight: 600;
+}
+
+.back-home-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
 }
 
 

@@ -325,7 +325,8 @@ func (m *LogMonitor) Monitor() {
 
 				//一条龙结束操作
 				if strings.Contains(line, "一条龙和配置组任务结束") {
-					archiveConfig := ArchiveConfig()
+
+					archiveConfig, ArchiveRecordMap := ArchiveConfig()
 					data := "一条龙和配置组任务结束，所有配置组已归档@所有人\n"
 					sumExecuteTime, _ := time.ParseDuration("0s")
 					for _, groupMap := range archiveConfig {
@@ -343,7 +344,19 @@ func (m *LogMonitor) Monitor() {
 							}
 
 						}
-						data += fmt.Sprintf("【%s--%s】\n", groupMap.GroupName, executeTime)
+
+						//计算差值
+						var diff time.Duration
+						if archiveRecord, ok := ArchiveRecordMap[groupMap.GroupName]; ok {
+							duration, err := time.ParseDuration(archiveRecord)
+							if err != nil {
+								fmt.Println("解析错误:", err)
+								return
+							}
+							diff = executeTime - duration
+						}
+
+						data += fmt.Sprintf("【%s--%s】(%s)\n", groupMap.GroupName, executeTime, diff)
 						sumExecuteTime += executeTime
 					}
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)

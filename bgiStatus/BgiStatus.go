@@ -2098,7 +2098,9 @@ func Log1Remote() {
 }
 
 // 将今日所有配置组归档
-func ArchiveConfig() []LogAnalysis2Struct {
+func ArchiveConfig() ([]LogAnalysis2Struct, map[string]string) {
+	//查询归档记录
+	ArchiveRecordMap, _ := ArchiveRecordList()
 	// 生成日志文件名
 	date := time.Now().Format("20060102")
 	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
@@ -2110,13 +2112,13 @@ func ArchiveConfig() []LogAnalysis2Struct {
 
 		autoLog.Sugar.Infof("归档配置组 %s", groupMap.GroupName)
 	}
-	return groupTime
+	return groupTime, ArchiveRecordMap
 
 }
 
 // 查询今日执行配置组
 func TodayGroupsInfo() {
-	//查询规定记录
+	//查询归档记录
 	ArchiveRecordMap, _ := ArchiveRecordList()
 
 	date := time.Now().Format("20060102")
