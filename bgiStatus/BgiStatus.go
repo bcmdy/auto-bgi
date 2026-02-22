@@ -2116,6 +2116,9 @@ func ArchiveConfig() []LogAnalysis2Struct {
 
 // 查询今日执行配置组
 func TodayGroupsInfo() {
+	//查询规定记录
+	ArchiveRecordMap, _ := ArchiveRecordList()
+
 	date := time.Now().Format("20060102")
 	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
 	//获取今日所有配置组
@@ -2133,14 +2136,26 @@ func TodayGroupsInfo() {
 					continue
 				}
 				executeTime += duration
-
 			}
 
 		}
-		NoticeData += fmt.Sprintf("【%s--%s】\n", groupMap.GroupName, executeTime)
+		Archive(groupMap)
+		//计算差值
+		var diff time.Duration
+		if archiveRecord, ok := ArchiveRecordMap[groupMap.GroupName]; ok {
+			duration, err := time.ParseDuration(archiveRecord)
+			if err != nil {
+				fmt.Println("解析错误:", err)
+				return
+			}
+			diff = executeTime - duration
+		}
+
+		NoticeData += fmt.Sprintf("【%s--%s】(%s)\n", groupMap.GroupName, executeTime, diff)
 		sumExecuteTime += executeTime
 	}
 	NoticeData += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
+	NoticeData += "\n"
 
 	Notice.SentText(NoticeData)
 
