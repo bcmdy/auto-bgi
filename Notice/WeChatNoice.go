@@ -35,14 +35,14 @@ func sendWeChatNotification(content string) {
 	req, err := http.NewRequest("POST", config.Cfg.Notice.Wechat, bytes.NewBuffer(jsonData))
 	if err != nil {
 
-		autoLog.Sugar.Error("Error creating request:", err)
+		autoLog.Sugar.Error("sendWeChatNotification Error creating request:", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		autoLog.Sugar.Error("Error sending request:", err)
+		autoLog.Sugar.Error("sendWeChatNotification Error sending request:", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -91,7 +91,7 @@ func sendWeChatImage(path string) error {
 	req, err := http.NewRequest("POST", config.Cfg.Notice.Wechat, bytes.NewBuffer(jsonData))
 	if err != nil {
 
-		autoLog.Sugar.Error("Error creating request:", err)
+		autoLog.Sugar.Error("sendWeChatImage Error creating request:", err)
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")

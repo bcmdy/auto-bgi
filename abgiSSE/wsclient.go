@@ -155,10 +155,21 @@ func (c *AbgiClient) listen() {
 					//重新连接
 					err := Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decrypt, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
 					if err != nil {
-						autoLog.Sugar.Errorf("重连失败:%v", err)
+						if err.Error() == "已经在线，请勿重复上线" {
+							autoLog.Sugar.Infof("已经在线，请勿重复上线")
+							break
+						} else {
+							autoLog.Sugar.Errorf("重连失败:%v", err)
+						}
+
+					} else {
+						autoLog.Sugar.Infof("重新连接成功")
+						break
 					}
 				}
 
+			} else {
+				autoLog.Sugar.Infof("当前网络正常，自然下线")
 			}
 			return
 		}
