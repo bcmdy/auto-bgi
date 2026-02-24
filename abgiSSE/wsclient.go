@@ -122,9 +122,43 @@ func (c *AbgiClient) listen() {
 			abgiClient = nil
 			//判断是否是因为断网导致重连
 			if !CheckNetwork() {
-				autoLog.Sugar.Error("网络断开，导致下线，开始重连（下次更新）")
-				Notice.SentText("网络断开，导致下线，开始重连（下次更新）")
-				return
+				decrypt, err := tools.Decrypt(config.Cfg.Account.SecretKey)
+				if err != nil {
+					autoLog.Sugar.Infof("密钥错误")
+					return
+				}
+				runDebug := false
+				abgiType := "noDebug"
+				//查询今天狗粮批发是什么线路
+				dogFoodLine := dogFood.DogFoodIsAOrB()
+				//读取联机文件
+				num := ReadFile("dogFoodNum.txt")
+
+				if dogFoodLine == "" {
+					autoLog.Sugar.Errorf("查询今天狗粮批发线路失败")
+					runDebug = true
+					abgiType = "debug"
+				} else if dogFoodLine == "B" {
+					runDebug = true
+					abgiType = "debug"
+				} else if num >= 100 {
+					autoLog.Sugar.Infof("今天狗粮已经跑完，无需再跑")
+					runDebug = true
+					abgiType = "debug"
+				}
+
+				for i := range 5 {
+					autoLog.Sugar.Errorf("网络断开，导致下线，开始重连,第%d次", i)
+					Notice.SentText(fmt.Sprintf("网络断开，导致下线，开始重连,第%d次", i))
+					//等待1分钟
+					time.Sleep(time.Minute)
+					//重新连接
+					err := Connect(fmt.Sprintf("ws://%s/api/abgiWs/%s/%s/%s", decrypt, abgiType, config.Cfg.Account.Uid, config.Cfg.Account.Name), runDebug, nil)
+					if err != nil {
+						autoLog.Sugar.Errorf("重连失败:%v", err)
+					}
+				}
+
 			}
 			return
 		}
@@ -185,8 +219,6 @@ func (c *AbgiClient) listen() {
 // StartGroups 启动配置组
 func startGroups(names []string) error {
 	control.CloseSoftware()
-
-	time.Sleep(5 * time.Second)
 
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 
