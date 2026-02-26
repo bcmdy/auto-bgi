@@ -1297,6 +1297,8 @@ func UpdateJs(jsName string) (string, error) {
 		}
 	}
 
+	//TODO 存为历史版本
+
 	// 删除原 js 脚本目录
 	os.RemoveAll(targetPath)
 

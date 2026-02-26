@@ -60,7 +60,10 @@ func UpdateABgi(c *gin.Context) {
 // GetBgiVersion 获取当前bgi版本和最新的bgi版本
 func GetBgiVersion(c *gin.Context) {
 	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
-		c.JSON(200, gin.H{"currentVersion": "不能在线升级", "lastVersion": "不能在线升级", "msg": "获取版本成功"})
+
+		versionInfo := BetterGI.GetYDVersionInfo()
+
+		c.JSON(200, gin.H{"currentVersion": config.BgiCfg.RunForVersion, "lastVersion": versionInfo.Version, "msg": "获取版本成功"})
 		return
 	}
 	//获取当前bgi版本

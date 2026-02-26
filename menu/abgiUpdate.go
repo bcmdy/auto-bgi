@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"auto-bgi/BetterGI"
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	_ "embed"
@@ -66,10 +67,19 @@ func Update() error {
 		return fmt.Errorf("当前版本为最新版本")
 	}
 
+	DownloadUrl := ""
+
+	if strings.Contains(version, "lcb") {
+		DownloadUrl = abgiConstant.ABgiUpdateUrl
+	} else {
+		ydVersionInfo := BetterGI.GetYDVersionInfo()
+		DownloadUrl = ydVersionInfo.BrowserDownloadUrl
+	}
+
 	// 记录开始下载新版本的日志
 	autoLog.Sugar.Infof("开始下载新版本")
 	// 通过HTTP GET请求获取更新文件
-	resp, err := http.Get(abgiConstant.ABgiUpdateUrl)
+	resp, err := http.Get(DownloadUrl)
 	if err != nil {
 		// 如果请求失败，返回错误
 		return err

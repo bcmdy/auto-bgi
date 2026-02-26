@@ -48,7 +48,7 @@
       <div class="section-block">
         <div class="section-header">
           <span class="icon">🎀</span>
-          <span class="text">茶包BGI 在线更新</span>
+          <span class="text">BGI 在线更新</span>
           <button class="help-btn" @click="openDisclaimer" title="免责声明">?</button>
           <button class="refresh-btn" @click="refreshBgiVersions" :disabled="downloading" title="刷新状态">
             <span>↻</span>
@@ -98,7 +98,7 @@
           </div>
           <div class="modal-body">
             <p>请确保bgi的文件夹是默认名字：BetterGI</p>
-            <p>本工具提供“茶包BGI 在线更新”功能仅为方便用户获取更新，开发者和供应方不对因更新引起的任何直接或间接损失承担责任。</p>
+            <p>本工具提供“BGI 在线更新”功能仅为方便用户获取更新，开发者和供应方不对因更新引起的任何直接或间接损失承担责任。很多反馈把本体删除的问题，是正常的，程序模拟的就是你手动更新的操作：备份-下载-删除原bgi-解压新的bgi到指定目录-还原user和log。</p>
           </div>
           <div class="modal-footer">
             <button class="anime-btn secondary" @click="closeDisclaimer">我已知晓</button>
