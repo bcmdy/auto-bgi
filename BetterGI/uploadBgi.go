@@ -486,28 +486,66 @@ func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, on
 		if end >= contentLength {
 			end = contentLength - 1
 		}
+		expectedSize := end - downloaded + 1
 
-		// 创建带 Range 头的请求
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-		if err != nil {
-			return err
+		var lastErr error
+		const maxRetries = 5
+		success := false
+
+		for i := 0; i < maxRetries; i++ {
+			if i > 0 {
+				autoLog.Sugar.Warnf("下载分片失败，正在重试 (%d/%d): %v", i, maxRetries, lastErr)
+				time.Sleep(time.Second * time.Duration(i))
+			}
+
+			// 重置文件指针到当前分片起始位置
+			if _, err := tmpFile.Seek(downloaded, 0); err != nil {
+				return fmt.Errorf("seek failed: %w", err)
+			}
+
+			// 创建带 Range 头的请求
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+			if err != nil {
+				return err
+			}
+			rangeHeader := fmt.Sprintf("bytes=%d-%d", downloaded, end)
+			req.Header.Set("Range", rangeHeader)
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+
+			// 检查状态码
+			if resp.StatusCode != http.StatusPartialContent && resp.StatusCode != http.StatusOK {
+				resp.Body.Close()
+				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+				continue
+			}
+
+			// 写入文件
+			n, err := io.Copy(tmpFile, resp.Body)
+			resp.Body.Close()
+
+			if err != nil {
+				lastErr = err
+				continue
+			}
+
+			if n != expectedSize {
+				lastErr = fmt.Errorf("short write: expected %d bytes, got %d", expectedSize, n)
+				continue
+			}
+
+			downloaded += n
+			success = true
+			break
 		}
-		rangeHeader := fmt.Sprintf("bytes=%d-%d", downloaded, end)
-		req.Header.Set("Range", rangeHeader)
 
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return err
+		if !success {
+			return fmt.Errorf("download chunk failed after %d retries: %w", maxRetries, lastErr)
 		}
-
-		// 写入文件
-		n, err := io.Copy(tmpFile, resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			return fmt.Errorf("write chunk failed: %w", err)
-		}
-
-		downloaded += n
 
 		// 5. 触发进度回调
 		if onProgress != nil {
