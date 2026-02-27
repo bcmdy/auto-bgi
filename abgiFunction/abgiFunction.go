@@ -2,7 +2,6 @@ package abgiFunction
 
 import (
 	"auto-bgi/AbgiBot"
-	"auto-bgi/BetterGI"
 	"auto-bgi/OneLong"
 	"auto-bgi/TaskCron"
 	"auto-bgi/abgiObs"
@@ -119,7 +118,7 @@ func InitFunction() {
 	control.GetSysTemUser()
 
 	if config.Cfg.Control.IsRedBlood {
-		go BetterGI.CheckRedBlood()
+		go bgiStatus.CheckRedBlood()
 		//go Ocr.PaddleOCR()
 	}
 

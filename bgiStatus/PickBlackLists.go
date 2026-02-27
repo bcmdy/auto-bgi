@@ -1,4 +1,4 @@
-package BetterGI
+package bgiStatus
 
 import (
 	"auto-bgi/autoLog"

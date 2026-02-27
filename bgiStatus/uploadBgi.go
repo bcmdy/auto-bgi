@@ -1,9 +1,8 @@
-package BetterGI
+package bgiStatus
 
 import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
-	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/tools"
@@ -116,7 +115,7 @@ func UploadBgi(c *gin.Context) {
 
 	//更新仓库
 	go func() {
-		bgiStatus.GitPull()
+		GitPull()
 	}()
 
 	c.JSON(http.StatusOK, gin.H{
@@ -391,7 +390,7 @@ func runBgiDownload(version string) {
 	}
 
 	go func() {
-		bgiStatus.GitPull()
+		GitPull()
 	}()
 
 	config.BgiCfg.RunForVersion = version
@@ -572,7 +571,7 @@ func UpdateBgi() error {
 	now := time.Now().Format("2006-01-02-15-04-05")
 
 	//1、备份user文件
-	err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+now+".zip", true)
+	err4 := ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+now+".zip", true)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("备份失败: %v", err4)
 		return fmt.Errorf("备份失败: %v", err4)

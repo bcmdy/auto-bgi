@@ -1,7 +1,6 @@
 package TaskCron
 
 import (
-	"auto-bgi/BetterGI"
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
 	"auto-bgi/abgiObs"
@@ -233,7 +232,7 @@ func InitTaskCron() {
 		autoLog.Sugar.Infof("定时任务启动：一条龙全部开启/关闭-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		split := strings.Split(data, "-")
 		if len(split) == 2 {
-			BetterGI.SetOneDragonAllStatus(split[0]+".json", split[1] == "开启")
+			bgiStatus.SetOneDragonAllStatus(split[0]+".json", split[1] == "开启")
 			autoLog.Sugar.Infof("一条龙全部开启/关闭成功")
 		} else {
 			autoLog.Sugar.Errorf("一条龙全部开启/关闭参数错误")

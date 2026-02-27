@@ -1,8 +1,8 @@
 package menu
 
 import (
-	"auto-bgi/BetterGI"
 	"auto-bgi/autoLog"
+	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/tools"
@@ -61,13 +61,13 @@ func UpdateABgi(c *gin.Context) {
 func GetBgiVersion(c *gin.Context) {
 	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
 
-		versionInfo := BetterGI.GetYDVersionInfo()
+		versionInfo := bgiStatus.GetYDVersionInfo()
 
 		c.JSON(200, gin.H{"currentVersion": config.BgiCfg.RunForVersion, "lastVersion": versionInfo.Version, "msg": "获取版本成功"})
 		return
 	}
 	//获取当前bgi版本
-	LastBgiVersion, err := BetterGI.GetVersion()
+	LastBgiVersion, err := bgiStatus.GetVersion()
 	if err != nil {
 		autoLog.Sugar.Error(err.Error())
 		c.JSON(200, gin.H{"msg": "获取版本失败"})

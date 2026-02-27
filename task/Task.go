@@ -7,13 +7,14 @@ import (
 	"auto-bgi/config"
 	"auto-bgi/control"
 	"fmt"
-	"github.com/robfig/cron/v3"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 func ListGroups() ([]string, error) {
@@ -56,7 +57,9 @@ func ListGroups() ([]string, error) {
 // StartGroups 启动配置组
 func StartGroups(names []string) error {
 	control.CloseSoftware()
-	time.Sleep(5 * time.Second)
+
+	//暂停500毫秒
+	time.Sleep(500 * time.Millisecond)
 
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 
@@ -67,13 +70,35 @@ func StartGroups(names []string) error {
 	}
 
 	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
-	cmdArgs := append([]string{"/C", "start", "", betterGIPath}, args...)
 
-	exec.Command("cmd", cmdArgs...).Start()
+	maxRetries := 3
+	var err error
 
-	autoLog.Sugar.Infof("执行命令:cmd /C start %s %s", betterGIPath, fmt.Sprintf("--startGroups %s", strings.Join(names, " ")))
+	for i := 0; i < maxRetries; i++ {
+		cmd := exec.Command(betterGIPath, args...)
+		cmd.Dir = config.Cfg.BetterGIAddress // 设置工作目录，确保能读取到配置文件
+		cmd.Stdout = nil
+		cmd.Stderr = nil
 
-	return nil
+		err = cmd.Start()
+		if err != nil {
+			autoLog.Sugar.Errorf("启动命令执行失败 (第 %d 次尝试): %v", i+1, err)
+		} else {
+			autoLog.Sugar.Infof("启动命令已下发，等待 20 秒检查进程状态 (第 %d 次尝试)...", i+1)
+		}
+
+		// 等待20秒检查进程
+		time.Sleep(20 * time.Second)
+
+		if control.CheckProcessRunning("BetterGI.exe") {
+			autoLog.Sugar.Infof("检测到 BetterGI 进程运行正常，启动成功: %v", names)
+			return nil
+		}
+
+		autoLog.Sugar.Warnf("未检测到 BetterGI 进程 (第 %d 次尝试)，将重试...", i+1)
+	}
+
+	return fmt.Errorf("启动配置组失败，已重试 %d 次: %w", maxRetries, err)
 }
 
 func StartOneDragon(name string) {
@@ -90,14 +115,30 @@ func StartOneDragon(name string) {
 		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
 		return
 	}
-	err := exec.Command("cmd", "/C", "start", "", betterGIPath, "--startOneDragon", name).Start()
-	if err != nil {
-		autoLog.Sugar.Errorf("启动一条龙失败: %v", err)
-		return
+
+	maxRetries := 3
+	var err error
+
+	for i := 0; i < maxRetries; i++ {
+		cmd := exec.Command(betterGIPath, "--startOneDragon", name)
+		cmd.Dir = config.Cfg.BetterGIAddress
+		err = cmd.Start()
+		if err != nil {
+			autoLog.Sugar.Errorf("启动一条龙命令执行失败 (第 %d 次尝试): %v", i+1, err)
+		} else {
+			autoLog.Sugar.Infof("启动一条龙命令已下发，等待 20 秒检查进程状态 (第 %d 次尝试)...", i+1)
+		}
+
+		time.Sleep(20 * time.Second)
+
+		if control.CheckProcessRunning("BetterGI.exe") {
+			autoLog.Sugar.Infof("检测到 BetterGI 进程运行正常，一条龙启动成功: %s", name)
+			return
+		}
+		autoLog.Sugar.Warnf("未检测到 BetterGI 进程 (第 %d 次尝试)，将重试...", i+1)
 	}
 
-	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startOneDragon", name)
-
+	autoLog.Sugar.Errorf("启动一条龙失败，已重试 %d 次: %v", maxRetries, err)
 }
 
 // 调用bat脚本
@@ -211,11 +252,28 @@ func StartOneDragonPlan(PlanName string) {
 		autoLog.Sugar.Errorf("BetterGI.exe 不存在: %v", err)
 		return
 	}
-	err := exec.Command("cmd", "/C", "start", "", betterGIPath, "--startContinuousOneDragon", PlanName).Start()
-	if err != nil {
-		autoLog.Sugar.Errorf("启动计划表失败: %v", err)
-		return
+
+	maxRetries := 3
+	var err error
+
+	for i := 0; i < maxRetries; i++ {
+		cmd := exec.Command(betterGIPath, "--startContinuousOneDragon", PlanName)
+		cmd.Dir = config.Cfg.BetterGIAddress
+		err = cmd.Start()
+		if err != nil {
+			autoLog.Sugar.Errorf("启动计划表命令执行失败 (第 %d 次尝试): %v", i+1, err)
+		} else {
+			autoLog.Sugar.Infof("启动计划表命令已下发，等待 20 秒检查进程状态 (第 %d 次尝试)...", i+1)
+		}
+
+		time.Sleep(20 * time.Second)
+
+		if control.CheckProcessRunning("BetterGI.exe") {
+			autoLog.Sugar.Infof("检测到 BetterGI 进程运行正常，计划表启动成功: %s", PlanName)
+			return
+		}
+		autoLog.Sugar.Warnf("未检测到 BetterGI 进程 (第 %d 次尝试)，将重试...", i+1)
 	}
 
-	autoLog.Sugar.Infof("执行命令：cmd /C start   %s %s %s", betterGIPath, "--startContinuousOneDragon", PlanName)
+	autoLog.Sugar.Errorf("启动计划表失败，已重试 %d 次: %v", maxRetries, err)
 }

@@ -9,7 +9,6 @@ import (
 	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"io"
 	"log"
 	"net"
@@ -19,6 +18,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type AbgiClient struct {
@@ -231,6 +232,9 @@ func (c *AbgiClient) listen() {
 func startGroups(names []string) error {
 	control.CloseSoftware()
 
+	//暂停500毫秒
+	time.Sleep(500 * time.Millisecond)
+
 	betterGIPath := filepath.Join(config.Cfg.BetterGIAddress, "BetterGI.exe")
 
 	// 检查文件是否存在
@@ -241,17 +245,34 @@ func startGroups(names []string) error {
 
 	args := append([]string{"--startGroups"}, names...) // 每个组名单独参数
 
-	cmd := exec.Command(betterGIPath, args...)
+	maxRetries := 3
+	var err error
 
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	err := cmd.Start()
-	if err != nil {
-		autoLog.Sugar.Errorf("启动配置组失败: %v", err)
-		return err
+	for i := 0; i < maxRetries; i++ {
+		cmd := exec.Command(betterGIPath, args...)
+		cmd.Dir = config.Cfg.BetterGIAddress // 设置工作目录，确保能读取到配置文件
+		cmd.Stdout = nil
+		cmd.Stderr = nil
+
+		err = cmd.Start()
+		if err != nil {
+			autoLog.Sugar.Errorf("启动命令执行失败 (第 %d 次尝试): %v", i+1, err)
+		} else {
+			autoLog.Sugar.Infof("启动命令已下发，等待 20 秒检查进程状态 (第 %d 次尝试)...", i+1)
+		}
+
+		// 等待20秒检查进程
+		time.Sleep(20 * time.Second)
+
+		if control.CheckProcessRunning("BetterGI.exe") {
+			autoLog.Sugar.Infof("检测到 BetterGI 进程运行正常，启动成功: %v", names)
+			return nil
+		}
+
+		autoLog.Sugar.Warnf("未检测到 BetterGI 进程 (第 %d 次尝试)，将重试...", i+1)
 	}
-	autoLog.Sugar.Infof("启动配置组成功: %v", names)
-	return nil
+
+	return fmt.Errorf("启动配置组失败，已重试 %d 次: %w", maxRetries, err)
 }
 
 // Send 发送消息

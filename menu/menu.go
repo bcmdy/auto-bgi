@@ -3,7 +3,6 @@ package menu
 import (
 	"auto-bgi/ArtifactsBulkSupply"
 	"auto-bgi/BackpackStatistics"
-	"auto-bgi/BetterGI"
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/CDCollectionManagement"
 	"auto-bgi/JsAPI"
@@ -32,6 +31,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/vcaesar/screenshot"
+	"image/png"
 	"io"
 	"io/fs"
 	"log"
@@ -280,7 +281,7 @@ func StarGin() {
 
 	var CDAwareAutoGatherService CDAwareAutoGather.UidInfo
 
-	var pickBlackListsService BetterGI.PickBlackLists
+	var pickBlackListsService bgiStatus.PickBlackLists
 
 	var videoInfoService abgiObs.VideoInfo
 
@@ -696,11 +697,11 @@ func StarGin() {
 		bgiConfigCotroller := needAuth.Group("/bgiConfig")
 		{
 			//查询所有配置文件
-			bgiConfigCotroller.GET("/allConfig", BetterGI.ReadBgiConfigAll)
+			bgiConfigCotroller.GET("/allConfig", bgiStatus.ReadBgiConfigAll)
 			//查询配置文件
-			bgiConfigCotroller.GET("/findConfig", BetterGI.ReadBgiConfig)
+			bgiConfigCotroller.GET("/findConfig", bgiStatus.ReadBgiConfig)
 			//保存配置文件
-			bgiConfigCotroller.POST("/saveConfig", BetterGI.ModifyBgiConfig)
+			bgiConfigCotroller.POST("/saveConfig", bgiStatus.ModifyBgiConfig)
 
 		}
 
@@ -765,6 +766,15 @@ func StarGin() {
 				c.JSON(http.StatusOK, gin.H{"status": "success", "msg": "启动成功"})
 			})
 
+			//查询没有跑完的一条龙配置组
+			oneLongController.GET("/unfinishedOneLong", func(context *gin.Context) {
+				unfinishedOneLong := bgiStatus.OneLongProgress.Order
+				if unfinishedOneLong == nil {
+					unfinishedOneLong = []string{}
+				}
+				context.JSON(http.StatusOK, gin.H{"status": "success", "data": unfinishedOneLong})
+			})
+
 		}
 
 		//读取所有一条龙配置
@@ -827,10 +837,10 @@ func StarGin() {
 
 		updateBgi := needAuth.Group("/UpdateBgi")
 		{
-			updateBgi.POST("/Upload", BetterGI.UploadBgi)
-			updateBgi.POST("/Download", BetterGI.StartDownloadBgi)
-			updateBgi.GET("/Download", BetterGI.DownloadBgiProgress)
-			updateBgi.GET("/DownloadStatus", BetterGI.GetBgiDownloadStatus)
+			updateBgi.POST("/Upload", bgiStatus.UploadBgi)
+			updateBgi.POST("/Download", bgiStatus.StartDownloadBgi)
+			updateBgi.GET("/Download", bgiStatus.DownloadBgiProgress)
+			updateBgi.GET("/DownloadStatus", bgiStatus.GetBgiDownloadStatus)
 		}
 
 		aBgiUpdate := needAuth.Group("/aBgiUpdate")
@@ -1163,7 +1173,14 @@ func StarGin() {
 	}
 
 	//测试
-	ginServer.GET("/api/test", CDCollectionManagement.CDCollectionRead)
+	ginServer.GET("/api/test", func(context *gin.Context) {
+
+		oneLongProgress := bgiStatus.OneLongProgress
+
+		context.JSON(http.StatusOK, gin.H{"status": "success", "msg": oneLongProgress})
+
+	})
+
 	//////妙妙屋
 	ABGIHoui()
 
@@ -1198,10 +1215,26 @@ func StarGin() {
 	needAuth.GET("/aBgiJt", func(c *gin.Context) {
 
 		//截图
-		err := control.ScreenShot("./img/abgi/jt.jpg")
+		//err := control.ScreenShot("./img/abgi/jt.jpg")
+		//if err != nil {
+		//	c.JSON(400, "截图失败")
+		//}
+
+		// 1. 获取显示器范围
+		bounds := screenshot.GetDisplayBounds(0)
+
+		// 2. 调用 Capture
+		img, err := screenshot.Capture(bounds.Min.X, bounds.Min.Y, bounds.Dx(), bounds.Dy())
 		if err != nil {
-			c.JSON(400, "截图失败")
+			panic(err)
 		}
+
+		// 3. 保存
+		f, _ := os.Create("./img/abgi/jt.jpg")
+		defer f.Close()
+		png.Encode(f, img)
+
+		fmt.Println("截图已保存至./img/abgi/jt.jpg")
 
 		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})

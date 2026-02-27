@@ -7,8 +7,6 @@ import (
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
-	"auto-bgi/task"
-	"auto-bgi/tools"
 	"bufio"
 	"fmt"
 	"io"
@@ -161,166 +159,20 @@ func (m *LogMonitor) Monitor() {
 					}
 				}
 
-				//ABGI启动重启ABGI:
-				if strings.HasPrefix(line, "ABGI启动重启ABGI：") {
-					autoLog.Sugar.Infof("js日志调用ABGI启动重启ABGI")
-					err := tools.RestartProgram()
-					if err != nil {
-						autoLog.Sugar.Errorf("js日志调用ABGI启动重启ABGI失败: %v", err)
-					}
+				if strings.HasPrefix(line, "ABGI") {
+					JsLogHandler(line)
 				}
 
-				//关闭原神
-				if strings.HasPrefix(line, "ABGI启动关闭原神：") {
-					autoLog.Sugar.Infof("js日志调用ABGI启动关闭原神")
-					control.CloseYuanShen()
-					data := strings.ReplaceAll(line, "ABGI启动关闭原神：", "")
-					if strings.Contains(data, "配置组-") {
-						//配置组
-						groupName := strings.ReplaceAll(data, "配置组-", "")
-						split := strings.Split(groupName, " ")
-						err := task.StartGroups(split)
-						if err != nil {
-							autoLog.Sugar.Errorf("js日志调用abgi启动配置组失败: %v", err)
-						} else {
-							autoLog.Sugar.Infof("js日志调用abgi关闭原神启动配置组成功: %s", groupName)
-						}
-					} else if strings.Contains(data, "一条龙-") {
-						//一条龙
-						oneLongName := strings.ReplaceAll(data, "一条龙-", "")
-						autoLog.Sugar.Infof("js日志调用abgi关闭原神启动一条龙" + oneLongName)
-						//// 关闭软件
-						control.CloseSoftware()
-						task.StartOneDragon(oneLongName)
-					}
-
-				}
-
-				//js日志调用abgi联机换号
-				if strings.HasPrefix(line, "ABGI启动联机换号：") {
-					data := strings.ReplaceAll(line, "ABGI启动联机换号：", "")
-					abgiSSE.ChangeAccount(data)
-				}
-
-				//js日志调用abgi启动一条龙
-				if strings.HasPrefix(line, "ABGI启动一条龙：") {
-
-					oneLongName := strings.ReplaceAll(line, "ABGI启动一条龙：", "")
-					autoLog.Sugar.Infof("js日志调用abgi启动一条龙" + oneLongName)
-					//// 关闭软件
-					control.CloseSoftware()
-					task.StartOneDragon(oneLongName)
-				}
-				//js日志调用abgi启动配置组
-				if strings.HasPrefix(line, "ABGI启动配置组：") {
-
-					autoLog.Sugar.Infof("js日志调用abgi启动配置组")
-					groupName := strings.ReplaceAll(line, "ABGI启动配置组：", "")
-					split := strings.Split(groupName, " ")
-					err := task.StartGroups(split)
-					if err != nil {
-						autoLog.Sugar.Errorf("js日志调用abgi启动配置组失败: %v", err)
-					}
-				}
-				//js日志调用abgi联机上线
-				if strings.HasPrefix(line, "ABGI启动联机上线：") {
-
-					autoLog.Sugar.Infof("js日志调用abgi联机上线")
-					abgiSSE.OnStart()
-				}
-
-				//js日志调用abgi联机下线
-				if strings.HasPrefix(line, "ABGI启动联机下线：") {
-					autoLog.Sugar.Infof("js日志调用abgi联机下线")
-					abgiSSE.Close()
-				}
-
-				//ABGI启动联机调试：
-				if strings.HasPrefix(line, "ABGI启动联机调试：") {
-					abgiSSE.OnStartDebug()
-					autoLog.Sugar.Infof("js日志调用ABGI启动联机调试")
-				}
-				//ABGI启动BAT脚本：
-				if strings.HasPrefix(line, "ABGI启动BAT脚本：") {
-					data := strings.ReplaceAll(line, "ABGI启动BAT脚本：", "")
-					task.CallBat(data)
-					if err != nil {
-						autoLog.Sugar.Errorf("js日志调用ABGI启动BAT脚本失败: %v", err)
-					} else {
-						autoLog.Sugar.Infof("js日志调用ABGI启动BAT脚本成功: %s", data)
-					}
-				}
-
-				//ABGI启动脚本更新
-				if strings.HasPrefix(line, "ABGI启动脚本更新：") {
-					names := strings.ReplaceAll(line, "ABGI启动脚本更新：", "")
-					split := strings.Split(names, " ")
-
-					js, err := SpecifyUpdateJs(split)
-					if err != nil {
-						autoLog.Sugar.Errorf("指定脚本更新失败: %v", err)
-					}
-					autoLog.Sugar.Infof("指定脚本更新成功: %s", js)
-					Notice.SentText("指定脚本更新成功: " + js)
-				}
-
-				//ABGI启动今日配置组执行情况通知
-				if strings.HasPrefix(line, "ABGI启动今日配置组执行情况通知：") {
-					TodayGroupsInfo()
-					autoLog.Sugar.Infof("js日志调用ABGI启动今日配置组执行情况通知")
-				}
-
-				//ABGI启动关闭原神和关闭bgi：
-				if strings.HasPrefix(line, "ABGI启动关闭原神和关闭bgi：") {
-					control.CloseSoftware()
-					control.CloseYuanShen()
-					autoLog.Sugar.Infof("js日志调用ABGI启动关闭原神和关闭bgi")
-				}
-
-				//ABGI启动电脑静音：
-				if strings.HasPrefix(line, "ABGI启动电脑静音：") {
-					AudioService.Mute()
-					autoLog.Sugar.Infof("js日志调用ABGI启动电脑静音")
-				}
-
-				//js日志调用abgi启动关闭obs
-				if strings.HasPrefix(line, "ABGI启动obs：") {
-
-					autoLog.Sugar.Infof("ABGI启动obs")
-					data := strings.ReplaceAll(line, "ABGI启动obs：", "")
-					if data == "启动" {
-						err := abgiObs.StartRecording()
-						if err != nil {
-							autoLog.Sugar.Errorf("js日志调用abgi启动obs失败: %v", err)
-						}
-					} else if data == "关闭" {
-						err := abgiObs.StopRecording(BgiLogStatusInfo.Group)
-						if err != nil {
-							autoLog.Sugar.Errorf("js日志调用abgi关闭obs失败: %v", err)
-						}
-					}
-
-				}
-
-				//js日志调用abgi米游社签到
-				if strings.HasPrefix(line, "ABGI启动米游社签到：") {
-					autoLog.Sugar.Infof("ABGI启动米游社签到")
+				//角色死亡自动吃药
+				if strings.Contains(line, "发现角色死亡") {
+					//自动吃药
 					go func() {
-						control.CallPython()
+						//等待2秒自动吃药
+						time.Sleep(2 * time.Second)
+						control.PressKey("z")
+						autoLog.Sugar.Infof("js日志角色死亡触发abgi自动吃药")
+						Notice.SentText("js日志角色死亡触发abgi自动吃药")
 					}()
-				}
-
-				//js日志调用abgi更换房间
-				if strings.HasPrefix(line, "ABGI启动更换房间：") {
-					autoLog.Sugar.Infof(line)
-					data := strings.ReplaceAll(line, "ABGI启动更换房间：", "")
-					split := strings.Split(data, "-")
-					if len(split) == 2 {
-						abgiSSE.ModifyRoom(split[0], split[1])
-					} else {
-						autoLog.Sugar.Errorf("更换房间参数错误")
-					}
-
 				}
 
 				//一条龙结束操作
@@ -365,6 +217,7 @@ func (m *LogMonitor) Monitor() {
 
 					autoLog.Sugar.Infof("一条龙和配置组任务结束，所有配置组已归档")
 				}
+
 				if strings.Contains(line, "OnRdpClientDisconnected") {
 					Notice.SentText("RDP 客户端断开连接")
 					autoLog.Sugar.Infof("RDP 客户端断开连接")
@@ -380,14 +233,6 @@ func (m *LogMonitor) Monitor() {
 					abgiSSE.ABgiSeeStatus = "联机结束"
 				}
 
-				if strings.Contains(line, "abgi联机排行榜") {
-					//提取数字
-					re := regexp.MustCompile(`(\d+)$`)
-					num := re.FindString(line)
-
-					abgiSSE.WriteDogFoodNum(num)
-				}
-
 				if strings.Contains(line, "如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）") {
 					Notice.SentText("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")
 					autoLog.Sugar.Infof("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")
@@ -396,6 +241,15 @@ func (m *LogMonitor) Monitor() {
 				}
 
 				//首页相关
+
+				//一条龙初始化
+				if strings.Contains(line, "参数指定的一条龙配置：") {
+					name := strings.ReplaceAll(line, "参数指定的一条龙配置：", "")
+					//去除空格
+					name = strings.TrimSpace(name)
+					InitialOneLongProgress(name)
+				}
+
 				//配置组名称
 				if strings.Contains(line, "配置组") && strings.Contains(line, "开始执行") {
 					re := regexp.MustCompile(`"(.*?)"`)
@@ -429,6 +283,11 @@ func (m *LogMonitor) Monitor() {
 						BgiLogStatusInfo.ScriptName = "已经结束"
 						BgiLogStatusInfo.JSProgress = "已经结束"
 						BgiLogStatusInfo.ConfigurationGroupExecutionProgress = "已经结束"
+
+						//更新进度
+						if _, ok := OneLongProgress.Details[BgiLogStatusInfo.Group]; ok {
+							OneLongProgress.Details[BgiLogStatusInfo.Group] = true
+						}
 
 					} else {
 						BgiLogStatusInfo.Group = "未找到配置组"

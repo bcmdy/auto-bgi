@@ -7,8 +7,6 @@ import (
 	"auto-bgi/config"
 	"crypto/sha256"
 	"fmt"
-	"github.com/go-vgo/robotgo"
-	"github.com/tidwall/gjson"
 	"image/jpeg"
 	"net/http"
 	"os"
@@ -21,6 +19,9 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"github.com/go-vgo/robotgo"
+	"github.com/tidwall/gjson"
 )
 
 /*
@@ -122,6 +123,19 @@ func CloseSoftware() {
 		autoLog.Sugar.Errorf("执行命令出错: %v\n", err)
 	}
 
+}
+
+// CheckProcessRunning 检查指定进程名的进程是否在运行
+func CheckProcessRunning(processName string) bool {
+	cmd := exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s", processName))
+	// 隐藏窗口
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		autoLog.Sugar.Errorf("检查进程失败: %v", err)
+		return false
+	}
+	return strings.Contains(string(output), processName)
 }
 
 // CloseYuanShen 关闭软件
