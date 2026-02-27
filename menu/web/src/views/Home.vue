@@ -134,10 +134,6 @@
       v-model:open="oneLongModal.visible"
       title="🌸 选择启动的一条龙 🌸"
       :confirm-loading="oneLongModal.loading"
-      @ok="handleOneLongOk"
-      @cancel="handleOneLongCancel"
-      ok-text="启动"
-      cancel-text="取消"
       class="anime-modal"
     >
       <div style="padding: 20px 0;">
@@ -150,6 +146,28 @@
                 {{ item }}
             </a-select-option>
          </a-select>
+      </div>
+      <template #footer>
+        <a-button key="back" @click="handleOneLongCancel">取消</a-button>
+        <a-button key="continue" :loading="oneLongModal.loading" @click="handleContinueRun">继续跑</a-button>
+        <a-button key="submit" type="primary" :loading="oneLongModal.loading" @click="handleOneLongOk">启动</a-button>
+      </template>
+    </a-modal>
+
+    <a-modal
+      v-model:open="continueRunModal.visible"
+      title="🌸 继续未完成的任务 🌸"
+      :confirm-loading="continueRunModal.loading"
+      @ok="handleContinueRunOk"
+      class="anime-modal"
+    >
+      <div style="padding: 20px 0;">
+        <div style="margin-bottom: 10px; color: #ff66a3; font-weight: bold;">请勾选需要继续执行的任务：</div>
+         <CheckboxGroup v-model:value="continueRunModal.selectedValues" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+            <Checkbox v-for="item in continueRunModal.options" :key="item" :value="item" style="margin-left: 0; font-size: 16px;">
+                {{ item }}
+            </Checkbox>
+         </CheckboxGroup>
       </div>
     </a-modal>
 
@@ -232,10 +250,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, computed, watch, h } from 'vue'
-import { message, Modal, Select } from 'ant-design-vue'
+import { message, Modal, Select, Checkbox } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 // 假设这里有您的API工具，如果报错请保留您原来的引入方式
 import { apiMethods } from '@/utils/api' 
+
+const CheckboxGroup = Checkbox.Group
 
 const router = useRouter()
 
@@ -608,7 +628,7 @@ const sendImage = () => {
 }
 
 const indexSXBtn = () => {
-    apiMethods.indexSX()
+    // apiMethods.indexSX()
     refreshStatus()
     message.success('正在重启中····')
 }
@@ -658,6 +678,65 @@ const handleOneLongOk = async () => {
     } catch(e) { message.error('启动失败') } finally { oneLongModal.loading = false }
 }
 const handleOneLongCancel = () => { oneLongModal.visible = false }
+
+// --- 继续跑逻辑 ---
+const continueRunModal = reactive({
+    visible: false,
+    loading: false,
+    options: [], 
+    selectedValues: []
+})
+
+const handleContinueRun = async () => {
+    try {
+        oneLongModal.loading = true
+        const res = await apiMethods.unfinishedOneLong()
+        const unfinishedGroups = res.data || []
+        
+        if (unfinishedGroups.length === 0) {
+             message.info('没有未完成的配置组')
+             return
+        }
+
+        // 初始化数据：设置选项并默认全选
+        continueRunModal.options = [...unfinishedGroups] // 确保是新数组
+        continueRunModal.selectedValues = [...unfinishedGroups] // 确保是新数组
+        
+        // 确保数据更新后再切换显示状态
+        // 尝试先打开新窗口，再关闭旧窗口，或者使用 nextTick（这里简单调整顺序）
+        console.log('Opening continueRunModal with options:', continueRunModal.options)
+        continueRunModal.visible = true
+        
+        // 稍微延迟关闭旧窗口，避免视觉上的闪烁或状态竞争
+        setTimeout(() => {
+            oneLongModal.visible = false
+        }, 100)
+
+    } catch(e) {
+        console.error('Failed to get unfinished tasks:', e)
+        message.error('获取未完成任务失败')
+    } finally {
+        oneLongModal.loading = false
+    }
+}
+
+const handleContinueRunOk = async () => {
+    if (continueRunModal.selectedValues.length === 0) {
+        message.warning('请至少选择一个配置组')
+        return
+    }
+    
+    try {
+        continueRunModal.loading = true
+        await apiMethods.startGroups(continueRunModal.selectedValues)
+        message.success('已启动选中的配置组')
+        continueRunModal.visible = false
+    } catch (e) {
+        message.error('启动失败')
+    } finally {
+        continueRunModal.loading = false
+    }
+}
 
 // --- 樱花动画类 ---
 class Petal {
@@ -756,7 +835,7 @@ onMounted(() => {
     getImages()
     getHeaderImages()
     refreshStatus()
-    statusInterval = setInterval(refreshStatus, 3000)
+    statusInterval = setInterval(refreshStatus, 5000)
     
     onUnmounted(() => {
         cleanup && cleanup()
@@ -999,6 +1078,9 @@ button {
   position: relative;
   overflow: hidden;
   text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 button:active { transform: scale(0.95); }

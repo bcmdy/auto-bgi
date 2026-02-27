@@ -1,7 +1,6 @@
 package menu
 
 import (
-	"auto-bgi/BetterGI"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/config"
 	"github.com/gin-gonic/gin"
@@ -30,7 +29,7 @@ func GetAppInfo(context *gin.Context) {
 		//当前bgi版本
 		data["bgi版本"] = config.BgiCfg.RunForVersion
 		//获取最新的bgi版本
-		data["最新bgi版本"], _ = BetterGI.GetVersion()
+		data["最新bgi版本"], _ = GetVersion()
 	}
 
 	context.JSON(http.StatusOK, gin.H{"status": "success", "data": data})

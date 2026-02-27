@@ -53,6 +53,9 @@ func InitFunction() {
 		}
 	}
 
+	//读取bgi配置
+	config.ReadBgiConfig()
+
 	//初始化bgi日志信息
 	bgiStatus.InitBgiLogStatus()
 
@@ -87,9 +90,6 @@ func InitFunction() {
 		}
 		autoLog.Sugar.Infof("目录Users成功：%s", "Users")
 	}
-
-	//读取bgi配置
-	config.ReadBgiConfig()
 
 	//定时任务
 	TaskCron.InitTaskCron()

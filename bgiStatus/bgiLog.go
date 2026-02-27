@@ -250,6 +250,12 @@ func (m *LogMonitor) Monitor() {
 					InitialOneLongProgress(name)
 				}
 
+				if BgiGroupEnd[line] != "" {
+					if _, ok := OneLongProgress.Details[BgiGroupEnd[line]]; ok {
+						OneLongProgress.Details[BgiGroupEnd[line]] = true
+					}
+				}
+
 				//配置组名称
 				if strings.Contains(line, "配置组") && strings.Contains(line, "开始执行") {
 					re := regexp.MustCompile(`"(.*?)"`)

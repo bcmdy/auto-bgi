@@ -98,7 +98,7 @@
           </div>
           <div class="modal-body">
             <p>请确保bgi的文件夹是默认名字：BetterGI</p>
-            <p>本工具提供“BGI 在线更新”功能仅为方便用户获取更新，开发者和供应方不对因更新引起的任何直接或间接损失承担责任。很多反馈把本体删除的问题，是正常的，程序模拟的就是你手动更新的操作：备份-下载-删除原bgi-解压新的bgi到指定目录-还原user和log。</p>
+            <p>本工具提供“BGI 在线更新”功能仅为方便用户获取更新，开发者和供应方不对因更新引起的任何直接或间接损失承担责任。很多反馈把本体删除的问题，是正常的，程序模拟的就是你手动更新的操作：备份-下载-删除原bgi-解压新的bgi到指定目录-还原user和log。备份路径：在abgi的根目录下：user备份在users文件夹，log备份在backups</p>
           </div>
           <div class="modal-footer">
             <button class="anime-btn secondary" @click="closeDisclaimer">我已知晓</button>

@@ -8,14 +8,26 @@ type OneLongLogProgress struct {
 	Order []string
 }
 
-var OneLongProgress OneLongLogProgress
+var OneLongProgress = OneLongLogProgress{
+	OneLongName: "",
+	Details:     make(map[string]bool),
+	Order:       []string{},
+}
 
 func InitialOneLongProgress(OneLongName string) {
+
+	if OneLongProgress.OneLongName == OneLongName {
+		return
+	}
+	OneLongProgress = OneLongLogProgress{
+		OneLongName: "",
+		Details:     make(map[string]bool),
+		Order:       []string{},
+	}
+
 	dragonConfig := readOneDragonConfig(OneLongName + ".json")
 
-	OneLongProgress.OneLongName = dragonConfig.Name
-	OneLongProgress.Details = make(map[string]bool)
-	OneLongProgress.Order = []string{} // 初始化顺序切片
+	OneLongProgress.OneLongName = OneLongName
 
 	for _, enabled := range dragonConfig.TaskEnabledList {
 		if enabled.Enabled {
@@ -25,4 +37,17 @@ func InitialOneLongProgress(OneLongName string) {
 			OneLongProgress.Details[enabled.Name] = false
 		}
 	}
+}
+
+// 去重
+func UniqueStrings(input []string) []string {
+	keys := make(map[string]bool)
+	var list []string
+	for _, entry := range input {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }

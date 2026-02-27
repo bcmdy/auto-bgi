@@ -27,6 +27,13 @@ var Projects []ScriptGroup.Project
 
 var Group ScriptGroup.ScriptGroupConfig
 
+var BgiGroupEnd = map[string]string{
+	"自动秘境结束":                      "自动秘境",
+	"领取尘歌壶奖励:\"退出到主页\"":     "领取尘歌壶奖励",
+	"合成\"浓缩树脂\"":                  "合成树脂",
+	"→ \"前往冒险家协会领取奖励\" 结束": "领取每日奖励",
+}
+
 // 倒序读取日志，找到第一个配置组和地图追踪路线就返回
 func InitBgiLogStatus() {
 	logName := config.Cfg.BgiLog
@@ -50,6 +57,14 @@ func InitBgiLogStatus() {
 	for scanner.Scan() {
 		line := scanner.Text()
 
+		//一条龙初始化
+		if strings.Contains(line, "参数指定的一条龙配置：") {
+			name := strings.ReplaceAll(line, "参数指定的一条龙配置：", "")
+			//去除空格
+			name = strings.TrimSpace(name)
+			InitialOneLongProgress(name)
+		}
+
 		//找到配置组
 		if strings.Contains(line, "配置组") && strings.Contains(line, "开始执行") {
 			re := regexp.MustCompile(`"(.*?)"`)
@@ -68,6 +83,12 @@ func InitBgiLogStatus() {
 			}
 		}
 
+		if BgiGroupEnd[line] != "" {
+			if _, ok := OneLongProgress.Details[BgiGroupEnd[line]]; ok {
+				OneLongProgress.Details[BgiGroupEnd[line]] = true
+			}
+		}
+
 		if strings.Contains(line, "配置组") && strings.Contains(line, "执行结束") {
 			re := regexp.MustCompile(`"(.*?)"`)
 			matches := re.FindStringSubmatch(line)
@@ -80,6 +101,12 @@ func InitBgiLogStatus() {
 				BgiLogStatusInfo.MapTrackingLine = "已经结束"
 				BgiLogStatusInfo.ScriptName = "已经结束"
 				BgiLogStatusInfo.JSProgress = "已经结束"
+
+				//更新进度
+				if _, ok := OneLongProgress.Details[matches[1]]; ok {
+					OneLongProgress.Details[matches[1]] = true
+				}
+
 			} else {
 				BgiLogStatusInfo.Group = "未找到配置组"
 			}
@@ -93,6 +120,7 @@ func InitBgiLogStatus() {
 
 		//当前运行脚本
 		if strings.Contains(line, "开始执行JS脚本") {
+
 			re := regexp.MustCompile(`"(.*?)"`)
 			matches := re.FindStringSubmatch(line)
 			if len(matches) > 1 {

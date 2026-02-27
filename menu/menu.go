@@ -768,11 +768,17 @@ func StarGin() {
 
 			//查询没有跑完的一条龙配置组
 			oneLongController.GET("/unfinishedOneLong", func(context *gin.Context) {
-				unfinishedOneLong := bgiStatus.OneLongProgress.Order
-				if unfinishedOneLong == nil {
-					unfinishedOneLong = []string{}
+				var unfinishedOneLong []string
+				// 按照插入时的顺序进行输出
+				for _, name := range bgiStatus.OneLongProgress.Order {
+					status := bgiStatus.OneLongProgress.Details[name]
+					if !status {
+						unfinishedOneLong = append(unfinishedOneLong, name)
+					}
 				}
 				context.JSON(http.StatusOK, gin.H{"status": "success", "data": unfinishedOneLong})
+
+				//context.JSON(http.StatusOK, gin.H{"status": "success", "data": bgiStatus.OneLongProgress})
 			})
 
 		}

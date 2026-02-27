@@ -107,6 +107,7 @@ export const apiMethods = {
   
   // 系统操作
   startOneLong: (data) => api.post('/api/oneLong/startOneLong', data),
+  unfinishedOneLong: () => api.get('/api/oneLong/unfinishedOneLong'),
   closeBgi: () => api.post('/api/closeBgi'),
   closeYuanShen: () => api.post('/closeYuanShen'),
   backup: () => api.post('/api/backup'),
