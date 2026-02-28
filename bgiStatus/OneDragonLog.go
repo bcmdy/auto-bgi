@@ -1,5 +1,7 @@
 package bgiStatus
 
+import "auto-bgi/autoLog"
+
 type OneLongLogProgress struct {
 	OneLongName string
 	// 存储具体的状态值
@@ -37,6 +39,8 @@ func InitialOneLongProgress(OneLongName string) {
 			OneLongProgress.Details[enabled.Name] = false
 		}
 	}
+
+	autoLog.Sugar.Infof("初始化一条龙进度：%v", OneLongProgress)
 }
 
 // 去重

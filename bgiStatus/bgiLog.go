@@ -164,7 +164,7 @@ func (m *LogMonitor) Monitor() {
 				}
 
 				//角色死亡自动吃药
-				if strings.Contains(line, "发现角色死亡") {
+				if strings.Contains(line, "发现角色死亡") && config.Cfg.Control.IsRedBlood {
 					//自动吃药
 					go func() {
 						//等待2秒自动吃药
