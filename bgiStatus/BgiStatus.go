@@ -6,6 +6,7 @@ import (
 	"auto-bgi/Notice"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/abgiConstant"
+	"auto-bgi/abgiObs"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -60,6 +61,11 @@ func CheckBetterGIStatus() {
 			if running {
 				autoLog.Sugar.Infof("BetterGI 正在运行: %s", time.Now().Format("2006-01-02 15:04:05"))
 			} else {
+				//缓存回放，保存关闭前的视频
+				go func() {
+					abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s", "BetterGI 已经关闭", time.Now().Format("2006-01-02-15-04-05")))
+				}()
+
 				Notice.SentText("BetterGI 已经关闭:" + config.Cfg.Content)
 				autoLog.Sugar.Infof("BetterGI 已关闭: %s", time.Now().Format("2006-01-02 15:04:05"))
 				// 检查配置文件中是否设置了需要关闭原神

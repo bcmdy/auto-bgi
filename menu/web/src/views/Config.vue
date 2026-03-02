@@ -116,6 +116,10 @@
              <div class="switch-item">
                <a-checkbox v-model:checked="formData.Control.IsRedBlood" class="enhanced-checkbox">❌ 是否开启血条检测</a-checkbox>
             </div>
+        <div class="switch-item" v-if="formData.Control.IsRedBlood" style="display:flex;align-items:center;gap:8px;">
+          <span style="color:#555">触发吃药次数：</span>
+          <a-input-number v-model:value="formData.Control.RedBloodCount" :min="0" :max="99" class="enhanced-input" style="width:120px" />
+        </div>
           </div>
         </a-card>
 
@@ -310,6 +314,7 @@ const formData = reactive({
     AbgiScreen: false,
     OBSReplayBuffer: false,
     IsRedBlood: false,
+    RedBloodCount: 0,
   },
   OneRemote: {
     IsMonitor: false,
@@ -413,7 +418,11 @@ const loadConfig = async () => {
       if (formData.LogKeywords.length === 0) formData.LogKeywords = ['']
 
       if (data.OneLong) Object.assign(formData.OneLong, data.OneLong)
-      if (data.Control) Object.assign(formData.Control, data.Control)
+      if (data.Control) {
+        Object.assign(formData.Control, data.Control)
+        // 确保 RedBloodCount 为数字类型（后端可能返回字符串）
+        formData.Control.RedBloodCount = Number(formData.Control.RedBloodCount) || 0
+      }
       if (data.OneRemote) Object.assign(formData.OneRemote, data.OneRemote)
       if (data.ScreenRecord) Object.assign(formData.ScreenRecord, data.ScreenRecord)
       if (data.Notice) {
@@ -474,6 +483,10 @@ const handleSubmit = async () => {
         payload.Notice.OneBot.QQNum = Number(payload.Notice.OneBot.QQNum) || 0
         payload.Notice.OneBot.groupNum = Number(payload.Notice.OneBot.groupNum) || 0
       }
+    }
+    // 确保 Control.RedBloodCount 为数字
+    if (payload.Control) {
+      payload.Control.RedBloodCount = Number(payload.Control.RedBloodCount) || 0
     }
 
     console.log('提交的配置:', payload)

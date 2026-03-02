@@ -2,6 +2,7 @@ package menu
 
 import (
 	"auto-bgi/abgiSSE"
+	"auto-bgi/bgiStatus"
 	"auto-bgi/config"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -22,14 +23,14 @@ func GetAppInfo(context *gin.Context) {
 
 	if !strings.Contains(config.BgiCfg.RunForVersion, "lcb") {
 		//当前bgi版本
-		data["bgi版本"] = "不能在线更新"
+		data["bgi版本"] = config.BgiCfg.RunForVersion
 		//获取最新的bgi版本
-		data["最新bgi版本"] = "不能在线更新"
+		data["最新bgi版本"] = bgiStatus.GetYDVersionInfo()
 	} else {
 		//当前bgi版本
 		data["bgi版本"] = config.BgiCfg.RunForVersion
 		//获取最新的bgi版本
-		data["最新bgi版本"], _ = GetVersion()
+		data["最新bgi版本"], _ = bgiStatus.GetVersion()
 	}
 
 	context.JSON(http.StatusOK, gin.H{"status": "success", "data": data})

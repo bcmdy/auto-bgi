@@ -152,7 +152,7 @@ func (m *LogMonitor) Monitor() {
 						if config.Cfg.ScreenRecord.IsRecord {
 							autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
 							go func() {
-								abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine))
+								abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s-%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine, time.Now().Format("2006-01-02-15-04-05")))
 							}()
 						}
 
@@ -169,9 +169,12 @@ func (m *LogMonitor) Monitor() {
 					go func() {
 						//等待2秒自动吃药
 						time.Sleep(2 * time.Second)
-						control.PressKey("z")
-						autoLog.Sugar.Infof("js日志角色死亡触发abgi自动吃药")
-						Notice.SentText("js日志角色死亡触发abgi自动吃药")
+						for range config.Cfg.Control.RedBloodCount {
+							control.PressKey("z")
+							CheckRedBloodSum++
+							Notice.SentText(fmt.Sprintf("角色死亡，自动按Z键，第%d次", CheckRedBloodSum))
+							time.Sleep(2 * time.Second)
+						}
 					}()
 				}
 

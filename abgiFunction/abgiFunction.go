@@ -14,9 +14,15 @@ import (
 	"auto-bgi/frpc"
 	"auto-bgi/task"
 	"os"
+	"time"
 )
 
 var OneLongService OneLong.OneLong
+
+func init() {
+	//读取bgi配置
+	config.ReadBgiConfig()
+}
 
 func InitFunction() {
 	//检查BGI状态
@@ -52,9 +58,6 @@ func InitFunction() {
 			autoLog.Sugar.Infof("OBS连接成功")
 		}
 	}
-
-	//读取bgi配置
-	config.ReadBgiConfig()
 
 	//初始化bgi日志信息
 	bgiStatus.InitBgiLogStatus()
@@ -118,6 +121,7 @@ func InitFunction() {
 	control.GetSysTemUser()
 
 	if config.Cfg.Control.IsRedBlood {
+		bgiStatus.RedBloodSumTime = time.Now()
 		go bgiStatus.CheckRedBlood()
 		//go Ocr.PaddleOCR()
 	}

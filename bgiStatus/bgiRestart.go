@@ -3,7 +3,9 @@ package bgiStatus
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
+	"auto-bgi/config"
 	"auto-bgi/control"
+	"auto-bgi/tools"
 	"fmt"
 	"github.com/vcaesar/screenshot"
 	"image"
@@ -19,6 +21,8 @@ var (
 )
 
 var CheckRedBloodSum = 0
+
+var RedBloodSumTime time.Time
 
 // 红血检测
 func CheckRedBlood() {
@@ -36,9 +40,16 @@ func CheckRedBlood() {
 		if hasRedBlood(rect) {
 			autoLog.Sugar.Infof("检测到红血条。")
 			// TODO: 检测到红色血条，执行相关操作
-			control.PressKey("z")
-			CheckRedBloodSum++
-			Notice.SentText(fmt.Sprintf("检测到红血条，自动按Z键，第%d次", CheckRedBloodSum))
+			for range config.Cfg.Control.RedBloodCount {
+				control.PressKey("z")
+				CheckRedBloodSum++
+				Notice.SentText(fmt.Sprintf("检测到红血条，自动按Z键，第%d次", CheckRedBloodSum))
+				time.Sleep(2 * time.Second)
+			}
+		}
+		if !tools.IsSameDay(RedBloodSumTime, time.Now()) {
+			CheckRedBloodSum = 0
+			RedBloodSumTime = time.Now()
 		}
 		time.Sleep(2000 * time.Millisecond)
 	}

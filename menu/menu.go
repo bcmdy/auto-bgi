@@ -6,6 +6,7 @@ import (
 	"auto-bgi/CDAwareAutoGather"
 	"auto-bgi/CDCollectionManagement"
 	"auto-bgi/JsAPI"
+	"auto-bgi/MCP"
 	"auto-bgi/Mihoyo"
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
@@ -262,6 +263,9 @@ func StarGin() {
 
 	ginServer.SetTrustedProxies(nil)
 	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
+
+	// 启动 MCP 服务
+	MCP.StartMCPServer(ginServer)
 
 	authApi := ginServer.Group("/api/auth")
 	{
