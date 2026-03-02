@@ -328,6 +328,24 @@ abgi会根据关键字自动录制回放。
 
 回到登录界面
 
+## MCP
+
+abgi提供mcp给ai客户端使用
+
+```json
+{
+  "transport": "sse",
+  "url": "http://ip:端口/mcp/sse",
+  "headers": {
+    "apiKey": "abgi"
+  },
+  "timeout": 5,
+  "sse_read_timeout": 300
+}
+```
+
+
+
 ------
 
 
