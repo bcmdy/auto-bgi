@@ -44,7 +44,8 @@ func CheckRedBlood() {
 				control.PressKey("z")
 				CheckRedBloodSum++
 				Notice.SentText(fmt.Sprintf("检测到红血条，自动按Z键，第%d次", CheckRedBloodSum))
-				time.Sleep(2 * time.Second)
+				autoLog.Sugar.Infof("自动按Z键，第%d次", CheckRedBloodSum)
+				time.Sleep(3 * time.Second)
 			}
 		}
 		if !tools.IsSameDay(RedBloodSumTime, time.Now()) {
@@ -90,7 +91,7 @@ func hasRedBlood(rect image.Rectangle) bool {
 
 	// 红色占比阈值（血条非常合适）
 	//fmt.Println(ratio >= 0.05)
-	return ratio > 0.018
+	return ratio > 0.015
 }
 
 // 红色判定规则（为血条调优）
@@ -98,9 +99,5 @@ func isRed(r, g, b uint8) bool {
 	//fmt.Println(r, g, b)
 
 	return r == 255 && g == 90 && b == 90
-
-	//return r >= 201 &&
-	//	g >= 60 && g <= 120 &&
-	//	b >= 60 && b <= 120
 
 }

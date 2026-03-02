@@ -72,6 +72,10 @@ func StartMCPServer(router *gin.Engine) {
 	mcpGroup := router.Group("/mcp")
 	{
 		mcpGroup.GET("/sse", handleSSE)
+
+		mcpGroup.POST("/sse", handleSSE)
+
+		// 支持路径参数 :sessionId
 		mcpGroup.POST("/messages", handleMessages)
 	}
 }
