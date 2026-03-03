@@ -4,7 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 // import { visualizer } from 'rollup-plugin-visualizer'
 // import styleImport from 'vite-plugin-style-import'
 
-const baseURL = "http://localhost:8083"
+const baseURL = "http://localhost:8082"
 
 export default defineConfig({
   plugins: [
@@ -54,7 +54,7 @@ export default defineConfig({
     }
   },
   build: {
-    // minify: 'terser', // 删除或注释此行，使用默认压缩
+    minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true, // 移除所有 console
@@ -65,6 +65,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('ant-design-vue') || id.includes('@ant-design')) return 'antd'
+            if (id.includes('/echarts/')) return 'echarts'
+            if (id.includes('/xlsx/')) return 'xlsx'
+            if (id.includes('/flv.js/')) return 'flv'
+            if (id.includes('/swiper/')) return 'swiper'
             return 'vendor'
           }
         }

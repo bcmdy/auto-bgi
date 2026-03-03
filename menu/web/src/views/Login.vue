@@ -114,6 +114,7 @@ const isUniappReady = ref(false) //
 
 // 页面挂载时获取系统配置
 onMounted(async () => {
+  void import('../assets/css2.css')
   try {
     const response = await apiMethods.getSystemConfig()
     if (response.systemName) {
@@ -212,8 +213,6 @@ const onFinishFailed = (errorInfo) => {
 </script>
 
 <style scoped>
-@import '../assets/css2.css';
-
 /* ========== 全局容器与背景 ========== */
 .login-container {
   display: flex;

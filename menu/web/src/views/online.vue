@@ -195,7 +195,6 @@ const handleReportOk = async () => {
         okText: '确定',
         width: isMobile.value ? 360 : 520,
         centered: true,
-        centered: true,
         class: 'anime-modal'
       })
     } else {
