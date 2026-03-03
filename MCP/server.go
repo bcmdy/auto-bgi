@@ -69,6 +69,7 @@ var sessions = make(map[string]*Session)
 var sessionsMutex sync.Mutex
 
 func StartMCPServer(router *gin.Engine) {
+	InitTaskCron()
 	mcpGroup := router.Group("/mcp")
 	{
 		mcpGroup.GET("/sse", handleSSE)
@@ -202,17 +203,26 @@ func processRequest(session *Session, req JsonRpcRequest) {
 					},
 				},
 				{
-					Name:        "StartOneLong",
-					Description: "启动自动化流程。严禁私自默认选项。如果用户未指明，你必须先询问用户具体执行哪一个，严禁直接调用此工具。",
+					Name:        "RunCronTask",
+					Description: "执行一次性定时任务",
 					InputSchema: map[string]interface{}{
 						"type": "object",
 						"properties": map[string]interface{}{
-							"name": map[string]interface{}{
+							"taskName": map[string]interface{}{
 								"type":        "string",
-								"enum":        OneLongService.OneLongAllName(),
-								"description": "必须且只能从枚举值中选择。如果用户提供的名称（如'aaaa'）不在列表中，严禁擅自匹配，必须回复用户并要求其从中枚举值选择一个。",
+								"enum":        TaskMcpKeys(),
+								"description": "任务名称",
+							},
+							"params": map[string]interface{}{
+								"type":        "string",
+								"description": "任务参数",
+							},
+							"delayInSeconds": map[string]interface{}{
+								"type":        "integer",
+								"description": "延迟执行的秒数。0表示立即执行。",
 							},
 						},
+						"required": []string{"taskName"},
 					},
 				},
 			},
@@ -230,16 +240,51 @@ func processRequest(session *Session, req JsonRpcRequest) {
 		switch params.Name {
 		case "findBgiIndex":
 			result, err = GetBgiIndex()
-		case "StartOneLong":
-			//参数校验
-			longAllName := OneLongService.OneLongAllName()
-			name := params.Arguments["name"].(string)
-			//判断参数是否包含
-			if !slices.Contains(longAllName, name) {
-				response.Error = &JsonRpcError{Code: -32602, Message: "没有这个一条龙，你的一条龙有：" + strings.Join(longAllName, "、")}
+		case "RunCronTask":
+			taskName := params.Arguments["taskName"].(string)
+			allTasks := TaskMcpKeys()
+			if !slices.Contains(allTasks, taskName) {
+				response.Error = &JsonRpcError{Code: -32602, Message: "没有这个任务，你的任务有：" + strings.Join(allTasks, "、")}
 				break
 			}
-			result, err = StartOneLong(params.Arguments["name"].(string))
+			param := ""
+			if p, ok := params.Arguments["params"]; ok {
+				if ps, ok := p.(string); ok {
+					param = ps
+				}
+			}
+			delay := 0
+			if d, ok := params.Arguments["delayInSeconds"]; ok {
+				// JSON numbers are usually float64
+				if df, ok := d.(float64); ok {
+					delay = int(df)
+				} else if di, ok := d.(int); ok {
+					delay = di
+				}
+			}
+
+			mcp, err := AddTaskMcp(taskName, delay, param)
+			if err != nil {
+				response.Error = &JsonRpcError{Code: -32602, Message: err.Error()}
+				break
+			} else {
+				result = mcp.Msg
+
+			}
+
+			//if fn, ok := TaskMcp[taskName]; ok {
+			//	if delay > 0 {
+			//		time.AfterFunc(time.Duration(delay)*time.Second, func() {
+			//			fn(param)
+			//		})
+			//		result = fmt.Sprintf("任务 [%s] 已安排在 %d 秒后执行", taskName, delay)
+			//	} else {
+			//		go fn(param)
+			//		result = "任务 [" + taskName + "] 已触发"
+			//	}
+			//} else {
+			//	err = fmt.Errorf("task definition not found")
+			//}
 		default:
 			response.Error = &JsonRpcError{Code: -32601, Message: "Tool not found"}
 			sendResponse(session, response)

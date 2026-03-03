@@ -91,6 +91,7 @@ type Control struct {
 	OBSReplayBuffer  bool `json:"OBSReplayBuffer" comment:"一条龙启动是否开启OBS重放缓冲"`
 	IsRedBlood       bool `json:"IsRedBlood" comment:"是否开启血条检测"`
 	RedBloodCount    int  `json:"RedBloodCount" comment:"检测到红血，吃药次数"`
+	IsMcp            bool `json:"IsMcp" comment:"是否开启MCP"`
 }
 
 type oneLong struct {

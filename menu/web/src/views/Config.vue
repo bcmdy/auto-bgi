@@ -120,6 +120,11 @@
           <span style="color:#555">触发吃药次数：</span>
           <a-input-number v-model:value="formData.Control.RedBloodCount" :min="0" :max="99" class="enhanced-input" style="width:120px" />
         </div>
+
+         <div class="switch-item">
+               <a-checkbox v-model:checked="formData.Control.IsMcp" class="enhanced-checkbox">是否开启MCP</a-checkbox>
+            </div>
+
           </div>
         </a-card>
 
@@ -315,6 +320,7 @@ const formData = reactive({
     OBSReplayBuffer: false,
     IsRedBlood: false,
     RedBloodCount: 0,
+    IsMcp: false
   },
   OneRemote: {
     IsMonitor: false,

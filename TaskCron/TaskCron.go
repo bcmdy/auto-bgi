@@ -12,12 +12,13 @@ import (
 	"auto-bgi/models"
 	taskTask "auto-bgi/task"
 	"fmt"
-	"github.com/robfig/cron/v3"
-	"gorm.io/gorm"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 )
 
 type TaskManager struct {

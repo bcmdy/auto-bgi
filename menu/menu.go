@@ -265,7 +265,9 @@ func StarGin() {
 	ginServer.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// 启动 MCP 服务
-	MCP.StartMCPServer(ginServer)
+	if config.Cfg.Control.IsMcp {
+		MCP.StartMCPServer(ginServer)
+	}
 
 	authApi := ginServer.Group("/api/auth")
 	{
