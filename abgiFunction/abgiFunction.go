@@ -60,7 +60,7 @@ func InitFunction() {
 	}
 
 	//初始化bgi日志信息
-	bgiStatus.InitBgiLogStatus()
+	//bgiStatus.InitBgiLogStatus()
 
 	if config.Cfg.CommandBot.TgBOT {
 		go func() {

@@ -74,7 +74,7 @@ func updateFileName(OutputPath, videoName string) {
 	//获取文件后缀
 	str5 := filepath.Ext(OutputPath)
 
-	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02 15:04:05")+str5)
+	videoName = filepath.Join(config.Cfg.ScreenRecord.ObsSavePath, videoName+time.Now().Format("2006-01-02-15-04-05")+str5)
 
 	if OutputPath == "" {
 		return
@@ -105,6 +105,10 @@ func updateFileName(OutputPath, videoName string) {
 
 // 停止录制
 func StopRecording(videoName string) error {
+	if videoName == "" {
+		videoName = "未指定名字"
+	}
+
 	connLock.Lock()
 	defer connLock.Unlock()
 
@@ -233,7 +237,7 @@ func SaveReplayBuffer(fileName string) (*outputs.SaveReplayBufferResponse, error
 
 	fmt.Println("开始保存回放缓冲区")
 
-	_, err2 := setOutputSettings("回放缓存", fileName)
+	_, err2 := setOutputSettings("回放缓存", fileName+time.Now().Format("2006-01-02-15-04-05"))
 	if err2 != nil {
 		autoLog.Sugar.Infof("设置输出设置失败: %v", err2)
 

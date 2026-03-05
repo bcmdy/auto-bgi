@@ -148,9 +148,15 @@
          </a-select>
       </div>
       <template #footer>
-        <a-button key="back" @click="handleOneLongCancel">取消</a-button>
-        <a-button key="continue" :loading="oneLongModal.loading" @click="handleContinueRun">继续跑</a-button>
-        <a-button key="submit" type="primary" :loading="oneLongModal.loading" @click="handleOneLongOk">启动</a-button>
+        <div class="modal-footer-custom">
+            <button class="cancel-btn" @click="handleOneLongCancel">取消</button>
+            <button class="continue-btn" :disabled="oneLongModal.loading" @click="handleContinueRun">
+                {{ oneLongModal.loading ? '...' : '继续跑' }}
+            </button>
+            <button class="start-btn" :disabled="oneLongModal.loading" @click="handleOneLongOk">
+                {{ oneLongModal.loading ? '启动中...' : '启动' }}
+            </button>
+        </div>
       </template>
     </a-modal>
 
@@ -1198,5 +1204,48 @@ button:hover::after { left: 100%; }
     backdrop-filter: blur(15px);
     background: rgba(255, 255, 255, 0.75);
   }
+}
+
+/* Modal footer customization */
+.modal-footer-custom {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 2px dashed #ffb6c1;
+  margin-top: 10px;
+}
+
+.modal-footer-custom button {
+  width: auto !important; /* Force auto width */
+  flex: 1; /* Equal width */
+  margin: 0;
+  border-radius: 20px;
+  font-size: 14px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-btn {
+  background: #fff0f5 !important;
+  color: #ff99cc !important;
+  border: 2px solid #ffcce6 !important;
+  box-shadow: none !important;
+}
+.cancel-btn:hover {
+  background: #ffe6f0 !important;
+}
+
+.continue-btn {
+  background: linear-gradient(135deg, #ffd1ff 0%, #fad0c4 100%) !important;
+  color: #d63384 !important;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, #ff99cc 0%, #ff66a3 100%) !important;
+  color: white !important;
+  font-weight: bold;
 }
 </style>

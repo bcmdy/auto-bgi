@@ -17,6 +17,12 @@ var OneLongProgress = OneLongLogProgress{
 }
 
 func InitialOneLongProgress(OneLongName string) {
+	//捕获异常
+	defer func() {
+		if err := recover(); err != nil {
+			autoLog.Sugar.Errorf("初始化一条龙进度失败: %v", err)
+		}
+	}()
 
 	if OneLongProgress.OneLongName == OneLongName {
 		return
@@ -41,17 +47,4 @@ func InitialOneLongProgress(OneLongName string) {
 	}
 
 	autoLog.Sugar.Infof("初始化一条龙进度：%v", OneLongProgress)
-}
-
-// 去重
-func UniqueStrings(input []string) []string {
-	keys := make(map[string]bool)
-	var list []string
-	for _, entry := range input {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
 }
