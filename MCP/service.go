@@ -5,6 +5,9 @@ import (
 	"auto-bgi/OneLong"
 	"auto-bgi/autoLog"
 	"auto-bgi/bgiStatus"
+	"auto-bgi/config"
+	"auto-bgi/control"
+	taskTask "auto-bgi/task"
 	"fmt"
 	"github.com/iancoleman/orderedmap"
 	"slices"
@@ -64,10 +67,35 @@ func InitTaskCron() {
 
 		taskOneLong.OneLongTask(data)
 		go func() {
-			Notice.SentText(fmt.Sprintf("定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data))
+			Notice.SentText(fmt.Sprintf("MCP定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data))
 			Notice.SendScreenshot()
 		}()
-		autoLog.Sugar.Infof("定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		autoLog.Sugar.Infof("MCP定时任务启动：一条龙-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+	}
+	TaskMcp["关闭原神和关闭bgi"] = func(data string) {
+		autoLog.Sugar.Infof("MCP定时任务启动：关闭原神和关闭bgi-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		control.CloseSoftware()
+		control.CloseYuanShen()
+	}
+	TaskMcp["米游社签到"] = func(data string) {
+		autoLog.Sugar.Infof("MCP定时任务启动：米游社签到-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		go func() {
+			control.CallPython()
+		}()
+	}
+	TaskMcp["启动配置组"] = func(data string) {
+		autoLog.Sugar.Infof("MCP定时任务启动：配置组-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		split := strings.Split(data, " ")
+		taskTask.StartGroups(split)
+	}
+	TaskMcp["备份user"] = func(data string) {
+		autoLog.Sugar.Infof("MCP定时任务启动：备份user-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		err4 := bgiStatus.ZipDir(config.Cfg.BetterGIAddress+"\\User\\", "Users\\User"+time.Now().Format("2006-01-02-15-04-05")+".zip", true)
+		if err4 != nil {
+			autoLog.Sugar.Errorf("备份失败: %v", err4)
+			return
+		}
+		autoLog.Sugar.Info("备份成功")
 	}
 }
 
@@ -123,10 +151,19 @@ func parameterValidation(taskName, data string) error {
 			autoLog.Sugar.Errorf("没有这个一条龙，你的一条龙有：%s", strings.Join(longAllName, "、"))
 			return fmt.Errorf("没有这个一条龙，你的一条龙有：%s", strings.Join(longAllName, "、"))
 		}
+		OneLongService.StartOneLong(data)
 		return nil
-
+	case "启动配置组":
+		groups, _ := taskTask.ListGroups()
+		//判断参数是否包含
+		if !slices.Contains(groups, data) {
+			autoLog.Sugar.Errorf("没有这个配置组，你的配置组有：%s", strings.Join(groups, "、"))
+			return fmt.Errorf("没有这个配置组，你的配置组有：%s", strings.Join(groups, "、"))
+		}
+		taskTask.StartGroups([]string{data})
+		return nil
 	default:
-		return fmt.Errorf("没有这个定时任务，你的定时任务有：%s", strings.Join(TaskMcpKeys(), "、"))
+		return nil
 	}
 
 }

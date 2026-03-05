@@ -32,8 +32,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/vcaesar/screenshot"
-	"image/png"
 	"io"
 	"io/fs"
 	"log"
@@ -465,6 +463,31 @@ func StarGin() {
 			//查询米游社背包信息
 			BagStatistics.GET("/getBagInfo", func(context *gin.Context) {
 				getBagInfo := config.GetBagInfo()
+
+				//go func() {
+				//	var BackpackRecords []models.BackpackRecord
+				//	for _, nodes := range getBagInfo {
+				//		for _, cn := range nodes {
+				//			if cn.ParentName == "贵重收集物" {
+				//				continue
+				//			}
+				//			var BackpackRecord models.BackpackRecord
+				//			BackpackRecord.UID = config.GameRoles.Data.List[0].GameId
+				//			BackpackRecord.Name = cn.Name
+				//			BackpackRecord.Type = cn.ParentName
+				//			BackpackRecord.Num = cn.Number
+				//			BackpackRecord.Time = time.Now().Format("2006/1/2 15:04:05")
+				//			BackpackRecords = append(BackpackRecords, BackpackRecord)
+				//		}
+				//	}
+				//	// 插入数据库
+				//	err := models.DB.Create(&BackpackRecords).Error
+				//	if err != nil {
+				//		fmt.Printf("数据库插入失败: %v\n", err)
+				//	}
+				//
+				//}()
+
 				context.JSON(http.StatusOK, getBagInfo)
 			})
 
@@ -1227,26 +1250,26 @@ func StarGin() {
 	needAuth.GET("/aBgiJt", func(c *gin.Context) {
 
 		//截图
-		//err := control.ScreenShot("./img/abgi/jt.jpg")
-		//if err != nil {
-		//	c.JSON(400, "截图失败")
-		//}
-
-		// 1. 获取显示器范围
-		bounds := screenshot.GetDisplayBounds(0)
-
-		// 2. 调用 Capture
-		img, err := screenshot.Capture(bounds.Min.X, bounds.Min.Y, bounds.Dx(), bounds.Dy())
+		err := control.ScreenShot("./img/abgi/jt.jpg")
 		if err != nil {
-			panic(err)
+			c.JSON(400, "截图失败")
 		}
 
-		// 3. 保存
-		f, _ := os.Create("./img/abgi/jt.jpg")
-		defer f.Close()
-		png.Encode(f, img)
-
-		fmt.Println("截图已保存至./img/abgi/jt.jpg")
+		//// 1. 获取显示器范围
+		//bounds := screenshot.GetDisplayBounds(0)
+		//
+		//// 2. 调用 Capture
+		//img, err := screenshot.Capture(bounds.Min.X, bounds.Min.Y, bounds.Dx(), bounds.Dy())
+		//if err != nil {
+		//	panic(err)
+		//}
+		//
+		//// 3. 保存
+		//f, _ := os.Create("./img/abgi/jt.jpg")
+		//defer f.Close()
+		//png.Encode(f, img)
+		//
+		//fmt.Println("截图已保存至./img/abgi/jt.jpg")
 
 		c.File("./img/abgi/jt.jpg") // 指定服务器上的图片路径
 	})

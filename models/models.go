@@ -64,3 +64,17 @@ type MoraleRecord struct {
 func (MoraleRecord) TableName() string {
 	return "MoraleRecord_two"
 }
+
+// 背包记录
+type BackpackRecord struct {
+	ID   uint64 `gorm:"primaryKey" json:"id"`
+	UID  string `json:"uid"`
+	Name string `json:"name"`
+	Time string `json:"Time"`
+	Type string `json:"type"`
+	Num  int64  `json:"num"` // 数量
+}
+
+func (BackpackRecord) TableName() string {
+	return "BackpackRecord"
+}

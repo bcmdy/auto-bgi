@@ -69,7 +69,7 @@ func StartRecording() error {
 
 func updateFileName(OutputPath, videoName string) {
 	if videoName == "" {
-		return
+		videoName = "未指定"
 	}
 	//获取文件后缀
 	str5 := filepath.Ext(OutputPath)

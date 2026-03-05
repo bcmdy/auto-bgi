@@ -138,92 +138,56 @@ type Material struct {
 
 func BagStatistics() ([]Material, error) {
 	autoLog.Sugar.Infof("背包统计")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", config.Cfg.BetterGIAddress))
 
-	// 打开文件
-	file, err := os.Open(filename)
-	if err != nil {
-		autoLog.Sugar.Errorf("背包统计失败: %v", err)
-	}
-	defer file.Close()
-
-	// 创建一个扫描器来读取文件
-	scanner := bufio.NewScanner(file)
-
-	// 创建一个正则表达式来匹配日期格式 "YYYY/M/D HH:MM:SS"
-	re1 := regexp.MustCompile(`\b\d{4}/\d{1,2}/\d{1,2} \d{2}:\d{2}:\d{2}\b`)
-
-	//statistics := config.Cfg.BagStatistics
-	//
-	//split := strings.Split(statistics, ",")
+	layout := "2006/1/2 15:04:05"
 	statistics := BackpackStatistics.List()
+
+	var names []string
+	for _, clName := range statistics {
+		names = append(names, clName.Material)
+	}
 
 	var bags []Material
 	var bag Material
-
 	bagMap := make(map[string]Material)
 
-	layout := "2006/1/2 15:04:05"
+	var dbRecords []models.BackpackRecord
+	uid := config.GameRoles.Data.List[0].GameId
+	models.DB.Where("uid = ? AND name IN ?", uid, names).Order("time ASC").Find(&dbRecords)
 
-	for scanner.Scan() {
-		for _, statistic := range statistics {
-			// 创建一个正则表达式来匹配 "晶蝶：数字" 模式
-			sprintf := fmt.Sprintf(`(?:^|[,\s])%s: (\d+)`, statistic.Material)
-
-			re := regexp.MustCompile(sprintf)
-
-			line := scanner.Text()
-
-			//日期匹配
-			if re1.MatchString(line) {
-				bag.Data = line
+	for _, dr := range dbRecords {
+		bag.Num = strconv.FormatInt(dr.Num, 10)
+		bag.Cl = dr.Name
+		bag.Data = dr.Time
+		//判断是否已经有了
+		isNil := bagMap[bag.Cl]
+		if isNil.Data != "" {
+			//判断是否是同一天
+			time1, err1 := time.Parse(layout, isNil.Data)
+			time2, err2 := time.Parse(layout, bag.Data)
+			if err1 != nil || err2 != nil {
+				continue
 			}
 
-			// 查找当前行中所有匹配
-			match := re.FindString(line)
-			if match != "" {
-				// 提取数字部分并存储
-				split := strings.Split(match, ":")
-				bag.Cl = strings.Replace(split[0], ",", "", -1)
-				bag.Num = split[1]
+			y1, m1, d1 := time1.Date()
+			y2, m2, d2 := time2.Date()
 
-				//判断是否已经有了
-				isNil := bagMap[bag.Cl]
-				if isNil.Data != "" {
-
-					//判断是否是同一天
-					time1, err1 := time.Parse(layout, isNil.Data)
-					time2, err2 := time.Parse(layout, bag.Data)
-					if err1 != nil || err2 != nil {
-						continue
-					}
-
-					y1, m1, d1 := time1.Date()
-					y2, m2, d2 := time2.Date()
-
-					if y1 == y2 && m1 == m2 && d1 == d2 {
-						continue
-					} else {
-						bagMap[bag.Cl] = bag
-						//判断数据是否一致
-						if isNil.Num != bag.Num {
-							bags = append(bags, bag)
-						}
-
-					}
-
-				} else {
-					bagMap[bag.Cl] = bag
+			if y1 == y2 && m1 == m2 && d1 == d2 {
+				continue
+			} else {
+				bagMap[bag.Cl] = bag
+				//判断数据是否一致
+				if isNil.Num != bag.Num {
 					bags = append(bags, bag)
 				}
 
 			}
+
+		} else {
+			bagMap[bag.Cl] = bag
+			bags = append(bags, bag)
 		}
 
-		// 检查扫描器是否有错误
-		if err := scanner.Err(); err != nil {
-			panic(err)
-		}
 	}
 
 	//摩拉统计
@@ -367,7 +331,16 @@ func MorasStatistics() ([]Material, error) {
 func DeleteBagStatistics() string {
 
 	autoLog.Sugar.Infof("清理背包统计")
-	DeleteBag()
+	//DeleteBag()
+	subQuery := models.DB.Table("BackpackRecord").
+		Select("id").
+		Where("id IN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY name ORDER BY time DESC, id DESC) as row_num FROM BackpackRecord) t WHERE t.row_num <= 3)")
+
+	err := models.DB.Where("id NOT IN (?)", subQuery).Delete(&models.BackpackRecord{}).Error
+	if err != nil {
+		autoLog.Sugar.Errorf("清理背包统计失败: %v", err)
+
+	}
 
 	autoLog.Sugar.Infof("清理摩拉统计")
 	DeleteMoLa()

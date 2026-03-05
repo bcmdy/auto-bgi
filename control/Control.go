@@ -121,6 +121,8 @@ func CloseSoftware() {
 
 	if err != nil {
 		autoLog.Sugar.Errorf("执行命令出错: %v\n", err)
+	} else {
+		autoLog.Sugar.Infof("BetterGI关闭成功")
 	}
 
 }

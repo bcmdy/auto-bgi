@@ -438,6 +438,7 @@ func GetBagInfo() map[string][]ChildNode {
 
 	mapData := make(map[string][]ChildNode)
 
+	//var BackpackRecords []models.BackpackRecord
 	// 8. 输出解析结果（可选，验证用）
 	fmt.Printf("成功解析到 %d 个背包标签节点\n", len(childNodes))
 	for _, cn := range childNodes {
@@ -446,8 +447,6 @@ func GetBagInfo() map[string][]ChildNode {
 		if cn.ParentName == "区域特产" || cn.ParentName == "木材" || cn.ParentName == "矿物" || cn.ParentName == "背包/素材" || cn.ParentName == "贵重收集物" {
 			mapData[cn.ParentName] = append(mapData[cn.ParentName], cn)
 		}
-		//fmt.Printf("节点ID: %d, 名称: %s, 类型: %s 数量：%d，\n", cn.ID, cn.Name, cn.ParentName, aa)
-
 	}
 
 	return mapData

@@ -40,7 +40,6 @@ func (tm *TaskManager) Start() {
 	tm.c.Start()
 }
 
-// var Task map[string]func(data string)
 var Task = make(map[string]func(string))
 
 var Tm *TaskManager
@@ -79,7 +78,6 @@ func InitTaskCron() {
 		autoLog.Sugar.Infof("定时任务启动：关闭原神和关闭bgi-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
 		control.CloseSoftware()
 		control.CloseYuanShen()
-
 	}
 	Task["备份user"] = func(data string) {
 		autoLog.Sugar.Infof("定时任务启动：备份user-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
@@ -239,6 +237,32 @@ func InitTaskCron() {
 			autoLog.Sugar.Errorf("一条龙全部开启/关闭参数错误")
 		}
 
+	}
+	Task["原神背包记录"] = func(data string) {
+		go func() {
+			getBagInfo := config.GetBagInfo()
+			var BackpackRecords []models.BackpackRecord
+			for _, nodes := range getBagInfo {
+				for _, cn := range nodes {
+					if cn.ParentName == "贵重收集物" {
+						continue
+					}
+					var BackpackRecord models.BackpackRecord
+					BackpackRecord.UID = config.GameRoles.Data.List[0].GameId
+					BackpackRecord.Name = cn.Name
+					BackpackRecord.Type = cn.ParentName
+					BackpackRecord.Num = cn.Number
+					BackpackRecord.Time = time.Now().Format("2006/1/2 15:04:05")
+					BackpackRecords = append(BackpackRecords, BackpackRecord)
+				}
+			}
+			// 插入数据库
+			err := models.DB.Create(&BackpackRecords).Error
+			if err != nil {
+				fmt.Printf("数据库插入失败: %v\n", err)
+			}
+
+		}()
 	}
 	Task["更新aBgi"] = func(data string) {
 

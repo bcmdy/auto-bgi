@@ -204,7 +204,7 @@ func processRequest(session *Session, req JsonRpcRequest) {
 				},
 				{
 					Name:        "RunCronTask",
-					Description: "执行一次性定时任务",
+					Description: "立即执行或安排一次性定时任务。支持任务：" + strings.Join(TaskMcpKeys(), "、") + "。若需立即执行，请将 delayInSeconds 设为 0。",
 					InputSchema: map[string]interface{}{
 						"type": "object",
 						"properties": map[string]interface{}{
@@ -215,7 +215,7 @@ func processRequest(session *Session, req JsonRpcRequest) {
 							},
 							"params": map[string]interface{}{
 								"type":        "string",
-								"description": "任务参数",
+								"description": "任务附加参数（可选）",
 							},
 							"delayInSeconds": map[string]interface{}{
 								"type":        "integer",

@@ -34,7 +34,7 @@ func InitDB() error {
 		return fmt.Errorf("打开数据库失败: %v", err)
 	}
 	// 自动迁移模式
-	err2 := DB.AutoMigrate(&ArchiveRecords{}, &AutoBgiConfig{}, &TaskCron{}, &BackpackStatistics{}, &MoraleRecord{})
+	err2 := DB.AutoMigrate(&ArchiveRecords{}, &AutoBgiConfig{}, &TaskCron{}, &BackpackStatistics{}, &MoraleRecord{}, &BackpackRecord{})
 	if err2 != nil {
 		return fmt.Errorf("failed to migrate database: %v", err2)
 	}
