@@ -1060,8 +1060,8 @@ func StarGin() {
 			})
 			//结束录制
 			abgiObsController.POST("/StopRecording", func(context *gin.Context) {
-				//videoName := context.Query("videoName")
-				err2 := abgiObs.StopRecording(bgiStatus.BgiLogStatusInfo.Group)
+				videoName := context.Query("videoName")
+				err2 := abgiObs.StopRecording(videoName)
 				if err2 != nil {
 					context.JSON(http.StatusInternalServerError, gin.H{"status": "error", "msg": err2.Error()})
 					return

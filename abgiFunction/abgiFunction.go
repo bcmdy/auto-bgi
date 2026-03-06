@@ -59,9 +59,6 @@ func InitFunction() {
 		}
 	}
 
-	//初始化bgi日志信息
-	//bgiStatus.InitBgiLogStatus()
-
 	if config.Cfg.CommandBot.TgBOT {
 		go func() {
 			err := AbgiBot.InitTG(config.Cfg.Notice.TGNotice.TGToken, config.Cfg.Notice.TGNotice.Proxy)
@@ -126,4 +123,5 @@ func InitFunction() {
 		//go Ocr.PaddleOCR()
 	}
 
+	//config.DailyNote()
 }

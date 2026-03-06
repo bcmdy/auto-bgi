@@ -45,7 +45,7 @@ func CheckRedBlood() {
 				CheckRedBloodSum++
 				Notice.SentText(fmt.Sprintf("检测到红血条，自动按Z键，第%d次", CheckRedBloodSum))
 				autoLog.Sugar.Infof("自动按Z键，第%d次", CheckRedBloodSum)
-				time.Sleep(3 * time.Second)
+				time.Sleep(1500 * time.Millisecond)
 			}
 		}
 		if !tools.IsSameDay(RedBloodSumTime, time.Now()) {

@@ -174,7 +174,7 @@ func (m *LogMonitor) Monitor() {
 							CheckRedBloodSum++
 							Notice.SentText(fmt.Sprintf("角色死亡，自动按Z键，第%d次", CheckRedBloodSum))
 							autoLog.Sugar.Infof("角色死亡 自动按Z键，第%d次", CheckRedBloodSum)
-							time.Sleep(3 * time.Second)
+							time.Sleep(1500 * time.Millisecond)
 						}
 					}()
 				}
