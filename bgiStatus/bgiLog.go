@@ -267,8 +267,13 @@ func (m *LogMonitor) Monitor() {
 					if len(matches) > 1 {
 						BgiLogStatusInfo.Group = matches[1]
 						autoLog.Sugar.Infof("配置组：【%s】开始执行", matches[1])
-						//提取开始时间
-						BgiLogStatusInfo.Timestamp = BgiLogTime(lastLine)
+
+						RunDetail = BgiLogTime(lastLine)
+						data := "【时间：" + RunDetail.StartTime.Format("2006-01-02 15:04:05") + "】\n" +
+							"【时长：" + RunDetail.LastRunDuration + "】\n" +
+							"【已经运行：" + RunDetail.AlreadyRunTime + "】\n" +
+							"【预计：" + RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05") + "】"
+						BgiLogStatusInfo.Timestamp = data
 
 						BgiLogStatusInfo.MapTrackingLine = ""
 						BgiLogStatusInfo.ScriptName = ""
@@ -295,8 +300,23 @@ func (m *LogMonitor) Monitor() {
 						BgiLogStatusInfo.ConfigurationGroupExecutionProgress = "已经结束"
 
 						//更新进度
-						if _, ok := OneLongProgress.Details[BgiLogStatusInfo.Group]; ok {
-							OneLongProgress.Details[BgiLogStatusInfo.Group] = true
+						if _, ok := OneLongProgress.Details[matches[1]]; ok {
+
+							//判断是否是正常结束的
+							endTime, err := BgiLastLine(lastLine)
+							if err != nil {
+								autoLog.Sugar.Errorf("获取结束时间失败: %v", err)
+								continue
+							}
+							//判断是否是正常结束的
+							if endTime.Before(RunDetail.ExpectedEndTime) {
+								autoLog.Sugar.Errorf("配置组 %s 异常结束，结束时间 %s 早于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
+								continue
+							} else {
+								autoLog.Sugar.Infof("配置组 %s 正常结束，结束时间 %s 晚于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
+								OneLongProgress.Details[matches[1]] = true
+							}
+
 						}
 
 					} else {
@@ -321,7 +341,6 @@ func (m *LogMonitor) Monitor() {
 					}
 					index := GetProjectIndex(BgiLogStatusInfo.ScriptName)
 					BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
-					autoLog.Sugar.Infof("配置组执行进度:%s", fmt.Sprintf("%d/%d", index, len(Projects)))
 				}
 
 				//当前运行路线
@@ -333,7 +352,6 @@ func (m *LogMonitor) Monitor() {
 						index := GetProjectIndex(BgiLogStatusInfo.MapTrackingLine)
 						if index != 0 {
 							BgiLogStatusInfo.ConfigurationGroupExecutionProgress = fmt.Sprintf("%d/%d", index, len(Projects))
-							autoLog.Sugar.Infof("配置组执行进度:%s", fmt.Sprintf("%d/%d", index, len(Projects)))
 
 						}
 					} else {
@@ -344,7 +362,6 @@ func (m *LogMonitor) Monitor() {
 				//js进度
 				if strings.Contains(line, "当前进度") || strings.Contains(line, ": 开始执行") {
 					BgiLogStatusInfo.JSProgress = line
-					autoLog.Sugar.Infof("js进度:%s", line)
 				}
 
 				//原神闪退检测

@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type bgiLogStatus struct {
@@ -34,6 +35,8 @@ var BgiGroupEnd = map[string]string{
 	"→ \"前往冒险家协会领取奖励\" 结束": "领取每日奖励",
 	"邮件：\"全部领取\"":          "领取邮件",
 }
+
+var RunDetail BGIGroupRunDetail
 
 // 倒序读取日志，找到第一个配置组和地图追踪路线就返回
 func InitBgiLogStatus() {
@@ -73,8 +76,12 @@ func InitBgiLogStatus() {
 			if len(matches) > 1 {
 				BgiLogStatusInfo.Group = matches[1]
 
-				//提取开始时间
-				BgiLogStatusInfo.Timestamp = BgiLogTime(lastLine)
+				RunDetail = BgiLogTime(lastLine)
+				data := "【时间：" + RunDetail.StartTime.Format("2006-01-02 15:04:05") + "】\n" +
+					"【时长：" + RunDetail.LastRunDuration + "】\n" +
+					"【已经运行：" + RunDetail.AlreadyRunTime + "】\n" +
+					"【预计：" + RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05") + "】"
+				BgiLogStatusInfo.Timestamp = data
 
 				BgiLogStatusInfo.MapTrackingLine = ""
 				BgiLogStatusInfo.ScriptName = ""
@@ -91,13 +98,11 @@ func InitBgiLogStatus() {
 		}
 
 		if strings.Contains(line, "配置组") && strings.Contains(line, "执行结束") {
+
 			re := regexp.MustCompile(`"(.*?)"`)
 			matches := re.FindStringSubmatch(line)
 			if len(matches) > 1 {
 				BgiLogStatusInfo.Group = matches[1] + "==(已经结束)"
-
-				//提取开始时间
-				BgiLogStatusInfo.Timestamp = BgiLogTime(lastLine)
 
 				BgiLogStatusInfo.MapTrackingLine = "已经结束"
 				BgiLogStatusInfo.ScriptName = "已经结束"
@@ -105,7 +110,22 @@ func InitBgiLogStatus() {
 
 				//更新进度
 				if _, ok := OneLongProgress.Details[matches[1]]; ok {
-					OneLongProgress.Details[matches[1]] = true
+
+					//判断是否是正常结束的
+					endTime, err := BgiLastLine(lastLine)
+					if err != nil {
+						autoLog.Sugar.Errorf("获取结束时间失败: %v", err)
+						continue
+					}
+					//判断是否是正常结束的
+					if endTime.Before(RunDetail.ExpectedEndTime) {
+						autoLog.Sugar.Errorf("配置组 %s 异常结束，结束时间 %s 早于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
+						continue
+					} else {
+						autoLog.Sugar.Infof("配置组 %s 正常结束，结束时间 %s 晚于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
+						OneLongProgress.Details[matches[1]] = true
+					}
+
 				}
 
 			} else {
@@ -174,18 +194,39 @@ func GetProjectIndex(name string) int {
 	return 0
 }
 
-// bgi时间提取
-func BgiLogTime(lastLine string) string {
+// bgi时间计算
+func BgiLastLine(lastLine string) (time.Time, error) {
+
+	// 匹配格式 [HH:MM:SS.mmm]
+	re := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2}\.\d{3})]`)
+	timeMatch := re.FindStringSubmatch(lastLine)
+
+	// 解析文件名中的日期
+	fileDate := GetFileNameDate(config.Cfg.BgiLog)
+
+	// 解析起始时间，例如 09:06:24.391
+	start, err := time.Parse("2006-01-02 15:04:05", fileDate+" "+timeMatch[1])
+	if err != nil {
+		autoLog.Sugar.Errorf("解析时间失败: %v", err)
+		return time.Time{}, err
+	}
+	// 返回解析后的时间
+	return start, nil
+}
+
+// 配置组运行情况分析
+func BgiLogTime(lastLine string) BGIGroupRunDetail {
 	// 匹配格式 [HH:MM:SS.mmm]
 	re := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2}\.\d{3})]`)
 	timeMatch := re.FindStringSubmatch(lastLine)
 	if len(timeMatch) > 1 {
 		time, err := CalculateTime(config.Cfg.BgiLog, BgiLogStatusInfo.Group, timeMatch[1])
 		if err != nil {
-			return "没有归档记录"
+			return BGIGroupRunDetail{}
 		} else {
 			return time
+
 		}
 	}
-	return "没有归档记录"
+	return BGIGroupRunDetail{}
 }

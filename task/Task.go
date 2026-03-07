@@ -139,6 +139,7 @@ func StartOneDragon(name string) {
 	}
 
 	autoLog.Sugar.Errorf("启动一条龙失败，已重试 %d 次: %v", maxRetries, err)
+	Notice.SentText(fmt.Sprintf("启动一条龙失败，已重试 %d 次: %v", maxRetries, err))
 }
 
 // 调用bat脚本

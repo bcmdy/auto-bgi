@@ -1385,8 +1385,16 @@ func Archive(data LogAnalysis2Struct) string {
 	return "归档成功"
 }
 
+type BGIGroupRunDetail struct {
+	GroupName       string    `json:"groupName" comment:"配置组名"`
+	StartTime       time.Time `json:"startTime" comment:"开始时间"`
+	LastRunDuration string    `json:"lastTime" comment:"上次运行时长"`
+	AlreadyRunTime  string    `json:"alreadyRunTime" comment:"已经运行时长"`
+	ExpectedEndTime time.Time `json:"ExpectedEndTime" comment:"预计结束时间"`
+}
+
 // 时间计算
-func CalculateTime(filename, groupName, startTime string) (string, error) {
+func CalculateTime(filename, groupName, startTime string) (BGIGroupRunDetail, error) {
 	// 解析文件名中的日期
 	fileDate := GetFileNameDate(filename)
 
@@ -1396,13 +1404,13 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 	// 解析起始时间，例如 09:06:24.391
 	start, err := time.Parse("2006-01-02 15:04:05", fileDate+" "+startTime)
 	if err != nil {
-		return "", err
+		return BGIGroupRunDetail{}, err
 	}
 
 	// 将执行时长字符串 "HH:MM:SS" 转为 Duration
 	duration, err := time.ParseDuration(archiveRecords.ExecuteTime)
 	if err != nil {
-		return "", err
+		return BGIGroupRunDetail{}, err
 	}
 
 	//// 计算预计结束时间
@@ -1436,15 +1444,24 @@ func CalculateTime(filename, groupName, startTime string) (string, error) {
 	//字符串转时间
 	//减去运行时长
 	d := duration - sumExecuteTime
-	//expectedEnd := start.Add(d)
 
 	parse, _ := time.Parse("2006-01-02 15:04:05", fileDate+" "+startTime)
 	expectedEnd := parse.Add(d)
 
-	return "【时间：" + fileDate + " " + startTime + "】\n" +
-		"【时长：" + archiveRecords.ExecuteTime + "】\n" +
-		"【已经运行：" + sumExecuteTime.String() + "】\n" +
-		"【预计：" + expectedEnd.Format("2006-01-02 15:04:05") + "】", nil
+	var bGIGroupRunDetail = BGIGroupRunDetail{
+		GroupName:       groupName,
+		StartTime:       parse,
+		LastRunDuration: archiveRecords.ExecuteTime,
+		AlreadyRunTime:  sumExecuteTime.String(),
+		ExpectedEndTime: expectedEnd,
+	}
+	return bGIGroupRunDetail, nil
+
+	//return "【时间：" + fileDate + " " + startTime + "】\n" +
+	//	"【时长：" + archiveRecords.ExecuteTime + "】\n" +
+	//	"【已经运行：" + sumExecuteTime.String() + "】\n" +
+	//	"【预计：" + expectedEnd.Format("2006-01-02 15:04:05") + "】", nil
+
 }
 
 // ListArchive 归档查询

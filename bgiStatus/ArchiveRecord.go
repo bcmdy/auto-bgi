@@ -1,6 +1,8 @@
 package bgiStatus
 
-import "auto-bgi/models"
+import (
+	"auto-bgi/models"
+)
 
 // 查询所有规定记录
 func ArchiveRecordList() (map[string]string, error) {
@@ -17,4 +19,15 @@ func ArchiveRecordList() (map[string]string, error) {
 
 	return dataMap, nil
 
+}
+
+// 根据名字查询单条记录
+func ArchiveRecordDetail(title string) (models.ArchiveRecords, error) {
+
+	var archiveRecords models.ArchiveRecords
+	query := models.DB.Model(&models.ArchiveRecords{}).Where("title = ?", title).First(&archiveRecords)
+	if query.Error != nil {
+		return archiveRecords, query.Error
+	}
+	return archiveRecords, nil
 }

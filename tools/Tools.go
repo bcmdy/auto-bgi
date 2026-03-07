@@ -632,7 +632,7 @@ func CloseSoftware(name string) {
 
 	autoLog.Sugar.Infof("当前window用户是：%s", username)
 	// 构建正确的命令
-	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", "BetterGI.exe", "/FI", fmt.Sprintf("USERNAME eq %s", username))
+	cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", name, "/FI", fmt.Sprintf("USERNAME eq %s", username))
 
 	// 创建命令
 	//cmd := exec.Command("cmd", "/c", "taskkill", "/F", "/IM", name, "/FI", "USERNAME eq %USERNAME%")
