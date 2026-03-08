@@ -152,6 +152,11 @@ func BagStatistics() ([]Material, error) {
 	bagMap := make(map[string]Material)
 
 	var dbRecords []models.BackpackRecord
+	if len(config.GameRoles.Data.List) == 0 {
+		autoLog.Sugar.Infof("客官，请先去bgi配置好您的米游社cookie哦")
+		return nil, fmt.Errorf("客官，请先去bgi配置好您的米游社cookie哦")
+	}
+
 	uid := config.GameRoles.Data.List[0].GameId
 	models.DB.Where("uid = ? AND name IN ?", uid, names).Order("time ASC").Find(&dbRecords)
 

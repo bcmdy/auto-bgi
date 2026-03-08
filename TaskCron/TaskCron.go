@@ -240,6 +240,11 @@ func InitTaskCron() {
 	}
 	Task["原神背包记录"] = func(data string) {
 		go func() {
+			if len(config.GameRoles.Data.List) == 0 {
+				autoLog.Sugar.Errorf("客官，原神背包记录定时任务失败，请先去bgi配置好您的米游社cookie哦")
+				return
+			}
+
 			getBagInfo := config.GetBagInfo()
 			var BackpackRecords []models.BackpackRecord
 			for _, nodes := range getBagInfo {

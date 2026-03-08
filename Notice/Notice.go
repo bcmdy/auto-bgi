@@ -132,7 +132,7 @@ func SentImage(path string) error {
 		}
 		autoLog.Sugar.Info("通知-微信图片发送成功")
 		return nil
-	case "oneBot":
+	case "OneBot":
 		err = oneBot.SendPrivateWithImage(path)
 		if err != nil {
 			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
@@ -203,7 +203,7 @@ func SendScreenshot() error {
 			autoLog.Sugar.Error("通知-微信图片发送失败:", err)
 		}
 		return fmt.Errorf("通知-微信图片发送失败:%v", err)
-	case "oneBot":
+	case "OneBot":
 		err = oneBot.SendPrivateWithImage("jt.jpg")
 		if err != nil {
 			autoLog.Sugar.Error("通知-OneBot图片发送失败:", err)
