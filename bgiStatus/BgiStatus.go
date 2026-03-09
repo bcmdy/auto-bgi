@@ -213,58 +213,22 @@ func BagStatistics() ([]Material, error) {
 	return bags, nil
 }
 
-func CheckBag() map[string]int {
-	autoLog.Sugar.Infof("背包检查")
-	filename := filepath.Clean(fmt.Sprintf("%s\\User\\JsScript\\背包材料统计\\latest_record.txt", config.Cfg.BetterGIAddress))
+func CheckBag() map[string]int64 {
 
-	file, err := os.Open(filename)
-	if err != nil {
-		autoLog.Sugar.Errorf("没有相关JS:背包材料统计")
-		return nil
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	// 正则匹配物品名和数量
-	itemRegex := regexp.MustCompile(`([\p{Han}「」·A-Za-z0-9]+):\s*([0-9?]+)`)
-
-	allItems := make(map[string]int)
-
-	// 遍历整个文件，逐行解析
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, ":") {
-			matches := itemRegex.FindAllStringSubmatch(line, -1)
-			for _, match := range matches {
-				name := match[1]
-				qtyStr := match[2]
-				if qtyStr == "?" {
-					continue
-				}
-				//判断是否已经有了
-				isNil := allItems[name]
-				if isNil != 0 {
-					continue
-				}
-
-				qty, _ := strconv.Atoi(qtyStr)
-				allItems[name] = qty
+	getBagInfo := config.GetBagInfo()
+	allItems := make(map[string]int64)
+	for s, nodes := range getBagInfo {
+		if s == "贵重收集物" || s == "木材" {
+			continue
+		}
+		for _, node := range nodes {
+			if node.Number >= 8000 {
+				autoLog.Sugar.Infof("背包检查: %s 数量超过8000", node.Name)
+				allItems[node.Name] = node.Number
 			}
 		}
 	}
-
-	liquidationItems := make(map[string]int)
-
-	// 检查是否有物品数量超过8000
-	for item, qty := range allItems {
-		if qty > 8000 {
-			liquidationItems[item] = qty
-		}
-	}
-
-	return liquidationItems
-
+	return allItems
 }
 
 // 原石统计

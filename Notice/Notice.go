@@ -72,7 +72,7 @@ func SentText(text string) {
 		}
 	case "Wechat":
 		sendWeChatNotification(text)
-	case "oneBot":
+	case "OneBot":
 		if err := oneBot.SendPrivateText(text); err != nil {
 			autoLog.Sugar.Error("通知-OneBot文本发送失败:", err)
 		}
