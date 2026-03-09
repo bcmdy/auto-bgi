@@ -206,8 +206,8 @@ func (m *LogMonitor) Monitor() {
 						if archiveRecord, ok := ArchiveRecordMap[groupMap.GroupName]; ok {
 							duration, err := time.ParseDuration(archiveRecord)
 							if err != nil {
-								fmt.Println("解析错误:", err)
-								return
+								fmt.Println("条龙和配置组任务结束 解析错误:", err)
+								continue
 							}
 							diff = executeTime - duration
 						}
