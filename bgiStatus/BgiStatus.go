@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -976,7 +977,7 @@ func GetFileNameDate(filePath string) string {
 // 返回值:
 //
 //	[]LogAnalysis2Struct - 分析结果的结构体切片
-func GroupTime(fileName string) []LogAnalysis2Struct {
+func GroupTime(fileName string) ([]LogAnalysis2Struct, []string) {
 	// 构建完整的日志文件路径
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
 	fullPath := filepath.Join(filePath, fileName)
@@ -986,7 +987,7 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 	file, err := os.Open(fullPath)
 	if err != nil {
 		fmt.Println("GroupTime无法打开日志文件:", err)
-		return nil
+		return nil, nil
 	}
 	defer file.Close() // 确保文件在函数结束时关闭
 
@@ -1001,6 +1002,9 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 	var logAnalysis2Structs []LogAnalysis2Struct
 	var currentStruct *LogAnalysis2Struct
 	var lastLine string
+
+	//配置组顺序
+	var groupNameOrder []string
 
 	// 逐行读取文件内容
 	for {
@@ -1030,6 +1034,8 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 
 		// 配置组开始
 		if matches := startRegexp.FindStringSubmatch(line); len(matches) > 1 {
+			// 🔹记录配置组顺序
+			groupNameOrder = append(groupNameOrder, matches[1])
 			currentStruct = &LogAnalysis2Struct{
 				GroupName:    matches[1],
 				ErrorSummary: make(map[string]int),
@@ -1093,7 +1099,7 @@ func GroupTime(fileName string) []LogAnalysis2Struct {
 		result = append(result, *v)
 	}
 
-	return result
+	return result, groupNameOrder
 }
 
 func GetGroupPInfo() string {
@@ -1386,7 +1392,7 @@ func CalculateTime(filename, groupName, startTime string) (BGIGroupRunDetail, er
 	//expectedEnd := start.Add(duration)
 
 	//查询已经运行了多少
-	groupTime := GroupTime(filepath.Base(filename))
+	groupTime, _ := GroupTime(filepath.Base(filename))
 	sumExecuteTime, _ := time.ParseDuration("0s")
 	for _, groupMap := range groupTime {
 		if groupMap.GroupName != groupName {
@@ -1425,11 +1431,6 @@ func CalculateTime(filename, groupName, startTime string) (BGIGroupRunDetail, er
 		ExpectedEndTime: expectedEnd,
 	}
 	return bGIGroupRunDetail, nil
-
-	//return "【时间：" + fileDate + " " + startTime + "】\n" +
-	//	"【时长：" + archiveRecords.ExecuteTime + "】\n" +
-	//	"【已经运行：" + sumExecuteTime.String() + "】\n" +
-	//	"【预计：" + expectedEnd.Format("2006-01-02 15:04:05") + "】", nil
 
 }
 
@@ -2065,21 +2066,21 @@ func Log1Remote() {
 }
 
 // 将今日所有配置组归档
-func ArchiveConfig() ([]LogAnalysis2Struct, map[string]string) {
+func ArchiveConfig() ([]LogAnalysis2Struct, map[string]string, []string) {
 	//查询归档记录
 	ArchiveRecordMap, _ := ArchiveRecordList()
 	// 生成日志文件名
 	date := time.Now().Format("20060102")
 	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
 	//获取今日所有配置组
-	groupTime := GroupTime(filename)
+	groupTime, groupNameOrder := GroupTime(filename)
 	for _, groupMap := range groupTime {
 
 		Archive(groupMap)
 
 		autoLog.Sugar.Infof("归档配置组 %s", groupMap.GroupName)
 	}
-	return groupTime, ArchiveRecordMap
+	return groupTime, ArchiveRecordMap, groupNameOrder
 
 }
 
@@ -2091,9 +2092,12 @@ func TodayGroupsInfo() {
 	date := time.Now().Format("20060102")
 	filename := fmt.Sprintf("better-genshin-impact%s.log", date)
 	//获取今日所有配置组
-	groupTime := GroupTime(filename)
+	groupTime, groupNameOrder := GroupTime(filename)
 	NoticeData := "今日配置组执行情况\n"
 	sumExecuteTime, _ := time.ParseDuration("0s")
+
+	dataMap := make(map[int]string)
+
 	for _, groupMap := range groupTime {
 
 		executeTime, _ := time.ParseDuration("0s")
@@ -2119,10 +2123,25 @@ func TodayGroupsInfo() {
 			}
 			diff = executeTime - duration
 		}
+		index := slices.Index(groupNameOrder, groupMap.GroupName)
+		dataMap[index] = fmt.Sprintf("%d.【%s--%s】(%s)\n", index, groupMap.GroupName, executeTime, diff)
 
-		NoticeData += fmt.Sprintf("【%s--%s】(%s)\n", groupMap.GroupName, executeTime, diff)
+		//NoticeData += fmt.Sprintf("【%s--%s】(%s)\n", groupMap.GroupName, executeTime, diff)
 		sumExecuteTime += executeTime
 	}
+
+	// 1. 提取所有的 Key
+	keys := make([]int, 0, len(dataMap))
+	for k := range dataMap {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	// 2. 对 Key 进行排序
+
+	for i2 := range keys {
+		NoticeData += dataMap[keys[i2]]
+	}
+
 	NoticeData += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
 	NoticeData += "\n"
 

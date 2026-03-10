@@ -464,30 +464,6 @@ func StarGin() {
 			BagStatistics.GET("/getBagInfo", func(context *gin.Context) {
 				getBagInfo := config.GetBagInfo()
 
-				//go func() {
-				//	var BackpackRecords []models.BackpackRecord
-				//	for _, nodes := range getBagInfo {
-				//		for _, cn := range nodes {
-				//			if cn.ParentName == "贵重收集物" {
-				//				continue
-				//			}
-				//			var BackpackRecord models.BackpackRecord
-				//			BackpackRecord.UID = config.GameRoles.Data.List[0].GameId
-				//			BackpackRecord.Name = cn.Name
-				//			BackpackRecord.Type = cn.ParentName
-				//			BackpackRecord.Num = cn.Number
-				//			BackpackRecord.Time = time.Now().Format("2006/1/2 15:04:05")
-				//			BackpackRecords = append(BackpackRecords, BackpackRecord)
-				//		}
-				//	}
-				//	// 插入数据库
-				//	err := models.DB.Create(&BackpackRecords).Error
-				//	if err != nil {
-				//		fmt.Printf("数据库插入失败: %v\n", err)
-				//	}
-				//
-				//}()
-
 				context.JSON(http.StatusOK, getBagInfo)
 			})
 
@@ -644,7 +620,7 @@ func StarGin() {
 			//获取配置组执行时长
 			go func() {
 				defer otherGroup.Done()
-				GroupTime = bgiStatus.GroupTime(fileName)
+				GroupTime, _ = bgiStatus.GroupTime(fileName)
 			}()
 
 			//获取今天执行配置组

@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -163,6 +164,8 @@ func (m *LogMonitor) Monitor() {
 					JsLogHandler(line)
 				}
 
+				//JsLogRestart(line)
+
 				//角色死亡自动吃药
 				if strings.Contains(line, "发现角色死亡") && config.Cfg.Control.IsRedBlood {
 					//自动吃药
@@ -182,9 +185,12 @@ func (m *LogMonitor) Monitor() {
 				//一条龙结束操作
 				if strings.Contains(line, "一条龙和配置组任务结束") {
 
-					archiveConfig, ArchiveRecordMap := ArchiveConfig()
+					archiveConfig, ArchiveRecordMap, groupNameOrder := ArchiveConfig()
 					data := "一条龙和配置组任务结束，所有配置组已归档@所有人\n"
 					sumExecuteTime, _ := time.ParseDuration("0s")
+
+					dataMap := make(map[int]string)
+
 					for _, groupMap := range archiveConfig {
 
 						executeTime, _ := time.ParseDuration("0s")
@@ -212,9 +218,23 @@ func (m *LogMonitor) Monitor() {
 							diff = executeTime - duration
 						}
 
-						data += fmt.Sprintf("【%s--%s】(%s)\n", groupMap.GroupName, executeTime, diff)
+						index := slices.Index(groupNameOrder, groupMap.GroupName)
+						dataMap[index] = fmt.Sprintf("%d.【%s--%s】(%s)\n", index, groupMap.GroupName, executeTime, diff)
 						sumExecuteTime += executeTime
 					}
+
+					// 1. 提取所有的 Key
+					keys := make([]int, 0, len(dataMap))
+					for k := range dataMap {
+						keys = append(keys, k)
+					}
+					slices.Sort(keys)
+					// 2. 对 Key 进行排序
+
+					for i2 := range keys {
+						data += dataMap[keys[i2]]
+					}
+
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)
 
 					Notice.SentText(data)

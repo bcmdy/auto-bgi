@@ -48,3 +48,16 @@ func InitialOneLongProgress(OneLongName string) {
 
 	autoLog.Sugar.Infof("初始化一条龙进度：%v", OneLongProgress)
 }
+
+// 获取没有跑完的配置组
+func NoRunningOneLongProgress() []string {
+	var unfinishedOneLong []string
+	// 按照插入时的顺序进行输出
+	for _, name := range OneLongProgress.Order {
+		status := OneLongProgress.Details[name]
+		if !status {
+			unfinishedOneLong = append(unfinishedOneLong, name)
+		}
+	}
+	return unfinishedOneLong
+}
