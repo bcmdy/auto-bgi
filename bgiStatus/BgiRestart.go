@@ -13,7 +13,7 @@ import (
 // JsLogRestart js日志触发重启
 func JsLogRestart(line string) {
 
-	if strings.HasPrefix(line, "OpenCV内存异常，重试1次") {
+	if strings.HasPrefix(line, "OpenCV内存异常, 重试1次") {
 		autoLog.Sugar.Errorf("bgi严重错误：%s", line)
 
 		// 构造通知内容

@@ -164,7 +164,7 @@ func (m *LogMonitor) Monitor() {
 					JsLogHandler(line)
 				}
 
-				//JsLogRestart(line)
+				JsLogRestart(line)
 
 				//角色死亡自动吃药
 				if strings.Contains(line, "发现角色死亡") && config.Cfg.Control.IsRedBlood {
