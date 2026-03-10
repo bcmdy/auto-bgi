@@ -81,7 +81,7 @@
                             :disabled="!selectedFile || loading || exportingRoutes"
                             title="按每分钟收入排序（耗时短、收益高排前面）"
                         >
-                            ⬇️ 导出效率路线
+                            ⬇️ 导出效率路线分析
                         </button>
                     </div>
                 </div>
