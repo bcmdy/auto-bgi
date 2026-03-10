@@ -664,6 +664,17 @@ func StarGin() {
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
 		})
 
+		needAuth.GET("/LogAnalysis2EfficiencyRoutes", func(context *gin.Context) {
+			fileName := context.Query("file")
+			if fileName == "" {
+				context.String(http.StatusBadRequest, "缺少 file 参数")
+				return
+			}
+
+			results := bgiStatus.LogAnalysis2EfficiencyRoutes(fileName)
+			context.JSON(http.StatusOK, gin.H{"status": "success", "data": results})
+		})
+
 		//查询脚本情况
 		needAuth.GET("/jsNames", func(context *gin.Context) {
 

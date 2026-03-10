@@ -74,6 +74,16 @@
                         <span class="stats-count">{{ analysisData.length }}</span>
                         <span class="stats-label">个配置组</span>
                     </div>
+                    <div class="panel-actions">
+                        <button
+                            class="btn export-route-btn"
+                            @click="exportEfficiencyRoutes"
+                            :disabled="!selectedFile || loading || exportingRoutes"
+                            title="按每分钟收入排序（耗时短、收益高排前面）"
+                        >
+                            ⬇️ 导出效率路线
+                        </button>
+                    </div>
                 </div>
 
                 <div class="analysis-result">
@@ -297,6 +307,7 @@ export default {
             selectedFile: '',
             analysisData: [],
             loading: false,
+            exportingRoutes: false,
             expandedGroups: [], // 记录展开的配置组
             bookmarkVisible: false, // 书签是否可见，默认折叠
             currentActiveGroup: '', // 当前活跃的配置组
@@ -656,6 +667,92 @@ export default {
                 path: '/logDetail',
                 query: { file: this.selectedFile }
             });
+        },
+        formatIncomeDetailForCsv(mapData) {
+            if (!mapData || Object.keys(mapData).length === 0) {
+                return ''
+            }
+            return Object.entries(mapData)
+                .sort((a, b) => Number(b[1]) - Number(a[1]))
+                .map(([k, v]) => `${k}:${v}`)
+                .join('; ')
+        },
+        escapeCsvCell(value) {
+            const str = value === null || value === undefined ? '' : String(value)
+            if (/[",\n\r]/.test(str)) {
+                return `"${str.replace(/"/g, '""')}"`
+            }
+            return str
+        },
+        downloadCsvFile(csvText, fileName) {
+            const blob = new Blob([`\uFEFF${csvText}`], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = fileName
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+        },
+        async exportEfficiencyRoutes() {
+            if (!this.selectedFile) {
+                this.$message?.warning('请先选择一个日志文件')
+                return
+            }
+            if (this.exportingRoutes) return
+
+            this.exportingRoutes = true
+            try {
+                const response = await api.get(`/api/LogAnalysis2EfficiencyRoutes?file=${encodeURIComponent(this.selectedFile)}`)
+                const routes = response?.data || []
+                if (!Array.isArray(routes) || routes.length === 0) {
+                    this.$message?.info('没有可导出的路线数据')
+                    return
+                }
+
+                const header = [
+                    '序号',
+                    '配置组',
+                    '路线',
+                    '开始时间',
+                    '结束时间',
+                    '耗时',
+                    '耗时(秒)',
+                    '收入总数',
+                    '每分钟收入',
+                    '错误数',
+                    '收入明细'
+                ]
+
+                const lines = [header.map(this.escapeCsvCell).join(',')]
+                routes.forEach((r, idx) => {
+                    const row = [
+                        idx + 1,
+                        r.GroupName || '',
+                        r.RouteName || '',
+                        r.StartTime || '',
+                        r.EndTime || '',
+                        r.Consuming || '',
+                        r.DurationSec || 0,
+                        r.IncomeTotal || 0,
+                        typeof r.IncomePerMin === 'number' ? r.IncomePerMin.toFixed(2) : '0.00',
+                        r.ErrorTotal || 0,
+                        this.formatIncomeDetailForCsv(r.Income)
+                    ]
+                    lines.push(row.map(this.escapeCsvCell).join(','))
+                })
+
+                const safeBase = String(this.selectedFile || 'log').replace(/[\\/:*?"<>|]/g, '_')
+                const fileName = `效率路线_${safeBase}.csv`
+                this.downloadCsvFile(lines.join('\n'), fileName)
+                this.$message?.success(`已导出：${fileName}`)
+            } catch (error) {
+                console.error('导出效率路线失败:', error)
+                this.$message?.error('导出效率路线失败')
+            } finally {
+                this.exportingRoutes = false
+            }
         }
     }
 }
@@ -876,6 +973,39 @@ export default {
 }
 
 .view-detail-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: linear-gradient(45deg, #ccc, #ddd);
+    box-shadow: none;
+}
+
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.export-route-btn {
+    background: linear-gradient(45deg, #4CAF50, #66BB6A);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.25);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.export-route-btn:hover:not(:disabled) {
+    background: linear-gradient(45deg, #66BB6A, #4CAF50);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.35);
+}
+
+.export-route-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background: linear-gradient(45deg, #ccc, #ddd);

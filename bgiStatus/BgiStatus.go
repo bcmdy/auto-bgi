@@ -1566,6 +1566,111 @@ type LogAnalysis2Json struct {
 	Consuming  string
 }
 
+type EfficiencyRoute struct {
+	GroupName    string
+	RouteName    string
+	StartTime    string
+	EndTime      string
+	Consuming    string
+	DurationSec  int64
+	Income       map[string]int
+	IncomeTotal  int
+	IncomePerMin float64
+	ErrorTotal   int
+	SelectedLog  string
+}
+
+func sumIntMap(m map[string]int) int {
+	if m == nil {
+		return 0
+	}
+	sum := 0
+	for _, v := range m {
+		sum += v
+	}
+	return sum
+}
+
+func durationSecondsFromSubTask(sub LogAnalysis2Json) int64 {
+	if sub.Consuming != "" {
+		if d, err := time.ParseDuration(sub.Consuming); err == nil {
+			return int64(d.Seconds())
+		}
+	}
+
+	if sub.StartTime != "" && sub.EndTime != "" {
+		layout := "2006-01-02 15:04:05"
+		start, err1 := time.Parse(layout, sub.StartTime)
+		end, err2 := time.Parse(layout, sub.EndTime)
+		if err1 == nil && err2 == nil {
+			return int64(end.Sub(start).Seconds())
+		}
+	}
+
+	return 0
+}
+
+func LogAnalysis2EfficiencyRoutes(fileName string) []EfficiencyRoute {
+	groups := LogAnalysis2(fileName)
+	if len(groups) == 0 {
+		return nil
+	}
+
+	routes := make([]EfficiencyRoute, 0, 128)
+	for _, g := range groups {
+		if g.GroupName == "合计" {
+			continue
+		}
+		for _, sub := range g.LogAnalysis2Json {
+			durSec := durationSecondsFromSubTask(sub)
+			incomeTotal := sumIntMap(sub.Income)
+			errorTotal := sumIntMap(sub.Errors)
+			incomePerMin := 0.0
+			if durSec > 0 {
+				incomePerMin = float64(incomeTotal) * 60.0 / float64(durSec)
+			}
+
+			routes = append(routes, EfficiencyRoute{
+				GroupName:    g.GroupName,
+				RouteName:    sub.JsonName,
+				StartTime:    sub.StartTime,
+				EndTime:      sub.EndTime,
+				Consuming:    sub.Consuming,
+				DurationSec:  durSec,
+				Income:       sub.Income,
+				IncomeTotal:  incomeTotal,
+				IncomePerMin: incomePerMin,
+				ErrorTotal:   errorTotal,
+				SelectedLog:  fileName,
+			})
+		}
+	}
+
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].IncomePerMin != routes[j].IncomePerMin {
+			return routes[i].IncomePerMin > routes[j].IncomePerMin
+		}
+		if routes[i].DurationSec != routes[j].DurationSec {
+			if routes[i].DurationSec == 0 {
+				return false
+			}
+			if routes[j].DurationSec == 0 {
+				return true
+			}
+			return routes[i].DurationSec < routes[j].DurationSec
+		}
+		if routes[i].IncomeTotal != routes[j].IncomeTotal {
+			return routes[i].IncomeTotal > routes[j].IncomeTotal
+		}
+		if routes[i].GroupName != routes[j].GroupName {
+			return routes[i].GroupName < routes[j].GroupName
+		}
+		return routes[i].RouteName < routes[j].RouteName
+	})
+
+	return routes
+}
+
 // 日志分析
 func LogAnalysis2(fileName string) []LogAnalysis2Struct {
 	filePath := filepath.Join(config.Cfg.BetterGIAddress, "log")
