@@ -317,7 +317,7 @@ type TreeResponse2 struct {
 }
 
 // 获取背包信息
-func GetBagInfo() map[string][]ChildNode {
+func GetBagInfo() (map[string][]ChildNode, map[string]int64) {
 	// 捕获异常
 	defer func() {
 		if r := recover(); r != nil {
@@ -329,7 +329,7 @@ func GetBagInfo() map[string][]ChildNode {
 	req, err := http.NewRequest("GET", "https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v2/map/label/tree?map_id=2&app_sn=ys_obc&lang=zh-cn", nil)
 	if err != nil {
 		fmt.Printf("创建请求失败: %v\n", err)
-		return nil
+		return nil, nil
 	}
 
 	// 设置请求头（补充必要的User-Agent，提升兼容性）
@@ -343,21 +343,21 @@ func GetBagInfo() map[string][]ChildNode {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("发送请求失败: %v\n", err)
-		return nil
+		return nil, nil
 	}
 	defer resp.Body.Close()
 
 	// 3. 检查响应状态码
 	if resp.StatusCode != http.StatusOK {
 		fmt.Printf("请求返回非200状态码: %d\n", resp.StatusCode)
-		return nil
+		return nil, nil
 	}
 
 	// 4. 读取响应体
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("读取响应体失败: %v\n", err)
-		return nil
+		return nil, nil
 	}
 
 	// 可选：打印原始响应（调试用）
@@ -368,13 +368,13 @@ func GetBagInfo() map[string][]ChildNode {
 	err = json.Unmarshal(body, &treeResp)
 	if err != nil {
 		fmt.Printf("JSON解析失败: %v\n", err)
-		return nil
+		return nil, nil
 	}
 
 	// 6. 检查接口返回状态
 	if treeResp.Retcode != 0 {
 		fmt.Printf("接口返回错误: retcode=%d, message=%s\n", treeResp.Retcode, treeResp.Message)
-		return nil
+		return nil, nil
 	}
 
 	// 7. 转换为ChildNode结构体列表
@@ -398,7 +398,7 @@ func GetBagInfo() map[string][]ChildNode {
 	req2, err2 := http.NewRequest("GET", "https://api-takumi.mihoyo.com/common/map_user/ys_obc/v1/user/sync_game_material_info?map_id=2&app_sn=ys_obc&lang=zh-cn", nil)
 	if err2 != nil {
 		fmt.Printf("创建请求失败: %v\n", err2)
-		return nil
+		return nil, nil
 	}
 
 	// 设置请求头（补充必要的User-Agent，提升兼容性）
@@ -412,31 +412,33 @@ func GetBagInfo() map[string][]ChildNode {
 	resp2, err2 := client2.Do(req2)
 	if err2 != nil {
 		fmt.Printf("发送请求失败: %v\n", err2)
-		return nil
+		return nil, nil
 	}
 	defer resp2.Body.Close()
 
 	// 3. 检查响应状态码
 	if resp2.StatusCode != http.StatusOK {
 		fmt.Printf("请求返回非200状态码: %d\n", resp2.StatusCode)
-		return nil
+		return nil, nil
 	}
 
 	// 4. 读取响应体
 	body2, err2 := ioutil.ReadAll(resp2.Body)
 	if err2 != nil {
 		fmt.Printf("读取响应体失败: %v\n", err2)
-		return nil
+		return nil, nil
 	}
 	var treeResp2 TreeResponse2
 
 	err = json.Unmarshal(body2, &treeResp2)
 	if err != nil {
 		fmt.Printf("JSON解析失败: %v\n", err)
-		return nil
+		return nil, nil
 	}
 
 	mapData := make(map[string][]ChildNode)
+
+	m := make(map[string]int64)
 
 	//var BackpackRecords []models.BackpackRecord
 	// 8. 输出解析结果（可选，验证用）
@@ -446,10 +448,11 @@ func GetBagInfo() map[string][]ChildNode {
 		cn.Number = aa
 		if cn.ParentName == "区域特产" || cn.ParentName == "木材" || cn.ParentName == "矿物" || cn.ParentName == "背包/素材" || cn.ParentName == "贵重收集物" {
 			mapData[cn.ParentName] = append(mapData[cn.ParentName], cn)
+			m[cn.Name] += aa
 		}
 	}
 
-	return mapData
+	return mapData, m
 }
 
 // 查询实时便签

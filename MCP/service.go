@@ -167,3 +167,9 @@ func parameterValidation(taskName, data string) error {
 	}
 
 }
+
+func GetBackpackMaterialCount(name string) (interface{}, error) {
+	_, m := config.GetBagInfo()
+
+	return fmt.Sprintf("此材料有%d个", m[name]), nil
+}

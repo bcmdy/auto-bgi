@@ -225,6 +225,20 @@ func processRequest(session *Session, req JsonRpcRequest) {
 						"required": []string{"taskName"},
 					},
 				},
+				{
+					Name:        "queryBackpack",
+					Description: "查询原神背包某一个材料的数量",
+					InputSchema: map[string]interface{}{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"materialName": map[string]interface{}{
+								"type":        "string",
+								"description": "材料名称",
+							},
+						},
+						"required": []string{"materialName"},
+					},
+				},
 			},
 		}
 	case "tools/call":
@@ -271,20 +285,15 @@ func processRequest(session *Session, req JsonRpcRequest) {
 				result = mcp.Msg
 
 			}
-
-			//if fn, ok := TaskMcp[taskName]; ok {
-			//	if delay > 0 {
-			//		time.AfterFunc(time.Duration(delay)*time.Second, func() {
-			//			fn(param)
-			//		})
-			//		result = fmt.Sprintf("任务 [%s] 已安排在 %d 秒后执行", taskName, delay)
-			//	} else {
-			//		go fn(param)
-			//		result = "任务 [" + taskName + "] 已触发"
-			//	}
-			//} else {
-			//	err = fmt.Errorf("task definition not found")
-			//}
+		case "queryBackpack":
+			materialName := params.Arguments["materialName"].(string)
+			num, err := GetBackpackMaterialCount(materialName)
+			if err != nil {
+				response.Error = &JsonRpcError{Code: -32602, Message: err.Error()}
+				break
+			} else {
+				result = num
+			}
 		default:
 			response.Error = &JsonRpcError{Code: -32601, Message: "Tool not found"}
 			sendResponse(session, response)

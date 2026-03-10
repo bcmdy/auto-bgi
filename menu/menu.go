@@ -462,7 +462,7 @@ func StarGin() {
 
 			//查询米游社背包信息
 			BagStatistics.GET("/getBagInfo", func(context *gin.Context) {
-				getBagInfo := config.GetBagInfo()
+				getBagInfo, _ := config.GetBagInfo()
 
 				context.JSON(http.StatusOK, getBagInfo)
 			})

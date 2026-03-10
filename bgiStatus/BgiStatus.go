@@ -216,7 +216,7 @@ func BagStatistics() ([]Material, error) {
 
 func CheckBag() map[string]int64 {
 
-	getBagInfo := config.GetBagInfo()
+	getBagInfo, _ := config.GetBagInfo()
 	allItems := make(map[string]int64)
 	for s, nodes := range getBagInfo {
 		if s == "贵重收集物" || s == "木材" {
