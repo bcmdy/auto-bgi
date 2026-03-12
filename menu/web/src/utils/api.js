@@ -156,6 +156,8 @@ export const apiMethods = {
   getBagStatistics: () => api.get('/api/BagStatistics'),
   addBagStatistics: (name) => api.post(`/api/BagStatistics/ADD?name=${encodeURIComponent(name)}`),
   getCDAwareAutoGather: (status = '3') => api.get('/api/CD-Aware-AutoGather/ReadInfo', { params: { status } }),
+  hotKeyQuery: () => api.get('/api/HotKeyConfig/HotKeyQuery'),
+  pressHotKey: (key) => api.post('/api/HotKeyConfig/PressKey', { params: { key } }),
   // 采集管理
   getCollectionManagement: (name) => api.get('/api/CDCollectionManagement/list', { params: { name } }),
   getAllUserFiles: () => api.get('/api/CDCollectionManagement/AllUserFile'),

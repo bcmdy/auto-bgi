@@ -488,6 +488,7 @@ func pressKey(key string) {
 func PressKeyWeb(context *gin.Context) {
 	value := context.Query("key")
 	PressKey(value)
+	context.JSON(200, "按键成功")
 }
 
 func PressKey(key string) {
