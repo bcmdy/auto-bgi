@@ -32,7 +32,8 @@ const routes = [
   { path: '/Update', component: () => import('../views/Update.vue'), meta: { requiresAuth: true } },
   { path: '/CollectionManagement', component: () => import('../views/CollectionManagement.vue'), meta: { requiresAuth: true } },
   { path: '/logDetail', component: () => import('../views/LogDetail.vue'), meta: { requiresAuth: true } },
-  { path: '/Morale', component: () => import('../views/Morale.vue'), meta: { requiresAuth: true } }
+  { path: '/Morale', component: () => import('../views/Morale.vue'), meta: { requiresAuth: true } },
+  { path: '/HotKey', component: () => import('../views/HotKey.vue'), meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({
