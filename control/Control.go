@@ -488,6 +488,7 @@ func pressKey(key string) {
 func PressKeyWeb(context *gin.Context) {
 	value := context.Query("key")
 	PressKey(value)
+	autoLog.Sugar.Infof("PressKeyWeb按键成功: %s", value)
 	context.JSON(200, "按键成功")
 }
 

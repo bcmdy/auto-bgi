@@ -3,7 +3,7 @@
     <header class="page-header">
       <button class="nav-btn" @click="goHome">🏠 返回首页</button>
       <div class="title-wrap">
-        <h1 class="page-title">快捷键遥控器</h1>
+        <h1 class="page-title">赤沙石板</h1>
       </div>
       <button class="nav-btn" :disabled="loading" @click="loadHotKeys">
         {{ loading ? '加载中...' : '🔄 刷新' }}
