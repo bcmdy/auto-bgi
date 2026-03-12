@@ -245,7 +245,7 @@ func InitTaskCron() {
 				return
 			}
 
-			getBagInfo := config.GetBagInfo()
+			getBagInfo, _ := config.GetBagInfo()
 			var BackpackRecords []models.BackpackRecord
 			for _, nodes := range getBagInfo {
 				for _, cn := range nodes {

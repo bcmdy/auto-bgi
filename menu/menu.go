@@ -1183,6 +1183,14 @@ func StarGin() {
 			})
 		}
 
+		HotKeyConfigController := needAuth.Group("/HotKeyConfig")
+		{
+			//查询按键
+			HotKeyConfigController.GET("/HotKeyQuery", config.HotKeyQuery)
+			//按键
+			HotKeyConfigController.POST("/PressKey", control.PressKeyWeb)
+		}
+
 		//js-API
 		jsController := needAuth.Group("/js")
 		{

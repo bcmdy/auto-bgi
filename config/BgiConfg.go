@@ -3,7 +3,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,12 +42,22 @@ func ReadManifest(jsName string) (ManifestStruct, error) {
 }
 
 type BgiConfig struct {
-	CancelTaskHotkey              string `json:"cancelTaskHotkey"`               // 取消任务的快捷键值
-	GenShinStartConfigInstallPath string `json:"genshinStartConfig.installPath"` // 原神安装目录
-	RunForVersion                 string `json:"runForVersion"`                  // bgi版本号
-	SelectedChannelName           string `json:"selectedChannelName"`            // selectedChannelName：仓库
-	RepoUrl                       string `json:"repoUrl"`                        // 仓库地址
-	MiYouSheConfigCookie          string `json:"miyousheConfig"`                 // miyousheConfig
+	GenShinStartConfigInstallPath string       `json:"genshinStartConfig.installPath"` // 原神安装目录
+	RunForVersion                 string       `json:"runForVersion"`                  // bgi版本号
+	SelectedChannelName           string       `json:"selectedChannelName"`            // selectedChannelName：仓库
+	RepoUrl                       string       `json:"repoUrl"`                        // 仓库地址
+	MiYouSheConfigCookie          string       `json:"miyousheConfig"`                 // miyousheConfig
+	HotKeyConfig                  HotKeyConfig `json:"shortcutKey"`                    //bgi快捷键
+}
+
+type HotKeyConfig struct {
+	BgiEnabledHotkey     string `json:"BgiEnabledHotkey"`      //启动停止BetterGI
+	CancelTaskHotkey     string `json:"CancelTaskHotkey" `     //停止当前脚本/独立任务
+	SuspendHotkey        string `json:"SuspendHotkey" `        //暂停当前脚本/独立任务
+	TakeScreenshotHotkey string `json:"TakeScreenshotHotkey" ` // 游戏截图
+	LogBoxDisplayHotkey  string `json:"LogBoxDisplayHotkey"`   //日志与状态窗口展示开关
+	OnedragonHotkey      string `json:"OnedragonHotkey"`       //启动停止一条龙
+
 }
 
 var BgiCfg BgiConfig
@@ -57,8 +69,18 @@ func ReadBgiConfig() {
 	configData, _ := os.ReadFile(configPath)
 
 	data := string(configData)
-	// 从配置文件中获取取消任务的快捷键值
-	BgiCfg.CancelTaskHotkey = gjson.Get(data, "hotKeyConfig.cancelTaskHotkey").String()
+
+	/**
+	*获取快捷键
+	 */
+	BgiCfg.HotKeyConfig.BgiEnabledHotkey = gjson.Get(data, "hotKeyConfig.bgiEnabledHotkey").String()
+	BgiCfg.HotKeyConfig.CancelTaskHotkey = gjson.Get(data, "hotKeyConfig.cancelTaskHotkey").String()
+	BgiCfg.HotKeyConfig.SuspendHotkey = gjson.Get(data, "hotKeyConfig.suspendHotkey").String()
+	BgiCfg.HotKeyConfig.TakeScreenshotHotkey = gjson.Get(data, "hotKeyConfig.takeScreenshotHotkey").String()
+	BgiCfg.HotKeyConfig.LogBoxDisplayHotkey = gjson.Get(data, "hotKeyConfig.logBoxDisplayHotkey").String()
+	BgiCfg.HotKeyConfig.OnedragonHotkey = gjson.Get(data, "hotKeyConfig.onedragonHotkey").String()
+
+	//end
 
 	//原神安装目录
 	BgiCfg.GenShinStartConfigInstallPath = gjson.Get(data, "genshinStartConfig.installPath").String()
@@ -81,5 +103,34 @@ func ReadBgiConfig() {
 	} else {
 		BgiCfg.RepoUrl = "https://cnb.cool/bettergi/bettergi-scripts-list.git"
 	}
+
+	fmt.Println(BgiCfg.HotKeyConfig)
+
+}
+
+func HotKeyQuery(context *gin.Context) {
+
+	configPath := Cfg.BetterGIAddress + "\\User\\Config.json"
+	// 读取配置文件内容，忽略可能出现的错误
+	configData, _ := os.ReadFile(configPath)
+
+	data := string(configData)
+
+	BgiCfg.HotKeyConfig.BgiEnabledHotkey = gjson.Get(data, "hotKeyConfig.bgiEnabledHotkey").String()
+	BgiCfg.HotKeyConfig.CancelTaskHotkey = gjson.Get(data, "hotKeyConfig.cancelTaskHotkey").String()
+	BgiCfg.HotKeyConfig.SuspendHotkey = gjson.Get(data, "hotKeyConfig.suspendHotkey").String()
+	BgiCfg.HotKeyConfig.TakeScreenshotHotkey = gjson.Get(data, "hotKeyConfig.takeScreenshotHotkey").String()
+	BgiCfg.HotKeyConfig.LogBoxDisplayHotkey = gjson.Get(data, "hotKeyConfig.logBoxDisplayHotkey").String()
+	BgiCfg.HotKeyConfig.OnedragonHotkey = gjson.Get(data, "hotKeyConfig.onedragonHotkey").String()
+
+	mapData := make(map[string]string)
+	mapData["启动停止BetterGI"] = BgiCfg.HotKeyConfig.BgiEnabledHotkey
+	mapData["停止当前脚本/ 独立任务"] = BgiCfg.HotKeyConfig.CancelTaskHotkey
+	mapData["暂停当前脚本/ 独立任务"] = BgiCfg.HotKeyConfig.SuspendHotkey
+	mapData["游戏截图"] = BgiCfg.HotKeyConfig.TakeScreenshotHotkey
+	mapData["日志与状态窗口展示开关"] = BgiCfg.HotKeyConfig.LogBoxDisplayHotkey
+	mapData["启动停止一条龙"] = BgiCfg.HotKeyConfig.OnedragonHotkey
+
+	context.JSON(http.StatusOK, gin.H{"status": "success", "data": mapData})
 
 }

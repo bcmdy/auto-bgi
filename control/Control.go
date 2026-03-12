@@ -7,6 +7,7 @@ import (
 	"auto-bgi/config"
 	"crypto/sha256"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"image/jpeg"
 	"net/http"
 	"os"
@@ -482,6 +483,11 @@ func pressKey(key string) {
 	if err != nil {
 		autoLog.Sugar.Errorf("按键失败: %v", err)
 	}
+}
+
+func PressKeyWeb(context *gin.Context) {
+	value := context.Query("key")
+	PressKey(value)
 }
 
 func PressKey(key string) {
