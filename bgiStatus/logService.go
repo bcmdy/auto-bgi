@@ -36,6 +36,15 @@ func GetIndex(context *gin.Context) {
 	info := BgiLogStatusInfo
 	data := make(map[string]interface{})
 	data["group"] = info.Group + " [" + info.GroupProgress + "]"
+
+	//// 统一使用UTC时间
+	//fmt.Println(time.Now().Format("2006-01-02 15:04:05"))
+	//fmt.Println(RunDetail.StartTime.Format("2006-01-02 15:04:05"))
+	//
+	//hour := time.Now().Hour() - RunDetail.StartTime.Hour()
+	//minute := time.Now().Minute() - RunDetail.StartTime.Minute()
+	//fmt.Println(hour, minute)
+
 	data["ExpectedToEnd"] = info.Timestamp
 	data["line"] = info.MapTrackingLine
 	data["scriptName"] = info.ScriptName

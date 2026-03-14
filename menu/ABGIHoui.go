@@ -46,7 +46,7 @@ func ABGIHouiPort(newPort string) {
 	// 2. 读取文件内容
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		autoLog.Sugar.Errorf("读取 妙妙屋API失败")
+		autoLog.Sugar.Warnf("读取 妙妙屋API失败")
 		return
 	}
 

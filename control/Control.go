@@ -5,10 +5,14 @@ import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 	"image/jpeg"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -522,7 +526,16 @@ func PressEsc() {
 	pressKey("esc")
 }
 
-// 调用Python
+// 将 GBK 字节转为 UTF-8 字符串
+func GbkToUtf8(s []byte) ([]byte, error) {
+	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())
+	d, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
 func CallPython() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -532,27 +545,66 @@ func CallPython() {
 
 	cmd := exec.Command("MihoyoBBSTools\\venv\\python.exe", "MihoyoBBSTools\\main.py")
 
-	// --- 关键代码：隐藏黑窗口 ---
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		HideWindow:    true,       // 隐藏窗口
-		CreationFlags: 0x08000000, // CREATE_NO_WINDOW 标志
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
 	}
-	// --------------------------
 
 	stdout, _ := cmd.StdoutPipe()
 	cmd.Start()
 
+	// 使用 bufio 或直接处理字节
 	buf := make([]byte, 1024)
 	for {
 		n, err := stdout.Read(buf)
 		if n == 0 || err != nil {
 			break
 		}
-		autoLog.Sugar.Infof(string(buf[:n]))
+
+		// --- 转换编码 ---
+		utf8Bytes, err := GbkToUtf8(buf[:n])
+		if err != nil {
+			// 如果转换失败，降级显示原内容
+			autoLog.Sugar.Infof(string(buf[:n]))
+		} else {
+			autoLog.Sugar.Infof(string(utf8Bytes))
+		}
 	}
 
 	cmd.Wait()
 }
+
+//// 调用Python
+//func CallPython() {
+//	defer func() {
+//		if err := recover(); err != nil {
+//			autoLog.Sugar.Errorf("CallPython捕获异常: %v", err)
+//		}
+//	}()
+//
+//	cmd := exec.Command("MihoyoBBSTools\\venv\\python.exe", "MihoyoBBSTools\\main.py")
+//
+//	// --- 关键代码：隐藏黑窗口 ---
+//	cmd.SysProcAttr = &syscall.SysProcAttr{
+//		HideWindow:    true,       // 隐藏窗口
+//		CreationFlags: 0x08000000, // CREATE_NO_WINDOW 标志
+//	}
+//	// --------------------------
+//
+//	stdout, _ := cmd.StdoutPipe()
+//	cmd.Start()
+//
+//	buf := make([]byte, 1024)
+//	for {
+//		n, err := stdout.Read(buf)
+//		if n == 0 || err != nil {
+//			break
+//		}
+//		autoLog.Sugar.Infof(string(buf[:n]))
+//	}
+//
+//	cmd.Wait()
+//}
 
 // 执行系统命令并获取输出
 func getWmic(target string, property string) string {

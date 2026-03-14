@@ -144,19 +144,21 @@ func (m *LogMonitor) Monitor() {
 
 			for _, line := range lines {
 				//关键字告警
-				for _, kw := range m.Keywords {
-					if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
-						msg := fmt.Sprintf("⚠️通知：💗%s💗\n时间:[%s]\n配置组：%s\n路线：%s", strings.TrimSpace(line), time.Now().Format("2006-01-02 15:04:05"), BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine)
-						//m.sendAlert(msg, false)
-						Notice.SentText(msg)
-						//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
-						if config.Cfg.ScreenRecord.IsRecord {
-							autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
-							go func() {
-								abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine))
-							}()
-						}
+				if len(m.Keywords) != 0 {
+					for _, kw := range m.Keywords {
+						if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
+							msg := fmt.Sprintf("⚠️通知：💗%s💗\n时间:[%s]\n配置组：%s\n路线：%s", strings.TrimSpace(line), time.Now().Format("2006-01-02 15:04:05"), BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine)
+							//m.sendAlert(msg, false)
+							Notice.SentText(msg)
+							//fmt.Printf("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
+							if config.Cfg.ScreenRecord.IsRecord {
+								autoLog.Sugar.Infof("[%s] 检测到关键词: %s\n", time.Now().Format("2006-01-02 15:04:05"), kw)
+								go func() {
+									abgiObs.SaveReplayBuffer(fmt.Sprintf("%s-%s", BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine))
+								}()
+							}
 
+						}
 					}
 				}
 
