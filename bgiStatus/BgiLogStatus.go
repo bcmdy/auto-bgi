@@ -119,10 +119,10 @@ func InitBgiLogStatus() {
 					}
 					//判断是否是正常结束的
 					if endTime.Before(RunDetail.ExpectedEndTime) {
-						autoLog.Sugar.Errorf("配置组 %s 异常结束，结束时间 %s 早于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
+						autoLog.Sugar.Warnf("配置组 %s 异常结束，结束时间 %s 早于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
 						continue
 					} else {
-						autoLog.Sugar.Infof("配置组 %s 正常结束，结束时间 %s 晚于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
+						autoLog.Sugar.Warnf("配置组 %s 正常结束，结束时间 %s 晚于预期结束时间 %s", matches[1], endTime.Format("2006-01-02 15:04:05"), RunDetail.ExpectedEndTime.Format("2006-01-02 15:04:05"))
 						OneLongProgress.Details[matches[1]] = true
 					}
 

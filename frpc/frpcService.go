@@ -2,6 +2,7 @@ package frpc
 
 import (
 	"auto-bgi/abgiConstant"
+	"auto-bgi/autoLog"
 	"embed"
 	"fmt"
 	"os"
@@ -13,10 +14,6 @@ import (
 //go:embed frpc.exe
 var embeddedFiles embed.FS
 
-// 1. 内置的 Server 配置 (写死在代码里，用户看不到也改不了)
-// 注意：确保最后有一个换行符 \n，否则拼接时会出错
-
-// 用户自定义配置文件的文件名
 const userConfigFileName = "frpc_user.toml"
 
 func InitFrp() {
@@ -45,7 +42,7 @@ func InitFrp() {
 		}
 	}(tempDir) // 退出时清理
 
-	fmt.Println("正在初始化运行环境...")
+	autoLog.Sugar.Infof("内网穿透正在初始化运行环境...")
 
 	// 1. 释放 frpc.exe 到临时目录
 	frpcExePath, err := extractFile("frpc.exe", "frpc.exe", tempDir)
