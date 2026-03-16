@@ -11,6 +11,7 @@ import (
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
 	"auto-bgi/OneLong"
+	"auto-bgi/OneLongPlan"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/TaskCron"
@@ -804,6 +805,16 @@ func StarGin() {
 			oneLongInfo := OneLongService.OneLongAllName()
 			context.JSON(http.StatusOK, gin.H{"status": "success", "data": oneLongInfo})
 		})
+
+		oneLongPlanController := needAuth.Group("/oneLongPlan")
+		{
+			oneLongPlanController.GET("/list", OneLongPlan.List)
+			oneLongPlanController.GET("/detail", OneLongPlan.Detail)
+			oneLongPlanController.POST("/add", OneLongPlan.Add)
+			oneLongPlanController.POST("/update", OneLongPlan.Update)
+			oneLongPlanController.DELETE("/delete", OneLongPlan.Delete)
+			oneLongPlanController.POST("/run", OneLongPlan.Run)
+		}
 
 		//读取js的md文件
 		needAuth.GET("/md", func(c *gin.Context) {

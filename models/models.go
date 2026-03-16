@@ -14,6 +14,17 @@ func (ArchiveRecords) TableName() string {
 	return "archive_records"
 }
 
+type OneLongPlan struct {
+	ID        uint   `gorm:"primaryKey" json:"id"`
+	Type      string `json:"type"`
+	Value     string `json:"value"`
+	GroupName string `json:"groupName"`
+}
+
+func (OneLongPlan) TableName() string {
+	return "OneLongPlan"
+}
+
 type AutoBgiConfig struct {
 	ID           uint   `gorm:"primaryKey" json:"id"`
 	AutoBgiKey   string `gorm:"auto_bgi_key"`

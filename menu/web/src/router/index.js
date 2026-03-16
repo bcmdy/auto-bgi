@@ -28,6 +28,7 @@ const routes = [
   { path: '/screen', component: () => import('../views/screen.vue'), meta: { requiresAuth: true } },
   { path: '/obsVideo', component: () => import('../views/obsVideo.vue'), meta: { requiresAuth: true } },
   { path: '/TaskCron', component: () => import('../views/TaskCron.vue'), meta: { requiresAuth: true } },
+  { path: '/OneLongPlan', component: () => import('../views/OneLongPlan.vue'), meta: { requiresAuth: true } },
   { path: '/BgiConfig', component: () => import('../views/BgiConfig.vue'), meta: { requiresAuth: true } },
   { path: '/Update', component: () => import('../views/Update.vue'), meta: { requiresAuth: true } },
   { path: '/CollectionManagement', component: () => import('../views/CollectionManagement.vue'), meta: { requiresAuth: true } },

@@ -173,6 +173,13 @@ export const apiMethods = {
     return api.post('/api/startGroups', payload)
   },
 
+  getOneLongPlanList: () => api.get('/api/oneLongPlan/list'),
+  getOneLongPlanDetail: (id) => api.get('/api/oneLongPlan/detail', { params: { id } }),
+  addOneLongPlan: (payload) => api.post('/api/oneLongPlan/add', payload),
+  updateOneLongPlan: (payload) => api.post('/api/oneLongPlan/update', payload),
+  deleteOneLongPlan: (id) => api.delete('/api/oneLongPlan/delete', { params: { id } }),
+  runOneLongPlan: (id) => api.post('/api/oneLongPlan/run', null, { params: { id } }),
+
   //脚本组管理
   //批量更新脚本
   batchUpdate: () => api.post('/api/batchUpdate', null, { timeout: 5 * 60 * 1000 }),
