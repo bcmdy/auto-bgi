@@ -67,7 +67,7 @@
               <a-space>
                 <a-button size="small" @click="openEdit(record)">编辑</a-button>
                 <a-button size="small" danger @click="remove(record)">删除</a-button>
-                <a-button size="small" type="primary" @click="run(record)">执行</a-button>
+                <!-- <a-button size="small" type="primary" @click="run(record)">执行</a-button> -->
               </a-space>
             </template>
           </template>

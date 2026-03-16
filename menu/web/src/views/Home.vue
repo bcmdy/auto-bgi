@@ -642,8 +642,8 @@ const indexSXBtn = () => {
 // --- 按钮定义 ---
 const automationButtons = ref([
   { text: '一条龙启动', action: () => { oneLongModal.visible = true; handleOneLongLoad() } },
-  { text: '一条龙计划', route: '/OneLongPlan' },
-  { text: '赤沙石板', route: '/HotKey' },
+  // { text: '一条龙计划', route: '/OneLongPlan' },
+  { text: 'BGI快捷键', route: '/HotKey' },
   { text: '关闭BGI和原神', action: handleCloseBgi },
   { text: '调度圣坛', route: '/listGroups' },
   { text: '备份 USER 文件', action: handleBackup },

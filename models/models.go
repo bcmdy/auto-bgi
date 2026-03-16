@@ -14,6 +14,7 @@ func (ArchiveRecords) TableName() string {
 	return "archive_records"
 }
 
+// OneLongPlan 一条龙计划
 type OneLongPlan struct {
 	ID        uint   `gorm:"primaryKey" json:"id"`
 	Type      string `json:"type"`
