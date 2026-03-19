@@ -205,6 +205,9 @@ subscribeScript: (scriptName) => {
     })
 },
 
+  // 删除未知脚本
+  deleteScript: (name) => api.post('/api/deleteScript', { name }),
+
   // 狗粮联机
   StartOnline: (typeKey,runDebug) => api.post('/api/abgiSSE/connect/'+typeKey+"?runDebug="+runDebug),
   offline:() => api.post('/api/abgiSSE/disconnect'),

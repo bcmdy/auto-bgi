@@ -118,6 +118,16 @@
               <span v-if="isUpdating[item.Name]" class="loading-spin">🍬</span>
               {{ isUpdating[item.Name] ? '升级中(2-5m)...' : '✨ 立即升级' }}
             </button>
+
+            <button 
+              v-if="item.Mark === '未知'"
+              class="btn-delete" 
+              :disabled="isGlobalLoading || isDeleting[item.Name]"
+              @click="deletePlugin(item.Name, item.ChineseName)"
+            >
+              <span v-if="isDeleting[item.Name]" class="loading-spin">🌀</span>
+              {{ isDeleting[item.Name] ? '删除中...' : '🗑️ 删除' }}
+            </button>
           </div>
         </div>
       </div>
@@ -250,6 +260,7 @@ export default {
     // 数据状态
     const pluginData = ref([])
     const isUpdating = reactive({})
+    const isDeleting = reactive({})
     let carouselTimer = null
 
     // 交互状态
@@ -333,6 +344,28 @@ export default {
         alert('更新失败: ' + e.message)
       } finally {
         isUpdating[name] = false
+      }
+    }
+
+    const deletePlugin = async (name, chineseName) => {
+      if (isGlobalLoading.value) return
+      if (!name) return
+      const displayName = chineseName || name
+      if (!confirm(`确认删除未知脚本「${displayName}」吗？`)) return
+      
+      isDeleting[name] = true
+      try {
+        const res = await apiMethods.deleteScript(name)
+        if (res.code === 200) {
+          alert('🎉 脚本已删除')
+          await loadPluginList()
+        } else {
+          throw new Error(res.msg || '删除失败')
+        }
+      } catch (e) {
+        alert('删除失败: ' + (e?.message || e))
+      } finally {
+        isDeleting[name] = false
       }
     }
 
@@ -530,6 +563,7 @@ export default {
       filteredList,
       updateCount,
       isUpdating,
+      isDeleting,
       searchText,
       filterTab,
       showModal,
@@ -553,6 +587,7 @@ export default {
       // 方法
       loadPluginList,
       updatePlugin,
+      deletePlugin,
       batchUpdate,
       resetRepo,
       openHistoryModal,
@@ -949,6 +984,25 @@ export default {
 }
 .btn-update:active { transform: scale(0.97); }
 .btn-update:disabled { background: #E0E0E0; box-shadow: none; color: #999; }
+
+.btn-delete {
+  width: 100%;
+  border: none;
+  background: linear-gradient(90deg, #FF6B6B, #FF5C5C);
+  color: white;
+  padding: 12px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+  transition: all 0.2s;
+}
+.btn-delete:active { transform: scale(0.97); }
+.btn-delete:disabled { background: #E0E0E0; box-shadow: none; color: #999; }
 
 .loading-spin {
   animation: spin 1s infinite linear;
