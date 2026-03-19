@@ -100,14 +100,28 @@
           </div>
           
           <div class="card-action">
-            <button
-              class="btn-history"
-              :disabled="isGlobalLoading || isHistoryButtonLoading[item.Name]"
-              @click="openHistoryModal(item)"
-            >
-              <span v-if="isHistoryButtonLoading[item.Name]" class="loading-spin">🌀</span>
-              {{ isHistoryButtonLoading[item.Name] ? '加载中...' : '🕰️ 历史版本' }}
-            </button>
+            <div class="icon-buttons-group">
+              <button
+                class="btn-icon"
+                :disabled="isGlobalLoading || isHistoryButtonLoading[item.Name]"
+                @click="openHistoryModal(item)"
+                title="历史版本"
+              >
+                <span v-if="isHistoryButtonLoading[item.Name]" class="loading-spin">🌀</span>
+                <span v-else>🕰️</span>
+              </button>
+
+              <button 
+                v-if="item.Mark === '未知'"
+                class="btn-icon btn-icon-delete"
+                :disabled="isGlobalLoading || isDeleting[item.Name]"
+                @click="deletePlugin(item.Name, item.ChineseName)"
+                title="删除脚本"
+              >
+                <span v-if="isDeleting[item.Name]" class="loading-spin">�</span>
+                <span v-else>🗑️</span>
+              </button>
+            </div>
 
             <button 
               v-if="item.Mark === '有更新' || isUpdating[item.Name]"
@@ -115,18 +129,8 @@
               :disabled="isGlobalLoading || isUpdating[item.Name]"
               @click="updatePlugin(item.Name)"
             >
-              <span v-if="isUpdating[item.Name]" class="loading-spin">🍬</span>
+              <span v-if="isUpdating[item.Name]" class="loading-spin">�</span>
               {{ isUpdating[item.Name] ? '升级中(2-5m)...' : '✨ 立即升级' }}
-            </button>
-
-            <button 
-              v-if="item.Mark === '未知'"
-              class="btn-delete" 
-              :disabled="isGlobalLoading || isDeleting[item.Name]"
-              @click="deletePlugin(item.Name, item.ChineseName)"
-            >
-              <span v-if="isDeleting[item.Name]" class="loading-spin">🌀</span>
-              {{ isDeleting[item.Name] ? '删除中...' : '🗑️ 删除' }}
             </button>
           </div>
         </div>
@@ -947,6 +951,44 @@ export default {
   gap: 10px;
 }
 
+.icon-buttons-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.btn-icon {
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.7;
+}
+
+.btn-icon:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(35, 173, 229, 0.15);
+}
+
+.btn-icon:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-icon-delete:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.15);
+}
+
 .btn-history {
   width: 100%;
   border: none;
@@ -984,25 +1026,6 @@ export default {
 }
 .btn-update:active { transform: scale(0.97); }
 .btn-update:disabled { background: #E0E0E0; box-shadow: none; color: #999; }
-
-.btn-delete {
-  width: 100%;
-  border: none;
-  background: linear-gradient(90deg, #FF6B6B, #FF5C5C);
-  color: white;
-  padding: 12px;
-  border-radius: 16px;
-  font-weight: 700;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
-  transition: all 0.2s;
-}
-.btn-delete:active { transform: scale(0.97); }
-.btn-delete:disabled { background: #E0E0E0; box-shadow: none; color: #999; }
 
 .loading-spin {
   animation: spin 1s infinite linear;
