@@ -99,15 +99,25 @@
             </div>
           </div>
           
-          <div class="card-action" v-if="item.Mark === '有更新' || isUpdating[item.Name]">
-              <button 
-                class="btn-update" 
-                :disabled="isGlobalLoading || isUpdating[item.Name]"
-                @click="updatePlugin(item.Name)"
-              >
-                <span v-if="isUpdating[item.Name]" class="loading-spin">🍬</span>
-                {{ isUpdating[item.Name] ? '升级中(2-5m)...' : '✨ 立即升级' }}
-              </button>
+          <div class="card-action">
+            <button
+              class="btn-history"
+              :disabled="isGlobalLoading || isHistoryButtonLoading[item.Name]"
+              @click="openHistoryModal(item)"
+            >
+              <span v-if="isHistoryButtonLoading[item.Name]" class="loading-spin">🌀</span>
+              {{ isHistoryButtonLoading[item.Name] ? '加载中...' : '🕰️ 历史版本' }}
+            </button>
+
+            <button 
+              v-if="item.Mark === '有更新' || isUpdating[item.Name]"
+              class="btn-update" 
+              :disabled="isGlobalLoading || isUpdating[item.Name]"
+              @click="updatePlugin(item.Name)"
+            >
+              <span v-if="isUpdating[item.Name]" class="loading-spin">🍬</span>
+              {{ isUpdating[item.Name] ? '升级中(2-5m)...' : '✨ 立即升级' }}
+            </button>
           </div>
         </div>
       </div>
@@ -173,6 +183,57 @@
       </div>
     </transition>
 
+    <transition name="pop">
+      <div v-if="showHistoryModal" class="modal-mask" @click.self="closeHistoryModal">
+        <div class="modal-panel history-panel">
+          <div class="modal-decorative-bg"></div>
+          <div class="modal-header">
+            <h3>🕰️ 历史版本</h3>
+            <button class="close-btn" @click="closeHistoryModal">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="history-title">
+              <span class="history-title-label">脚本：</span>
+              <span class="history-title-name">{{ historyChineseName || historyJsName }}</span>
+            </div>
+
+            <div v-if="isHistoryLoading" class="history-loading">
+              <span class="loading-spin">🌀</span>
+              加载中...
+            </div>
+
+            <div v-else-if="historyVersions.length === 0" class="history-empty">
+              暂无历史版本
+            </div>
+
+            <div v-else class="history-list">
+              <label v-for="ver in historyVersions" :key="ver" class="history-item">
+                <input
+                  type="radio"
+                  name="historyVer"
+                  :value="ver"
+                  v-model="selectedHistoryVersion"
+                />
+                <span class="history-ver">v{{ ver }}</span>
+                <span v-if="historyNowVersion && ver === historyNowVersion" class="history-current">当前</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeHistoryModal">关闭</button>
+            <button
+              class="btn-confirm"
+              :disabled="!selectedHistoryVersion || isHistoryLoading || isHistoryRollingBack"
+              @click="rollbackSelectedHistoryVersion"
+            >
+              <span v-if="isHistoryRollingBack" class="loading-spin">🍬</span>
+              回滚
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -205,6 +266,16 @@ export default {
     const showSearchResult = ref(false)
     const isSearchingScript = ref(false)
     let searchTimer = null
+
+    const showHistoryModal = ref(false)
+    const isHistoryLoading = ref(false)
+    const isHistoryRollingBack = ref(false)
+    const historyJsName = ref('')
+    const historyChineseName = ref('')
+    const historyNowVersion = ref('')
+    const historyVersions = ref([])
+    const selectedHistoryVersion = ref('')
+    const isHistoryButtonLoading = reactive({})
 
     // --- 计算属性 ---
     const isGlobalLoading = computed(() => isRefreshing.value || isBatchUpdating.value)
@@ -291,6 +362,74 @@ export default {
         loadPluginList()
       } catch (e) {
         alert('重置失败')
+      }
+    }
+
+    const closeHistoryModal = () => {
+      showHistoryModal.value = false
+      setTimeout(() => {
+        historyVersions.value = []
+        selectedHistoryVersion.value = ''
+        historyJsName.value = ''
+        historyChineseName.value = ''
+        historyNowVersion.value = ''
+        isHistoryLoading.value = false
+        isHistoryRollingBack.value = false
+      }, 300)
+    }
+
+    const openHistoryModal = async (item) => {
+      if (isGlobalLoading.value) return
+      if (!item || !item.Name) return
+
+      historyJsName.value = item.Name
+      historyChineseName.value = item.ChineseName || ''
+      historyNowVersion.value = item.NowVersion || ''
+      historyVersions.value = []
+      selectedHistoryVersion.value = ''
+      showHistoryModal.value = true
+
+      isHistoryLoading.value = true
+      isHistoryButtonLoading[item.Name] = true
+      try {
+        const res = await apiMethods.queryHistoryVersion(item.Name)
+        if (!res || res.success !== true) {
+          throw new Error(res?.message || '获取历史版本失败')
+        }
+        historyVersions.value = Array.isArray(res.versions) ? res.versions : []
+        if (historyVersions.value.length > 0) {
+          selectedHistoryVersion.value = historyVersions.value[0]
+        }
+      } catch (e) {
+        alert('获取历史版本失败: ' + (e?.message || e))
+      } finally {
+        isHistoryLoading.value = false
+        isHistoryButtonLoading[item.Name] = false
+      }
+    }
+
+    const rollbackSelectedHistoryVersion = async () => {
+      if (isHistoryLoading.value || isHistoryRollingBack.value) return
+      if (!historyJsName.value || !selectedHistoryVersion.value) return
+      const displayName = historyChineseName.value || historyJsName.value
+      if (!confirm(`确认将「${displayName}」回滚到 v${selectedHistoryVersion.value} 吗？`)) return
+
+      isHistoryRollingBack.value = true
+      try {
+        const res = await apiMethods.rollbackHistoryVersion({
+          version: selectedHistoryVersion.value,
+          jsName: historyJsName.value
+        })
+        if (!res || res.success !== true) {
+          throw new Error(res?.message || '回滚失败')
+        }
+        alert(res.message || '更新并还原成功')
+        closeHistoryModal()
+        await loadPluginList()
+      } catch (e) {
+        alert('回滚失败: ' + (e?.message || e))
+      } finally {
+        isHistoryRollingBack.value = false
       }
     }
 
@@ -402,11 +541,23 @@ export default {
       isSearchingScript,
       isRefreshing,
       isGlobalLoading,
+      showHistoryModal,
+      isHistoryLoading,
+      isHistoryRollingBack,
+      historyJsName,
+      historyChineseName,
+      historyNowVersion,
+      historyVersions,
+      selectedHistoryVersion,
+      isHistoryButtonLoading,
       // 方法
       loadPluginList,
       updatePlugin,
       batchUpdate,
       resetRepo,
+      openHistoryModal,
+      closeHistoryModal,
+      rollbackSelectedHistoryVersion,
       openSubscribeModal,
       closeSubscribeModal,
       confirmSubscribe,
@@ -756,7 +907,29 @@ export default {
   margin-top: 14px;
   padding-top: 14px;
   border-top: 2px dashed #FFE4EA;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
+
+.btn-history {
+  width: 100%;
+  border: none;
+  background: linear-gradient(90deg, #23ADE5, #66a6ff);
+  color: white;
+  padding: 12px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(35, 173, 229, 0.35);
+  transition: all 0.2s;
+}
+.btn-history:active { transform: scale(0.97); }
+.btn-history:disabled { background: #E0E0E0; box-shadow: none; color: #999; }
 
 .btn-update {
   width: 100%;
@@ -810,6 +983,71 @@ export default {
   overflow: visible; /* 允许下拉框超出 */
   display: flex;
   flex-direction: column;
+}
+
+.history-panel {
+  max-width: 560px;
+  height: auto;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.history-title {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding-left: 8px;
+}
+.history-title-label { font-size: 13px; color: #999; font-weight: bold; }
+.history-title-name { font-size: 14px; color: var(--text-main); font-weight: 800; }
+
+.history-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #999;
+  padding: 32px 0;
+}
+
+.history-empty {
+  text-align: center;
+  color: #BBB;
+  padding: 32px 0;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 8px;
+  overflow: auto;
+  max-height: 46vh;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 2px solid #FFE6EE;
+  background: #FFF;
+  cursor: pointer;
+}
+
+.history-item input { accent-color: var(--primary); }
+.history-ver { font-weight: 800; color: var(--primary); }
+.history-current {
+  margin-left: auto;
+  font-size: 12px;
+  color: #52C41A;
+  background: #F6FFED;
+  border: 1px solid #B7EB8F;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
 }
 
 /* 装饰性背景 */

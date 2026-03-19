@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"auto-bgi/JsAPI"
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -95,12 +96,15 @@ func UploadBgi(c *gin.Context) {
 	}
 
 	// 保存文件到指定目录
-	dst := filepath.Join("./uploads", "BetterGI.zip")
+	dst := filepath.Join("./uploads", "BetterGI.7z")
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	time.Sleep(1 * time.Second)
+
+	version, _ := GetVersion()
+	JsAPI.BackupHistoryVersion("./uploads/BetterGI.7z", version+".zip")
 
 	err = UpdateBgi()
 	if err != nil {
@@ -350,7 +354,8 @@ func runBgiDownload(version string) {
 
 	control.CloseSoftware()
 
-	dst := filepath.Join("./uploads", "BetterGI.zip")
+	dst := filepath.Join("./uploads", "BetterGI.7z")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
 
@@ -378,6 +383,8 @@ func runBgiDownload(version string) {
 	}
 
 	time.Sleep(1 * time.Second)
+
+	JsAPI.BackupHistoryVersion("./uploads/BetterGI.7z", version+".zip")
 
 	err = UpdateBgi()
 	if err != nil {
@@ -419,7 +426,27 @@ func runBgiDownload(version string) {
 // current: 已下载字节数, total: 总字节数
 type ProgressFunc func(current, total int64)
 
-// downloadFileWithProgress 支持分片下载并实时反馈进度
+// 自定义一个 Writer 来监听并反馈下载进度
+type progressWriter struct {
+	writer     io.Writer
+	total      int64
+	downloaded int64
+	onProgress ProgressFunc
+}
+
+// 每次 io.Copy 写入数据时，都会调用这个 Write 方法
+func (pw *progressWriter) Write(p []byte) (int, error) {
+	n, err := pw.writer.Write(p)
+	if n > 0 {
+		pw.downloaded += int64(n)
+		if pw.onProgress != nil {
+			pw.onProgress(pw.downloaded, pw.total)
+		}
+	}
+	return n, err
+}
+
+// 流式下载 + 进度监听
 func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, onProgress ProgressFunc) error {
 	// 1. 验证 URL
 	parsed, err := url.ParseRequestURI(reqURL)
@@ -427,34 +454,36 @@ func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, on
 		return errors.New("invalid http/https url")
 	}
 
-	var contentLength int64
+	// 2. 发起单次完整的 GET 请求
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return err
+	}
 
-	// 如果版本号包含 "lcb"，直接使用大小
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned status: %s", resp.Status)
+	}
+
+	// 3. 确定文件总大小 (Content-Length)
+	var contentLength int64
 	if !strings.Contains(strings.ToLower(config.BgiCfg.RunForVersion), "lcb") {
 		contentLength = int64(GetYDVersionInfo().Size)
 	} else {
-		// 2. 获取文件总大小
-		headReq, err := http.NewRequestWithContext(ctx, http.MethodHead, reqURL, nil)
-		if err != nil {
-			return err
-		}
-		resp, err := http.DefaultClient.Do(headReq)
-		if err != nil {
-			return fmt.Errorf("head request failed: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("server returned status: %s", resp.Status)
-		}
-
-		contentLength, _ = strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+		// 优先取 Response 中的 Content-Length
+		contentLength = resp.ContentLength
 		if contentLength <= 0 {
-			return errors.New("cannot determine file size")
+			cl, _ := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+			contentLength = cl
 		}
 	}
 
-	// 3. 准备临时文件
+	// 4. 准备临时文件
 	dir := filepath.Dir(dst)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
@@ -464,95 +493,28 @@ func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, on
 		return err
 	}
 	tmpPath := tmpFile.Name()
+
+	// defer 保证发生错误或正常完成时清理未重命名的临时文件
 	defer func() {
 		tmpFile.Close()
-		_ = os.Remove(tmpPath) // 如果成功 Rename，此处删除会失效，符合预期
+		_ = os.Remove(tmpPath)
 	}()
 
-	// 4. 分片下载逻辑
-	const chunkSize = 1024 * 1024 // 每次下载 1MB
-	var downloaded int64 = 0
-
-	for downloaded < contentLength {
-		// 检查上下文是否取消
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		end := downloaded + chunkSize - 1
-		if end >= contentLength {
-			end = contentLength - 1
-		}
-		expectedSize := end - downloaded + 1
-
-		var lastErr error
-		const maxRetries = 5
-		success := false
-
-		for i := 0; i < maxRetries; i++ {
-			if i > 0 {
-				autoLog.Sugar.Warnf("下载分片失败，正在重试 (%d/%d): %v", i, maxRetries, lastErr)
-				time.Sleep(time.Second * time.Duration(i))
-			}
-
-			// 重置文件指针到当前分片起始位置
-			if _, err := tmpFile.Seek(downloaded, 0); err != nil {
-				return fmt.Errorf("seek failed: %w", err)
-			}
-
-			// 创建带 Range 头的请求
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-			if err != nil {
-				return err
-			}
-			rangeHeader := fmt.Sprintf("bytes=%d-%d", downloaded, end)
-			req.Header.Set("Range", rangeHeader)
-
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				lastErr = err
-				continue
-			}
-
-			// 检查状态码
-			if resp.StatusCode != http.StatusPartialContent && resp.StatusCode != http.StatusOK {
-				resp.Body.Close()
-				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-				continue
-			}
-
-			// 写入文件
-			n, err := io.Copy(tmpFile, resp.Body)
-			resp.Body.Close()
-
-			if err != nil {
-				lastErr = err
-				continue
-			}
-
-			if n != expectedSize {
-				lastErr = fmt.Errorf("short write: expected %d bytes, got %d", expectedSize, n)
-				continue
-			}
-
-			downloaded += n
-			success = true
-			break
-		}
-
-		if !success {
-			return fmt.Errorf("download chunk failed after %d retries: %w", maxRetries, lastErr)
-		}
-
-		// 5. 触发进度回调
-		if onProgress != nil {
-			onProgress(downloaded, contentLength)
-		}
+	// 5. 绑定进度监听并流式写入文件
+	pw := &progressWriter{
+		writer:     tmpFile,
+		total:      contentLength,
+		onProgress: onProgress,
 	}
 
-	// 6. 原子重命名
+	// 核心：io.Copy 会边下载边写入，底层会自动调用 pw.Write 触发进度更新
+	// 这个过程一直持续到文件下载完毕，只有 1 次 HTTP 请求
+	_, err = io.Copy(pw, resp.Body)
+	if err != nil {
+		return fmt.Errorf("公版下载失败: %w", err)
+	}
+
+	// 6. 确保数据落盘并原子重命名
 	if err := tmpFile.Sync(); err != nil {
 		return err
 	}
@@ -564,6 +526,152 @@ func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, on
 
 	return nil
 }
+
+//// downloadFileWithProgress 支持分片下载并实时反馈进度
+//func downloadFileWithProgress(ctx context.Context, reqURL string, dst string, onProgress ProgressFunc) error {
+//	// 1. 验证 URL
+//	parsed, err := url.ParseRequestURI(reqURL)
+//	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+//		return errors.New("invalid http/https url")
+//	}
+//
+//	var contentLength int64
+//
+//	// 如果版本号包含 "lcb"，直接使用大小
+//	if !strings.Contains(strings.ToLower(config.BgiCfg.RunForVersion), "lcb") {
+//		contentLength = int64(GetYDVersionInfo().Size)
+//	} else {
+//		// 2. 获取文件总大小
+//		headReq, err := http.NewRequestWithContext(ctx, http.MethodHead, reqURL, nil)
+//		if err != nil {
+//			return err
+//		}
+//		resp, err := http.DefaultClient.Do(headReq)
+//		if err != nil {
+//			return fmt.Errorf("head request failed: %w", err)
+//		}
+//		defer resp.Body.Close()
+//
+//		if resp.StatusCode != http.StatusOK {
+//			return fmt.Errorf("server returned status: %s", resp.Status)
+//		}
+//
+//		contentLength, _ = strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+//		if contentLength <= 0 {
+//			return errors.New("cannot determine file size")
+//		}
+//	}
+//
+//	// 3. 准备临时文件
+//	dir := filepath.Dir(dst)
+//	if err := os.MkdirAll(dir, 0o755); err != nil {
+//		return err
+//	}
+//	tmpFile, err := os.CreateTemp(dir, "download-*.tmp")
+//	if err != nil {
+//		return err
+//	}
+//	tmpPath := tmpFile.Name()
+//	defer func() {
+//		tmpFile.Close()
+//		_ = os.Remove(tmpPath) // 如果成功 Rename，此处删除会失效，符合预期
+//	}()
+//
+//	// 4. 分片下载逻辑
+//	const chunkSize = 1024 * 1024 // 每次下载 1MB
+//	var downloaded int64 = 0
+//
+//	for downloaded < contentLength {
+//		// 检查上下文是否取消
+//		select {
+//		case <-ctx.Done():
+//			return ctx.Err()
+//		default:
+//		}
+//
+//		end := downloaded + chunkSize - 1
+//		if end >= contentLength {
+//			end = contentLength - 1
+//		}
+//		expectedSize := end - downloaded + 1
+//
+//		var lastErr error
+//		const maxRetries = 10
+//		success := false
+//
+//		for i := 0; i < maxRetries; i++ {
+//			if i > 0 {
+//				autoLog.Sugar.Warnf("下载分片失败，正在重试 (%d/%d): %v", i, maxRetries, lastErr)
+//				time.Sleep(time.Second * time.Duration(i))
+//			}
+//
+//			// 重置文件指针到当前分片起始位置
+//			if _, err := tmpFile.Seek(downloaded, 0); err != nil {
+//				return fmt.Errorf("seek failed: %w", err)
+//			}
+//
+//			// 创建带 Range 头的请求
+//			req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+//			if err != nil {
+//				return err
+//			}
+//			rangeHeader := fmt.Sprintf("bytes=%d-%d", downloaded, end)
+//			req.Header.Set("Range", rangeHeader)
+//
+//			resp, err := http.DefaultClient.Do(req)
+//			if err != nil {
+//				lastErr = err
+//				continue
+//			}
+//
+//			// 检查状态码
+//			if resp.StatusCode != http.StatusPartialContent && resp.StatusCode != http.StatusOK {
+//				resp.Body.Close()
+//				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+//				continue
+//			}
+//
+//			// 写入文件
+//			n, err := io.Copy(tmpFile, resp.Body)
+//			resp.Body.Close()
+//
+//			if err != nil {
+//				lastErr = err
+//				continue
+//			}
+//
+//			if n != expectedSize {
+//				lastErr = fmt.Errorf("short write: expected %d bytes, got %d", expectedSize, n)
+//				continue
+//			}
+//
+//			downloaded += n
+//			success = true
+//			break
+//		}
+//
+//		if !success {
+//			return fmt.Errorf("download chunk failed after %d retries: %w", maxRetries, lastErr)
+//		}
+//
+//		// 5. 触发进度回调
+//		if onProgress != nil {
+//			onProgress(downloaded, contentLength)
+//		}
+//	}
+//
+//	// 6. 原子重命名
+//	if err := tmpFile.Sync(); err != nil {
+//		return err
+//	}
+//	tmpFile.Close()
+//
+//	if err := os.Rename(tmpPath, dst); err != nil {
+//		return err
+//	}
+//
+//	return nil
+//}
 
 // 更新bgi
 func UpdateBgi() error {
@@ -597,7 +705,7 @@ func UpdateBgi() error {
 	//3、解压bgi压缩包
 	base := filepath.Base(config.Cfg.BetterGIAddress)
 	path := strings.ReplaceAll(config.Cfg.BetterGIAddress, base, "")
-	err4 = tools.Un7z("./uploads/BetterGI.zip", path)
+	err4 = tools.Un7z("./uploads/BetterGI.7z", path)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("解压bgi压缩包失败: %v", err)
 		return fmt.Errorf("解压bgi压缩包失败: %v", err)
@@ -642,11 +750,12 @@ func UpdateBgi() error {
 	}
 	autoLog.Sugar.Infof("还原log")
 
-	err5 = os.Remove("./uploads/BetterGI.zip")
+	err5 = os.Remove("./uploads/BetterGI.7z")
 	if err5 != nil {
 		autoLog.Sugar.Errorf("删除BetterGI压缩包失败: %v", err5)
 	}
 	autoLog.Sugar.Infof("删除BetterGI压缩包")
+
 	return nil
 
 }

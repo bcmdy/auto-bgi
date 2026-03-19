@@ -37,6 +37,10 @@ func CheckRedBlood() {
 
 	for {
 
+		if !config.Cfg.Control.IsRedBlood {
+			continue
+		}
+
 		if hasRedBlood(rect) {
 			autoLog.Sugar.Infof("检测到红血条。")
 			// TODO: 检测到红色血条，执行相关操作

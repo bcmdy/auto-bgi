@@ -658,3 +658,69 @@ func IsSameDay(t1, t2 time.Time) bool {
 	y2, m2, d2 := t2.Date()
 	return y1 == y2 && m1 == m2 && d1 == d2
 }
+
+func ZipDir(sourceDir, zipFilePath string, keepRoot bool) error {
+
+	////清理历史备份
+	//_ = ClearDir("Users")
+
+	fmt.Println("压缩目录:", sourceDir)
+	fmt.Println("输出文件:", zipFilePath)
+
+	zipFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	base := filepath.Clean(sourceDir)
+	parent := filepath.Dir(base)
+
+	err = filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			// ✅ 不写入目录条目，让解压自动生成
+			return nil
+		}
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+
+		// 计算压缩包内路径
+		var relPath string
+		if keepRoot {
+			relPath, _ = filepath.Rel(parent, path) // 保留根目录
+		} else {
+			relPath, _ = filepath.Rel(base, path) // 去掉根目录
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.ToSlash(relPath) // ✅ 统一分隔符
+		header.Method = zip.Deflate
+
+		writer, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(writer, file)
+		return err
+	})
+
+	return err
+}

@@ -686,6 +686,9 @@ func StarGin() {
 		//查询所有脚本
 		needAuth.GET("/jsNamesAll", ScriptRepo.QueryAllScript)
 
+		//删除脚本
+		needAuth.POST("/deleteScript", ScriptRepo.DeleteScript)
+
 		//重置仓库
 		needAuth.POST("/repo/resetRepo", warehouse.RepoReset)
 
@@ -696,7 +699,13 @@ func StarGin() {
 		needAuth.POST("/updateJs/:name", func(context *gin.Context) {
 			name := context.Param("name")
 
-			autoLog.Sugar.Infof("更新插件:%s", name)
+			autoLog.Sugar.Infof("更新脚本:%s", name)
+
+			repoDir := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "js", name)
+			newVersion, _, _ := bgiStatus.GetJsNewVersion(name)
+
+			JsAPI.BackupHistoryVersion(repoDir, newVersion)
+
 			_, err := bgiStatus.UpdateJs(name)
 			if err != nil {
 				// 成功返回
@@ -1209,6 +1218,13 @@ func StarGin() {
 			jsController.POST("/screenShot", JsAPI.ScreenShot)
 			//ai
 			//jsController.POST("/abgiAiConversation", JsAPI.AbgiAiConversation)
+
+			//根据脚本名字查询所有历史版本
+			jsController.GET("/QueryHistoryVersion", JsAPI.QueryHistoryVersionService)
+			//回滚脚本历史版本
+			jsController.POST("/RollbackHistoryVersion", JsAPI.RollbackHistoryVersionService)
+			//bgi 版本回滚
+			jsController.POST("/BgiRollbackHistoryVersion", JsAPI.BgiRollbackHistoryVersionService)
 		}
 	}
 

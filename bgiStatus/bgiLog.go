@@ -3,7 +3,6 @@ package bgiStatus
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/abgiObs"
-	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/control"
@@ -146,6 +145,9 @@ func (m *LogMonitor) Monitor() {
 				//关键字告警
 				if len(m.Keywords) != 0 {
 					for _, kw := range m.Keywords {
+						if kw == "" {
+							break
+						}
 						if strings.Contains(strings.ToLower(line), strings.ToLower(kw)) {
 							msg := fmt.Sprintf("⚠️通知：💗%s💗\n时间:[%s]\n配置组：%s\n路线：%s", strings.TrimSpace(line), time.Now().Format("2006-01-02 15:04:05"), BgiLogStatusInfo.Group, BgiLogStatusInfo.MapTrackingLine)
 							//m.sendAlert(msg, false)
@@ -250,14 +252,14 @@ func (m *LogMonitor) Monitor() {
 					aaa()
 				}
 
-				if strings.HasPrefix(line, "通知发送成功：") && strings.Contains(line, "联机狗粮分解获得经验") {
-					//提取数字
-					re := regexp.MustCompile(`(\d+)$`)
-					num := re.FindString(line)
-
-					abgiSSE.WriteDogFoodNum(num)
-					abgiSSE.ABgiSeeStatus = "联机结束"
-				}
+				//if strings.HasPrefix(line, "通知发送成功：") && strings.Contains(line, "联机狗粮分解获得经验") {
+				//	//提取数字
+				//	re := regexp.MustCompile(`(\d+)$`)
+				//	num := re.FindString(line)
+				//
+				//	abgiSSE.WriteDogFoodNum(num)
+				//	abgiSSE.ABgiSeeStatus = "联机结束"
+				//}
 
 				if strings.Contains(line, "如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）") {
 					Notice.SentText("如果你已经在游戏内的其他界面，请自行退出当前界面（ESC）")

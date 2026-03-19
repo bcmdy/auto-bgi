@@ -1152,47 +1152,6 @@ func GitPull() {
 		}
 	}
 
-	//localPath := config.Cfg.BetterGIAddress + "/Repos/bettergi-scripts-list-git"
-	//
-	//// 尝试打开本地仓库
-	//repo, err := git.PlainOpen(localPath)
-	//if err == git.ErrRepositoryNotExists {
-	//	// 本地不存在，克隆
-	//	autoLog.Sugar.Info("仓库不存在，请先去bgi重置或者更新仓库")
-	//
-	//} else if err == nil {
-	//	// 已存在，拉取最新
-	//	autoLog.Sugar.Info("仓库存在，拉取最新代码...")
-	//	w, err := repo.Worktree()
-	//	if err != nil {
-	//		return fmt.Errorf("获取工作区失败: %v", err)
-	//	}
-	//	// 强制还原本地更改
-	//	err = w.Reset(&git.ResetOptions{
-	//		Mode: git.HardReset,
-	//	})
-	//	if err != nil {
-	//		autoLog.Sugar.Errorf("重置工作区失败: %v", err)
-	//		return fmt.Errorf("重置工作区失败: %v", err)
-	//	}
-	//	autoLog.Sugar.Info("本地更改已清除，准备拉取")
-	//
-	//	// 拉取更新
-	//	err = w.Pull(&git.PullOptions{
-	//		RemoteName:    "origin",
-	//		ReferenceName: plumbing.NewBranchReferenceName("main"),
-	//		Force:         false,
-	//	})
-	//	if err != nil && err != git.NoErrAlreadyUpToDate {
-	//		autoLog.Sugar.Errorf("拉取失败: %v", err)
-	//
-	//		return fmt.Errorf("拉取失败: %v", err)
-	//	}
-	//	autoLog.Sugar.Info("拉取完成或已是最新")
-	//} else {
-	//	return fmt.Errorf("打开仓库失败: %v", err)
-	//}
-	//return nil
 }
 
 func UpdateJs(jsName string) (string, error) {
@@ -1250,8 +1209,6 @@ func UpdateJs(jsName string) (string, error) {
 			}
 		}
 	}
-
-	//TODO 存为历史版本
 
 	// 删除原 js 脚本目录
 	os.RemoveAll(targetPath)

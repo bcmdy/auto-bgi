@@ -187,6 +187,9 @@ export const apiMethods = {
   updateJs: (name) => api.post(`/api/updateJs/${name}`, null, { timeout: 5 * 60 * 1000 }),
   //获取脚本列表
   getJsNames: () => api.get('/api/jsNames', { timeout: 5 * 60 * 1000 }),
+  queryHistoryVersion: (jsName) => api.get('/api/js/QueryHistoryVersion', { params: { jsName } }),
+  rollbackHistoryVersion: (payload) => api.post('/api/js/RollbackHistoryVersion', payload),
+  bgiRollbackHistoryVersion: (payload) => api.post('/api/js/BgiRollbackHistoryVersion', payload),
   //重置仓库
   resetRepo: () => api.post('/api/repo/resetRepo', null, { timeout: 5 * 60 * 1000 }),
   //查询所有脚本

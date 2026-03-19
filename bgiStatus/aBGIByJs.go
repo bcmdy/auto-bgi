@@ -5,6 +5,7 @@ import (
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
+	"auto-bgi/config"
 	"auto-bgi/control"
 	"auto-bgi/task"
 	"auto-bgi/tools"
@@ -173,6 +174,18 @@ func JsLogHandler(line string) {
 			autoLog.Sugar.Errorf("更换房间参数错误")
 		}
 
+	}
+	//js日志调用abgi启动关闭红血检测
+	if strings.HasPrefix(line, "ABGI启动关闭红血检测：") {
+		autoLog.Sugar.Infof(line)
+		data := strings.ReplaceAll(line, "ABGI启动关闭红血检测：", "")
+		if data == "启动" {
+			Notice.SentText("红血检测启动")
+			config.Cfg.Control.IsRedBlood = true
+		} else if data == "关闭" {
+			Notice.SentText("红血检测关闭")
+			config.Cfg.Control.IsRedBlood = false
+		}
 	}
 
 }

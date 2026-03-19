@@ -1,6 +1,7 @@
 package bgiStatus
 
 import (
+	"auto-bgi/JsAPI"
 	"auto-bgi/Notice"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
@@ -115,6 +116,9 @@ func BatchUpdateScript() string {
 				Notice.SentText("带CD管理的自动采集有更新，版本号是：" + newVersion + "。如需更新，请手动更新")
 				continue
 			}
+
+			repoDir := filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "js", name)
+			JsAPI.BackupHistoryVersion(repoDir, newVersion)
 
 			// 开始更新
 			_, err := UpdateJs(name)
