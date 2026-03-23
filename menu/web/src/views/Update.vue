@@ -119,7 +119,7 @@
             <div v-else class="radio-list">
               <label v-for="ver in bgiHistoryVersions" :key="ver" class="radio-item" :class="{'is-active': bgiSelectedVersion === ver}">
                 <input type="radio" name="bgiHistoryVer" :value="ver" v-model="bgiSelectedVersion" />
-                <span class="ver-text">v{{ ver }}</span>
+                <span class="ver-text">{{ ver }}</span>
                 <span class="check-circle"></span>
               </label>
             </div>
@@ -258,7 +258,7 @@ const openBgiHistory = async () => {
   bgiSelectedVersion.value = ''
   bgiHistoryVersions.value = []
   try {
-    const res = await apiMethods.queryHistoryVersion('BetterGI.7z')
+    const res = await apiMethods.queryHistoryVersion('BetterGI')
     if (!res || res.success !== true) {
       throw new Error(res?.message || '获取历史版本失败')
     }
