@@ -65,6 +65,11 @@
             <span>一键下线</span>
           </button>
           
+          <button class="anime-btn btn-create" @click="openCreateRoom">
+            <span class="icon">🧩</span> 
+            <span>创建房间</span>
+          </button>
+          
           <button class="anime-btn btn-home" @click="goHome">
             <span class="icon">🏠</span> 
             <span>返回主页</span>
@@ -84,11 +89,22 @@
             :key="item.key || index" 
             class="room-card"
           >
+            <div v-if="item.is_homeowner" class="room-ribbon">我的房间</div>
             <div class="card-header">
               <h3 class="room-title">{{ item.title }}</h3>
-              <span class="room-count" :class="{ 'has-people': item.count > 0 }">
-                {{ item.count }} 人在线
-              </span>
+              <div class="card-actions">
+                <button
+                  v-if="item.is_homeowner"
+                  type="button"
+                  class="room-edit-btn"
+                  @click="openRoomEditor(item)"
+                >
+                  编辑
+                </button>
+                <span class="room-count" :class="{ 'has-people': item.count > 0 }">
+                  {{ item.count }} 人在线
+                </span>
+              </div>
             </div>
             
             <p class="room-desc">{{ item.description || '暂无描述' }}</p>
@@ -140,6 +156,76 @@
           </div>
         </div>
       </a-modal>
+
+      <a-modal
+        v-model:open="roomEditModal.open"
+        title="编辑房间"
+        :confirm-loading="roomEditModal.loading"
+        :width="isMobile ? '95vw' : 520"
+        centered
+        :ok-button-props="{ disabled: roomEditModal.queryLoading }"
+        @ok="handleRoomEditOk"
+        @cancel="handleRoomEditCancel"
+        ok-text="确认"
+        cancel-text="取消"
+        class="anime-modal"
+      >
+        <a-spin :spinning="roomEditModal.queryLoading">
+          <div style="display:flex; flex-direction: column; gap:12px; padding-top: 8px;">
+            <div>
+              <div style="font-weight:700; margin-bottom:6px;">房间名</div>
+              <a-input v-model:value="roomEditModal.group_name" disabled />
+            </div>
+            <div>
+              <div style="font-weight:700; margin-bottom:6px;">描述</div>
+              <a-textarea
+                v-model:value="roomEditModal.description"
+                :auto-size="{ minRows: 2, maxRows: 6 }"
+                placeholder="房间描述"
+              />
+            </div>
+            <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+              <div>
+                <div style="font-weight:700; margin-bottom:6px;">是否启用</div>
+                <a-switch v-model:checked="roomEditModal.is_active" />
+              </div>
+              <div>
+                <div style="font-weight:700; margin-bottom:6px;">是否开放</div>
+                <a-switch v-model:checked="roomEditModal.is_open" />
+              </div>
+            </div>
+          </div>
+        </a-spin>
+      </a-modal>
+
+      <a-modal
+        v-model:open="createRoomModal.open"
+        title="创建房间"
+        :confirm-loading="createRoomModal.loading"
+        :width="isMobile ? '95vw' : 520"
+        centered
+        @ok="handleCreateRoomOk"
+        @cancel="handleCreateRoomCancel"
+        ok-text="确认"
+        cancel-text="取消"
+        class="anime-modal"
+      >
+        <div style="display:flex; flex-direction: column; gap:12px; padding-top: 8px;">
+          <div>
+            <div style="font-weight:700; margin-bottom:6px;">房间名</div>
+            <a-input v-model:value="createRoomModal.name" placeholder="房间名" allow-clear />
+          </div>
+          <div>
+            <div style="font-weight:700; margin-bottom:6px;">描述</div>
+            <a-textarea
+              v-model:value="createRoomModal.description"
+              :auto-size="{ minRows: 2, maxRows: 6 }"
+              placeholder="房间描述"
+              allow-clear
+            />
+          </div>
+        </div>
+      </a-modal>
     </div>
   </div>
 </template>
@@ -163,6 +249,23 @@ const reportModal = reactive({
   loading: false,
   BombName: '',
   BombAction: ''
+})
+
+const roomEditModal = reactive({
+  open: false,
+  loading: false,
+  queryLoading: false,
+  group_name: '',
+  description: '',
+  is_active: false,
+  is_open: false
+})
+
+const createRoomModal = reactive({
+  open: false,
+  loading: false,
+  name: '',
+  description: ''
 })
 
 const openReportBomb = () => {
@@ -211,6 +314,101 @@ const handleReportOk = async () => {
   }
 }
 
+const getErrorMessage = (e, fallback) => {
+  if (!e) return fallback
+  if (typeof e === 'string') return e
+  return e.response?.data?.message || e.data?.message || e.message || e.msg || fallback
+}
+
+const openRoomEditor = async (room) => {
+  roomEditModal.group_name = room?.title || room?.key || ''
+  roomEditModal.description = ''
+  roomEditModal.is_active = false
+  roomEditModal.is_open = false
+  roomEditModal.open = true
+  roomEditModal.queryLoading = true
+
+  try {
+    const res = await api.post('/api/abgiSSE/HomeownerQueryGroup', {
+      group_name: roomEditModal.group_name
+    })
+    const data = res?.message
+    if (!data) {
+      message.error('查询房间信息失败')
+      return
+    }
+    roomEditModal.group_name = data.group_name || roomEditModal.group_name
+    roomEditModal.description = data.description || ''
+    roomEditModal.is_active = data.is_active === true || data.is_active === 1 || data.is_active === '1' || data.is_active === 'true'
+    roomEditModal.is_open = data.is_open === true || data.is_open === 1 || data.is_open === '1' || data.is_open === 'true'
+  } catch (e) {
+    message.error(getErrorMessage(e, '查询房间信息失败'))
+  } finally {
+    roomEditModal.queryLoading = false
+  }
+}
+
+const handleRoomEditCancel = () => {
+  roomEditModal.open = false
+}
+
+const handleRoomEditOk = async () => {
+  if (!roomEditModal.group_name) {
+    message.warning('房间名不能为空')
+    return
+  }
+
+  roomEditModal.loading = true
+  try {
+    const res = await api.post('/api/abgiSSE/HomeownerUpdateGroup', {
+      group_name: roomEditModal.group_name,
+      description: roomEditModal.description,
+      is_active: roomEditModal.is_active,
+      is_open: roomEditModal.is_open
+    })
+    message.success(res?.message || '房间信息更新成功')
+    roomEditModal.open = false
+    await fetchOnlineDetail()
+  } catch (e) {
+    message.error(getErrorMessage(e, '更新房间信息失败'))
+  } finally {
+    roomEditModal.loading = false
+  }
+}
+
+const openCreateRoom = () => {
+  createRoomModal.name = ''
+  createRoomModal.description = ''
+  createRoomModal.open = true
+}
+
+const handleCreateRoomCancel = () => {
+  createRoomModal.open = false
+}
+
+const handleCreateRoomOk = async () => {
+  const name = (createRoomModal.name || '').trim()
+  if (!name) {
+    message.warning('请填写房间名')
+    return
+  }
+
+  createRoomModal.loading = true
+  try {
+    const res = await api.post('/api/abgiSSE/HomeownerCreateGroup', {
+      name,
+      description: createRoomModal.description || ''
+    })
+    message.success(res?.message || '创建房间成功')
+    createRoomModal.open = false
+    await fetchOnlineDetail()
+  } catch (e) {
+    message.error(getErrorMessage(e, '创建房间失败'))
+  } finally {
+    createRoomModal.loading = false
+  }
+}
+
 
 // /**
 //  * 检测是否为 WebView 环境
@@ -243,6 +441,7 @@ const fetchOnlineDetail = async () => {
       description: item.description,
       count: item.count,
       members: Array.isArray(item.members) ? item.members : [],
+      is_homeowner: item.is_homeowner === true || item.is_homeowner === 1 || item.is_homeowner === '1' || item.is_homeowner === 'true',
       status: item.count > 0,
       time: ''
     }))
@@ -653,6 +852,11 @@ onUnmounted(() => {
   box-shadow: 0 4px 15px rgba(132, 250, 176, 0.4);
 }
 
+.btn-create {
+  background: linear-gradient(135deg, #ffe259 0%, #ffa751 100%);
+  box-shadow: 0 4px 15px rgba(255, 167, 81, 0.4);
+}
+
 .btn-report {
   background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
   box-shadow: 0 4px 15px rgba(255, 126, 95, 0.4);
@@ -739,6 +943,24 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.room-ribbon {
+  position: absolute;
+  top: 14px;
+  right: -46px;
+  transform: rotate(45deg);
+  transform-origin: center;
+  background: linear-gradient(135deg, #ff6fb2 0%, #ffb6d5 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 6px 56px;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 14px rgba(255, 105, 180, 0.35);
+  z-index: 2;
+  user-select: none;
+  pointer-events: none;
+}
+
 .room-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 30px rgba(255, 182, 193, 0.35);
@@ -750,6 +972,29 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.room-edit-btn {
+  border: 1px solid #ffd6e7;
+  background: #fff0f5;
+  color: #ff3385;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 4px 10px;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.room-edit-btn:hover {
+  border-color: #ff9ecf;
+  background: #ffe6f1;
 }
 
 .room-title {

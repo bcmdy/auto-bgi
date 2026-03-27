@@ -318,6 +318,12 @@ func StarGin() {
 				onlineUser := abgiSSE.GroupsStatusHandler()
 				context.JSON(http.StatusOK, onlineUser)
 			})
+			// 房主修改房间信息
+			abgiWs.POST("/HomeownerUpdateGroup", abgiSSE.HomeownerUpdateGroup)
+			//查询房间信息
+			abgiWs.POST("/HomeownerQueryGroup", abgiSSE.HomeownerQueryGroup)
+			//创建房间
+			abgiWs.POST("/HomeownerCreateGroup", abgiSSE.HomeownerCreateGroup)
 
 			//联机清0
 			abgiWs.POST("/clearNumberOfLaunches", func(context *gin.Context) {

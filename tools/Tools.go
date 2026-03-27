@@ -5,16 +5,16 @@ import (
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/control"
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
+	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/agnivade/levenshtein"
 	"github.com/getlantern/systray"
+	"github.com/go-resty/resty/v2"
 	"io"
 	"log"
 	"math"
@@ -369,6 +369,25 @@ func hashFileMD5(filePath string) ([16]byte, error) {
 	return result, nil
 }
 
+func Encrypt(plainText string) (string, error) {
+	block, err := aes.NewCipher([]byte(abgiConstant.ABgiKey))
+	if err != nil {
+		return "", err
+	}
+
+	cipherText := make([]byte, aes.BlockSize+len(plainText))
+	iv := cipherText[:aes.BlockSize]
+
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(cipherText[aes.BlockSize:], []byte(plainText))
+
+	return base64.StdEncoding.EncodeToString(cipherText), nil
+}
+
 // 解密
 func Decrypt(encryptedText string) (string, error) {
 	block, err := aes.NewCipher([]byte(abgiConstant.ABgiKey))
@@ -538,41 +557,28 @@ var httpClient = &http.Client{
 	Timeout: 15 * time.Second, // 默认超时时间 15 秒
 }
 
-func PostJSON(url string, data interface{}, headers map[string]string) ([]byte, int, error) {
-	// 1. 序列化 JSON 数据
-	jsonBytes, err := json.Marshal(data)
+func PostHttp[T any, R any](url string, body T, res *R) (*R, int, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeaders(map[string]string{
+			"Content-Type": "application/json",
+		}).
+		SetBody(body).
+		SetResult(res).
+		Post(url)
+
 	if err != nil {
-		return nil, 0, fmt.Errorf("json 序列化失败: %w", err)
+		return nil, 0, err
 	}
 
-	// 2. 构建请求
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-	if err != nil {
-		return nil, 0, fmt.Errorf("构建请求失败: %w", err)
+	// 检查 HTTP 状态码（可选，根据需要调整）
+	if resp.StatusCode() >= 400 {
+		return nil, resp.StatusCode(), fmt.Errorf("HTTP error: %d", resp.StatusCode())
 	}
 
-	// 3. 设置请求头
-	req.Header.Set("Content-Type", "application/json")
-	// 合并自定义请求头
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	// 4. 发送请求
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, 0, fmt.Errorf("发送请求失败: %w", err)
-	}
-	defer resp.Body.Close() // 确保响应体关闭
-
-	// 5. 读取响应体
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("读取响应失败: %w", err)
-	}
-
-	return buf.Bytes(), resp.StatusCode, nil
+	// 返回反序列化后的结果
+	return res, resp.StatusCode(), nil
 }
 
 // IsDateLess 判断 date1 是否早于 date2

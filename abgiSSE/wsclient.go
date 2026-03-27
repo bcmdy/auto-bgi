@@ -9,6 +9,7 @@ import (
 	"auto-bgi/tools"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"net"
@@ -298,6 +299,7 @@ type OnlineUser struct {
 	GroupName   string    `json:"group_name"`
 	Count       int64     `json:"count"`
 	Description string    `json:"description"`
+	IsHomeowner bool      `json:"is_homeowner"`
 	Members     []Members `json:"members"`
 }
 
@@ -331,6 +333,131 @@ func GroupsStatusHandler() interface{} {
 		return 0
 	}
 	return mapData
+}
+
+// 房主修改房间信息
+func HomeownerUpdateGroup(context *gin.Context) {
+	type UpdateGroup struct {
+		Uid         string `json:"uid"`
+		GroupName   string `json:"group_name"`
+		Description string `json:"description"`
+		IsActive    bool   `gorm:"default:true" json:"is_active"`
+		IsOpen      bool   `gorm:"default:false" json:"is_open"`
+	}
+
+	var updateGroup UpdateGroup
+	if err := context.ShouldBindJSON(&updateGroup); err != nil {
+		autoLog.Sugar.Errorf("绑定JSON失败: %v", err)
+		context.JSON(http.StatusOK, gin.H{"error": "数据错误"})
+		return
+	}
+	fmt.Println(updateGroup)
+	decrypt, _ := tools.Decrypt(config.Cfg.Account.SecretKey)
+
+	encrypt, _ := tools.Encrypt(config.Cfg.Account.Uid)
+	updateGroup.Uid = encrypt
+
+	res := make(map[string]interface{})
+	_, _, err := tools.PostHttp(fmt.Sprintf("http://%s/api/HomeownerUpdateGroup", decrypt), updateGroup, &res)
+	if err != nil {
+		autoLog.Sugar.Errorf("更新房间失败: %v", err)
+		context.JSON(http.StatusOK, gin.H{"message": "更新配房间失败"})
+		return
+	}
+
+	if res["code"] != "500" {
+		autoLog.Sugar.Errorf("更新房间失败: %v", res["message"].(string))
+		context.JSON(http.StatusOK, gin.H{"message": res["message"].(string)})
+		return
+	}
+
+	autoLog.Sugar.Infof("更新配房间成功: %v", res["message"].(string))
+	context.JSON(http.StatusOK, gin.H{"message": res["message"].(string)})
+
+}
+
+// 房主查询房间信息
+func HomeownerQueryGroup(context *gin.Context) {
+	type QueryGroup struct {
+		Uid       string `json:"uid"`
+		GroupName string `json:"group_name"`
+	}
+	var queryGroup QueryGroup
+	if err := context.ShouldBindJSON(&queryGroup); err != nil {
+		autoLog.Sugar.Errorf("绑定查询参数失败: %v", err)
+		context.JSON(http.StatusOK, gin.H{"error": "数据错误"})
+		return
+	}
+
+	uid, err := tools.Encrypt(config.Cfg.Account.Uid)
+	if err != nil {
+		autoLog.Sugar.Errorf("解密失败: %v", err)
+		context.JSON(http.StatusOK, gin.H{"error": "数据错误"})
+		return
+	}
+	queryGroup.Uid = uid
+	res := make(map[string]interface{})
+	decrypt, _ := tools.Decrypt(config.Cfg.Account.SecretKey)
+	_, _, err = tools.PostHttp(fmt.Sprintf("http://%s/api/HomeownerQueryGroup", decrypt), queryGroup, &res)
+	if err != nil {
+		autoLog.Sugar.Errorf("查询房间失败: %v", err)
+		context.JSON(http.StatusOK, gin.H{"message": "查询配房间失败"})
+		return
+	}
+	if res["code"] != "200" {
+		autoLog.Sugar.Errorf("查询房间失败: %v", res["error"].(string))
+		context.JSON(http.StatusOK, gin.H{"message": res["error"].(string)})
+		return
+	}
+
+	info := make(map[string]interface{})
+	// 直接使用，不需要再 Unmarshal
+	if data, ok := res["message"].(map[string]interface{}); ok {
+		info["description"] = data["description"]
+		info["group_name"] = data["group_name"]
+		info["is_active"] = data["is_active"]
+		info["is_open"] = data["is_open"]
+
+	}
+
+	autoLog.Sugar.Infof("查询配房间成功: %v", info)
+	context.JSON(http.StatusOK, gin.H{"message": info})
+}
+
+// 新建房间
+func HomeownerCreateGroup(c *gin.Context) {
+	type CreateGroupRequest struct {
+		Uid         string `json:"uid"`
+		Name        string `json:"name" binding:"required"`
+		Description string `json:"description"`
+	}
+	var req CreateGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	uid, err := tools.Encrypt(config.Cfg.Account.Uid)
+	if err != nil {
+		autoLog.Sugar.Errorf("解密失败: %v", err)
+		c.JSON(http.StatusOK, gin.H{"error": "数据错误"})
+		return
+	}
+	req.Uid = uid
+	decrypt, _ := tools.Decrypt(config.Cfg.Account.SecretKey)
+	res := make(map[string]interface{})
+	_, _, err = tools.PostHttp(fmt.Sprintf("http://%s/api/HomeownerCreateGroup", decrypt), req, &res)
+	if err != nil {
+		autoLog.Sugar.Errorf("创建房间失败: %v", err)
+		c.JSON(http.StatusOK, gin.H{"message": "创建配房间失败"})
+		return
+	}
+	if res["code"] != "200" {
+		autoLog.Sugar.Errorf("创建房间失败: %v", res["error"].(string))
+		c.JSON(http.StatusOK, gin.H{"message": res["error"].(string)})
+		return
+	}
+	autoLog.Sugar.Infof("创建配房间成功: %v", res["message"].(string))
+	c.JSON(http.StatusOK, gin.H{"message": res["message"].(string)})
 }
 
 // Close 关闭连接

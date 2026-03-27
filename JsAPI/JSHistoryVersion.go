@@ -4,6 +4,7 @@ import (
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
+	"auto-bgi/control"
 	"auto-bgi/tools"
 	"fmt"
 	abgiCopy "github.com/otiai10/copy"
@@ -204,6 +205,8 @@ func findSubFolder(root string, targetFolder string) (string, error) {
 // bgi 版本回滚
 func BgiRollbackHistoryVersion(jsName string, version string) error {
 
+	control.CloseSoftware()
+
 	now := time.Now().Format("2006-01-02-15-04-05")
 
 	//1、备份user文件
@@ -233,7 +236,8 @@ func BgiRollbackHistoryVersion(jsName string, version string) error {
 	//3、解压bgi压缩包
 	base := filepath.Base(config.Cfg.BetterGIAddress)
 	path := strings.ReplaceAll(config.Cfg.BetterGIAddress, base, "")
-	err4 = tools.Un7z("./historyVersion/"+jsName+"-version-"+version, path)
+	//err4 = tools.Un7z("./historyVersion/"+jsName+"-version-"+version, path)
+	err4 = tools.Un7z("./historyVersion/"+version, path)
 	if err4 != nil {
 		autoLog.Sugar.Errorf("解压bgi压缩包失败: %v", err)
 		return fmt.Errorf("解压bgi压缩包失败: %v", err)

@@ -62,7 +62,7 @@ func BgiRollbackHistoryVersionService(context *gin.Context) {
 		return
 	}
 
-	Version := strings.ReplaceAll(request.Version, ".zip", "")
+	Version := strings.ReplaceAll(request.Version, ".7z", "")
 
 	config.BgiCfg.RunForVersion = Version
 	control.OpenSoftware(config.Cfg.BetterGIAddress + "\\BetterGI.exe")
