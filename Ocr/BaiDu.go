@@ -182,8 +182,7 @@ func ocr(path, apiKey, secretKey string) string {
 	autoLog.Sugar.Info("识别结果:")
 	var buf bytes.Buffer
 	for _, w := range ocrResp.WordsResult {
-		line := fmt.Sprintf(w.Words)
-		buf.WriteString(line)
+		buf.WriteString(w.Words)
 	}
 	autoLog.Sugar.Info(buf.String())
 	return buf.String()

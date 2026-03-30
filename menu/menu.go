@@ -11,6 +11,7 @@ import (
 	"auto-bgi/Notice"
 	"auto-bgi/Ocr"
 	"auto-bgi/OneLong"
+	"auto-bgi/OneRemote"
 	"auto-bgi/ScriptGroup"
 	"auto-bgi/ScriptRepo"
 	"auto-bgi/TaskCron"
@@ -298,6 +299,13 @@ func StarGin() {
 		needAuth.GET("/logFiles", bgiStatus.GetLogFiles)
 		//读取日志
 		needAuth.GET("/logInfo", bgiStatus.GetLogFileContent)
+
+		oneRemoteController := needAuth.Group("/oneRemote")
+		{
+			oneRemoteController.GET("/sessions", OneRemote.GetMultiUsers)
+			oneRemoteController.POST("/start", OneRemote.StartMultiUser)
+			oneRemoteController.POST("/logoff", OneRemote.LogoutMultiUser)
+		}
 
 		/**
 		 * 联机相关

@@ -161,6 +161,44 @@
     </a-modal>
 
     <a-modal
+      v-model:open="oneRemoteModal.visible"
+      title="🧩 1Remote 管理"
+      :footer="null"
+      :width="isMobile ? '98vw' : '900px'"
+      class="anime-modal"
+    >
+      <div style="padding: 12px 0;">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;">
+          <a-input
+            v-model:value="oneRemoteModal.launcher"
+            placeholder="launcher / username"
+            style="width: 280px;"
+            allowClear
+          />
+          <a-button type="primary" :loading="oneRemoteModal.startLoading" @click="handleOneRemoteStart">启动 1Remote</a-button>
+          <a-button danger :loading="oneRemoteModal.logoffLoading" @click="handleOneRemoteLogoff">注销会话</a-button>
+          <a-button :loading="oneRemoteModal.loading" @click="loadOneRemoteSessions">刷新列表</a-button>
+        </div>
+
+        <a-table
+          :data-source="oneRemoteModal.sessions"
+          :columns="oneRemoteColumns"
+          :row-key="(record) => record.ID"
+          size="small"
+          :pagination="{ pageSize: 10 }"
+          :row-selection="{
+            selectedRowKeys: oneRemoteModal.selectedRowKeys,
+            onChange: onOneRemoteSelectChange
+          }"
+        />
+
+        <div style="margin-top: 10px; font-size: 12px; opacity: 0.85;">
+          已选择会话ID: {{ oneRemoteSelectedID || '-' }}
+        </div>
+      </div>
+    </a-modal>
+
+    <a-modal
       v-model:open="continueRunModal.visible"
       title="🌸 继续未完成的任务 🌸"
       :confirm-loading="continueRunModal.loading"
@@ -643,6 +681,7 @@ const indexSXBtn = () => {
 const automationButtons = ref([
   { text: '一条龙启动', action: () => { oneLongModal.visible = true; handleOneLongLoad() } },
   // { text: '一条龙计划', route: '/OneLongPlan' },
+  { text: '1Remote管理', route: '/OneRemote' },
   { text: 'BGI快捷键', route: '/HotKey' },
   { text: '关闭BGI和原神', action: handleCloseBgi },
   { text: '调度圣坛', route: '/listGroups' },
@@ -686,6 +725,106 @@ const handleOneLongOk = async () => {
     } catch(e) { message.error('启动失败') } finally { oneLongModal.loading = false }
 }
 const handleOneLongCancel = () => { oneLongModal.visible = false }
+
+const oneRemoteModal = reactive({
+  visible: false,
+  loading: false,
+  sessions: [],
+  launcher: '',
+  selectedRowKeys: [],
+  startLoading: false,
+  logoffLoading: false
+})
+
+const oneRemoteColumns = [
+  { title: 'SESSIONNAME', dataIndex: 'SessionName', key: 'SessionName', width: 180 },
+  { title: 'USERNAME', dataIndex: 'Username', key: 'Username', width: 180 },
+  { title: 'ID', dataIndex: 'ID', key: 'ID', width: 80 },
+  { title: 'STATE', dataIndex: 'State', key: 'State', width: 140 }
+]
+
+const oneRemoteSelectedID = computed(() => (oneRemoteModal.selectedRowKeys?.[0] ? String(oneRemoteModal.selectedRowKeys[0]) : ''))
+const oneRemoteSelectedSession = computed(() => {
+  const id = oneRemoteSelectedID.value
+  if (!id) return null
+  return (oneRemoteModal.sessions || []).find((s) => String(s.ID) === id) || null
+})
+
+const onOneRemoteSelectChange = (keys) => {
+  const normalized = Array.isArray(keys) ? keys.map((k) => String(k)) : []
+  oneRemoteModal.selectedRowKeys = normalized.slice(0, 1)
+}
+
+const loadOneRemoteSessions = async () => {
+  try {
+    oneRemoteModal.loading = true
+    const res = await apiMethods.oneRemoteGetSessions()
+    const list = res?.data || []
+    oneRemoteModal.sessions = Array.isArray(list) ? list : []
+    if (oneRemoteModal.selectedRowKeys?.length) {
+      const keep = oneRemoteModal.selectedRowKeys[0]
+      const exists = oneRemoteModal.sessions.some((s) => String(s.ID) === String(keep))
+      if (!exists) oneRemoteModal.selectedRowKeys = []
+    }
+  } catch (e) {
+    message.error('获取会话列表失败')
+  } finally {
+    oneRemoteModal.loading = false
+  }
+}
+
+const openOneRemoteModal = async () => {
+  oneRemoteModal.visible = true
+  await loadOneRemoteSessions()
+}
+
+const handleOneRemoteStart = async () => {
+  const launcherFromInput = (oneRemoteModal.launcher || '').trim()
+  const launcher = launcherFromInput || (oneRemoteSelectedSession.value?.Username || '').trim() || (oneRemoteSelectedSession.value?.SessionName || '').trim()
+  if (!launcher) {
+    message.warning('请输入 launcher / username，或先选择一条会话')
+    return
+  }
+
+  try {
+    oneRemoteModal.startLoading = true
+    await apiMethods.oneRemoteStart(launcher)
+    message.success('已触发启动')
+  } catch (e) {
+    message.error('启动失败')
+  } finally {
+    oneRemoteModal.startLoading = false
+  }
+}
+
+const handleOneRemoteLogoff = async () => {
+  const id = oneRemoteSelectedID.value
+  const username = !id ? (oneRemoteModal.launcher || '').trim() : ''
+  if (!id && !username) {
+    message.warning('请选择会话ID，或输入 username')
+    return
+  }
+
+  const content = id ? `确认注销会话 ID=${id} ？` : `确认注销用户 ${username} 的会话？`
+  Modal.confirm({
+    title: '确认注销？',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        oneRemoteModal.logoffLoading = true
+        await apiMethods.oneRemoteLogoff(id ? { id } : { username })
+        message.success('注销成功')
+        await loadOneRemoteSessions()
+      } catch (e) {
+        message.error('注销失败')
+      } finally {
+        oneRemoteModal.logoffLoading = false
+      }
+    }
+  })
+}
 
 // --- 继续跑逻辑 ---
 const continueRunModal = reactive({

@@ -121,6 +121,10 @@ export const apiMethods = {
   getBgiConfigAll: () => api.get('/api/bgiConfig/allConfig'),
   findBgiConfig: (configName) => api.get('/api/bgiConfig/findConfig', { params: { configName } }),
   saveBgiConfig: (data) => api.post('/api/bgiConfig/saveConfig', data),
+
+  oneRemoteGetSessions: () => api.get('/api/oneRemote/sessions'),
+  oneRemoteStart: (launcher) => api.post('/api/oneRemote/start', null, { params: { launcher } }),
+  oneRemoteLogoff: (params) => api.post('/api/oneRemote/logoff', null, { params }),
   
   // 日志相关
   getLog: () => api.get('/api/gitLog'),

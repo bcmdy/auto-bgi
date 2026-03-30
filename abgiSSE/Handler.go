@@ -15,7 +15,7 @@ var scriptGroupConfig ScriptGroup.ScriptGroupConfig
 func HandleImg(info Information) {
 	if info.Img.Base64Str != "" {
 		// 这里 Img 是 Base64 数据，你可以保存成文件，或者直接通知客户端
-		fileName := fmt.Sprintf(info.Img.Path)
+		fileName := info.Img.Path
 		imgBytes, err := base64.StdEncoding.DecodeString(info.Img.Base64Str)
 		if err != nil {
 			autoLog.Sugar.Errorf("解码图片失败: %v", err)

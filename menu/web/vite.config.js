@@ -37,6 +37,10 @@ export default defineConfig({
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, '')
       },
+      '/js': {
+        target: baseURL,
+        changeOrigin: true
+      },
       '/index': {
         target: baseURL,
         changeOrigin: true

@@ -118,7 +118,7 @@ func init() {
 	err := ReloadConfig()
 	if err != nil {
 		//autoLog.Sugar.Fatalf("首次加载配置失败: %v", err)
-		fmt.Println("首次加载配置失败: %v", err)
+		fmt.Printf("首次加载配置失败: %v\n", err)
 	}
 }
 
@@ -127,7 +127,7 @@ func WriteConfig() error {
 	// 序列化为JSON字符串，格式化输出
 	data, err := json.MarshalIndent(Cfg, "", "  ")
 	if err != nil {
-		fmt.Println("writeConfig序列化失败: %v", err)
+		fmt.Printf("writeConfig序列化失败: %v\n", err)
 		return err
 	}
 
@@ -135,7 +135,7 @@ func WriteConfig() error {
 	filePath := filepath.Join(".", "main.json")
 	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
-		fmt.Println("writeConfig写文件失败: %v", err)
+		fmt.Printf("writeConfig写文件失败: %v\n", err)
 		return err
 	}
 	return nil
@@ -146,7 +146,7 @@ func ReloadConfig() error {
 
 	file, err := os.Open("main.json")
 	if err != nil {
-		fmt.Println("ReloadConfig打开配置文件失败: %v", err)
+		fmt.Printf("ReloadConfig打开配置文件失败: %v\n", err)
 		//创建配置文件
 		Cfg = Config{}
 		WriteConfig()
@@ -157,13 +157,13 @@ func ReloadConfig() error {
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
 
-		fmt.Println("ReloadConfig读取配置文件失败: %v", err)
+		fmt.Printf("ReloadConfig读取配置文件失败: %v\n", err)
 		return err
 	}
 
 	if err := json.Unmarshal(bytes, &Cfg); err != nil {
 
-		fmt.Println("ReloadConfig解析配置文件失败: %v", err)
+		fmt.Printf("ReloadConfig解析配置文件失败: %v\n", err)
 		return err
 	}
 
@@ -192,7 +192,7 @@ func ReloadConfig() error {
 	data, err := json.MarshalIndent(Cfg, "", "  ")
 	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
-		fmt.Println("ReloadConfig写文件失败: %v", err)
+		fmt.Printf("ReloadConfig写文件失败: %v\n", err)
 		return err
 	}
 

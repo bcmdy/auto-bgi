@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -36,9 +37,12 @@ func GetDetailedSessions() ([]SessionInfo, error) {
 	cmd := exec.Command("C:\\Windows\\System32\\qwinsta.exe")
 
 	// 获取混合输出（包含标准输出和错误输出）
-	output, _ := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 
 	if len(output) == 0 {
+		if err != nil {
+			return nil, fmt.Errorf("未获取到任何输出: %v", err)
+		}
 		return nil, fmt.Errorf("未获取到任何输出")
 	}
 
@@ -89,6 +93,10 @@ func GetDetailedSessions() ([]SessionInfo, error) {
 				}
 			}
 
+			if strings.EqualFold(strings.TrimSpace(s.Username), "Administrator") {
+				continue
+			}
+
 			if s.ID != "" {
 				results = append(results, s)
 			}
@@ -97,11 +105,37 @@ func GetDetailedSessions() ([]SessionInfo, error) {
 	return results, nil
 }
 
+func FindSessionIDByUsername(username string) (string, error) {
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return "", fmt.Errorf("username is empty")
+	}
+
+	sessions, err := GetDetailedSessions()
+	if err != nil {
+		return "", err
+	}
+
+	for _, s := range sessions {
+		if s.ID == "" {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(s.Username), username) {
+			return s.ID, nil
+		}
+	}
+	return "", fmt.Errorf("未找到用户会话: %s", username)
+}
+
 // 启动1Remote用户
-func startOneRemoteUser(sessionName string) {
+func startOneRemoteUser(sessionName string) error {
 	// 1Remote.exe 的路径，如果在环境变量中可直接写名
 	// 注意：根据你的安装路径修改
 	appPath := "D:\\1R\\1Remote.exe"
+
+	if _, err := os.Stat(appPath); err != nil {
+		return fmt.Errorf("1Remote.exe 不存在或不可访问: %s", appPath)
+	}
 
 	// 构造命令：1Remote.exe --launcher "MyWindowsServer"
 	cmd := exec.Command(appPath, "--launcher", sessionName)
@@ -109,10 +143,11 @@ func startOneRemoteUser(sessionName string) {
 	// 运行命令
 	err := cmd.Start()
 	if err != nil {
-		log.Fatalf("无法启动 1Remote: %v", err)
+		return fmt.Errorf("无法启动 1Remote: %v", err)
 	}
 
 	log.Printf("已成功触发 1Remote 连接: %s", sessionName)
+	return nil
 }
 
 // ForceLogoff 注销1Remote用户
@@ -120,11 +155,12 @@ func startOneRemoteUser(sessionName string) {
 // 参数:
 //
 //	sessionID: 要注销的会话ID字符串
-func ForceLogoff(sessionID string) {
+func ForceLogoff(sessionID string) error {
 	// 格式: logoff [ID] /server:[IP]
 	cmd := exec.Command("logoff", sessionID)
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("强制注销远程会话失败: %v", err)
+		return fmt.Errorf("强制注销远程会话失败: %v, output: %s", err, strings.TrimSpace(string(output)))
 	}
+	return nil
 }
