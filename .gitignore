@@ -26,3 +26,16 @@ menu/web/TEMP-OneLong.txt
 .main.json
 internal/**
 **/.vscode/**
+historyVersion/**
+lib/**
+img/**
+ddddocr_weights/**
+paddle_weights/*
+menu/web/index.html.bak
+auto-bgi.exe.old
+auto-bgi.exe.bak
+auto-bgi.exe
+auto-bgi*.exe
+auto-bgi.upx
+menu/web/nul
+menu/web/index.html.rej

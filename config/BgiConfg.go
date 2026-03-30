@@ -89,6 +89,7 @@ func ReadBgiConfig() {
 	BgiCfg.RunForVersion = gjson.Get(data, "commonConfig.runForVersion").String()
 
 	BgiCfg.MiYouSheConfigCookie = strings.ReplaceAll(gjson.Get(data, "otherConfig.miyousheConfig.cookie").String(), " ", "")
+	BgiCfg.MiYouSheConfigCookie = strings.ReplaceAll(BgiCfg.MiYouSheConfigCookie, "\n", "")
 	fmt.Println(BgiCfg.MiYouSheConfigCookie)
 
 	//selectedChannelName：仓库

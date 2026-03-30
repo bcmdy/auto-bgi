@@ -134,12 +134,17 @@ func CloseSoftware() {
 
 // CheckProcessRunning 检查指定进程名的进程是否在运行
 func CheckProcessRunning(processName string) bool {
-	cmd := exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s", processName))
+
+	username := GetSysTemUser()
+
+	//cmd := exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s", processName))
+	filter := fmt.Sprintf("IMAGENAME eq %s", processName)
+	cmd := exec.Command("tasklist", "/FI", filter, "/FI", fmt.Sprintf("USERNAME eq %s", username))
 	// 隐藏窗口
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		autoLog.Sugar.Errorf("检查进程失败: %v", err)
+		autoLog.Sugar.Errorf("检查进程失败: %v-%s", err, username)
 		return false
 	}
 	return strings.Contains(string(output), processName)

@@ -193,6 +193,22 @@
             </template>
             
             <div class="tree-container">
+        <div v-if="rawTreeData && rawTreeData.path" class="tree-actions">
+          <!-- <a-button
+            type="primary"
+            class="create-root-folder-btn"
+            @click="openCreateFolderModal(rawTreeData)"
+          >
+            新建顶级文件夹
+          </a-button> -->
+          <!-- <a-button
+            type="primary"
+            class="create-script-btn"
+            @click="openCreateScriptModal(rawTreeData)"
+          >
+            新增路线
+          </a-button> -->
+        </div>
         <a-tree
           v-if="treeData.length > 0"
           :tree-data="treeData"
@@ -210,15 +226,38 @@
                   
                   <!-- 文件夹节点：显示子节点数量 -->
                   <template v-if="nodeData.is_dir">
-                    <!-- <span class="children-count-badge">
-                      📁 {{ nodeData.children ? nodeData.children.length : 0 }} 项
-                    </span> -->
-                    <span 
-                      class="children-count-badge" 
-                      style="margin-left: 8px; background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);"
-                    >
-                      📊 {{ (nodeData.nodeStats || (dataRef && dataRef.nodeStats) || {available: 0, total: 0}).available }}/{{ (nodeData.nodeStats || (dataRef && dataRef.nodeStats) || {available: 0, total: 0}).total }}
-                    </span>
+                    <div class="node-actions">
+                      <span 
+                        class="children-count-badge" 
+                        style="margin-left: 8px; background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);"
+                      >
+                        📊 {{ (nodeData.nodeStats || (dataRef && dataRef.nodeStats) || {available: 0, total: 0}).available }}/{{ (nodeData.nodeStats || (dataRef && dataRef.nodeStats) || {available: 0, total: 0}).total }}
+                      </span>
+                      <a-button
+                        type="primary"
+                        size="small"
+                        class="folder-create-btn"
+                        @click.stop="openCreateFolderModal(dataRef || nodeData)"
+                      >
+                        新建文件夹
+                      </a-button>
+                      <a-button
+                        type="primary"
+                        size="small"
+                        class="folder-script-btn"
+                        @click.stop="openCreateScriptModal(dataRef || nodeData)"
+                      >
+                        新增路线
+                      </a-button>
+                      <a-button
+                        danger
+                        size="small"
+                        class="folder-delete-btn"
+                        @click.stop="confirmDeleteNode(dataRef || nodeData)"
+                      >
+                        删除
+                      </a-button>
+                    </div>
                   </template>
                   
                   <!-- 文件节点：显示冷却倒计时 -->
@@ -230,7 +269,7 @@
                 </div>
                 
                 <!-- 文件节点：显示record信息 -->
-                <div v-if="!nodeData.is_dir && nodeData.record" class="file-info-row" style="display: flex; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0;">
+                <div v-if="!nodeData.is_dir" class="file-info-row" style="display: flex; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0;">
                   <div class="file-info-left">
 
                       <!-- 显示 CD 时间 -->
@@ -271,7 +310,15 @@
                         {{ nodeData.record.Status }}
                       </a-tag>
                       <a-button 
-                        v-if="nodeData.record.History && nodeData.record.History.length > 0"
+                        danger
+                        size="small"
+                        class="file-delete-btn"
+                        @click.stop="confirmDeleteNode(dataRef || nodeData)"
+                      >
+                        删除
+                      </a-button>
+                      <a-button 
+                        v-if="nodeData.record?.History && nodeData.record.History.length > 0"
                         type="primary"
                         size="small"
                         @click="showHistory(nodeData.record)"
@@ -400,13 +447,59 @@
         </div>
       </div>
     </a-modal>
+
+    <a-modal
+      v-model:open="createFolderVisible"
+      title="新建文件夹"
+      :confirm-loading="createFolderLoading"
+      :ok-button-props="{ disabled: !createFolderName.trim() }"
+      @ok="submitCreateFolder"
+      @cancel="closeCreateFolderModal"
+    >
+      <div class="create-folder-content">
+        <div class="create-folder-target">
+          <span class="create-folder-label">父级目录：</span>
+          <span class="create-folder-value">{{ createFolderParentLabel || '-' }}</span>
+        </div>
+        <a-input
+          v-model:value="createFolderName"
+          placeholder="请输入文件夹名称"
+          :maxlength="50"
+          @pressEnter="submitCreateFolder"
+        />
+      </div>
+    </a-modal>
+
+    <a-modal
+      v-model:open="createScriptVisible"
+      title="新增路线"
+      :confirm-loading="createScriptLoading"
+      :ok-button-props="{ disabled: createScriptCatalogLoading || createScriptSelection.length === 0 }"
+      @ok="submitCreateScript"
+      @cancel="closeCreateScriptModal"
+    >
+      <div class="create-folder-content">
+        <!-- <div class="create-folder-target">
+          <span class="create-folder-label">父级目录：</span>
+          <span class="create-folder-value">{{ createScriptParentLabel || '-' }}</span>
+        </div> -->
+        <a-spin :spinning="createScriptCatalogLoading">
+          <a-cascader
+            v-model:value="createScriptSelection"
+            :options="createScriptOptions"
+            placeholder="请选择要新增的路线"
+            style="width: 100%;"
+          />
+        </a-spin>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { apiMethods } from '@/utils/api'
 import dayjs from 'dayjs'
 
@@ -418,6 +511,19 @@ const accountList = ref([]) // 账户列表
 const rawTreeData = ref(null) // 原始树形数据
 const historyVisible = ref(false)
 const currentHistory = ref(null)
+const createFolderVisible = ref(false)
+const createFolderLoading = ref(false)
+const createFolderName = ref('')
+const createFolderParentPath = ref('')
+const createFolderParentLabel = ref('')
+const createScriptVisible = ref(false)
+const createScriptLoading = ref(false)
+const createScriptCatalogLoading = ref(false)
+const createScriptParentPath = ref('')
+const createScriptParentLabel = ref('')
+const createScriptSelection = ref([])
+const createScriptOptions = ref([])
+const deleteNodeLoading = ref(false)
 const pickupLoading = ref(false) // 采集历史加载状态
 const pickupData = ref([]) // 采集历史数据
 const activeTab = ref('cd') // 当前激活的标签页，默认显示CD记录
@@ -848,6 +954,233 @@ const showHistory = (record) => {
   historyVisible.value = true
 }
 
+const collectExistingScriptNames = (node, scriptNames = new Set()) => {
+  if (!node || !node.is_dir || !Array.isArray(node.children)) {
+    return scriptNames
+  }
+
+  const dirChildren = node.children.filter(child => child?.is_dir)
+  const fileChildren = node.children.filter(child => child && !child.is_dir)
+
+  if (node.name !== 'pathing' && dirChildren.length === 0 && fileChildren.length > 0) {
+    scriptNames.add(node.name)
+  }
+
+  dirChildren.forEach(child => collectExistingScriptNames(child, scriptNames))
+  return scriptNames
+}
+
+const isScriptDirectory = (node) => {
+  if (!node || !node.is_dir || !Array.isArray(node.children)) {
+    return false
+  }
+
+  const dirChildren = node.children.filter(child => child?.is_dir)
+  const fileChildren = node.children.filter(child => child && !child.is_dir)
+
+  return node.name !== 'pathing' && dirChildren.length === 0 && fileChildren.length > 0
+}
+
+const getDirectoryTypeLabel = (node) => {
+  return isScriptDirectory(node) ? '路线' : '文件夹'
+}
+
+const getNodeTypeLabel = (node) => {
+  if (!node?.is_dir) return '文件'
+  return isScriptDirectory(node) ? '路线' : '文件夹'
+}
+
+const convertScriptOptions = (items, existingScriptNames) => {
+  if (!Array.isArray(items)) return []
+
+  return items.map(item => {
+    const children = convertScriptOptions(item.fileNameChild, existingScriptNames)
+    const isLeaf = children.length === 0
+    const disabled = isLeaf && existingScriptNames.has(item.fileName)
+
+    return {
+      label: disabled ? `${item.fileName}（已新增）` : item.fileName,
+      value: item.fileName,
+      disabled,
+      children: children.length > 0 ? children : undefined
+    }
+  })
+}
+
+const loadCreateScriptOptions = async () => {
+  createScriptCatalogLoading.value = true
+  try {
+    const response = await apiMethods.getCollectionScriptCatalog()
+    const existingScriptNames = collectExistingScriptNames(rawTreeData.value, new Set())
+    createScriptOptions.value = convertScriptOptions(response?.data || [], existingScriptNames)
+  } catch (error) {
+    createScriptOptions.value = []
+    message.error('获取路线列表失败: ' + (error?.message || '未知错误'))
+  } finally {
+    createScriptCatalogLoading.value = false
+  }
+}
+
+const openCreateFolderModal = (node) => {
+  const targetNode = node?.dataRef?.path ? node.dataRef : node
+  if (!targetNode || !targetNode.is_dir || !targetNode.path) {
+    message.warning('请选择有效的文件夹')
+    return
+  }
+
+  createFolderParentPath.value = targetNode.path
+  createFolderParentLabel.value = targetNode.name === 'pathing' ? '根目录' : targetNode.path
+  createFolderName.value = ''
+  createFolderVisible.value = true
+}
+
+const openCreateScriptModal = async (node) => {
+  const targetNode = node?.dataRef?.path ? node.dataRef : node
+  if (!targetNode || !targetNode.is_dir || !targetNode.path) {
+    message.warning('请选择有效的文件夹')
+    return
+  }
+
+  createScriptParentPath.value = targetNode.path
+  createScriptParentLabel.value = targetNode.name === 'pathing' ? '根目录' : targetNode.path
+  createScriptSelection.value = []
+  createScriptVisible.value = true
+  await loadCreateScriptOptions()
+}
+
+const closeCreateFolderModal = () => {
+  if (createFolderLoading.value) return
+
+  createFolderVisible.value = false
+  createFolderName.value = ''
+  createFolderParentPath.value = ''
+  createFolderParentLabel.value = ''
+}
+
+const closeCreateScriptModal = () => {
+  if (createScriptLoading.value || createScriptCatalogLoading.value) return
+
+  createScriptVisible.value = false
+  createScriptParentPath.value = ''
+  createScriptParentLabel.value = ''
+  createScriptSelection.value = []
+  createScriptOptions.value = []
+}
+
+const deleteNode = async (targetNode) => {
+  if (deleteNodeLoading.value) return
+
+  deleteNodeLoading.value = true
+  try {
+    const response = await apiMethods.deleteCollectionNode({
+      targetPath: targetNode.path
+    })
+
+    if (!response?.path) {
+      throw new Error(response?.message || '未知错误')
+    }
+
+    message.success(response?.message || '删除成功')
+    await refreshData()
+  } catch (error) {
+    message.error('删除失败: ' + (error?.message || '未知错误'))
+    throw error
+  } finally {
+    deleteNodeLoading.value = false
+  }
+}
+
+const confirmDeleteNode = (node) => {
+  const targetNode = node?.dataRef?.path ? node.dataRef : node
+  if (!targetNode || !targetNode.path) {
+    message.warning('请选择有效的文件夹')
+    return
+  }
+  if (targetNode.is_dir && targetNode.name === 'pathing') {
+    message.warning('根目录不允许删除')
+    return
+  }
+
+  const typeLabel = getNodeTypeLabel(targetNode)
+  Modal.confirm({
+    title: `确认删除${typeLabel}`,
+    content: `${typeLabel}「${targetNode.name}」删除后无法恢复，是否继续？`,
+    okText: '确认删除',
+    okType: 'danger',
+    cancelText: '取消',
+    onOk: () => deleteNode(targetNode)
+  })
+}
+
+const submitCreateFolder = async () => {
+  if (createFolderLoading.value) return
+
+  const folderName = createFolderName.value.trim()
+  if (!createFolderParentPath.value) {
+    message.warning('请选择父级目录')
+    return
+  }
+  if (!folderName) {
+    message.warning('请输入文件夹名称')
+    return
+  }
+
+  createFolderLoading.value = true
+  try {
+    const response = await apiMethods.createCollectionFolder({
+      parentPath: createFolderParentPath.value,
+      folderName
+    })
+
+    if (!response?.path) {
+      throw new Error(response?.message || '未知错误')
+    }
+
+    createFolderLoading.value = false
+    message.success(response?.message || '文件夹创建成功')
+    closeCreateFolderModal()
+    await refreshData()
+  } catch (error) {
+    message.error('创建文件夹失败: ' + (error?.message || '未知错误'))
+  } finally {
+    createFolderLoading.value = false
+  }
+}
+
+const submitCreateScript = async () => {
+  if (createScriptLoading.value || createScriptCatalogLoading.value) return
+
+  if (!createScriptParentPath.value) {
+    message.warning('请选择父级目录')
+    return
+  }
+  if (!Array.isArray(createScriptSelection.value) || createScriptSelection.value.length === 0) {
+    message.warning('请选择要新增的路线')
+    return
+  }
+
+  createScriptLoading.value = true
+  try {
+    const response = await apiMethods.createCollectionScript({
+      parentPath: createScriptParentPath.value,
+      scriptPath: createScriptSelection.value.join('\\')
+    })
+
+    if (!response?.path) {
+      throw new Error(response?.message || '未知错误')
+    }
+
+    createScriptLoading.value = false
+    message.success(response?.message || '路线新增成功')
+    closeCreateScriptModal()
+    await refreshData()
+  } catch (error) {
+    message.error('新增路线失败: ' + (error?.message || '未知错误'))
+  } finally {
+    createScriptLoading.value = false
+  }
+}
+
 const calculateNodeStats = (node) => {
   let total = 0
   let available = 0
@@ -1161,6 +1494,12 @@ onUnmounted(() => {
   border-radius: 0;
   overflow-x: auto;
 }
+.tree-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
+}
 
 .collection-tree {
   background: transparent;
@@ -1199,6 +1538,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.node-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .node-title {
@@ -1250,6 +1596,40 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #722ed1 0%, #9254de 100%);
   color: #fff;
   white-space: nowrap;
+}
+.folder-create-btn,
+.create-root-folder-btn,
+.folder-script-btn,
+.create-script-btn,
+.folder-delete-btn {
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.create-folder-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-folder-target {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.create-folder-label {
+  flex-shrink: 0;
+  color: #666;
+  font-weight: 600;
+}
+
+.create-folder-value {
+  color: #333;
+  word-break: break-all;
 }
 
 @keyframes pulse {
@@ -1701,6 +2081,10 @@ onUnmounted(() => {
   }
   
   /* 标签页移动端适配 */
+  .tree-actions {
+    margin-bottom: 12px;
+  }
+  
   .tabs-container :deep(.ant-tabs-nav) {
     padding: 8px 8px 0 8px;
   }
@@ -1742,6 +2126,11 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+  
+  .node-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
   
   .node-title {

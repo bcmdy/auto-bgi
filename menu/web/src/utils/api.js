@@ -162,6 +162,10 @@ export const apiMethods = {
   getCollectionManagement: (name) => api.get('/api/CDCollectionManagement/list', { params: { name } }),
   getAllUserFiles: () => api.get('/api/CDCollectionManagement/AllUserFile'),
   getPickupHistory: (name) => api.get('/api/CDCollectionManagement/ReadPickup', { params: { name } }),
+  getCollectionScriptCatalog: () => api.get('/api/scriptGroup/listAllGroups'),
+  createCollectionFolder: (payload) => api.post('/api/CDCollectionManagement/createFolder', payload),
+  createCollectionScript: (payload) => api.post('/api/CDCollectionManagement/createScript', payload),
+  deleteCollectionNode: (payload) => api.post('/api/CDCollectionManagement/deleteNode', payload),
   // 更新是否加入背包统计
   CDAllMaterial : () => api.post('/api/CD-Aware-AutoGather/CDAllMaterial'),
   // 一键更新全部材料

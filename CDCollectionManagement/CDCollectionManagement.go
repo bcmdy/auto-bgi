@@ -1,16 +1,21 @@
 package CDCollectionManagement
 
 import (
+	"auto-bgi/ScriptGroup"
 	"auto-bgi/abgiConstant"
 	"auto-bgi/autoLog"
 	"auto-bgi/config"
 	"auto-bgi/tools"
+	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	copy "github.com/otiai10/copy"
 )
 
 type Record struct {
@@ -23,6 +28,14 @@ type Record struct {
 type History struct {
 	Item        map[string]int
 	DurationSec int
+}
+
+func pathingRootDir() string {
+	return filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "pathing")
+}
+
+func repoPathingRootDir() string {
+	return filepath.Join(config.Cfg.BetterGIAddress, "Repos", "bettergi-scripts-list-git", "repo", "pathing")
 }
 
 // 读取所有多用户
@@ -38,12 +51,273 @@ func ReadAllUser() []string {
 
 // 遍历文件，获取路径和json文件
 func ReadAllPathing() (*FileNode, error) {
-	tree, err := GenerateTree(filepath.Join(config.Cfg.BetterGIAddress, "User", "JsScript", "采集cd管理", "pathing"), ".js", ".txt", ".ini", ".ico", ".md")
+	tree, err := GenerateTree(pathingRootDir(), ".js", ".txt", ".ini", ".ico", ".md")
 	if err != nil {
 		autoLog.Sugar.Errorf("ReadAllPathing:%s", err.Error())
 		return nil, err
 	}
 	return tree, nil
+}
+
+func CreatePathingFolder(parentPath, folderName string) (string, error) {
+	rootPath := filepath.Clean(pathingRootDir())
+	cleanParentPath := filepath.Clean(strings.TrimSpace(parentPath))
+	cleanFolderName := strings.TrimSpace(folderName)
+
+	if cleanFolderName == "" {
+		return "", fmt.Errorf("文件夹名称不能为空")
+	}
+	if cleanFolderName == "." || cleanFolderName == ".." {
+		return "", fmt.Errorf("文件夹名称不合法")
+	}
+	if strings.ContainsAny(cleanFolderName, `<>:"/\|?*`) {
+		return "", fmt.Errorf("文件夹名称包含非法字符")
+	}
+	if cleanParentPath == "" {
+		cleanParentPath = rootPath
+	}
+
+	relativePath, err := filepath.Rel(rootPath, cleanParentPath)
+	if err != nil {
+		return "", fmt.Errorf("父级目录校验失败: %w", err)
+	}
+	if relativePath == ".." || strings.HasPrefix(relativePath, ".."+string(os.PathSeparator)) || filepath.IsAbs(relativePath) {
+		return "", fmt.Errorf("父级目录不在采集目录范围内")
+	}
+
+	parentInfo, err := os.Stat(cleanParentPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("父级目录不存在")
+		}
+		return "", fmt.Errorf("读取父级目录失败: %w", err)
+	}
+	if !parentInfo.IsDir() {
+		return "", fmt.Errorf("父级路径不是文件夹")
+	}
+
+	targetPath := filepath.Join(cleanParentPath, cleanFolderName)
+	if _, err = os.Stat(targetPath); err == nil {
+		return "", fmt.Errorf("文件夹已存在")
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("检查文件夹是否存在失败: %w", err)
+	}
+
+	if err = os.MkdirAll(targetPath, 0o755); err != nil {
+		return "", fmt.Errorf("创建文件夹失败: %w", err)
+	}
+
+	return targetPath, nil
+}
+
+func AddPathingScript(parentPath, scriptPath string) (string, error) {
+	cleanParentPath, err := validatePathingTargetDir(parentPath)
+	if err != nil {
+		return "", err
+	}
+
+	cleanScriptPath, err := normalizeRelativePath(scriptPath)
+	if err != nil {
+		return "", err
+	}
+
+	var scriptGroupConfig ScriptGroup.ScriptGroupConfig
+	allPathing, err := scriptGroupConfig.ListAllPathing()
+	if err != nil {
+		return "", fmt.Errorf("读取脚本列表失败: %w", err)
+	}
+
+	leafPaths := make(map[string]struct{})
+	collectLeafPathings(allPathing, "", leafPaths)
+	if _, ok := leafPaths[cleanScriptPath]; !ok {
+		return "", fmt.Errorf("请选择最后一级脚本目录")
+	}
+
+	scriptName := filepath.Base(cleanScriptPath)
+	exists, err := pathingScriptExists(scriptName)
+	if err != nil {
+		return "", fmt.Errorf("校验脚本是否已存在失败: %w", err)
+	}
+	if exists {
+		return "", fmt.Errorf("脚本已新增，不能重复新增")
+	}
+
+	sourcePath := filepath.Join(repoPathingRootDir(), cleanScriptPath)
+	sourceInfo, err := os.Stat(sourcePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("脚本目录不存在")
+		}
+		return "", fmt.Errorf("读取脚本目录失败: %w", err)
+	}
+	if !sourceInfo.IsDir() {
+		return "", fmt.Errorf("脚本路径不是文件夹")
+	}
+
+	targetPath := filepath.Join(cleanParentPath, scriptName)
+	if _, err = os.Stat(targetPath); err == nil {
+		return "", fmt.Errorf("当前目录已存在同名脚本")
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("检查目标脚本目录失败: %w", err)
+	}
+
+	if err = copy.Copy(sourcePath, targetPath); err != nil {
+		return "", fmt.Errorf("新增脚本失败: %w", err)
+	}
+
+	return targetPath, nil
+}
+
+func DeletePathingNode(targetPath string) (string, error) {
+	cleanTargetPath, err := validatePathingTargetPath(targetPath)
+	if err != nil {
+		return "", err
+	}
+
+	rootPath := filepath.Clean(pathingRootDir())
+	if cleanTargetPath == rootPath {
+		return "", fmt.Errorf("根目录不允许删除")
+	}
+
+	if fileInfo, statErr := os.Stat(cleanTargetPath); statErr == nil && !fileInfo.IsDir() {
+		if err = os.Remove(cleanTargetPath); err != nil {
+			return "", fmt.Errorf("删除文件失败: %w", err)
+		}
+		return cleanTargetPath, nil
+	}
+
+	targetInfo, err := os.Stat(cleanTargetPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("目标目录不存在")
+		}
+		return "", fmt.Errorf("读取目标目录失败: %w", err)
+	}
+	if !targetInfo.IsDir() {
+		return "", fmt.Errorf("目标路径不是文件夹")
+	}
+
+	if err = os.RemoveAll(cleanTargetPath); err != nil {
+		return "", fmt.Errorf("删除失败: %w", err)
+	}
+
+	return cleanTargetPath, nil
+}
+
+func validatePathingTargetDir(targetPath string) (string, error) {
+	rootPath := filepath.Clean(pathingRootDir())
+	cleanTargetPath := filepath.Clean(strings.TrimSpace(targetPath))
+	if cleanTargetPath == "" {
+		cleanTargetPath = rootPath
+	}
+
+	relativePath, err := filepath.Rel(rootPath, cleanTargetPath)
+	if err != nil {
+		return "", fmt.Errorf("目录校验失败: %w", err)
+	}
+	if relativePath == ".." || strings.HasPrefix(relativePath, ".."+string(os.PathSeparator)) || filepath.IsAbs(relativePath) {
+		return "", fmt.Errorf("目标目录不在采集目录范围内")
+	}
+
+	targetInfo, err := os.Stat(cleanTargetPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("目标目录不存在")
+		}
+		return "", fmt.Errorf("读取目标目录失败: %w", err)
+	}
+	if !targetInfo.IsDir() {
+		return "", fmt.Errorf("目标路径不是文件夹")
+	}
+
+	return cleanTargetPath, nil
+}
+
+func validatePathingTargetPath(targetPath string) (string, error) {
+	rootPath := filepath.Clean(pathingRootDir())
+	cleanTargetPath := filepath.Clean(strings.TrimSpace(targetPath))
+	if cleanTargetPath == "" {
+		cleanTargetPath = rootPath
+	}
+
+	relativePath, err := filepath.Rel(rootPath, cleanTargetPath)
+	if err != nil {
+		return "", fmt.Errorf("目录校验失败: %w", err)
+	}
+	if relativePath == ".." || strings.HasPrefix(relativePath, ".."+string(os.PathSeparator)) || filepath.IsAbs(relativePath) {
+		return "", fmt.Errorf("目标不在采集目录范围内")
+	}
+
+	if _, err = os.Stat(cleanTargetPath); err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("目标不存在")
+		}
+		return "", fmt.Errorf("读取目标失败: %w", err)
+	}
+
+	return cleanTargetPath, nil
+}
+
+func normalizeRelativePath(path string) (string, error) {
+	cleanPath := strings.TrimSpace(path)
+	cleanPath = strings.ReplaceAll(cleanPath, "/", string(os.PathSeparator))
+	cleanPath = strings.Trim(cleanPath, `\/`)
+	if cleanPath == "" {
+		return "", fmt.Errorf("脚本路径不能为空")
+	}
+
+	cleanPath = filepath.Clean(cleanPath)
+	if cleanPath == "." || cleanPath == ".." {
+		return "", fmt.Errorf("脚本路径不合法")
+	}
+	if filepath.IsAbs(cleanPath) || strings.HasPrefix(cleanPath, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("脚本路径不合法")
+	}
+	return cleanPath, nil
+}
+
+func collectLeafPathings(items []ScriptGroup.AllPath, parent string, leafPaths map[string]struct{}) {
+	for _, item := range items {
+		currentPath := item.FileName
+		if parent != "" {
+			currentPath = filepath.Join(parent, item.FileName)
+		}
+
+		if len(item.FileNameChild) == 0 {
+			leafPaths[currentPath] = struct{}{}
+			continue
+		}
+
+		collectLeafPathings(item.FileNameChild, currentPath, leafPaths)
+	}
+}
+
+func pathingScriptExists(scriptName string) (bool, error) {
+	scriptName = strings.TrimSpace(scriptName)
+	if scriptName == "" {
+		return false, nil
+	}
+
+	stopErr := errors.New("script found")
+	err := filepath.WalkDir(pathingRootDir(), func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == pathingRootDir() || !d.IsDir() {
+			return nil
+		}
+		if d.Name() == scriptName {
+			return stopErr
+		}
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, stopErr) {
+			return true, nil
+		}
+		return false, err
+	}
+	return false, nil
 }
 
 // 读取record.json

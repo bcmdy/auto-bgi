@@ -148,13 +148,13 @@ func (d *DogFood) WriteDogFoodNum(num string) string {
 				autoLog.Sugar.Infof("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum)
 				Notice.SentText(fmt.Sprintf("批发:[%d]和联机狗粮:[%d]相加等于：%s", a, b, sum))
 
-				go func() {
-					if a+b >= 150000 && a+b <= 190000 {
-						UpdateRevenue(sum)
-					} else {
-						autoLog.Sugar.Infof("a+b = %d，不在目标区间，未执行 UpdateRevenue", a+b)
-					}
-				}()
+				//go func() {
+				//	if a+b >= 150000 && a+b <= 190000 {
+				//		UpdateRevenue(sum)
+				//	} else {
+				//		autoLog.Sugar.Infof("a+b = %d，不在目标区间，未执行 UpdateRevenue", a+b)
+				//	}
+				//}()
 
 				continue
 			} else {

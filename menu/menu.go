@@ -1009,6 +1009,9 @@ func StarGin() {
 			CDCollectionController.GET("/AllUserFile", CDCollectionManagement.AllUserFile)
 			CDCollectionController.GET("/list", CDCollectionManagement.CDCollectionRead)
 			CDCollectionController.GET("/ReadPickup", CDCollectionManagement.ReadPickup)
+			CDCollectionController.POST("/createFolder", CDCollectionManagement.CreateFolder)
+			CDCollectionController.POST("/createScript", CDCollectionManagement.CreateScript)
+			CDCollectionController.POST("/deleteNode", CDCollectionManagement.DeleteNode)
 
 		}
 

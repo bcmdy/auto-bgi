@@ -738,8 +738,8 @@ func findLogFiles(dirPath string) ([]string, error) {
 }
 
 func FindLogFiles1Remote(dirPath string) ([]string, error) {
-	// 匹配 1Remote.log_20250810.md 这种文件名
-	pattern := filepath.Join(dirPath, "1Remote.log_*.md")
+	// 匹配 OneRemote.log_20250810.md 这种文件名
+	pattern := filepath.Join(dirPath, "OneRemote.log_*.md")
 
 	files, err := filepath.Glob(pattern)
 	if err != nil {
@@ -2104,7 +2104,7 @@ func Log1Remote() {
 	for {
 		files, err := FindLogFiles1Remote(config.Cfg.OneRemote.LogFilePath)
 		if err != nil || len(files) == 0 {
-			fmt.Println("找不到 1Remote 日志文件")
+			fmt.Println("找不到 OneRemote 日志文件")
 			<-ticker.C
 			continue
 		}
@@ -2112,7 +2112,7 @@ func Log1Remote() {
 		newLogFile := filepath.Join(config.Cfg.OneRemote.LogFilePath, files[0]) // 最新文件
 
 		if newLogFile != Log1RemoteCurrentLogFile {
-			fmt.Printf("检测到新的 1Remote 日志文件: %s\n", newLogFile)
+			fmt.Printf("检测到新的 OneRemote 日志文件: %s\n", newLogFile)
 			Log1RemoteCurrentLogFile = newLogFile
 
 			if Log1RemoteMonitor != nil {
