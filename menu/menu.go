@@ -305,6 +305,8 @@ func StarGin() {
 			oneRemoteController.GET("/sessions", OneRemote.GetMultiUsers)
 			oneRemoteController.POST("/start", OneRemote.StartMultiUser)
 			oneRemoteController.POST("/logoff", OneRemote.LogoutMultiUser)
+			//电脑性能查询
+			oneRemoteController.GET("/performance", OneRemote.GetPerformance)
 		}
 
 		/**

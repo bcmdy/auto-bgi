@@ -18,6 +18,7 @@
         </div>
 
         <div class="topbar-right">
+          <a-tag color="processing">Auto {{ autoRefreshCountdown }}s</a-tag>
           <a-button class="topbar-refresh-btn" type="default" @click="refreshSessions" :loading="refreshLoading">刷新</a-button>
         </div>
       </header>
@@ -147,13 +148,17 @@ const loading = ref(false)
 const startLoading = ref(false)
 const logoffLoading = ref(false)
 const performanceLoading = ref(false)
+const silentRefreshing = ref(false)
 
 const sessions = ref([])
 const selectedRowKeys = ref([])
 const search = ref('')
 const launcher = ref('')
 const performanceData = ref({ CPUUsage: '-', MemoryUsage: '-', GPUUsage: '-' })
+const AUTO_REFRESH_INTERVAL_MS = 5000
+const autoRefreshCountdown = ref(AUTO_REFRESH_INTERVAL_MS / 1000)
 let refreshTimer = null
+let countdownTimer = null
 
 const columns = [
   { title: '会话名', dataIndex: 'SessionName', key: 'SessionName', width: 180 },
@@ -196,21 +201,21 @@ const onSelectChange = (keys) => {
   selectedRowKeys.value = Array.isArray(keys) ? keys.slice(0, 1) : []
 }
 
-const loadSessions = async () => {
+const loadSessions = async ({ silent = false } = {}) => {
   try {
-    loading.value = true
+    if (!silent) loading.value = true
     const res = await apiMethods.oneRemoteGetSessions()
     sessions.value = Array.isArray(res?.data) ? res.data : []
   } catch (e) {
-    message.error('获取会话失败')
+    if (!silent) message.error('获取会话失败')
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
-const loadPerformance = async () => {
+const loadPerformance = async ({ silent = false } = {}) => {
   try {
-    performanceLoading.value = true
+    if (!silent) performanceLoading.value = true
     const res = await apiMethods.oneRemotePerformance()
     const data = res?.data || {}
     performanceData.value = {
@@ -219,14 +224,56 @@ const loadPerformance = async () => {
       GPUUsage: data.GPUUsage || '-'
     }
   } catch (e) {
-    message.error('获取性能监控失败')
+    if (!silent) message.error('获取性能监控失败')
   } finally {
-    performanceLoading.value = false
+    if (!silent) performanceLoading.value = false
   }
 }
 
-const refreshSessions = async () => {
-  await Promise.all([loadSessions(), loadPerformance()])
+const refreshSessions = async ({ silent = false } = {}) => {
+  await Promise.all([
+    loadSessions({ silent }),
+    loadPerformance({ silent })
+  ])
+}
+
+const refreshSessionsSilently = async () => {
+  if (silentRefreshing.value || loading.value || performanceLoading.value) return
+  silentRefreshing.value = true
+  try {
+    await refreshSessions({ silent: true })
+  } finally {
+    silentRefreshing.value = false
+  }
+}
+
+const stopAutoRefresh = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+const startAutoRefresh = () => {
+  stopAutoRefresh()
+  autoRefreshCountdown.value = AUTO_REFRESH_INTERVAL_MS / 1000
+
+  refreshTimer = setInterval(() => {
+    autoRefreshCountdown.value = AUTO_REFRESH_INTERVAL_MS / 1000
+    refreshSessionsSilently()
+  }, AUTO_REFRESH_INTERVAL_MS)
+
+  countdownTimer = setInterval(() => {
+    if (autoRefreshCountdown.value <= 1) {
+      autoRefreshCountdown.value = AUTO_REFRESH_INTERVAL_MS / 1000
+      return
+    }
+    autoRefreshCountdown.value -= 1
+  }, 1000)
 }
 
 const resolveLauncher = () => {
@@ -284,6 +331,11 @@ const handleLogoff = async () => {
 
 onMounted(() => {
   refreshSessions()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 
 </script>
