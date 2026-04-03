@@ -3,6 +3,7 @@ package TaskCron
 import (
 	"auto-bgi/Notice"
 	"auto-bgi/OneLong"
+	"auto-bgi/OneRemote"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
@@ -268,6 +269,37 @@ func InitTaskCron() {
 			}
 
 		}()
+	}
+	Task["启动1Remote多用户"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：启动1Remote多用户-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		if data == "" {
+			autoLog.Sugar.Errorf("启动1Remote多用户失败: 参数为空")
+			return
+		}
+		split := strings.Split(data, "-")
+		for _, s := range split {
+			OneRemote.StartOneRemoteUser(s)
+			//暂停2秒
+			time.Sleep(2 * time.Second)
+		}
+	}
+	Task["注销1Remote多用户"] = func(data string) {
+		autoLog.Sugar.Infof("定时任务启动：注销1Remote多用户-现在时间:%s 参数:[%s]", time.Now().Format("15:04:05"), data)
+		if data == "" {
+			autoLog.Sugar.Errorf("启动1Remote多用户失败: 参数为空")
+			return
+		}
+		split := strings.Split(data, "-")
+		for _, s := range split {
+			id, err := OneRemote.FindSessionIDByUsername(s)
+			if err != nil {
+				autoLog.Sugar.Errorf("注销1Remote多用户失败: %v", err)
+				return
+			}
+			OneRemote.ForceLogoff(id)
+			//暂停2秒
+			time.Sleep(2 * time.Second)
+		}
 	}
 	Task["更新aBgi"] = func(data string) {
 

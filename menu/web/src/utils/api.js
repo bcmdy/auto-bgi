@@ -125,6 +125,7 @@ export const apiMethods = {
   oneRemoteGetSessions: () => api.get('/api/oneRemote/sessions'),
   oneRemoteStart: (launcher) => api.post('/api/oneRemote/start', null, { params: { launcher } }),
   oneRemoteLogoff: (params) => api.post('/api/oneRemote/logoff', null, { params }),
+  oneRemotePerformance: () => api.get('/api/oneRemote/performance'),
   
   // 日志相关
   getLog: () => api.get('/api/gitLog'),

@@ -235,9 +235,9 @@ func (m *LogMonitor) Monitor() {
 					}
 					slices.Sort(keys)
 					// 2. 对 Key 进行排序
-
 					for i2 := range keys {
 						data += dataMap[keys[i2]]
+
 					}
 
 					data += fmt.Sprintf("【%s--%s】\n", "合计", sumExecuteTime)

@@ -134,13 +134,6 @@ func AddPathingScript(parentPath, scriptPath string) (string, error) {
 	}
 
 	scriptName := filepath.Base(cleanScriptPath)
-	exists, err := pathingScriptExists(scriptName)
-	if err != nil {
-		return "", fmt.Errorf("校验脚本是否已存在失败: %w", err)
-	}
-	if exists {
-		return "", fmt.Errorf("脚本已新增，不能重复新增")
-	}
 
 	sourcePath := filepath.Join(repoPathingRootDir(), cleanScriptPath)
 	sourceInfo, err := os.Stat(sourcePath)
@@ -155,8 +148,13 @@ func AddPathingScript(parentPath, scriptPath string) (string, error) {
 	}
 
 	targetPath := filepath.Join(cleanParentPath, scriptName)
-	if _, err = os.Stat(targetPath); err == nil {
-		return "", fmt.Errorf("当前目录已存在同名脚本")
+	if info, err := os.Stat(targetPath); err == nil {
+		if !info.IsDir() {
+			return "", fmt.Errorf("当前目录存在同名文件，无法覆盖: %w", fs.ErrExist)
+		}
+		if err := os.RemoveAll(targetPath); err != nil {
+			return "", fmt.Errorf("移除已有脚本目录失败: %w", err)
+		}
 	} else if !os.IsNotExist(err) {
 		return "", fmt.Errorf("检查目标脚本目录失败: %w", err)
 	}

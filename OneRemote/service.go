@@ -29,7 +29,7 @@ func StartMultiUser(context *gin.Context) {
 		return
 	}
 
-	if err := startOneRemoteUser(value); err != nil {
+	if err := StartOneRemoteUser(value); err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -61,4 +61,14 @@ func LogoutMultiUser(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// 电脑性能查询
+func GetPerformance(context *gin.Context) {
+	performance, err := GetSystemPerformance()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"status": "success", "data": performance})
 }

@@ -128,14 +128,14 @@
           </div>
         </a-card>
 
-        <a-card title="1Remote 远程监控" class="config-card">
+        <a-card title="1Remote配置" class="config-card">
           <template #extra><span class="card-icon">💻</span></template>
-          <a-form-item class="checkbox-item">
+          <!-- <a-form-item class="checkbox-item">
             <a-checkbox v-model:checked="formData.OneRemote.IsMonitor" class="enhanced-checkbox">启用远程监控</a-checkbox>
-          </a-form-item>
-          <div v-if="formData.OneRemote.IsMonitor" class="fade-in-section">
-            <a-form-item label="日志文件夹路径" class="form-item-enhanced">
-              <a-input v-model:value="formData.OneRemote.LogFilePath" placeholder="例如 ...\.logs" class="enhanced-input">
+          </a-form-item> -->
+          <div  class="fade-in-section">
+            <a-form-item label="1Remote安装路径" class="form-item-enhanced">
+              <a-input v-model:value="formData.OneRemote.LogFilePath" placeholder="D:\1R\1Remote.exe" class="enhanced-input">
                 <template #prefix>📂</template>
               </a-input>
             </a-form-item>

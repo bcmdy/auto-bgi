@@ -1,14 +1,18 @@
 package OneRemote
 
 import (
+	"auto-bgi/config"
 	"bytes"
 	"fmt"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -93,9 +97,9 @@ func GetDetailedSessions() ([]SessionInfo, error) {
 				}
 			}
 
-			if strings.EqualFold(strings.TrimSpace(s.Username), "Administrator") {
-				continue
-			}
+			//if !strings.EqualFold(strings.TrimSpace(s.Username), "#") {
+			//	continue
+			//}
 
 			if s.ID != "" {
 				results = append(results, s)
@@ -128,10 +132,10 @@ func FindSessionIDByUsername(username string) (string, error) {
 }
 
 // 启动1Remote用户
-func startOneRemoteUser(sessionName string) error {
+func StartOneRemoteUser(sessionName string) error {
 	// 1Remote.exe 的路径，如果在环境变量中可直接写名
 	// 注意：根据你的安装路径修改
-	appPath := "D:\\1R\\1Remote.exe"
+	appPath := config.Cfg.OneRemote.LogFilePath
 
 	if _, err := os.Stat(appPath); err != nil {
 		return fmt.Errorf("1Remote.exe 不存在或不可访问: %s", appPath)
@@ -163,4 +167,44 @@ func ForceLogoff(sessionID string) error {
 		return fmt.Errorf("强制注销远程会话失败: %v, output: %s", err, strings.TrimSpace(string(output)))
 	}
 	return nil
+}
+
+type SystemPerformance struct {
+	CPUUsage    string // CPU 使用率百分比
+	MemoryUsage string // 内存使用率百分比
+	GPUUsage    string // GPU 使用情况描述
+}
+
+// 电脑性能查询
+func GetSystemPerformance() (SystemPerformance, error) {
+	var performance SystemPerformance
+	// 1. 获取 CPU
+	cpuPercent, _ := cpu.Percent(time.Second, false)
+	performance.CPUUsage = fmt.Sprintf("CPU 使用率: %.2f%%", cpuPercent[0])
+
+	// 2. 获取内存信息
+	v, _ := mem.VirtualMemory()
+	performance.MemoryUsage = fmt.Sprintf("总内存: %v MB, 已用比例: %.2f%%", v.Total/1024/1024, v.UsedPercent)
+
+	// 3. 获取 GPU 使用情况
+	performance.GPUUsage = getGpuUsage()
+
+	return performance, nil
+}
+
+func getGpuUsage() string {
+	cmd := exec.Command("nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits")
+	out, err := cmd.Output()
+	if err != nil {
+		return "无法获取 GPU 信息"
+	}
+	result := strings.TrimSpace(string(out))
+	parts := strings.Split(result, ",")
+	if len(parts) >= 3 {
+		return fmt.Sprintf("负载: %s%%, 显存: %sMB / %sMB",
+			strings.TrimSpace(parts[0]),
+			strings.TrimSpace(parts[1]),
+			strings.TrimSpace(parts[2]))
+	}
+	return result
 }

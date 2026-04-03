@@ -2,6 +2,7 @@ package bgiStatus
 
 import (
 	"auto-bgi/Notice"
+	"auto-bgi/OneRemote"
 	"auto-bgi/abgiObs"
 	"auto-bgi/abgiSSE"
 	"auto-bgi/autoLog"
@@ -10,6 +11,7 @@ import (
 	"auto-bgi/task"
 	"auto-bgi/tools"
 	"strings"
+	"time"
 )
 
 //cmd测试
@@ -185,6 +187,41 @@ func JsLogHandler(line string) {
 		} else if data == "关闭" {
 			Notice.SentText("红血检测关闭")
 			config.Cfg.Control.IsRedBlood = false
+		}
+	}
+	//js日志调用abgi启动1Remote多用户
+	if strings.HasPrefix(line, "ABGI启动1Remote多用户：") {
+		autoLog.Sugar.Infof(line)
+		data := strings.ReplaceAll(line, "ABGI启动1Remote多用户：", "")
+		if data == "" {
+			autoLog.Sugar.Errorf("启动1Remote多用户失败: 参数为空")
+			return
+		}
+		split := strings.Split(data, "-")
+		for _, s := range split {
+			OneRemote.StartOneRemoteUser(s)
+			//暂停2秒
+			time.Sleep(2 * time.Second)
+		}
+	}
+	//js日志调用abgi注销1Remote多用户
+	if strings.HasPrefix(line, "ABGI注销1Remote多用户：") {
+		autoLog.Sugar.Infof(line)
+		data := strings.ReplaceAll(line, "ABGI注销1Remote多用户：", "")
+		if data == "" {
+			autoLog.Sugar.Errorf("启动1Remote多用户失败: 参数为空")
+			return
+		}
+		split := strings.Split(data, "-")
+		for _, s := range split {
+			id, err := OneRemote.FindSessionIDByUsername(s)
+			if err != nil {
+				autoLog.Sugar.Errorf("注销1Remote多用户失败: %v", err)
+				return
+			}
+			OneRemote.ForceLogoff(id)
+			//暂停2秒
+			time.Sleep(2 * time.Second)
 		}
 	}
 

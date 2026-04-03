@@ -990,18 +990,15 @@ const getNodeTypeLabel = (node) => {
   return isScriptDirectory(node) ? '路线' : '文件夹'
 }
 
-const convertScriptOptions = (items, existingScriptNames) => {
+const convertScriptOptions = (items) => {
   if (!Array.isArray(items)) return []
 
   return items.map(item => {
-    const children = convertScriptOptions(item.fileNameChild, existingScriptNames)
-    const isLeaf = children.length === 0
-    const disabled = isLeaf && existingScriptNames.has(item.fileName)
+    const children = convertScriptOptions(item.fileNameChild)
 
     return {
-      label: disabled ? `${item.fileName}（已新增）` : item.fileName,
+      label: item.fileName,
       value: item.fileName,
-      disabled,
       children: children.length > 0 ? children : undefined
     }
   })
@@ -1011,8 +1008,7 @@ const loadCreateScriptOptions = async () => {
   createScriptCatalogLoading.value = true
   try {
     const response = await apiMethods.getCollectionScriptCatalog()
-    const existingScriptNames = collectExistingScriptNames(rawTreeData.value, new Set())
-    createScriptOptions.value = convertScriptOptions(response?.data || [], existingScriptNames)
+    createScriptOptions.value = convertScriptOptions(response?.data || [])
   } catch (error) {
     createScriptOptions.value = []
     message.error('获取路线列表失败: ' + (error?.message || '未知错误'))
