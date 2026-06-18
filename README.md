@@ -21,6 +21,8 @@ ABGI 是 BetterGI（BGI）的自动化管理与日志分析工具。它可以帮
 
 - 已安装并能正常运行的 BetterGI。
 - ABGI 程序压缩包。
+- autobgi.exe
+- 将exe放进解压的压缩包里面
 - Windows 运行权限。第一次运行建议右键使用管理员权限。
 - 如果要使用录屏功能，提前安装 OBS，并开启 OBS WebSocket。
 - 如果要使用通知功能，准备对应平台的机器人 Webhook、Token 或 App 信息。
