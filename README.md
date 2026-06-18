@@ -168,7 +168,7 @@ http://你的电脑IP:8082
 提瓦特指挥所 -> ABGI设置 -> 功能开关 -> 开机自启动
 ```
 
-![开机自启动设置](./assets/tutorial-images/09-autostart.png)
+![开机自启动设置](./assets/tutorial-images/tutorial-images/09-autostart.png)
 
 操作步骤：
 
@@ -260,7 +260,7 @@ ABGI 支持以下通知渠道：
 实时监测 -> ABGI日志查询
 ```
 
-![ABGI 日志查询](./assets/tutorial-images/06-auto-log.png)
+![ABGI 日志查询](./assets/tutorial-images/tutorial-images/06-auto-log.png)
 
 ABGI 日志查询支持搜索、自动刷新、导出、复制和清空。
 
@@ -423,7 +423,7 @@ ABGI 日志查询支持搜索、自动刷新、导出、复制和清空。
 
 配合 BetterGI 的 JS 脚本“采集 CD 管理”使用。脚本运行后，ABGI 会汇总采集路线、材料拾取记录和路线 CD，适合多账号查看哪些路线已经可以重新采集。
 
-![采集管理总览](./assets/tutorial-images/13-collection-overview.png)
+![采集管理总览](./assets/tutorial-images/tutorial-images/13-collection-overview.png)
 
 页面上方会显示当前账号的采集统计：
 
@@ -445,7 +445,7 @@ ABGI 日志查询支持搜索、自动刷新、导出、复制和清空。
 
 “按料理添加采集路线”适合缺食材时使用：选择料理和制作份数后，系统会根据料理需要的材料自动匹配可用采集路线。这个操作会修改路线清单，建议先确认当前账号选择正确。
 
-![采集管理拾取记录](./assets/tutorial-images/14-collection-pickup.png)
+![采集管理拾取记录](./assets/tutorial-images/tutorial-images/14-collection-pickup.png)
 
 “拾取记录”用于查看脚本记录到的每日采集结果：
 
@@ -533,7 +533,7 @@ QQ群里的 MAA 相关压缩包一般分为两类：
 
 最终目录结构必须是这样：
 
-![MAA 压缩包放置位置](./assets/tutorial-images/12-maa-folders.svg)
+![MAA 压缩包放置位置](./assets/tutorial-images/tutorial-images/12-maa-folders.svg)
 
 文字版目录：
 
@@ -592,7 +592,7 @@ Maa 控制台入口是否显示取决于：
 ABGI设置 -> 功能开关 -> 启用 Maa 功能
 ```
 
-![启用 Maa 功能](./assets/tutorial-images/10-maa-enable.png)
+![启用 Maa 功能](./assets/tutorial-images/tutorial-images/10-maa-enable.png)
 
 操作步骤：
 
@@ -610,7 +610,7 @@ ABGI设置 -> 功能开关 -> 启用 Maa 功能
 自动化控制 -> Maa控制台
 ```
 
-![Maa 控制台](./assets/tutorial-images/11-maa-console.png)
+![Maa 控制台](./assets/tutorial-images/tutorial-images/11-maa-console.png)
 
 页面主要分为四块：
 
@@ -714,7 +714,7 @@ Maa 控制台读取这些目录：
 自动化控制 -> ABGI定时任务
 ```
 
-![ABGI 定时任务](./assets/tutorial-images/04-task-cron.png)
+![ABGI 定时任务](./assets/tutorial-images/tutorial-images/04-task-cron.png)
 
 定时任务页面左侧是新增或编辑表单，右侧是任务列表。
 
@@ -808,7 +808,7 @@ Mouse-1005-528-右键-500*Keyboard-lwdsg-300
 自动化控制 -> 日志行为编排
 ```
 
-![日志行为编排](./assets/tutorial-images/05-log-keyword.png)
+![日志行为编排](./assets/tutorial-images/tutorial-images/05-log-keyword.png)
 
 这个功能用于“日志里出现某些关键词时，自动按顺序执行动作”。
 
@@ -852,7 +852,7 @@ Mouse-1005-528-右键-500*Keyboard-lwdsg-300
 提瓦特指挥所 -> 录屏管理
 ```
 
-![录屏管理](./assets/tutorial-images/07-obs-video.png)
+![录屏管理](./assets/tutorial-images/tutorial-images/07-obs-video.png)
 
 可操作：
 
@@ -948,7 +948,7 @@ Mouse-1005-528-右键-500*Keyboard-lwdsg-300
 提瓦特指挥所 -> 检查更新
 ```
 
-![检查更新](./assets/tutorial-images/08-update.png)
+![检查更新](./assets/tutorial-images/tutorial-images/08-update.png)
 
 可检查并更新 ABGI 和 BetterGI。更新成功后可能会自动跳转到登录页或需要等待程序重启。
 
