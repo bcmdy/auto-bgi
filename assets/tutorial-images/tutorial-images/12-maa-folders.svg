@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <rect width="1200" height="720" fill="#f7f9fc"/>
+  <rect x="60" y="48" width="1080" height="624" rx="24" fill="#ffffff" stroke="#d8dee9"/>
+  <text x="96" y="104" font-family="Microsoft YaHei, Arial" font-size="34" font-weight="700" fill="#1f2937">MAA 两个压缩包放置位置</text>
+  <text x="96" y="146" font-family="Microsoft YaHei, Arial" font-size="18" fill="#64748b">以 ABGI 根目录为起点，最终目录结构必须长这样</text>
+  <g font-family="Consolas, Microsoft YaHei, monospace" font-size="23" fill="#111827">
+    <text x="110" y="210">ABGI 根目录</text>
+    <text x="110" y="250">├─ auto-bgi.exe</text>
+    <text x="110" y="290">├─ main.json</text>
+    <text x="110" y="330">├─ MaaResources</text>
+    <text x="150" y="370">│  ├─ pipeline</text>
+    <text x="150" y="410">│  ├─ image</text>
+    <text x="150" y="450">│  └─ modelocr</text>
+    <text x="110" y="490">├─ MaaUser</text>
+    <text x="150" y="530">│  ├─ config</text>
+    <text x="150" y="570">│  └─ debug</text>
+    <text x="110" y="610">└─ libMaaFrameworkin</text>
+  </g>
+  <g font-family="Microsoft YaHei, Arial" font-size="20" fill="#0f172a">
+    <rect x="650" y="225" width="420" height="96" rx="14" fill="#ecfdf5" stroke="#86efac"/>
+    <text x="680" y="262" font-weight="700">MaaResources.zip</text>
+    <text x="680" y="294" fill="#166534">解压后得到 ABGIMaaResources</text>
+    <rect x="650" y="365" width="420" height="110" rx="14" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="680" y="402" font-weight="700">MaaFramework.zip</text>
+    <text x="680" y="434" fill="#1d4ed8">解压后最终要有：</text>
+    <text x="680" y="464" fill="#1d4ed8">ABGIlibMaaFrameworkin</text>
+    <rect x="650" y="520" width="420" height="76" rx="14" fill="#fff7ed" stroke="#fdba74"/>
+    <text x="680" y="556" font-weight="700">不要多套一层目录</text>
+    <text x="680" y="586" fill="#9a3412">例如 MaaFrameworkMaaFrameworkin 是错的</text>
+  </g>
+</svg>
