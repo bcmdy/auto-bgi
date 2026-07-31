@@ -1,0 +1,305 @@
+name: 🔄 Auto-BGI Daily Sync & Build
+
+on:
+  # schedule:
+  #   - cron: '0 11 * * *'
+  workflow_dispatch:
+
+env:
+  UPSTREAM_REPO: 'https://gitee.com/wangjian0327/auto-bgi.git '
+  UPSTREAM_BRANCH: 'ginVue'
+  LOCAL_BRANCH: 'main'
+
+jobs:
+  sync-build-release:
+    runs-on: windows-latest
+    steps:
+      # 1. 检出本仓库
+      - name: 🧾 Checkout self
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # 2. 配置 Git
+      - name: ⚙️ Configure Git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      # 3. 检测上游更新
+      - name: 🔍 Check upstream changes
+        id: upstream
+        shell: bash
+        run: |
+          git remote add upstream ${{ env.UPSTREAM_REPO }} || true
+          git fetch upstream ${{ env.UPSTREAM_BRANCH }} --quiet
+          UPSTREAM_HASH=$(git rev-parse upstream/${{ env.UPSTREAM_BRANCH }})
+          LOCAL_HASH=$(git rev-parse HEAD)
+          echo "upstream_hash=$UPSTREAM_HASH" >> $GITHUB_OUTPUT
+          echo "local_hash=$LOCAL_HASH" >> $GITHUB_OUTPUT
+          echo "changed=$([ \"$UPSTREAM_HASH\" != \"$LOCAL_HASH\" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      # 4. 同步并强制保留 workflows
+      - name: ⬇️⬆️ Sync & force-push
+        if: steps.upstream.outputs.changed == 'true'
+        shell: bash
+        env:
+          BACKUP_DIR: "${{ runner.temp }}/workflows-backup"
+        run: |
+          mkdir -p "$BACKUP_DIR"
+          if [ -d ".github/workflows" ] && [ -n "$(ls -A .github/workflows 2>/dev/null)" ]; then
+            echo "✅ Found workflows, backing up to $BACKUP_DIR..."
+            cp -r .github/workflows/* "$BACKUP_DIR/"
+            echo "WORKFLOWS_BACKED_UP=true" >> $GITHUB_ENV
+            if [ ! -f "$BACKUP_DIR/$(ls .github/workflows | head -1)" ]; then
+              echo "❌ Backup verification failed"
+              exit 1
+            fi
+          else
+            echo "❌ CRITICAL: No workflows found to backup!"
+            exit 1
+          fi
+          
+          echo "🔄 Resetting to upstream..."
+          git reset --hard upstream/${{ env.UPSTREAM_BRANCH }}
+          
+          if [ -d ".github" ]; then
+            echo "⚠️ 上游有 .github 目录，可能需要检查冲突"
+          else
+            echo "✅ .github 已按预期被删除"
+          fi
+          
+          echo "📁 Restoring workflows..."
+          mkdir -p .github/workflows
+          cp -r "$BACKUP_DIR"/* .github/workflows/
+          
+          if [ -n "$(ls -A .github/workflows 2>/dev/null)" ]; then
+            echo "✅ Workflows restored successfully"
+            ls -la .github/workflows/
+          else
+            echo "❌ Failed to restore workflows"
+            exit 1
+          fi
+          
+          git add .github/workflows
+          git -c user.name='github-actions[bot]' \
+              -c user.email='github-actions[bot]@users.noreply.github.com' \
+              commit -m "chore: sync upstream and restore workflows" || true
+          git push --force-with-lease origin ${{ env.LOCAL_BRANCH }}
+
+      # 5. 安装 Node.js
+      - name: 🧰 Setup Node
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.13.1'
+
+      # 6. 安装 Go
+      - name: 🐹 Setup Go
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24.0'
+
+      # 7. 安装 UPX
+      - name: 📦 Install UPX
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: choco install upx -y
+
+      # 8. 版本递增、前端构建 + 后端构建（CLI/GUI）+ UPX
+      - name: 🏗 Build & compress
+        if: steps.upstream.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          # 版本管理
+          Write-Host "====== 版本递增 ======"
+          $versionFile = "menu\web\version.txt"
+          $indexFile = "menu\web\index.html"
+          
+          if (-not (Test-Path $versionFile)) {
+              "0.0.0" | Out-File -FilePath $versionFile -Encoding utf8
+          }
+          
+          $oldVersion = (Get-Content $versionFile).Trim()
+          Write-Host "当前版本: $oldVersion"
+          
+          $parts = $oldVersion -split '\.'
+          $major = if ($parts[0]) { [int]$parts[0] } else { 0 }
+          $minor = if ($parts[1]) { [int]$parts[1] } else { 0 }
+          $patch = if ($parts[2]) { [int]$parts[2] } else { 0 }
+          $patch++
+          $newVersion = "$major.$minor.$patch"
+          Write-Host "新版本: $newVersion"
+          
+          $newVersion | Out-File -FilePath $versionFile -Encoding utf8
+          
+          if (Test-Path $indexFile) {
+              $content = Get-Content -Raw $indexFile
+              $updated = $content -replace '(?<=autobgi)[^<]+', $newVersion
+              $updated | Out-File -FilePath $indexFile -Encoding utf8
+              Write-Host "已更新 $indexFile 中的版本号为: $newVersion"
+          }
+          
+          # 前端构建
+          Write-Host "====== 前端构建 ======"
+          Set-Location menu/web
+          Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
+          npm install --silent --no-audit --no-fund
+          if (-not (Test-Path node_modules/.bin/vite.cmd)) {
+              npm install --save-dev vite --silent --no-audit --no-fund
+          }
+          npm run build
+          if (-not (Test-Path dist)) { throw "❌ Frontend build failed" }
+          Set-Location $env:GITHUB_WORKSPACE
+          
+          # 关键修复：检查并初始化 Go 模块
+          Write-Host "====== 准备 Go 模块 ======"
+          if (-not (Test-Path go.mod)) {
+              Write-Host "⚠️ 警告: 项目根目录下不存在 go.mod 文件"
+              Write-Host "尝试自动初始化 Go 模块 (github.com/bcmdy/auto-bgi)"
+              go mod init github.com/bcmdy/auto-bgi
+              if ($LASTEXITCODE -ne 0) {
+                  throw "❌ Go 模块初始化失败"
+              }
+              Write-Host "✅ Go 模块初始化成功"
+          }
+          
+          # == 核心修复：改进的导入路径修正逻辑 ==
+          Write-Host "====== 修正所有 Go 文件的导入路径 ======"
+          $goFiles = Get-ChildItem -Path . -Filter *.go -Recurse
+          $fixedCount = 0
+          foreach ($file in $goFiles) {
+              $content = Get-Content -Raw $file.FullName
+              $originalContent = $content
+              
+              # 更健壮的正则表达式，处理各种导入格式
+              # 1. 替换双引号包裹的 auto-bgi/ 路径（单行和多行）
+              $content = $content -replace '["'']?(auto-bgi/[^"'']+)["'']?', '"github.com/bcmdy/${1}"'
+              
+              # 2. 确保导入语句格式正确（处理可能的重复引号）
+              $content = $content -replace 'import\s+"github.com/bcmdy/(auto-bgi/)', 'import "github.com/bcmdy/'
+              
+              if ($content -ne $originalContent) {
+                  $content | Out-File -FilePath $file.FullName -Encoding utf8
+                  $fixedCount++
+                  Write-Host "  已修正: $($file.FullName)"
+              }
+          }
+          Write-Host "✅ 共修复 $fixedCount 个 Go 文件的导入路径"
+          
+          # 新增：调试信息，显示 main.go 的导入部分
+          Write-Host "====== 调试：main.go 导入声明 ======"
+          if (Test-Path main.go) {
+              Get-Content main.go | Select-String -Pattern "import" -Context 0,5
+          }
+          
+          # 整理依赖
+          Write-Host "====== 执行 go mod tidy ======"
+          go mod tidy
+          if ($LASTEXITCODE -ne 0) {
+              throw "❌ go mod tidy 失败"
+          }
+          
+          # 显示最终的 go.mod 内容
+          Write-Host "====== 调试：go.mod 内容 ======"
+          Get-Content go.mod | Select-Object -First 20
+          
+          # 后端构建
+          Write-Host "====== 构建 CLI 版本 ======"
+          go build -ldflags="-s -w" -o auto-bgi.exe
+          if (-not (Test-Path auto-bgi.exe)) { throw "❌ CLI build failed" }
+          
+          Write-Host "====== 构建 GUI 版本 ======"
+          go build -ldflags="-s -w -H=windowsgui" -o auto-bgi-GUI.exe
+          if (-not (Test-Path auto-bgi-GUI.exe)) { throw "❌ GUI build failed" }
+          
+          # UPX 压缩
+          Write-Host "====== UPX 压缩 ======"
+          upx --best -o auto-bgi-upx.exe auto-bgi.exe
+          upx --best -o auto-bgi-GUI-upx.exe auto-bgi-GUI.exe
+          if (-not (Test-Path auto-bgi-upx.exe)) { throw "❌ UPX CLI compression failed" }
+          if (-not (Test-Path auto-bgi-GUI-upx.exe)) { throw "❌ UPX GUI compression failed" }
+          
+          # ZIP 打包
+          Write-Host "====== 创建 ZIP 压缩包 ======"
+          Compress-Archive -Path auto-bgi.exe -DestinationPath auto-bgi.exe.zip -Force
+          Compress-Archive -Path auto-bgi-GUI.exe -DestinationPath auto-bgi-GUI.exe.zip -Force
+          Compress-Archive -Path auto-bgi-upx.exe -DestinationPath auto-bgi-upx.exe.zip -Force
+          Compress-Archive -Path auto-bgi-GUI-upx.exe -DestinationPath auto-bgi-GUI-upx.exe.zip -Force
+          
+          Write-Host "✅ 构建完成，文件列表:"
+          Get-ChildItem *.zip | Select-Object Name, Length
+
+      # 9. 生成发布信息
+      - name: 🏷️ Prepare release info
+        if: steps.upstream.outputs.changed == 'true' && success()
+        id: release_info
+        shell: bash
+        run: |
+          BUILD_DATE=$(date +%Y%m%d)
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "version=autobuild-${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      # 10. 上传产物
+      - name: 📤 Upload CLI ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-CLI-${{ github.run_number }}
+          path: auto-bgi.exe.zip
+          retention-days: 30
+
+      - name: 📤 Upload GUI ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-GUI-${{ github.run_number }}
+          path: auto-bgi-GUI.exe.zip
+          retention-days: 30
+
+      - name: 📤 Upload CLI-UPX ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-CLI-UPX-${{ github.run_number }}
+          path: auto-bgi-upx.exe.zip
+          retention-days: 30
+
+      - name: 📤 Upload GUI-UPX ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bgi-GUI-UPX-${{ github.run_number }}
+          path: auto-bgi-GUI-upx.exe.zip
+          retention-days: 30
+
+      # 11. 发布 Release
+      - name: 🚀 Create Release
+        if: steps.upstream.outputs.changed == 'true' && success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.version }}
+          name: 每日编译-${{ steps.release_info.outputs.build_date }}-${{ github.run_number }}
+          body: |
+            🗓 **Build Date**: ${{ github.event.repository.updated_at }}  
+            🔖 **Version**: `${{ steps.release_info.outputs.version }}`
+            
+            ## 📦 Downloads
+            - `auto-bgi.exe.zip` - 命令行版本
+            - `auto-bgi-GUI.exe.zip` - GUI版本
+            - `auto-bgi-upx.exe.zip` - UPX压缩后的命令行版本（体积更小）
+            - `auto-bgi-GUI-upx.exe.zip` - UPX压缩后的GUI版本（体积更小）
+          files: |
+            auto-bgi.exe.zip
+            auto-bgi-GUI.exe.zip
+            auto-bgi-upx.exe.zip
+            auto-bgi-GUI-upx.exe.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
